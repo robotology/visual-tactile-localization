@@ -1,7 +1,7 @@
 
 /*
  * Copyright: (C) 2015 iCub Facility - Istituto Italiano di Tecnologia
- * Authors: Giulia Vezzani
+ * Authors: Ugo Pattacini
  * CopyPolicy: Released under the terms of the GNU GPL v2.0.
 */
 
@@ -102,6 +102,8 @@ bool UnscentedParticleFilter::step()
 
     t++;
     cout<<"t "<<t<<"\n";
+    
+    cout<<"modified algorithm "<<endl;
     
     ParametersUPF &params=get_parameters();
     cout<<"num tot meas "<<params.numMeas<<endl;
@@ -301,18 +303,51 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k)
 		
 	//	cout<<"INITIAL MEAS "<<initial_meas<<endl;
 		
-	
-	for (size_t i=initial_meas; i<t; i++)
+	if (t<=params.window_width)
 	{
-		Point &m=measurements[i];
+		for (size_t i=initial_meas; i<t; i++)
+		{
+			
+			Point &m=measurements[i];
+			
+				
+			double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
+			double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
+			double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
+			
+			
+			//modification for not double counting
+				
+			if (i==t-1)
+				likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0))*t);
+			else
+				likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)));
+				
+		}
+	}
+	else
+	{
+			for (size_t i=initial_meas-1; i<t; i++)
+			{
 		
+				Point &m=measurements[i];
 			
-		double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
-		double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
-		double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
-			
-	
-		likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)));
+				
+				double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
+				double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
+				double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
+				
+				
+				//modification for not double counting
+					
+				if (i==t-1)
+					likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0))*t);
+				if(i==initial_meas-1)
+					likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)*(t-1)));
+				else
+					likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)));
+				
+			}
 		
 	}
 

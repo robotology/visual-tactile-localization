@@ -1,4 +1,5 @@
 
+
 /*
  * Copyright: (C) 2015 iCub Facility - Istituto Italiano di Tecnologia
  * Authors: Ugo Pattacini
@@ -244,33 +245,128 @@ Vector UnscentedParticleFilter::finalize()
 	result.resize(8,0.0);
 	
 
-    MsParticleUPF ms_particle;
-    
-    ms_particle.pos=x_most.back();
-    performanceIndex(ms_particle);
    
-    Matrix H=rpr(ms_particle.pos.subVector(3,5));
-    Affine affine(H(0,0),H(0,1),H(0,2),ms_particle.pos[0],
-                  H(1,0),H(1,1),H(1,2),ms_particle.pos[1],
-                  H(2,0),H(2,1),H(2,2),ms_particle.pos[2]);
+    
+    ms_particle1.pos=x_most.back();
+    performanceIndex(ms_particle1);
+   
+   
+    
+    
+  	result[0]=ms_particle1.pos[0];
+  	result[1]=ms_particle1.pos[1];
+  	result[2]=ms_particle1.pos[2];
+  	result[3]=ms_particle1.pos[3];
+  	result[4]=ms_particle1.pos[4];
+  	result[5]=ms_particle1.pos[5];
+  	result[6]=ms_particle1.error_index;
+    dt=Time::now()-t0;
+    result[7]=dt;
+    
+    cout<<"RESULT WITH HIGHEST WEIGHT "<<result.toString().c_str()<<endl;
+    
+    
+    //let's try to use instead of particle with highest weight
+    // particle with highest density
+    Vector result2;
+    result2=particleDensity();
+    
+    cout<<"RESULT WITH HIGHEST density "<<result2.toString().c_str()<<endl;
+    
+    //save all the result wwith highest density in ms_particle2
+    ms_particle2.pos=result2;
+   
+    
+    
+   
+                   
+    performanceIndex(ms_particle2);
+    cout<<"error_index"<<ms_particle2.error_index<<endl;
+    
+    
+     Matrix H=rpr(ms_particle1.pos.subVector(3,5));
+    Affine affine(H(0,0),H(0,1),H(0,2),ms_particle1.pos[0],
+                  H(1,0),H(1,1),H(1,2),ms_particle1.pos[1],
+                  H(2,0),H(2,1),H(2,2),ms_particle1.pos[2]);
                            
     std::transform(model.points_begin(),model.points_end(),
                    model.points_begin(),affine);
-    
-    
-  	result[0]=ms_particle.pos[0];
-  	result[1]=ms_particle.pos[1];
-  	result[2]=ms_particle.pos[2];
-  	result[3]=ms_particle.pos[3];
-  	result[4]=ms_particle.pos[4];
-  	result[5]=ms_particle.pos[5];
-  	result[6]=ms_particle.error_index;
-    dt=Time::now()-t0;
-    result[7]=dt;
+	
   
-    return result;
+    return result2;
 }
  
+/*******************************************************************************/
+Vector UnscentedParticleFilter::particleDensity()
+{	
+	
+	
+
+	
+	
+	
+	deque<double> Mahalanobis_distance;
+	Matrix peso(6,6);
+
+	
+	peso(0,0)=0.00005;
+	peso(1,1)=0.00005;
+	peso(2,2)=0.00005;
+	peso(3,3)=0.0036;
+	peso(4,4)=0.0036;
+	peso(5,5)=0.0036;
+	
+	
+	for(size_t i=0; i<x.size(); i++)
+	{
+		Mahalanobis_distance.push_back(0);
+		for(size_t j=0; j<x.size(); j++)
+		{
+			Matrix diff(6,1);
+		
+			diff(0,0)=x[i].x_corr(0)-x[j].x_corr(0);
+			diff(1,0)=x[i].x_corr(1)-x[j].x_corr(1);
+			diff(2,0)=x[i].x_corr(2)-x[j].x_corr(2);
+			diff(3,0)=fmod(x[i].x_corr(3)-x[j].x_corr(3),2*M_PI);
+			diff(4,0)=fmod(x[i].x_corr(4)-x[j].x_corr(4),2*M_PI);
+			diff(5,0)=fmod(x[i].x_corr(5)-x[j].x_corr(5),2*M_PI);
+			
+		
+			Matrix temp(1,1);
+			temp=diff.transposed()*luinv(peso)*diff;
+			Mahalanobis_distance[i]=Mahalanobis_distance[i]+sqrt(temp(0,0));
+			
+		}
+		
+	}
+	
+	double Mahalanobis_minimum_distance;
+	int i_min_dist;
+	Mahalanobis_minimum_distance=10000000000;
+	for(size_t i=0; i<x.size(); i++)
+	{
+		if(	Mahalanobis_minimum_distance> Mahalanobis_distance[i])
+		{
+			
+			Mahalanobis_minimum_distance=Mahalanobis_distance[i];
+			i_min_dist=i;
+			
+		}
+		
+		
+	}
+	
+	
+	cout<<"i_min_dist "<<i_min_dist<<endl;
+	return x[i_min_dist].x_corr;
+	
+
+	
+	
+	
+	
+
+}
 /*******************************************************************************/
 
 double UnscentedParticleFilter::likelihood(const int &t, const int &k)
@@ -327,7 +423,9 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k)
 	}
 	else
 	{
-			for (size_t i=initial_meas-1; i<t; i++)
+		int count;
+		count=0;
+			for (size_t i=initial_meas; i<t; i++)
 			{
 		
 				Point &m=measurements[i];
@@ -340,12 +438,26 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k)
 				
 				//modification for not double counting
 					
-				if (i==t-1)
-					likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0))*t);
-				if(i==initial_meas-1)
-					likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)*(t-1)));
+				//if (i==t-1)
+				//	likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0))*t);
+				//if(i==initial_meas-1)
+				//	likelihood=likelihood*exp(0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0))*(t-1));
+				//else
+				count++;
+				if(t==params.numMeas)
+				{
+					
+					
+						likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0))*(count));
+				
+					
+						
+				}
+			
 				else
+				{
 					likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)));
+				}
 				
 			}
 		
@@ -679,6 +791,7 @@ void UnscentedParticleFilter::findMostSignificantParticle()
    		}
     }
   
+   cout<<"index_most "<<index_most<<endl;
 	x_most.push_back(x[index_most].x_corr);
 }
 /*******************************************************************************/
@@ -1001,10 +1114,15 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle)
     ofstream fout2(outputFileName2.c_str());                                           
 
 	if(fout2.is_open())
-	{                                     
-		fout2 << "solution: "<<ms_particle.subVector(0,5).toString(3,3).c_str()<<endl;
-  	    fout2 << "found in "<<ms_particle[7]<<" [s]"<<endl;
-	    fout2<< "error_index "<<ms_particle(6)<<endl;
+	{   
+		fout2<<"highest weight "<<endl;
+		fout2 << "solution: "<<ms_particle1.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+  	    //fout2 << "found in "<<ms_particle[7]<<" [s]"<<endl;
+	    fout2<< "error_index "<<ms_particle1.error_index<<endl;
+	    
+	    fout2<<"highest density "<<endl;
+		fout2 << "solution: "<<ms_particle2.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+	    fout2<< "error_index "<<ms_particle2.error_index<<endl;
 	
 	}
 	else

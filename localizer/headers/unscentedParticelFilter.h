@@ -62,6 +62,9 @@ struct ParametersUPF : public Parameters
     yarp::sig::Vector radius0;  
     
     
+    
+    
+    
 };
 
 /*******************************************************************/
@@ -186,6 +189,14 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
     
     /** executional time*/
     double dt;
+    
+     /** vector for solution with high weight*/
+     MsParticleUPF ms_particle1;
+    
+    /** vector for solution with high density*/
+     MsParticleUPF ms_particle2;
+    
+     
     
    
     /*******************************************************************/
@@ -364,6 +375,15 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
      bool readMeasurements(std::ifstream &fin);
     
      /*******************************************************************/
+     
+     
+     
+     /** Find the particle with the highest density
+   
+     */
+     yarp::sig::Vector particleDensity();
+     /*******************************************************************/
+     
     
      public:
     

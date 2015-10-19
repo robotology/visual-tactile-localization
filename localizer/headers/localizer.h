@@ -106,6 +106,15 @@ class Localizer
      */
     virtual void saveData(const yarp::sig::Vector &ms_particle)=0;
     
+    
+    
+    
+    /*******************************************************************/
+    
+    
+    /** save statics data
+     */
+    virtual void saveStatisticsData(const yarp::sig::Matrix &solutions)=0;
     /*******************************************************************/
 
     

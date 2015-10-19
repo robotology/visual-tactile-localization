@@ -598,7 +598,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 	
 	for(size_t i=0; i<x.size(); i++)
 	{
-		cout<<"x i pred "<<x[i].x_pred.toString().c_str()<<endl;
+		
 		Vector index_of_particle;
 		
 		Vector check_on_dimensions;
@@ -607,9 +607,10 @@ Vector UnscentedParticleFilter::particleDensity2()
 		
 		for(size_t j=0; j<x.size(); j++)
 		{
-			cout<<"x j pred "<<x[j].x_pred.toString().c_str()<<endl;
+			check_on_dimensions.resize(6,0.0);
         	int sum=0;
-			if((x[j].x_pred[0]<=x[i].x_pred[0]+neigh[0]) && (x[j].x_pred[0]>=x[i].x_pred[0]-neigh[0]))
+        	
+			if((x[j].x_pred[0]<=x[i].x_pred[0]+neigh[0]) && (x[j].x_pred[0]>=x[i].x_pred[0]-neigh[0])) 
 			{
 				check_on_dimensions[0]=1;
 
@@ -649,8 +650,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 			{
 				count++;
 				index_of_particle.push_back(j);
-				cout<<"count "<<count<<endl;
-				cout<<"particle included "<<index_of_particle.toString().c_str()<<endl;
+				
 				
 				
 				
@@ -660,6 +660,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 		
 	
 		particle_per_particle.push_back(index_of_particle);
+	
 		number_per_neigh.push_back(count);
 	
 	}
@@ -673,7 +674,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 		if(max_numer_per_part<number_per_neigh[i])
 		{
 			max_numer_per_part=number_per_neigh[i];
-			cout<<"max num per part "<<max_numer_per_part<<endl;
+		
 			
 		}
 			
@@ -1470,7 +1471,7 @@ void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &soluti
 		for(int j=0; j<solutions.rows(); j++)
 		{
 		
-				fout2<<"trail "<<j<<": "<<solutions.getRow(j).toString(3,5).c_str()<<endl;
+				fout2<<"trail "<<j<<": "<<solutions.getRow(j).toString().c_str()<<endl;
 				average1=average1+solutions(j,0);
 				average2=average2+solutions(j,1);
 				average3=average3+solutions(j,2);

@@ -1,9 +1,4 @@
 
-/*
- * Copyright: (C) 2015 iCub Facility - Istituto Italiano di Tecnologia
- * Authors: Giulia Vezzani
- * CopyPolicy: Released under the terms of the GNU GPL v2.0.
- */
 
 #include <iostream>
 #include <fstream>
@@ -41,29 +36,40 @@ int main(int argc, char *argv[])
     ResourceFinder rf;
     rf.configure(argc,argv);
     rf.setDefaultContext("../../");
+    int numTrials;
+    numTrials=20;
    
-         
+    yarp::sig::Matrix solutions;
+    solutions.resize(numTrials,3);
+    yarp::sig::Vector error_indices;
 
     
     Localizer *loc5=new UnscentedParticleFilter();
     loc5->configure(rf);
-    yarp::sig::Vector result2=loc5->localization();
-    loc5->saveData(result2);
-   
+    for(size_t i=0; i<numTrials; i++)
+    {
+        error_indices=loc5->localization();
+        loc5->saveData(error_indices);
+        
+        solutions.setRow(i,error_indices);
+    }
+        cout<<"error "<<error_indices.toString(3,5).c_str()<<endl;
+        cout<<"staticis "<<solutions.getRow(0).toString(3,3).c_str()<<endl;
+   loc5->saveStatisticsData(solutions);
     
     delete loc5;
     
     
-    Localizer *loc4=new ScalingSeries();
-    loc4->configure(rf);
-    yarp::sig::Vector result=loc4->localization();
-    loc4->saveData(result);
+   // Localizer *loc4=new ScalingSeries();
+    //loc4->configure(rf);
+    //yarp::sig::Vector result=loc4->localization();
+    //loc4->saveData(result);
     
-    delete loc4;
+//    delete loc4;
     
  
     
     
     
     return 0;
-}
+}C

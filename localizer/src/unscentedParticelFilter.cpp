@@ -240,9 +240,10 @@ Vector UnscentedParticleFilter::finalize()
 {  
 	//cout<<"we are in finalize"<<endl;
 
-	Vector result;
+	Vector error_indices;
+	error_indices.resize(3,0.0);
 	
-	result.resize(8,0.0);
+	result.resize(10,0.0);
 	
 
    
@@ -271,7 +272,11 @@ Vector UnscentedParticleFilter::finalize()
     Vector result2;
     result2=particleDensity();
     
-    cout<<"RESULT WITH HIGHEST density "<<result2.toString().c_str()<<endl;
+    cout<<"RESULT WITH HIGHEST DENSITY "<<result2.toString().c_str()<<endl;
+    
+    
+     dt=Time::now()-t0;
+    result[8]=dt;
     
     //save all the result wwith highest density in ms_particle2
     ms_particle2.pos=result2;
@@ -289,14 +294,17 @@ Vector UnscentedParticleFilter::finalize()
      Vector result3;
     result3=particleDensity2();
     
-    cout<<"RESULT WITH HIGHEST density "<<result3.toString().c_str()<<endl;
+     dt=Time::now()-t0;
+    result[9]=dt;
+    
+    cout<<"RESULT WITH HIGHEST DENSITY 2"<<result3.toString().c_str()<<endl;
     
     //save all the result wwith highest density in ms_particle2
-    MsParticleUPF ms_particle3;
+    
     ms_particle3.pos=result3;
    
     
-    
+   
    
                    
     performanceIndex(ms_particle3);
@@ -310,9 +318,14 @@ Vector UnscentedParticleFilter::finalize()
                            
     std::transform(model.points_begin(),model.points_end(),
                    model.points_begin(),affine);
+                   
+                   
+    error_indices[0]=ms_particle1.error_index;
+    error_indices[1]=ms_particle2.error_index;
+    error_indices[2]=ms_particle3.error_index;
 	
   
-    return result2;
+    return error_indices;
 }
  
 /*******************************************************************************/
@@ -404,15 +417,7 @@ Vector UnscentedParticleFilter::particleDensity()
 	
 	
 	deque<double> Mahalanobis_distance;
-	Matrix peso(6,6);
 
-	
-	peso(0,0)=0.00005;
-	peso(1,1)=0.00005;
-	peso(2,2)=0.00005;
-	peso(3,3)=0.008;
-	peso(4,4)=0.008;
-	peso(5,5)=0.008;
 	
 	
 	for(size_t i=0; i<x.size(); i++)
@@ -579,92 +584,21 @@ Vector UnscentedParticleFilter::particleDensity2()
 	ParametersUPF &params=get_parameters();
 
 	
-	yarp::sig::Vector random;
-	random.resize(n,0.0);
-	
-	yarp::sig::Matrix cholQ;
-	cholQ(n,n);
 
-	RandnScalar prova;
-
-
-	//initialize Matrix for UKF
-	for(size_t i=0; i<x.size(); i++ )
-	{
-		initializeUKFMatrix(i);
-
-	}
-
-	//compute sigmaPoints
-	for(size_t i=0; i<x.size(); i++ )
-	{
-		computeSigmaPoints(i);
-		
-	}
-
-	//propagate particle in the future
-	for(size_t i=0; i<x.size(); i++ )
-	{
-	
-		for(size_t j=0; j<2*n+1; j++)
-		{
-		
-			for( size_t l=0; l<n; l++)
-			{
-					
-			random[l]=prova.RandnScalar::get(0.0, 1.0);
-		
-			}
-	
-		cholQ=params.Q;
-	
-		//since Q is diagonal, chol(Q) is sqrt of its member on diagonal
-			
-		for(size_t k=0; k<6; k++)
-		{
-			for( size_t l=0; l<n; l++)
-			{
-				cholQ(k,l)=sqrt(cholQ(k,l));
-		
-			}
-		}
-
-
-		x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j)+cholQ*random);
-
-		x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
-		x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
-		x[i].XsigmaPoints_pred(5,j)=fmod(x[i].XsigmaPoints_pred(5,j),2*M_PI);
-
-		x[i].YsigmaPoints_pred.setCol(j,compute_y(t,i,j));
-	
-		}
-		
-	}
-	 
-	for(size_t i=0; i<x.size(); i++ )
-	{
-	 	predictionStep(i);
-	}
-	
 	
 	
 	//compute number of particles in each neighrboard
 	deque<int> number_per_neigh;
 	deque<Vector> particle_per_particle;
-	Vector neigh;
-	neigh.resize(6,0.0);
-	neigh[0]=0.08;
-	neigh[1]=0.08;
-	neigh[2]=0.08;
-	neigh[3]=0.2;
-	neigh[4]=0.2;
-	neigh[5]=0.2;
 	deque<double> Mahalanobis_distance;
+	
+	Vector neigh=params.neigh;
+	double percentage=params.percent;
 	
 	
 	for(size_t i=0; i<x.size(); i++)
 	{
+		cout<<"x i pred "<<x[i].x_pred.toString().c_str()<<endl;
 		Vector index_of_particle;
 		
 		Vector check_on_dimensions;
@@ -673,19 +607,19 @@ Vector UnscentedParticleFilter::particleDensity2()
 		
 		for(size_t j=0; j<x.size(); j++)
 		{
-			
+			cout<<"x j pred "<<x[j].x_pred.toString().c_str()<<endl;
         	int sum=0;
-			if(((x[j].x_pred[0]<=x[i].x_pred[0]+neigh[0]) && (x[j].x_pred[0]>=x[i].x_pred[0]-neigh[0])))
+			if((x[j].x_pred[0]<=x[i].x_pred[0]+neigh[0]) && (x[j].x_pred[0]>=x[i].x_pred[0]-neigh[0]))
 			{
 				check_on_dimensions[0]=1;
 
 			}
-				if(((x[j].x_pred[1]<=x[i].x_pred[1]+neigh[1]) && (x[j].x_pred[1]>=x[i].x_pred[1]-neigh[1])))
+				if((x[j].x_pred[1]<=x[i].x_pred[1]+neigh[1]) && (x[j].x_pred[1]>=x[i].x_pred[1]-neigh[1]))
 			{
 				check_on_dimensions[1]=1;
 
 			}
-				if(((x[j].x_pred[2]<=x[i].x_pred[2]+neigh[2]) && (x[j].x_pred[2]>=x[i].x_pred[2]-neigh[2])))
+				if((x[j].x_pred[2]<=x[i].x_pred[2]+neigh[2]) && (x[j].x_pred[2]>=x[i].x_pred[2]-neigh[2]))
 			{
 				check_on_dimensions[2]=1;
 
@@ -715,6 +649,8 @@ Vector UnscentedParticleFilter::particleDensity2()
 			{
 				count++;
 				index_of_particle.push_back(j);
+				cout<<"count "<<count<<endl;
+				cout<<"particle included "<<index_of_particle.toString().c_str()<<endl;
 				
 				
 				
@@ -727,8 +663,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 		number_per_neigh.push_back(count);
 	
 	}
-	
-	cout<<"DEBU2"<<endl;
+
 	
 	int max_numer_per_part;
 	max_numer_per_part=0;
@@ -736,16 +671,22 @@ Vector UnscentedParticleFilter::particleDensity2()
 	for(size_t i=0; i<number_per_neigh.size();i++)
 	{
 		if(max_numer_per_part<number_per_neigh[i])
-			max_numer_per_part<number_per_neigh[i];
+		{
+			max_numer_per_part=number_per_neigh[i];
+			cout<<"max num per part "<<max_numer_per_part<<endl;
+			
+		}
 			
 	}
-	cout<<"DEBU2"<<endl;
+	
+	cout<<"max num per part "<<max_numer_per_part<<endl;
+
 	int l;
 	
 	for(size_t i=0; i<x.size(); i++)
 	{
 		Mahalanobis_distance.push_back(0);
-		if(number_per_neigh[i]>=0.85*max_numer_per_part)
+		if(number_per_neigh[i]>=percentage*max_numer_per_part)
 		{
 		
 			for(size_t j=0; j<particle_per_particle[i].size(); j++)
@@ -770,13 +711,11 @@ Vector UnscentedParticleFilter::particleDensity2()
 						
 			}
 		}
-		cout<<"Mahalanobis_distance i "<<Mahalanobis_distance[i]<<endl;
-			
+		
 	}
 	
 	
-	
-	cout<<"DEBU3"<<endl;
+
 
 	
 	double Mahalanobis_minimum_distance;
@@ -785,7 +724,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 	
 	for(size_t i=0; i<Mahalanobis_distance.size(); i++)
 	{
-		if(number_per_neigh[i]>=0.8*max_numer_per_part)
+		if(number_per_neigh[i]>=percentage*max_numer_per_part)
 		{
 			if(	Mahalanobis_minimum_distance> Mahalanobis_distance[i])
 			{
@@ -1324,6 +1263,14 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
         
         parameters.lambda=pow(parameters.alpha,2.0)*(6+parameters.kappa)-6;
         
+        
+        parameters.percent=rf.find("percentage").asDouble();
+        if (rf.find("percentage").isNull())
+        	parameters.percent=rf.check("percentage",Value(0.85)).asDouble();
+        	
+        	
+       
+        
         yarp::sig::Vector diagQ;
         diagQ.resize(parameters.n,1);
         check=readDiagonalMatrix("Q",diagQ,parameters.n);
@@ -1364,6 +1311,29 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
         	diagP0[4]=rf.check("P05",Value(pow(M_PI/2.0,2.0))).asDouble();
         	diagP0[5]=rf.check("P06",Value(pow(M_PI,2.0))).asDouble();
 		}
+		
+		
+		yarp::sig::Vector neigh0;
+        neigh0.resize(parameters.n,1);
+        
+        check=readDiagonalMatrix("neigh",neigh0,parameters.n);
+	
+		if(!check)
+		{
+        	neigh0[0]=rf.check("neigh0",Value(0.08)).asDouble();
+        	neigh0[1]=rf.check("neigh1",Value(0.08)).asDouble();
+        	neigh0[2]=rf.check("neigh2",Value(0.08)).asDouble();
+        	neigh0[3]=rf.check("neigh3",Value(0.3)).asDouble();
+        	neigh0[4]=rf.check("neigh4",Value(0.3)).asDouble();
+        	neigh0[5]=rf.check("neigh5",Value(0.3)).asDouble();
+		}
+		
+		
+		parameters.neigh=neigh0;
+		
+		 cout<<"perc "<<parameters.percent<<endl;
+        cout<<"neigh "<<parameters.neigh.toString(6,3)<<endl;
+		
        
         yarp::sig::Matrix Q;
         Q.resize(parameters.n,parameters.n);
@@ -1462,19 +1432,54 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle)
 	if(fout2.is_open())
 	{   
 		fout2<<"highest weight "<<endl;
-		fout2 << "solution: "<<ms_particle1.pos.subVector(0,5).toString(3,3).c_str()<<endl;
-  	    //fout2 << "found in "<<ms_particle[7]<<" [s]"<<endl;
+		fout2 << "s: "<<ms_particle1.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+  	    fout2 << "found in "<<result[7]<<" [s]"<<endl;
 	    fout2<< "error_index "<<ms_particle1.error_index<<endl;
 	    
-	    fout2<<"highest density "<<endl;
+	    fout2<<"highest density with all particles"<<endl;
 		fout2 << "solution: "<<ms_particle2.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+		fout2 << "found in "<<result[8]<<" [s]"<<endl;
 	    fout2<< "error_index "<<ms_particle2.error_index<<endl;
+	    
+	    fout2<<"highest density with neighborhood"<<endl;
+		fout2 << "solution: "<<ms_particle3.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+		fout2 << "found in "<<result[9]<<" [s]"<<endl;
+	    fout2<< "error_index "<<ms_particle3.error_index<<endl;
 	
 	}
 	else
 	    cout<< "problem opening output_data file!";
 
      fout2.close();  
+}
+
+void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &solutions)
+{
+	string outputFileName2=this->rf->check("outputFileMUPF",Value("../../outputs/outputStatisticsMUPF.off")).
+                       asString().c_str();
+                       
+     double average1,average2,average3;   
+     average1=0;
+     average2=0;
+     average3=0;
+                       
+    ofstream fout2(outputFileName2.c_str());                                           
+
+	if(fout2.is_open())
+	{
+		for(int j=0; j<solutions.rows(); j++)
+		{
+		
+				fout2<<"trail "<<j<<": "<<solutions.getRow(j).toString(3,5).c_str()<<endl;
+				average1=average1+solutions(j,0);
+				average2=average2+solutions(j,1);
+				average3=average3+solutions(j,2);
+				
+		
+		}
+		
+		fout2<<"average "<< average1/solutions.rows()<<" "<<average2/solutions.rows()<<" "<<average3/solutions.rows()<<" "<<endl;
+	}
 }
        
 /*******************************************************************************/      

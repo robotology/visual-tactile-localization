@@ -265,6 +265,7 @@ Vector UnscentedParticleFilter::finalize()
     result[7]=dt;
     
     cout<<"RESULT WITH HIGHEST WEIGHT "<<result.toString().c_str()<<endl;
+     cout<<"error_index"<<ms_particle1.error_index<<endl; 
     
     
     //let's try to use instead of particle with highest weight
@@ -306,7 +307,8 @@ Vector UnscentedParticleFilter::finalize()
     
    
    
-                   
+     performanceIndex(ms_particle2);
+    cout<<"error_index"<<ms_particle2.error_index<<endl;              
     performanceIndex(ms_particle3);
     cout<<"error_index"<<ms_particle3.error_index<<endl;
     
@@ -337,85 +339,6 @@ Vector UnscentedParticleFilter::particleDensity()
 	ParametersUPF &params=get_parameters();
 
 	
-	yarp::sig::Vector random;
-	random.resize(n,0.0);
-	
-	yarp::sig::Matrix cholQ;
-	cholQ(n,n);
-
-	RandnScalar prova;
-
-
-	//initialize Matrix for UKF
-	for(size_t i=0; i<x.size(); i++ )
-	{
-		initializeUKFMatrix(i);
-
-	}
-
-	//compute sigmaPoints
-	for(size_t i=0; i<x.size(); i++ )
-	{
-		computeSigmaPoints(i);
-		
-	}
-
-	//propagate particle in the future
-	for(size_t i=0; i<x.size(); i++ )
-	{
-	
-		for(size_t j=0; j<2*n+1; j++)
-		{
-		
-			for( size_t l=0; l<n; l++)
-			{
-					
-			random[l]=prova.RandnScalar::get(0.0, 1.0);
-		
-			}
-	
-		cholQ=params.Q;
-	
-		//since Q is diagonal, chol(Q) is sqrt of its member on diagonal
-			
-		for(size_t k=0; k<6; k++)
-		{
-			for( size_t l=0; l<n; l++)
-			{
-				cholQ(k,l)=sqrt(cholQ(k,l));
-		
-			}
-		}
-
-
-		x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j)+cholQ*random);
-
-		x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
-		x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
-		x[i].XsigmaPoints_pred(5,j)=fmod(x[i].XsigmaPoints_pred(5,j),2*M_PI);
-
-		x[i].YsigmaPoints_pred.setCol(j,compute_y(t,i,j));
-	
-		}
-		
-	}
-	 
-	for(size_t i=0; i<x.size(); i++ )
-	{
-	 	predictionStep(i);
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-
-	
-	
-	
 	deque<double> Mahalanobis_distance;
 
 	
@@ -427,12 +350,12 @@ Vector UnscentedParticleFilter::particleDensity()
 		{
 			Matrix diff(6,1);
 		
-			diff(0,0)=x[i].x_pred(0)-x[j].x_pred(0);
-			diff(1,0)=x[i].x_pred(1)-x[j].x_pred(1);
-			diff(2,0)=x[i].x_pred(2)-x[j].x_pred(2);
-			diff(3,0)=fmod(x[i].x_pred(3)-x[j].x_pred(3),2*M_PI);
-			diff(4,0)=fmod(x[i].x_pred(4)-x[j].x_pred(4),2*M_PI);
-			diff(5,0)=fmod(x[i].x_pred(5)-x[j].x_pred(5),2*M_PI);
+			diff(0,0)=x[i].x_corr(0)-x[j].x_corr(0);
+			diff(1,0)=x[i].x_corr(1)-x[j].x_corr(1);
+			diff(2,0)=x[i].x_corr(2)-x[j].x_corr(2);
+			diff(3,0)=fmod(x[i].x_corr(3)-x[j].x_corr(3),2*M_PI);
+			diff(4,0)=fmod(x[i].x_corr(4)-x[j].x_corr(4),2*M_PI);
+			diff(5,0)=fmod(x[i].x_corr(5)-x[j].x_corr(5),2*M_PI);
 			
 		
 			Matrix temp(1,1);
@@ -461,7 +384,7 @@ Vector UnscentedParticleFilter::particleDensity()
 	
 	
 	cout<<"i_min_dist "<<i_min_dist<<endl;
-	return x[i_min_dist].x_pred;
+	return x[i_min_dist].x_corr;
 	
 
 	
@@ -610,33 +533,33 @@ Vector UnscentedParticleFilter::particleDensity2()
 			check_on_dimensions.resize(6,0.0);
         	int sum=0;
         	
-			if((x[j].x_pred[0]<=x[i].x_pred[0]+neigh[0]) && (x[j].x_pred[0]>=x[i].x_pred[0]-neigh[0])) 
+			if((x[j].x_corr[0]<=x[i].x_corr[0]+neigh[0]) && (x[j].x_corr[0]>=x[i].x_corr[0]-neigh[0])) 
 			{
 				check_on_dimensions[0]=1;
 
 			}
-				if((x[j].x_pred[1]<=x[i].x_pred[1]+neigh[1]) && (x[j].x_pred[1]>=x[i].x_pred[1]-neigh[1]))
+				if((x[j].x_corr[1]<=x[i].x_corr[1]+neigh[1]) && (x[j].x_corr[1]>=x[i].x_corr[1]-neigh[1]))
 			{
 				check_on_dimensions[1]=1;
 
 			}
-				if((x[j].x_pred[2]<=x[i].x_pred[2]+neigh[2]) && (x[j].x_pred[2]>=x[i].x_pred[2]-neigh[2]))
+				if((x[j].x_corr[2]<=x[i].x_corr[2]+neigh[2]) && (x[j].x_corr[2]>=x[i].x_corr[2]-neigh[2]))
 			{
 				check_on_dimensions[2]=1;
 
 			}
 		
-				if((x[j].x_pred[4]<=fmod(x[i].x_pred[4]+neigh[4],2*M_PI)) && (x[j].x_pred[4]>=fmod(x[i].x_pred[4]-neigh[4],2*M_PI)))
+				if((x[j].x_corr[4]<=fmod(x[i].x_corr[4]+neigh[4],2*M_PI)) && (x[j].x_corr[4]>=fmod(x[i].x_corr[4]-neigh[4],2*M_PI)))
 			{
 				check_on_dimensions[4]=1;
-
+			
 			}
-				if((x[j].x_pred[5]<=fmod(x[i].x_pred[5]+neigh[5],2*M_PI)) && (x[j].x_pred[5]>=fmod(x[i].x_pred[5]-neigh[5],2*M_PI)))
+				if((x[j].x_corr[5]<=fmod(x[i].x_corr[5]+neigh[5],2*M_PI)) && (x[j].x_corr[5]>=fmod(x[i].x_corr[5]-neigh[5],2*M_PI)))
 			{
 				check_on_dimensions[5]=1;
 
 			}
-				if((x[j].x_pred[3]<=fmod(x[i].x_pred[3]+neigh[3],2*M_PI)) && (x[j].x_pred[3]>=fmod(x[i].x_pred[3]-neigh[3],2*M_PI)))
+				if((x[j].x_corr[3]<=fmod(x[i].x_corr[3]+neigh[3],2*M_PI)) && (x[j].x_corr[3]>=fmod(x[i].x_corr[3]-neigh[3],2*M_PI)))
 			{
 				check_on_dimensions[3]=1;
 
@@ -661,10 +584,14 @@ Vector UnscentedParticleFilter::particleDensity2()
 	
 		particle_per_particle.push_back(index_of_particle);
 	
+	
 		number_per_neigh.push_back(count);
 	
 	}
 
+	
+	
+	
 	
 	int max_numer_per_part;
 	max_numer_per_part=0;
@@ -683,65 +610,73 @@ Vector UnscentedParticleFilter::particleDensity2()
 	cout<<"max num per part "<<max_numer_per_part<<endl;
 
 	int l;
+	Vector index_of_particle2;
 	
 	for(size_t i=0; i<x.size(); i++)
 	{
-		Mahalanobis_distance.push_back(0);
+		
 		if(number_per_neigh[i]>=percentage*max_numer_per_part)
 		{
-		
+			index_of_particle2.push_back(i);
+			double mahalanobis_dist;
+			mahalanobis_dist=0;
+			
 			for(size_t j=0; j<particle_per_particle[i].size(); j++)
 			{
+					
 					Vector temp2;
 					temp2=particle_per_particle[i];
 					l=temp2[j];
 				
 					Matrix diff(6,1);
 				
-					diff(0,0)=x[i].x_pred(0)-x[l].x_pred(0);
-					diff(1,0)=x[i].x_pred(1)-x[l].x_pred(1);
-					diff(2,0)=x[i].x_pred(2)-x[l].x_pred(2);
-					diff(3,0)=fmod(x[i].x_pred(3)-x[l].x_pred(3),2*M_PI);
-					diff(4,0)=fmod(x[i].x_pred(4)-x[l].x_pred(4),2*M_PI);
-					diff(5,0)=fmod(x[i].x_pred(5)-x[j].x_pred(5),2*M_PI);
+					diff(0,0)=x[i].x_corr(0)-x[l].x_corr(0);
+					diff(1,0)=x[i].x_corr(1)-x[l].x_corr(1);
+					diff(2,0)=x[i].x_corr(2)-x[l].x_corr(2);
+					diff(3,0)=fmod(x[i].x_corr(3)-x[l].x_corr(3),2*M_PI);
+					diff(4,0)=fmod(x[i].x_corr(4)-x[l].x_corr(4),2*M_PI);
+					diff(5,0)=fmod(x[i].x_corr(5)-x[l].x_corr(5),2*M_PI);
 					
 				
 					Matrix temp(1,1);
 					temp=diff.transposed()*luinv(params.Q)*diff;
-					Mahalanobis_distance[i]=Mahalanobis_distance[i]+sqrt(temp(0,0));
+					mahalanobis_dist=mahalanobis_dist+sqrt(temp(0,0));
 						
 			}
+			Mahalanobis_distance.push_back(mahalanobis_dist/particle_per_particle[i].size());
 		}
 		
 	}
 	
 	
-
-
+ 
+	
 	
 	double Mahalanobis_minimum_distance;
 	int i_min_dist;
 	Mahalanobis_minimum_distance=10000000000;
 	
+	cout<<"maha size "<<Mahalanobis_distance.size()<<endl;
+	cout<<"index size "<<index_of_particle2.size()<<endl;
+	
 	for(size_t i=0; i<Mahalanobis_distance.size(); i++)
 	{
-		if(number_per_neigh[i]>=percentage*max_numer_per_part)
-		{
+		
 			if(	Mahalanobis_minimum_distance> Mahalanobis_distance[i])
 			{
-				
+					cout<<"Mhaln "<<Mahalanobis_distance[i]<<endl;
 				Mahalanobis_minimum_distance=Mahalanobis_distance[i];
-				i_min_dist=i;
+				i_min_dist=index_of_particle2[i];
 				
 			}
-		}
+		
 		
 		
 	}
 	
 	
 	cout<<"i_min_dist "<<i_min_dist<<endl;
-	return x[i_min_dist].x_pred;
+	return x[i_min_dist].x_corr;
 	
 
 	

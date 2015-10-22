@@ -1,5 +1,6 @@
 
 
+
 /*
  * Copyright: (C) 2015 iCub Facility - Istituto Italiano di Tecnologia
  * Authors: Ugo Pattacini
@@ -226,8 +227,13 @@ bool UnscentedParticleFilter::step()
 	}
 	
 	findMostSignificantParticle();
-
+	
+	if(t==params.numMeas)
+		result4=particleDensity3();
+	
 	selectionStep(Neff,sum_squared);
+		
+	
 
     
     return false;
@@ -241,7 +247,7 @@ Vector UnscentedParticleFilter::finalize()
 	//cout<<"we are in finalize"<<endl;
 
 	Vector error_indices;
-	error_indices.resize(3,0.0);
+	error_indices.resize(4,0.0);
 	
 	result.resize(10,0.0);
 	
@@ -266,6 +272,21 @@ Vector UnscentedParticleFilter::finalize()
     
     cout<<"RESULT WITH HIGHEST WEIGHT "<<result.toString().c_str()<<endl;
      cout<<"error_index"<<ms_particle1.error_index<<endl; 
+     
+     
+    
+     
+      cout<<"RESULT WITH GAUSSIANS"<<result4.toString().c_str()<<endl;
+    
+    //save all the result wwith highest density in ms_particle2
+    
+    ms_particle4.pos=result4;
+   
+    
+   
+   
+    performanceIndex(ms_particle4);
+    cout<<"error_index"<<ms_particle4.error_index<<endl; 
     
     
     //let's try to use instead of particle with highest weight
@@ -325,6 +346,8 @@ Vector UnscentedParticleFilter::finalize()
     error_indices[0]=ms_particle1.error_index;
     error_indices[1]=ms_particle2.error_index;
     error_indices[2]=ms_particle3.error_index;
+    error_indices[3]=ms_particle4.error_index;
+    cout<<"error_index"<<error_indices.toString().c_str()<<endl;
 	
   
     return error_indices;
@@ -686,7 +709,60 @@ Vector UnscentedParticleFilter::particleDensity2()
 
 }
 /*******************************************************************************/
-
+Vector UnscentedParticleFilter::particleDensity3()
+{
+	deque<double> probability_per_particle;
+	double probability;
+	Matrix diff(6,1);
+	
+	for(size_t i=0; i<x.size(); i++)
+	{
+		probability=0;
+		
+		for(size_t j=0; j<x.size(); j++)
+		{
+			
+		
+			diff(0,0)=x[i].x_corr(0)-x[j].x_corr(0);
+			diff(1,0)=x[i].x_corr(1)-x[j].x_corr(1);
+			diff(2,0)=x[i].x_corr(2)-x[j].x_corr(2);
+			diff(3,0)=fmod(x[i].x_corr(3)-x[j].x_corr(3),2*M_PI);
+			diff(4,0)=fmod(x[i].x_corr(4)-x[j].x_corr(4),2*M_PI);
+			diff(5,0)=fmod(x[i].x_corr(5)-x[j].x_corr(5),2*M_PI);
+			
+		
+			Matrix temp(1,1);
+			temp=diff.transposed()*luinv(x[j].P_corr)*diff;
+			
+			probability=probability+x[i].weights*exp(-0.5*(temp(0,0)));
+		}
+		probability_per_particle.push_back(probability);
+	}
+	
+	double prob;
+	prob=0;
+	int i_max_prob;
+	
+	for(size_t i=0; i<x.size(); i++)
+	{
+		
+			if(prob< probability_per_particle[i])
+			{
+				
+				prob=probability_per_particle[i];
+				i_max_prob=i;
+				
+			}
+		
+		
+		
+	}
+	
+	
+	cout<<"i max prob "<<i_max_prob<<endl;
+	return x[i_max_prob].x_corr;
+	
+}
 
 
 /*******************************************************************************/
@@ -1394,10 +1470,11 @@ void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &soluti
 	string outputFileName2=this->rf->check("outputFileMUPF",Value("../../outputs/outputStatisticsMUPF.off")).
                        asString().c_str();
                        
-     double average1,average2,average3;   
+     double average1,average2,average3,average4;   
      average1=0;
      average2=0;
      average3=0;
+     average4=0;
                        
     ofstream fout2(outputFileName2.c_str());                                           
 
@@ -1410,11 +1487,12 @@ void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &soluti
 				average1=average1+solutions(j,0);
 				average2=average2+solutions(j,1);
 				average3=average3+solutions(j,2);
+				average4=average4+solutions(j,3);
 				
 		
 		}
 		
-		fout2<<"average "<< average1/solutions.rows()<<" "<<average2/solutions.rows()<<" "<<average3/solutions.rows()<<" "<<endl;
+		fout2<<"average "<< average1/solutions.rows()<<" "<<average2/solutions.rows()<<" "<<average3/solutions.rows()<<" "<<average4/solutions.rows()<<endl;
 	}
 }
        

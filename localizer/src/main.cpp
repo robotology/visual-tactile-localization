@@ -37,10 +37,10 @@ int main(int argc, char *argv[])
     rf.configure(argc,argv);
     rf.setDefaultContext("../../");
     int numTrials;
-    numTrials=20;
+    numTrials=50;
    
     yarp::sig::Matrix solutions;
-    solutions.resize(numTrials,3);
+    solutions.resize(numTrials,4);
     yarp::sig::Vector error_indices;
 
     
@@ -72,4 +72,4 @@ int main(int argc, char *argv[])
     
     
     return 0;
-}C
+}

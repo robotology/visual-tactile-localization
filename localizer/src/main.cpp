@@ -1,5 +1,6 @@
 
 
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
     rf.configure(argc,argv);
     rf.setDefaultContext("../../");
     int numTrials;
-    numTrials=50;
+    numTrials=1;
    
     yarp::sig::Matrix solutions;
     solutions.resize(numTrials,4);

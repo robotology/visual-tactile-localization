@@ -412,7 +412,13 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
      yarp::sig::Vector particleDensity3();
      /*******************************************************************/
      
-    
+      
+      /**Time with the new method
+   
+     */
+     double dt_gauss;
+       /*******************************************************************/
+     
      public:
     
     

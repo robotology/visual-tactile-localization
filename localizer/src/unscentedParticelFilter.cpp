@@ -229,7 +229,10 @@ bool UnscentedParticleFilter::step()
 	findMostSignificantParticle();
 	
 	if(t==params.numMeas)
+	{
 		result4=particleDensity3();
+		dt_gauss=Time::now()-t0;
+	}
 	
 	selectionStep(Neff,sum_squared);
 		
@@ -254,24 +257,24 @@ Vector UnscentedParticleFilter::finalize()
 
    
     
-    ms_particle1.pos=x_most.back();
-    performanceIndex(ms_particle1);
+   // ms_particle1.pos=x_most.back();
+   // performanceIndex(ms_particle1);
    
    
     
     
-  	result[0]=ms_particle1.pos[0];
-  	result[1]=ms_particle1.pos[1];
-  	result[2]=ms_particle1.pos[2];
-  	result[3]=ms_particle1.pos[3];
-  	result[4]=ms_particle1.pos[4];
-  	result[5]=ms_particle1.pos[5];
-  	result[6]=ms_particle1.error_index;
-    dt=Time::now()-t0;
-    result[7]=dt;
+  	// result[0]=ms_particle1.pos[0];
+  	// result[1]=ms_particle1.pos[1];
+  	// result[2]=ms_particle1.pos[2];
+  	// result[3]=ms_particle1.pos[3];
+  	// result[4]=ms_particle1.pos[4];
+  	// result[5]=ms_particle1.pos[5];
+  	// result[6]=ms_particle1.error_index;
+   // dt=Time::now()-t0;
+   // result[7]=dt;
     
-    cout<<"RESULT WITH HIGHEST WEIGHT "<<result.toString().c_str()<<endl;
-     cout<<"error_index"<<ms_particle1.error_index<<endl; 
+   // cout<<"RESULT WITH HIGHEST WEIGHT "<<result.toString().c_str()<<endl;
+   //  cout<<"error_index"<<ms_particle1.error_index<<endl; 
      
      
     
@@ -287,6 +290,8 @@ Vector UnscentedParticleFilter::finalize()
    
     performanceIndex(ms_particle4);
     cout<<"error_index"<<ms_particle4.error_index<<endl; 
+    double dt_gauss;
+   
     
     
     //let's try to use instead of particle with highest weight
@@ -1493,6 +1498,7 @@ void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &soluti
 		}
 		
 		fout2<<"average "<< average1/solutions.rows()<<" "<<average2/solutions.rows()<<" "<<average3/solutions.rows()<<" "<<average4/solutions.rows()<<endl;
+		fout2<<"time "<<dt_gauss<<endl;
 	}
 }
        

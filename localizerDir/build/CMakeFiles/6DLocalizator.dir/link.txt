@@ -1,0 +1,2 @@
+/usr/bin/ar cr lib/lib6DLocalizator.a  CMakeFiles/6DLocalizator.dir/src/unscentedParticleFilter.cpp.o CMakeFiles/6DLocalizator.dir/src/scalingSeries.cpp.o CMakeFiles/6DLocalizator.dir/src/main.cpp.o CMakeFiles/6DLocalizator.dir/src/localizer.cpp.o
+/usr/bin/ranlib lib/lib6DLocalizator.a

@@ -300,47 +300,47 @@ Vector UnscentedParticleFilter::finalize()
     
     //let's try to use instead of particle with highest weight
     // particle with highest density
-    Vector result2;
-    result2=particleDensity();
+    //Vector result2;
+    //result2=particleDensity();
     
-    cout<<"RESULT WITH HIGHEST DENSITY "<<result2.toString().c_str()<<endl;
+    //cout<<"RESULT WITH HIGHEST DENSITY "<<result2.toString().c_str()<<endl;
     
     
-     dt=Time::now()-t0;
-    result[8]=dt;
+     //dt=Time::now()-t0;
+    //result[8]=dt;
     
     //save all the result wwith highest density in ms_particle2
-    ms_particle2.pos=result2;
+    //ms_particle2.pos=result2;
    
     
     
    
                    
-    performanceIndex(ms_particle2);
-    cout<<"error_index"<<ms_particle2.error_index<<endl;
+    //performanceIndex(ms_particle2);
+    //cout<<"error_index"<<ms_particle2.error_index<<endl;
     
     
     
     
-     Vector result3;
-    result3=particleDensity2();
+     //Vector result3;
+    //result3=particleDensity2();
     
-     dt=Time::now()-t0;
-    result[9]=dt;
+     //dt=Time::now()-t0;
+    //result[9]=dt;
     
-    cout<<"RESULT WITH HIGHEST DENSITY 2"<<result3.toString().c_str()<<endl;
+   // cout<<"RESULT WITH HIGHEST DENSITY 2"<<result3.toString().c_str()<<endl;
     
     //save all the result wwith highest density in ms_particle2
     
-    ms_particle3.pos=result3;
+    //ms_particle3.pos=result3;
    
     
    
    
-     performanceIndex(ms_particle2);
-    cout<<"error_index"<<ms_particle2.error_index<<endl;              
-    performanceIndex(ms_particle3);
-    cout<<"error_index"<<ms_particle3.error_index<<endl;
+     //performanceIndex(ms_particle2);
+    //cout<<"error_index"<<ms_particle2.error_index<<endl;              
+    //performanceIndex(ms_particle3);
+    //cout<<"error_index"<<ms_particle3.error_index<<endl;
     
     
      Matrix H=rpr(ms_particle1.pos.subVector(3,5));
@@ -352,10 +352,10 @@ Vector UnscentedParticleFilter::finalize()
                    model.points_begin(),affine);
                    
                    
-    error_indices[0]=ms_particle1.error_index;
-    error_indices[1]=ms_particle2.error_index;
-    error_indices[2]=ms_particle3.error_index;
-    error_indices[3]=ms_particle4.error_index;
+//    error_indices[0]=ms_particle1.error_index;
+//  error_indices[1]=ms_particle2.error_index;
+//    error_indices[2]=ms_particle3.error_index;
+    error_indices[0]=ms_particle4.error_index;
     cout<<"error_index"<<error_indices.toString().c_str()<<endl;
 	
   
@@ -1479,11 +1479,11 @@ void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &soluti
 	string outputFileName2=this->rf->check("outputFileMUPF",Value("../../outputs/outputStatisticsMUPF.off")).
                        asString().c_str();
                        
-     double average1,average2,average3,average4;   
+     double average1;   
      average1=0;
-     average2=0;
-     average3=0;
-     average4=0;
+
+
+
                        
     ofstream fout2(outputFileName2.c_str());                                           
 
@@ -1492,16 +1492,16 @@ void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &soluti
 		for(int j=0; j<solutions.rows(); j++)
 		{
 		
-				fout2<<"trail "<<j<<": "<<solutions.getRow(j).toString().c_str()<<endl;
+				fout2<<"trail "<<j<<": "<<solutions(j,0)<<endl;
 				average1=average1+solutions(j,0);
-				average2=average2+solutions(j,1);
-				average3=average3+solutions(j,2);
-				average4=average4+solutions(j,3);
+				
+				
+				
 				
 		
 		}
 		
-		fout2<<"average "<< average1/solutions.rows()<<" "<<average2/solutions.rows()<<" "<<average3/solutions.rows()<<" "<<average4/solutions.rows()<<endl;
+		fout2<<"average "<< average1/solutions.rows()<<endl;
 		fout2<<"time "<<dt_gauss<<endl;
 		fout2<<"time DT"<<DT<<endl;
 		

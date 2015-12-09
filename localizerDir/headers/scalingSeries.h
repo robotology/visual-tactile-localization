@@ -294,6 +294,10 @@ class ScalingSeries : public GeometryCGAL, public Localizer
      bool configure(yarp::os::ResourceFinder &rf);
      
      /*******************************************************************************/ 
+
+     void saveStatisticsData(const yarp::sig::Matrix &solutions);
+     /*******************************************************************************/ 
+
       
      /** Runs init() and solve(). Configure must be runned before and if we want to
      * save or to send the result, we have to do it in main.cpp

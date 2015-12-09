@@ -33,44 +33,65 @@ using namespace iCub::skinDynLib;
 
 int main(int argc, char *argv[])
 {
-    
+
     ResourceFinder rf;
     rf.configure(argc,argv);
     rf.setDefaultContext("../../");
     int numTrials;
-    numTrials=1;
-   
+
+    if(argc>1)
+	 numTrials=atoi(argv[1]); 
+    else
+	numTrials=1;
+
     yarp::sig::Matrix solutions;
-    solutions.resize(numTrials,4);
     yarp::sig::Vector error_indices;
 
-    
-    Localizer *loc5=new UnscentedParticleFilter();
-    loc5->configure(rf);
-    for(size_t i=0; i<numTrials; i++)
+    if(!strcmp(argv[2],"mupf"))
     {
-        error_indices=loc5->localization();
-        loc5->saveData(error_indices);
-        
-        solutions.setRow(i,error_indices);
-    }
+	solutions.resize(numTrials,4);
+        for(size_t i=0; i<numTrials; i++)
+        {
+	    Localizer *loc5=new UnscentedParticleFilter();
+            loc5->configure(rf);
+            error_indices=loc5->localization();
+            loc5->saveData(error_indices);
+            solutions.setRow(i,error_indices);
+	    delete loc5;
+        }
+
         cout<<"error "<<error_indices.toString(3,5).c_str()<<endl;
         cout<<"staticis "<<solutions.getRow(0).toString(3,3).c_str()<<endl;
-   loc5->saveStatisticsData(solutions);
-    
-    delete loc5;
-    
-    
-   // Localizer *loc4=new ScalingSeries();
-    //loc4->configure(rf);
-    //yarp::sig::Vector result=loc4->localization();
-    //loc4->saveData(result);
-    
-//    delete loc4;
-    
- 
-    
-    
-    
+        Localizer *loc5=new UnscentedParticleFilter();
+        loc5->saveStatisticsData(solutions);
+
+        delete loc5;
+   }
+   else
+   {
+	solutions.resize(numTrials,1);
+	for(size_t i=0; i<numTrials-1; i++)
+	{
+            Localizer *loc4=new ScalingSeries();
+            loc4->configure(rf);
+            error_indices=loc4->localization();
+            loc4->saveData(error_indices);
+            solutions(i,0)=error_indices[6];
+            delete loc4;
+        }
+
+	cout<<"error "<<error_indices.toString(3,5).c_str()<<endl;
+        cout<<"staticis "<<solutions.getRow(0).toString(3,3).c_str()<<endl;
+        Localizer *loc4=new ScalingSeries();
+	loc4->configure(rf);
+        error_indices=loc4->localization();
+        loc4->saveData(error_indices);
+        solutions(numTrials-1,0)=error_indices[6];
+	loc4->saveStatisticsData(solutions);
+        delete loc4;
+
+   }
+
+
     return 0;
 }

@@ -31,7 +31,7 @@ using namespace iCub::ctrl;
 /*******************************************************************************/
 ScalingSeries::ScalingSeries() : GeometryCGAL()
 {
-    
+
     parameters=new ParametersSSprune;   // owned by GeometryCGAL
 }
 
@@ -50,15 +50,15 @@ void ScalingSeries::initialRandomize()
     {
         Particle &particle=x[i];
         ParametersSSprune &params=get_parameters();
-        
+
         particle.pos[0]=Rand::scalar(params.center0[0]-params.radius0[0],params.center0[0]+params.radius0[0]);
         particle.pos[1]=Rand::scalar(params.center0[1]-params.radius0[1],params.center0[1]+params.radius0[1]);
         particle.pos[2]=Rand::scalar(params.center0[2]-params.radius0[2],params.center0[2]+params.radius0[2]);
         particle.pos[3]=Rand::scalar(0,2*M_PI);
         particle.pos[4]=Rand::scalar(0,M_PI);
         particle.pos[5]=Rand::scalar(0,2*M_PI);
+
  
-   
     }
 }
 
@@ -66,26 +66,22 @@ void ScalingSeries::initialRandomize()
 
 /*******************************************************************************/
 void ScalingSeries::init()
-{   
-	
+{
+
     t0=Time::now();
-	double Np, Nn;
-	
+    double Np, Nn;
     GeometryCGAL::init();
     ParametersSSprune &params=get_parameters();
-    
-	//counter for iterations
+    //counter for iterations
     iter=0;
-    
-
-	// init delta
-	numTotPart=params.numParticles;
-	delta_p=params.radius0[0];
-	delta_n=M_PI;
+    // init delta
+    numTotPart=params.numParticles;
+    delta_p=params.radius0[0];
+    delta_n=M_PI;
 	radius_p=delta_p;
 	radius_n=delta_n;
     n=params.n;
-  
+
 
 	//compute number of iterations
 	Np=log2(volumeSphere(params.radius0[0],n)/volumeSphere(params.delta_desired_p, n));
@@ -741,6 +737,42 @@ void ScalingSeries::saveData( const yarp::sig::Vector &ms_particle)
 
      fout2.close();  
 }
+
+/******************************************************************************/
+
+void ScalingSeries::saveStatisticsData(const yarp::sig::Matrix &solutions)
+{
+	string outputFileName2=this->rf->check("outputFileSS",Value("../../outputs/outputStatisticsSS.off")).
+                       asString().c_str();
+                       
+     double average1;   
+     average1=0;
+     
+     
+ 
+                       
+    ofstream fout2(outputFileName2.c_str());                                           
+ 
+	if(fout2.is_open())
+	{ 
+		for(int j=0; j<solutions.rows(); j++)
+		{  
+		
+				fout2<<"trail "<<j<<": "<<solutions.getRow(j).toString().c_str()<<endl;
+				average1=average1+solutions(j,0);
+				
+				
+		
+		}
+		
+		fout2<<"average "<< average1/solutions.rows()<<endl;
+		fout2<<"time "<<dt<<endl;
+		
+	}
+}
+
+
+
 /*******************************************************************************/    
 yarp::sig::Vector ScalingSeries::localization()
 {

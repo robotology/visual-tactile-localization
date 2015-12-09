@@ -3,10 +3,10 @@ s:  0.000  0.000  0.000  0.000  0.000  0.000
 found in 0 [s]
 error_index inf
 highest density with all particles
-solution: -0.000 -0.002  0.001  3.998  0.010  2.261
-found in 4.6341 [s]
-error_index 0.00106991
+solution:  0.000  0.000  0.000  0.000  0.000  0.000
+found in 0 [s]
+error_index inf
 highest density with neighborhood
-solution: -0.000 -0.002  0.001  3.998  0.010  2.261
-found in 5.63068 [s]
-error_index 0.00106991
+solution:  0.000  0.000  0.000  0.000  0.000  0.000
+found in 0 [s]
+error_index inf

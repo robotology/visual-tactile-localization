@@ -10,4 +10,10 @@ Before compiling the code you are required to install
 The compilation makes use of the cmake tool.
 
 #how to use the software
+You can run one of the algorithm typing in the command line:
+
+./localizer 'num_of_trials' 'mupf'or nothing --from configuration file
+
+-num_of_trials is the number of times you want to run the algorithm and to have statistics about
+-you have to write mupf if you want to use mupf algorithm. If you don't write anything, the scaling series is used
 

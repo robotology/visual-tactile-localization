@@ -168,7 +168,7 @@ Vector ScalingSeries::finalize()
 	MsParticle ms_particle;
 	Vector result;
 	
-	result.resize(7,0.0);
+	result.resize(8,0.0);
 	
 	double larger_weights=0.0;
 	int index_most=0;
@@ -214,6 +214,7 @@ Vector ScalingSeries::finalize()
   	result[6]=ms_particle.error_index;
   	dt=Time::now()-t0;
     result[7]=dt;
+	cout<<"time "<< result[7]<<endl;
   	cout<<"number of particles"<< number.subVector(0,N-1).toString(3,3)<<endl;
   
     return result;
@@ -736,6 +737,7 @@ void ScalingSeries::saveStatisticsData(const yarp::sig::Matrix &solutions)
                        
     double average1, average_time;   
     average1=0;
+    average_time=0;
     ofstream fout2(outputFileName2.c_str());                                           
  
 	if(fout2.is_open())
@@ -749,7 +751,7 @@ void ScalingSeries::saveStatisticsData(const yarp::sig::Matrix &solutions)
 		}
 		
 		fout2<<"average "<< average1/solutions.rows()<<endl;
-		fout2<<"time "<<dt<<endl;
+		fout2<<"average time "<<average_time/solutions.rows()<<endl;
 		
 	}
 }
@@ -770,3 +772,4 @@ yarp::sig::Vector ScalingSeries::localization()
     
     
 
+ 

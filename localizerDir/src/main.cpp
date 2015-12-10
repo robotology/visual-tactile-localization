@@ -67,13 +67,14 @@ int main(int argc, char *argv[])
    }
    else
    {
+            error_indices.resize(0.0,8);
 	    solutions.resize(numTrials,2);
 	    for(size_t i=0; i<numTrials-1; i++)
 	    {
             Localizer *loc4=new ScalingSeries();
             loc4->configure(rf);
             error_indices=loc4->localization();
-            loc4->saveData(error_indices);
+ 	    loc4->saveData(error_indices);
             solutions(i,0)=error_indices[6];
             solutions(i,1)=error_indices[7];
             delete loc4;

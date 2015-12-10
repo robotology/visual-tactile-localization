@@ -188,14 +188,12 @@ CMakeFiles/localizer.dir/src/localizer.cpp.o
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Contactables.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/DummyConnector.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Event.h
- /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/IConfig.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LocalReader.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LockGuard.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Log.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LogStream.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/ManagedBytes.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/MessageStack.h
- /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Module.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Mutex.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/NameStore.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/NestedContact.h
@@ -635,7 +633,6 @@ CMakeFiles/localizer.dir/src/main.cpp.o
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LogStream.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/ManagedBytes.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/MessageStack.h
- /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Module.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Mutex.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/NameStore.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/NestedContact.h
@@ -1123,14 +1120,12 @@ CMakeFiles/localizer.dir/src/scalingSeries.cpp.o
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Contactables.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/DummyConnector.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Event.h
- /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/IConfig.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LocalReader.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LockGuard.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Log.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LogStream.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/ManagedBytes.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/MessageStack.h
- /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Module.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Mutex.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/NameStore.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/NestedContact.h
@@ -1556,14 +1551,12 @@ CMakeFiles/localizer.dir/src/unscentedParticleFilter.cpp.o
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Contactables.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/DummyConnector.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Event.h
- /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/IConfig.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LocalReader.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LockGuard.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Log.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/LogStream.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/ManagedBytes.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/MessageStack.h
- /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Module.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Mutex.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/NameStore.h
  /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/NestedContact.h

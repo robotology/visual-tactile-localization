@@ -5,8 +5,6 @@ FILE(REMOVE_RECURSE
   "CMakeFiles/localizer.dir/src/localizer.cpp.o"
   "bin/localizer.pdb"
   "bin/localizer"
-  "bin/localizer.pdb"
-  "CMakeFiles/CMakeRelink.dir/localizer"
 )
 
 # Per-language clean rules from dependency scanning.

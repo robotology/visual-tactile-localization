@@ -60,6 +60,32 @@ yarp/sig/all.h
 yarp/os/ResourceFinder.h
 -
 
+/home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/src/localizer.cpp
+iostream
+-
+fstream
+-
+string
+-
+algorithm
+-
+cmath
+-
+yarp/os/all.h
+-
+yarp/math/Math.h
+-
+yarp/math/Rand.h
+-
+CGAL/IO/Polyhedron_iostream.h
+-
+yarp/os/ResourceFinder.h
+-
+iCub/ctrl/math.h
+-
+headers/localizer.h
+/home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/src/headers/localizer.h
+
 /home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/src/main.cpp
 iostream
 -
@@ -89,6 +115,32 @@ headers/scalingSeries.h
 /home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/src/headers/scalingSeries.h
 headers/unscentedParticleFilter.h
 /home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/src/headers/unscentedParticleFilter.h
+
+/home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/src/scalingSeries.cpp
+iostream
+-
+fstream
+-
+string
+-
+algorithm
+-
+cmath
+-
+yarp/os/all.h
+-
+yarp/math/Math.h
+-
+yarp/math/Rand.h
+-
+CGAL/IO/Polyhedron_iostream.h
+-
+yarp/os/ResourceFinder.h
+-
+iCub/ctrl/math.h
+-
+headers/scalingSeries.h
+/home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/src/headers/scalingSeries.h
 
 /home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/src/unscentedParticleFilter.cpp
 iostream
@@ -3319,6 +3371,8 @@ CGAL/version_macros.h
 -
 
 /usr/local/src/robot/icub-main/src/libraries/ctrlLib/include/iCub/ctrl/math.h
+cmath
+-
 yarp/sig/Vector.h
 -
 yarp/sig/Matrix.h
@@ -3574,20 +3628,6 @@ yarp/os/Portable.h
 
 /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/MessageStack.h
 yarp/os/Portable.h
--
-
-/usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Module.h
-yarp/os/IConfig.h
--
-yarp/os/Bottle.h
--
-yarp/os/Port.h
--
-yarp/os/Time.h
--
-yarp/os/BufferedPort.h
--
-yarp/os/Property.h
 -
 
 /usr/local/src/robot/yarp/src/libYARP_OS/include/yarp/os/Mutex.h
@@ -4028,8 +4068,6 @@ yarp/os/Time.h
 yarp/os/Value.h
 -
 yarp/os/Vocab.h
--
-yarp/os/Module.h
 -
 yarp/os/RFModule.h
 -
@@ -4698,6 +4736,8 @@ yarp/os/ConstString.h
 yarp/os/ManagedBytes.h
 -
 yarp/sig/api.h
+-
+yarp/os/Log.h
 -
 
 /usr/local/src/robot/yarp/src/libYARP_sig/include/yarp/sig/all.h

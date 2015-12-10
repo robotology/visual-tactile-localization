@@ -33,7 +33,23 @@ IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 
 IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "/home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/build/CMakeFiles/CMakeRelink.dir/localizer")
+  IF(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/localizer" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/localizer")
+    FILE(RPATH_CHECK
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/localizer"
+         RPATH "/usr/local/src/robot/iCubContrib-ubuntu/lib:/usr/local/src/robot/cgal/build-ubuntu/lib:/usr/local/src/robot/yarp/build-ubuntu/lib")
+  ENDIF()
+  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "/home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/build/bin/localizer")
+  IF(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/localizer" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/localizer")
+    FILE(RPATH_CHANGE
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/localizer"
+         OLD_RPATH "/usr/local/src/robot/cgal/build-ubuntu/lib:/usr/local/src/robot/yarp/build-ubuntu/lib::::::::::::::::::::::::::::::::::::::::::::"
+         NEW_RPATH "/usr/local/src/robot/iCubContrib-ubuntu/lib:/usr/local/src/robot/cgal/build-ubuntu/lib:/usr/local/src/robot/yarp/build-ubuntu/lib")
+    IF(CMAKE_INSTALL_DO_STRIP)
+      EXECUTE_PROCESS(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/localizer")
+    ENDIF(CMAKE_INSTALL_DO_STRIP)
+  ENDIF()
 ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
 
 IF(CMAKE_INSTALL_COMPONENT)

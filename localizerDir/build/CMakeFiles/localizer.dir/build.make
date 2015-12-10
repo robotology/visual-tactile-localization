@@ -181,43 +181,6 @@ bin/localizer: CMakeFiles/localizer.dir/link.txt
 CMakeFiles/localizer.dir/build: bin/localizer
 .PHONY : CMakeFiles/localizer.dir/build
 
-# Object files for target localizer
-localizer_OBJECTS = \
-"CMakeFiles/localizer.dir/src/unscentedParticleFilter.cpp.o" \
-"CMakeFiles/localizer.dir/src/scalingSeries.cpp.o" \
-"CMakeFiles/localizer.dir/src/main.cpp.o" \
-"CMakeFiles/localizer.dir/src/localizer.cpp.o"
-
-# External object files for target localizer
-localizer_EXTERNAL_OBJECTS =
-
-CMakeFiles/CMakeRelink.dir/localizer: CMakeFiles/localizer.dir/src/unscentedParticleFilter.cpp.o
-CMakeFiles/CMakeRelink.dir/localizer: CMakeFiles/localizer.dir/src/scalingSeries.cpp.o
-CMakeFiles/CMakeRelink.dir/localizer: CMakeFiles/localizer.dir/src/main.cpp.o
-CMakeFiles/CMakeRelink.dir/localizer: CMakeFiles/localizer.dir/src/localizer.cpp.o
-CMakeFiles/CMakeRelink.dir/localizer: CMakeFiles/localizer.dir/build.make
-CMakeFiles/CMakeRelink.dir/localizer: /usr/lib/x86_64-linux-gnu/libmpfr.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/lib/x86_64-linux-gnu/libgmp.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/cgal/build-ubuntu/lib/libCGAL.so.11.0.1
-CMakeFiles/CMakeRelink.dir/localizer: /usr/lib/x86_64-linux-gnu/libboost_thread.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/lib/x86_64-linux-gnu/libboost_system.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/lib/x86_64-linux-gnu/libpthread.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/yarp/build-ubuntu/lib/libYARP_OS.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/yarp/build-ubuntu/lib/libYARP_sig.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/yarp/build-ubuntu/lib/libYARP_math.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/yarp/build-ubuntu/lib/libYARP_dev.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/yarp/build-ubuntu/lib/libYARP_init.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/yarp/build-ubuntu/lib/libYARP_name.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/yarp/build-ubuntu/lib/libYARP_sig.so
-CMakeFiles/CMakeRelink.dir/localizer: /usr/local/src/robot/yarp/build-ubuntu/lib/libYARP_OS.so
-CMakeFiles/CMakeRelink.dir/localizer: CMakeFiles/localizer.dir/relink.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --red --bold "Linking CXX executable CMakeFiles/CMakeRelink.dir/localizer"
-	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/localizer.dir/relink.txt --verbose=$(VERBOSE)
-
-# Rule to relink during preinstall.
-CMakeFiles/localizer.dir/preinstall: CMakeFiles/CMakeRelink.dir/localizer
-.PHONY : CMakeFiles/localizer.dir/preinstall
-
 CMakeFiles/localizer.dir/requires: CMakeFiles/localizer.dir/src/unscentedParticleFilter.cpp.o.requires
 CMakeFiles/localizer.dir/requires: CMakeFiles/localizer.dir/src/scalingSeries.cpp.o.requires
 CMakeFiles/localizer.dir/requires: CMakeFiles/localizer.dir/src/main.cpp.o.requires

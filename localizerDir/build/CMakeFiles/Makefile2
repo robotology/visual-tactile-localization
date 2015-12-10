@@ -81,15 +81,6 @@ CMakeFiles/localizer.dir/rule: cmake_check_build_system
 localizer: CMakeFiles/localizer.dir/rule
 .PHONY : localizer
 
-# Pre-install relink rule for target.
-CMakeFiles/localizer.dir/preinstall:
-	$(MAKE) -f CMakeFiles/localizer.dir/build.make CMakeFiles/localizer.dir/preinstall
-.PHONY : CMakeFiles/localizer.dir/preinstall
-
-# Prepare target for install.
-preinstall: CMakeFiles/localizer.dir/preinstall
-.PHONY : preinstall
-
 # clean rule for target.
 CMakeFiles/localizer.dir/clean:
 	$(MAKE) -f CMakeFiles/localizer.dir/build.make CMakeFiles/localizer.dir/clean

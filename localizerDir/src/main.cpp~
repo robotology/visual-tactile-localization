@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         error_indices=loc4->localization();
         loc4->saveData(error_indices);
         solutions(numTrials-1,0)=error_indices[6];
-        solutions(numTrials-1,1)=error_indices[7];
+        solutions(numTrials-1,0)=error_indices[7];
 	    loc4->saveStatisticsData(solutions);
         delete loc4;
 

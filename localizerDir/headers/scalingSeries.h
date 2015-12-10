@@ -294,7 +294,11 @@ class ScalingSeries : public GeometryCGAL, public Localizer
      bool configure(yarp::os::ResourceFinder &rf);
      
      /*******************************************************************************/ 
-
+     
+     /** Saves the solution and the time computed for all the trials, computes the average
+     * of the solution and of the time of the trials 
+     * @param Matrix, containing the three solutions
+     */
      void saveStatisticsData(const yarp::sig::Matrix &solutions);
      /*******************************************************************************/ 
 

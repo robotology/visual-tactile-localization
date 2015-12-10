@@ -734,7 +734,7 @@ void ScalingSeries::saveStatisticsData(const yarp::sig::Matrix &solutions)
 	string outputFileName2=this->rf->check("outputFileSS",Value("../../outputs/outputStatisticsSS.off")).
                        asString().c_str();
                        
-    double average1, average_time;   
+    double average1;   
     average1=0;
     ofstream fout2(outputFileName2.c_str());                                           
  
@@ -745,7 +745,6 @@ void ScalingSeries::saveStatisticsData(const yarp::sig::Matrix &solutions)
 		
 				fout2<<"trail "<<j<<": "<<solutions.getRow(j).toString().c_str()<<endl;
 				average1=average1+solutions(j,0);
-                average_time=average_time+solutions(j,1);
 		}
 		
 		fout2<<"average "<< average1/solutions.rows()<<endl;

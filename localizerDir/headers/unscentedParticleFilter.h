@@ -435,7 +435,7 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
     
      /** Calls step( ) until measurements finish
      */
-    void solve();
+     void solve();
     
      /*******************************************************************/
     
@@ -447,9 +447,10 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
      void saveData( const yarp::sig::Vector &ms_particle);
      
      
-        /*******************************************************************/
+     /*******************************************************************/
     
-     /** Saves the solution computed in 3 different ways
+     /** Saves the solution and the time computed for all the trials, computes the average
+     * of the solution and of the time of the trials 
      * @param Matrix, containing the three solutions
      */
      void saveStatisticsData(const yarp::sig::Matrix &solutions);

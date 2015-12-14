@@ -56,7 +56,8 @@ int main(int argc, char *argv[])
             loc5->configure(rf);
             error_indices=loc5->localization();
             loc5->saveData(error_indices);
-            solutions.setRow(i,error_indices);
+            solutions(i,0)=error_indices[6];
+
 	        delete loc5;
         }
 

@@ -253,7 +253,7 @@ Vector UnscentedParticleFilter::finalize()
 
 	Vector error_indices;
 	error_indices.resize(4,0.0);
-	result.resize(10,0.0);
+	result.resize(7,0.0);
 	cout<<"RESULT WITH GAUSSIANS"<<result4.toString().c_str()<<endl;
     
     //save all the result wwith highest density in ms_particle2
@@ -273,18 +273,13 @@ Vector UnscentedParticleFilter::finalize()
                    
                    
 
+   result[0]=result4[0];
+   result[0]=result4[0];
    
-	result[0]=result4[0]; 
-result[1]=result4[1];
-result[2]=result4[2];
-result[3]=result4[3];
-result[4]=result4[4];
-result[5]=result4[5];
-result[6]=ms_particle4.error_index;;
- 
+  
 	
   
-    return result;
+    return result4;
 }
  
 /*******************************************************************************/
@@ -1110,198 +1105,3 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
 		{
         	diagR[0]=rf.check("R1",Value(0.0001)).asDouble();
         	diagR[1]=rf.check("R2",Value(0.0001)).asDouble();
-        	diagR[2]=rf.check("R3",Value(0.0001)).asDouble();
-		}
-		
-        yarp::sig::Vector diagP0;
-        diagP0.resize(parameters.n,1);
-        
-        check=readDiagonalMatrix("P0",diagP0,parameters.n);
-	
-		if(!check)
-		{
-        	diagP0[0]=rf.check("P01",Value(0.04)).asDouble();
-        	diagP0[1]=rf.check("P02",Value(0.04)).asDouble();
-        	diagP0[2]=rf.check("P03",Value(0.04)).asDouble();
-        	diagP0[3]=rf.check("P04",Value(pow(M_PI,2.0))).asDouble();
-        	diagP0[4]=rf.check("P05",Value(pow(M_PI/2.0,2.0))).asDouble();
-        	diagP0[5]=rf.check("P06",Value(pow(M_PI,2.0))).asDouble();
-		}
-		
-		
-		yarp::sig::Vector neigh0;
-        neigh0.resize(parameters.n,1);
-        
-        check=readDiagonalMatrix("neigh",neigh0,parameters.n);
-	
-		if(!check)
-		{
-        	neigh0[0]=rf.check("neigh0",Value(0.08)).asDouble();
-        	neigh0[1]=rf.check("neigh1",Value(0.08)).asDouble();
-        	neigh0[2]=rf.check("neigh2",Value(0.08)).asDouble();
-        	neigh0[3]=rf.check("neigh3",Value(0.3)).asDouble();
-        	neigh0[4]=rf.check("neigh4",Value(0.3)).asDouble();
-        	neigh0[5]=rf.check("neigh5",Value(0.3)).asDouble();
-		}
-		
-		
-		parameters.neigh=neigh0;
-		
-		 cout<<"perc "<<parameters.percent<<endl;
-        cout<<"neigh "<<parameters.neigh.toString(6,3)<<endl;
-		
-       
-        yarp::sig::Matrix Q;
-        Q.resize(parameters.n,parameters.n);
-       
-        yarp::sig::Matrix R;
-        R.resize(parameters.p,parameters.p);
-       
-        yarp::sig::Matrix P0;
-        P0.resize(parameters.n,parameters.n);
-        
- 		for(size_t i=0; i<parameters.n; i++)
-	    {
-	          
-	         Q(i,i)=diagQ[i];
-	         P0(i,i)=diagP0[i];
-	    }
-	    parameters.Q=Q;
-	    parameters.P0=P0;
-	   
-	      
-	    for(size_t i=0; i<parameters.p; i++)
-	    {
-	         R(i,i)=diagR[i];
-	        
-	    }
-
-        parameters.R=R;     
-      
-        // read the polyhedron from a .OFF file
-         ifstream modelFile(modelFileName.c_str());
-        if (!modelFile.is_open())
-        {
-            yError()<<"problem opening model file!";
-            return false;
-        }
-        
-        modelFile>>get_model();
-        
-        
-        if (modelFile.bad())
-        {
-            yError()<<"problem reading model file!";
-            modelFile.close();
-            return false;
-        }
-        modelFile.close();
-
-        // read the measurements file
-        ifstream measurementsFile(measurementsFileName.c_str());
-        if (!measurementsFile.is_open())
-        {
-            yError()<<"problem opening measurements file!";
-            modelFile.close();
-            return false;
-        }
-        if (!readMeasurements(measurementsFile))
-        {
-            yError()<<"problem reading measurements file!";
-            modelFile.close();
-            measurementsFile.close();
-            return false;
-        }
-        measurementsFile.close();
-        for(int i=0;  i<measurements.size(); i++)
-        cout<<"measurements "<< measurements[i]<<endl;
-        
-          parameters.window_width=rf.find("window_width").asInt();
-        if (rf.find("window_width").isNull())
-        parameters.window_width=rf.check("window_width",Value(parameters.numMeas)).asInt();
-        cout<<"WINDOW_WIDTH"<<parameters.window_width<<endl;
- 
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle)
-{    
-	string outputFileName=this->rf->check("outputFileMUPF",Value("../../outputs/outputMUPF.off")).
-                       asString().c_str();
-    string  outputFileName2=this->rf->check("outputFileDataMUPF",Value("../../outputs/output_dataMUPF.off")).
-                       asString().c_str();
-                     
-                       
-	ofstream fout(outputFileName.c_str());
-    if(fout.is_open())
-    {
-        fout<<get_model();
- 
-    }
-    else
-		cout<< "problem opening output_data file!";
-		
-	fout.close();
-	        
-    ofstream fout2(outputFileName2.c_str());                                           
-
-	if(fout2.is_open())
-	{   
-		fout2<<"highest weight "<<endl;
-		fout2 << "s: "<<ms_particle1.pos.subVector(0,5).toString(3,3).c_str()<<endl;
-  	    fout2 << "found in "<<result[7]<<" [s]"<<endl;
-	    fout2<< "error_index "<<ms_particle1.error_index<<endl;
-	    
-	    fout2<<"highest density with all particles"<<endl;
-		fout2 << "solution: "<<ms_particle2.pos.subVector(0,5).toString(3,3).c_str()<<endl;
-		fout2 << "found in "<<result[8]<<" [s]"<<endl;
-	    fout2<< "error_index "<<ms_particle2.error_index<<endl;
-	    
-	    fout2<<"highest density with neighborhood"<<endl;
-		fout2 << "solution: "<<ms_particle3.pos.subVector(0,5).toString(3,3).c_str()<<endl;
-		fout2 << "found in "<<result[9]<<" [s]"<<endl;
-	    fout2<< "error_index "<<ms_particle3.error_index<<endl;
-	
-	}
-	else
-	    cout<< "problem opening output_data file!";
-
-     fout2.close();  
-}
-
-void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &solutions)
-{
-	string outputFileName2=this->rf->check("outputFileMUPF",Value("../../outputs/outputStatisticsMUPF.off")).
-                       asString().c_str();                 
-     double average1;   
-     average1=0;
-              
-    ofstream fout2(outputFileName2.c_str());                                           
-
-	if(fout2.is_open())
-	{
-		for(int j=0; j<solutions.rows(); j++)
-		{
-		
-				fout2<<"trail "<<j<<": "<<solutions(j,0)<<endl;
-				average1=average1+solutions(j,0);
-	
-		}
-		
-		fout2<<"average "<< average1/solutions.rows()<<endl;
-		fout2<<"time "<<dt_gauss<<endl;
-		fout2<<"time DT"<<DT<<endl;
-		
-	}
-}
-       
-/*******************************************************************************/      
-yarp::sig::Vector UnscentedParticleFilter::localization()
-{
-    yarp::sig::Vector result;
-  
-   init();
-   solve();
-   return result=finalize();
-        
-};

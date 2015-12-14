@@ -253,7 +253,7 @@ Vector UnscentedParticleFilter::finalize()
 
 	Vector error_indices;
 	error_indices.resize(4,0.0);
-	result.resize(10,0.0);
+	result.resize(7,0.0);
 	cout<<"RESULT WITH GAUSSIANS"<<result4.toString().c_str()<<endl;
     
     //save all the result wwith highest density in ms_particle2
@@ -273,18 +273,13 @@ Vector UnscentedParticleFilter::finalize()
                    
                    
 
+   result[0]=result4[0];
+   result[0]=result4[0];
    
-	result[0]=result4[0]; 
-result[1]=result4[1];
-result[2]=result4[2];
-result[3]=result4[3];
-result[4]=result4[4];
-result[5]=result4[5];
-result[6]=ms_particle4.error_index;;
- 
+  
 	
   
-    return result;
+    return result4;
 }
  
 /*******************************************************************************/

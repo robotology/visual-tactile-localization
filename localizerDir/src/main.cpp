@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 	        Localizer *loc5=new UnscentedParticleFilter();
             loc5->configure(rf);
             error_indices=loc5->localization();
-            loc5->saveData(error_indices);
+            loc5->saveData(error_indices,i);
             solutions(i,0)=error_indices[6];
 
 	        delete loc5;
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
             Localizer *loc4=new ScalingSeries();
             loc4->configure(rf);
             error_indices=loc4->localization();
- 	    loc4->saveData(error_indices);
+ 	    loc4->saveData(error_indices,i);
             solutions(i,0)=error_indices[6];
             solutions(i,1)=error_indices[7];
             delete loc4;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         Localizer *loc4=new ScalingSeries();
 	    loc4->configure(rf);
         error_indices=loc4->localization();
-        loc4->saveData(error_indices);
+        loc4->saveData(error_indices,numTrials-1);
         solutions(numTrials-1,0)=error_indices[6];
         solutions(numTrials-1,1)=error_indices[7];
 	    loc4->saveStatisticsData(solutions);

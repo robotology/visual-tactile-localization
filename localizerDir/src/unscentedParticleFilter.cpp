@@ -1224,9 +1224,11 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
 }
 
 /*******************************************************************************/
-void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle)
-{    
-	string outputFileName=this->rf->check("outputFileMUPF",Value("../../outputs/outputMUPF.off")).
+void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, const int &i)
+{    stringstream ss2;
+     ss2 << i;
+     string str_i = ss2.str();
+	string outputFileName=this->rf->check("outputFileMUPF",Value("../../outputs/outputMUPF"+str_i+".off")).
                        asString().c_str();
     string  outputFileName2=this->rf->check("outputFileDataMUPF",Value("../../outputs/output_dataMUPF.off")).
                        asString().c_str();

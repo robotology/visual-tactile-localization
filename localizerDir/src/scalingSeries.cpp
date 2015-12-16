@@ -694,7 +694,7 @@ bool ScalingSeries::configure(ResourceFinder &rf)
     
 }
 /*******************************************************************************/
-void ScalingSeries::saveData( const yarp::sig::Vector &ms_particle)
+void ScalingSeries::saveData( const yarp::sig::Vector &ms_particle, const int &i)
 {      
 	string outputFileName=this->rf->check("outputFileSS",Value("../../outputs/outputSS.off")).
                        asString().c_str();

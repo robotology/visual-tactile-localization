@@ -104,7 +104,7 @@ class Localizer
      * @param ms_particle is a Vector of 8 components: the estimated 
      * x,y,z,phi,theta,psi, the final localization error and the execution time
      */
-    virtual void saveData(const yarp::sig::Vector &ms_particle)=0;
+    virtual void saveData(const yarp::sig::Vector &ms_particle, const int &i)=0;
     
     
     

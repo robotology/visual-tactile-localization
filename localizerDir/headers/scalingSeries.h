@@ -281,7 +281,7 @@ class ScalingSeries : public GeometryCGAL, public Localizer
      * @param rf a previously inizialized @see Resource Finder
      * @param ms_particle, containing estimated x, localization error and execution time
      */
-     void saveData(const yarp::sig::Vector &ms_particle);
+     void saveData(const yarp::sig::Vector &ms_particle,const int &i);
     
      /*******************************************************************************/
     

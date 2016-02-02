@@ -1,13 +1,13 @@
-modelFile           ../../models/tetrahedron.off
-measurementsFile    ../../measurements/measTetra30_sim.off
+modelFile           ../../models/robot.off
+measurementsFile    ../../measurements/measRobot_sim.off
 outputFile          ../../outputs/output.off
 outputFile2          ../../outputs/output_data.off
 M                   2
 numMeas             30
 errp                0.005
 errn                0.01
-delta_desired_p     0.005
-delta_desired_n     0.06
+delta_desired_p     0.0001
+delta_desired_n     0.001
 radius0             (0.2, 0.2, 0.2)
 center0             (0.0, 0.0, 0.0)
 N                   700
@@ -18,5 +18,5 @@ P0                  (0.04, 0.04, 0.04, 9.86, 2.46, 9,86)
 alpha               1
 kappa               2
 beta                30
-window_width        35
+window_width        40
 

@@ -1106,7 +1106,7 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
           parameters.window_width=rf.find("window_width").asInt();
         if (rf.find("window_width").isNull())
         parameters.window_width=rf.check("window_width",Value(parameters.numMeas)).asInt();
-        cout<<"WINDOW_WIDTH"<<parameters.window_width<<endl;
+        cout<<"Window_width "<<parameters.window_width<<endl;
  
 }
 

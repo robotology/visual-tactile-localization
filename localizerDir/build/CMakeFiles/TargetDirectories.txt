@@ -1,2 +1,0 @@
-/home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/build/CMakeFiles/localizer.dir
-/home/icub/tmp_giulia_vezzani/localizerAPI/localizerDir/build/CMakeFiles/uninstall.dir

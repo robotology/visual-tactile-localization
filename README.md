@@ -17,3 +17,5 @@ You can run one of the algorithm typing in the command line:
 -num_of_trials is the number of times you want to run the algorithm and to have statistics about
 -you have to write mupf if you want to use mupf algorithm. If you don't write anything, the scaling series is used
 
+[![DOI](https://zenodo.org/badge/20254/tacman-fp7/tactile-localization.svg)](https://zenodo.org/badge/latestdoi/20254/tacman-fp7/tactile-localization)
+

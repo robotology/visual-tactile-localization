@@ -488,7 +488,7 @@ void ScalingSeries::solve()
     bool finished=false;
     while(finished==false)
     {
-            finished=ScalingSeries::step();
+        finished=ScalingSeries::step();
     }
 		
 }
@@ -585,9 +585,9 @@ bool ScalingSeries::configure(ResourceFinder &rf)
 
     if(!check)
     {
-            parameters.center0[0]=this->rf->check("center0",Value(0.2)).asDouble();
-            parameters.center0[1]=this->rf->check("center0",Value(0.2)).asDouble();
-            parameters.center0[2]=this->rf->check("center0",Value(0.3)).asDouble();
+        parameters.center0[0]=this->rf->check("center0",Value(0.2)).asDouble();
+        parameters.center0[1]=this->rf->check("center0",Value(0.2)).asDouble();
+        parameters.center0[2]=this->rf->check("center0",Value(0.3)).asDouble();
     }
 
     parameters.radius0.resize(3,0.0);
@@ -672,7 +672,7 @@ void ScalingSeries::saveData( const yarp::sig::Vector &ms_particle, const int &i
 
     if(fout2.is_open())
     {
-             fout2 << "solution: "<<ms_particle.subVector(0,5).toString(3,3).c_str()<<endl;
+         fout2 << "solution: "<<ms_particle.subVector(0,5).toString(3,3).c_str()<<endl;
          fout2 << "found in "<<ms_particle[7]<<" [s]"<<endl;
          fout2<< "error_index "<<ms_particle(6)<<endl;
          fout2<< "number of particles "<< number.toString().c_str()<<endl;
@@ -698,7 +698,6 @@ void ScalingSeries::saveStatisticsData(const yarp::sig::Matrix &solutions)
     {
         for(int j=0; j<solutions.rows(); j++)
         {
-
             fout2<<"trail "<<j<<": "<<solutions.getRow(j).toString().c_str()<<endl;
             average1=average1+solutions(j,0);
             average_time=average_time+solutions(j,1);

@@ -1,4 +1,3 @@
-
 # Copyright: (C) 2015 iCub Facility - Istituto Italiano di Tecnologia
 # Authors: Giulia Vezzani
 # CopyPolicy: Released under the terms of the GNU GPL v2.0.
@@ -6,10 +5,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PROJECTNAME localizer)
-
-
 project(${PROJECTNAME})
-
 
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
@@ -27,7 +23,6 @@ include(ICUBcontribHelpers)
 include(ICUBcontribOptions)
 icubcontrib_set_default_prefix()
 
-
 set(headers headers/geometryCGAL.h  headers/unscentedParticleFilter.h headers/scalingSeries.h headers/localizer.h )
 set(sources src/unscentedParticleFilter.cpp src/scalingSeries.cpp src/main.cpp src/localizer.cpp) 
 source_group("Source Files" FILES ${sources})
@@ -38,10 +33,7 @@ include_directories(${PROJECT_SOURCE_DIR} )
 include(${CGAL_USE_FILE})
 include(CGAL_CreateSingleSourceCGALProgram)
 
-#add_library(6DLocalizator  ${headers} ${sources} )
-
 add_executable(${PROJECTNAME} ${headers} ${sources})
 target_link_libraries(${PROJECTNAME} ${YARP_LIBRARIES})
-#target_link_libraries(${PROJECTNAME}  6DLocalizator)
 install(TARGETS ${PROJECTNAME} DESTINATION bin)
 icubcontrib_add_uninstall_target()

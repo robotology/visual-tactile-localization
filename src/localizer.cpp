@@ -27,21 +27,18 @@ using namespace iCub::ctrl;
 
 /***********************************************************************************/
 bool Localizer::readCenter(const string &tag, Vector &center0)
-    {
-      
+    {      
         if (Bottle *b=this->rf->find(tag.c_str()).asList())
         {
             if (b->size()>=3)
             {   
-              
                 center0[0]=b->get(0).asDouble();
                 center0[1]=b->get(1).asDouble();
-				center0[2]=b->get(2).asDouble();
+                center0[2]=b->get(2).asDouble();
                 return true;
             }
         }
-        
-       
+               
         return false;
     }
     
@@ -53,13 +50,9 @@ bool Localizer::readRadius(const string &tag, Vector &radius0)
        
         if (b->size()>=3)
         {
-            
-            radius0[0]=b->get(0).asDouble();
-           
-            radius0[1]=b->get(1).asDouble();
-            
-			radius0[2]=b->get(2).asDouble();
-			
+            radius0[0]=b->get(0).asDouble();           
+            radius0[1]=b->get(1).asDouble();            
+            radius0[2]=b->get(2).asDouble();
 				
             return true;
         }
@@ -77,8 +70,7 @@ bool Localizer::readDiagonalMatrix(const string &tag, Vector &diag, const int &d
         {
             for(size_t i; i<dimension; i++)
                 diag[i]=b->get(i).asDouble();
-             
-				
+
             return true;
         }
     }
@@ -101,12 +93,12 @@ void Localizer::sendData( const yarp::sig::Vector &ms_particle)
     Bottle &dataOut=dataOutPort.prepare();
 	dataOut.clear();
 	   
-	for(size_t i=0; i<6; i++)
-   {
-		 dataOut.addDouble(ms_particle(i));
-	}
+    for(size_t i=0; i<6; i++)
+    {
+        dataOut.addDouble(ms_particle(i));
+    }
 		    
-	dataOutPort.write();
+    dataOutPort.write();
     dataOutPort.close();
         
 };

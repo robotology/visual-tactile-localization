@@ -1135,19 +1135,19 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, con
 
     if(fout2.is_open())
     {
-            fout2<<"highest weight "<<endl;
-            fout2 << "s: "<<ms_particle1.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+        fout2<<"highest weight "<<endl;
+        fout2 << "s: "<<ms_particle1.pos.subVector(0,5).toString(3,3).c_str()<<endl;
         fout2 << "found in "<<result[7]<<" [s]"<<endl;
         fout2<< "error_index "<<ms_particle1.error_index<<endl;
 
         fout2<<"highest density with all particles"<<endl;
-            fout2 << "solution: "<<ms_particle2.pos.subVector(0,5).toString(3,3).c_str()<<endl;
-            fout2 << "found in "<<result[8]<<" [s]"<<endl;
+        fout2 << "solution: "<<ms_particle2.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+        fout2 << "found in "<<result[8]<<" [s]"<<endl;
         fout2<< "error_index "<<ms_particle2.error_index<<endl;
 
         fout2<<"highest density with neighborhood"<<endl;
-            fout2 << "solution: "<<ms_particle3.pos.subVector(0,5).toString(3,3).c_str()<<endl;
-            fout2 << "found in "<<result[9]<<" [s]"<<endl;
+        fout2 << "solution: "<<ms_particle3.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+        fout2 << "found in "<<result[9]<<" [s]"<<endl;
         fout2<< "error_index "<<ms_particle3.error_index<<endl;
 
     }

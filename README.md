@@ -1,4 +1,4 @@
-# localizerAPI
+#tactile-localization
 The code distributed here provides the implementation of two different algorithms for the solution of the 6D object tactile localization: the Scaling Series algorithm, a reference algorithm in literature, and a new proposed algorithm, the Memory Unscented Particle Filter.
 
 #dependeces 

@@ -909,24 +909,30 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &down)
         {
             if (isNumber && (b.size()>=3))
             {
-                cout<<"count"<<count<<endl;
-                cout<<"down"<<down<<endl;
-                if(count==down)
-                {
+                point_tmp[0]=b.get(0).asDouble();
+                point_tmp[1]=b.get(1).asDouble();
+                point_tmp[2]=b.get(2).asDouble();
+                points_tmp.push_back(point_tmp);
 
-                    get_measurements().push_back(Point(b.get(0).asDouble(),
-                                                       b.get(1).asDouble(),
-                                                       b.get(2).asDouble()));
-                                        params.numMeas++;
-                                        count=0;
-                }
-                count++;
+
+
+
 
                 if (--nPoints<=0)
                     return true;
             }
         }
     }
+
+    for( size_t i=0; i<points.size();i=i+down)
+    {
+        point_tmp=points[i];
+        get_measurements().push_back(Point(point_tmp[0],
+                                           point_tmp[1],
+                                           point_tmp[2]));
+                            params.numMeas++;
+    }
+
         
     return false;
 }

@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
         solutions(i,4)=error_indices[4];
         solutions(i,5)=error_indices[5];
         solutions(i,6)=error_indices[6];
+        cout<<"executed mupf for object numer "<<i<<endl;
 
         delete loc5;
     }

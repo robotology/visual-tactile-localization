@@ -202,6 +202,9 @@ protected:
      
      yarp::sig::Vector result4;
 
+     /** For downsampling*/
+     double down;
+
    
     /*******************************************************************/
     /** Get parameters necessary for UnscentedParticleFilter class

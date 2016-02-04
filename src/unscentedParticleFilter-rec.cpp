@@ -883,6 +883,7 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &down)
     char line[255];
     deque<Vector> points_tmp;
     Vector point_tmp;
+    point_tmp.resize(3,0.0);
     params.numMeas=0;
         
     while (!fin.eof())

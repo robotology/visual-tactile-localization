@@ -881,8 +881,8 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &down)
     int nPoints;
     int count=0;
     char line[255];
-    deque<Vector> points;
-    Vector point;
+    deque<Vector> points_tmp;
+    Vector point_tmp;
     params.numMeas=0;
         
     while (!fin.eof())

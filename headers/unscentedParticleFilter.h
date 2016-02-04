@@ -422,7 +422,7 @@ public:
      * @param rf a previously inizialized @see Resource Finder
      * @return true/false on succes/failure
      */
-     bool configure(yarp::os::ResourceFinder &rf);    
+     bool configure(yarp::os::ResourceFinder &rf, const int &i);
      /*******************************************************************/
     
      /** Runs init() and solve(). Configure must be runned before and if we want to

@@ -90,12 +90,9 @@ bool UnscentedParticleFilter::step()
     t++;
     cout<<"t "<<t<<"\n";
     ParametersUPF &params=get_parameters();
-
-    cout<<"params num "<<params.numMeas<<endl;
     
     if( t>params.numMeas)
-    {	
-        cout<<"t greater than numMeas"<<endl;
+    {
         return true;
     }
 
@@ -192,9 +189,13 @@ bool UnscentedParticleFilter::step()
 
     if(t==params.numMeas)
     {
+        cout<<"debug1"<<endl;
         dt_gauss2=Time::now()-t0;
+        cout<<"debug2"<<endl;
         result4=particleDensity3();
+        cout<<"debug3"<<endl;
         dt_gauss=Time::now()-t0;
+        cout<<"debug4"<<endl;
         DT=dt_gauss-dt_gauss2;
     }
     else

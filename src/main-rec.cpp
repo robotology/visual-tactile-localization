@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         solutions(i,4)=error_indices[4];
         solutions(i,5)=error_indices[5];
         solutions(i,6)=error_indices[6];
-        cout<<"solution "<<solution.toString().c_str()<<endl;
+        cout<<"solution "<<solution.subrow(i,0,7).toString().c_str()<<endl;
 
 
         delete loc5;

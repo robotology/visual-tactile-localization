@@ -352,7 +352,7 @@ protected:
      * @param fin is the ifstream associated to measurements file
      * @return true/false on succes/failure
      */
-     bool readMeasurements(std::ifstream &fin);
+     bool readMeasurements(std::ifstream &fin, const int &down);
     
      /*******************************************************************/
      /** Find the particle with the highest density

@@ -1021,6 +1021,10 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &i)
     if (rf.find("alpha").isNull())
             parameters.alpha=rf.check("alpha",Value(1.0)).asDouble();
 
+    if (rf.find("down sampling").isNull())
+            down=1;
+    down=rf.find("down sampling").asInt();
+
     parameters.kappa=rf.find("kappa").asDouble();
     if (rf.find("kappa").isNull())
             parameters.kappa=rf.check("kappa",Value(2.0)).asDouble();
@@ -1140,16 +1144,13 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &i)
             modelFile.close();
             return false;
         }
-        if (!readMeasurements(measurementsFile))
+        if (!readMeasurements(measurementsFile,down))
         {
             yError()<<"problem reading measurements file!";
             modelFile.close();
             measurementsFile.close();
             return false;
         }
-
-        if(!rf.fing("downsampling").isNull())
-            downsampling();
 
         measurementsFile.close();
         for(int i=0;  i<measurements.size(); i++)

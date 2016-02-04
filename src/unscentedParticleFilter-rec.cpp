@@ -917,7 +917,7 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &down)
                 point_tmp[2]=b.get(2).asDouble();
                 points_tmp.push_back(point_tmp);
 
-                cout<<"points_tmp"<<points_tmp[i].toString().c_str()<<endl;
+                cout<<"points_tmp"<<point_tmp.toString().c_str()<<endl;
 
                 if (--nPoints<=0)
                     return true;

@@ -203,7 +203,7 @@ protected:
      yarp::sig::Vector result4;
 
      /** For downsampling*/
-     double down;
+     int down;
 
    
     /*******************************************************************/

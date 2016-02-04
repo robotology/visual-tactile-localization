@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
         Localizer *loc5=new UnscentedParticleFilter();
         loc5->configure(rf,i);
         error_indices=loc5->localization();
+        cout<<"fuori da loc"<<endl;
         loc5->saveData(error_indices,i);
         solutions(i,0)=error_indices[0];
         solutions(i,1)=error_indices[1];

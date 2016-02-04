@@ -195,6 +195,7 @@ bool UnscentedParticleFilter::step()
         dt_gauss2=Time::now()-t0;
         cout<<"debug2 "<<"\n";
         result4=particleDensity3();
+        cout<<"result4 "<<result4.toString().c_str()<<endl;
         cout<<"debug 3"<<"\n";
         dt_gauss=Time::now()-t0;
         DT=dt_gauss-dt_gauss2;

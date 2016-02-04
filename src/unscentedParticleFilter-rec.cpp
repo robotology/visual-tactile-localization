@@ -909,8 +909,11 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &down)
         {
             if (isNumber && (b.size()>=3))
             {
+                cout<<"count"<<count<<endl;
+                cout<<"down"<<down<<endl;
                 if(count==down)
                 {
+
                     get_measurements().push_back(Point(b.get(0).asDouble(),
                                                        b.get(1).asDouble(),
                                                        b.get(2).asDouble()));

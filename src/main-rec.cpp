@@ -15,7 +15,7 @@
 #include "headers/scalingSeries.h"
 #include "headers/unscentedParticleFilter.h"
 
-YARP_DECLARE_DEVICES(icubmod)
+YARP_DECLARE_PLUGINS(icubmod)
 using namespace std;
 using namespace yarp::os;
 using namespace yarp::sig;
@@ -65,13 +65,13 @@ int main(int argc, char *argv[])
     {
         if(solutions(i,6)<=min_error)
         {
-            min_err=solutions(i,6);
+            min_error=solutions(i,6);
             i_min=i;
         }
     }
 
-    cout<<"the recognized object is: "<< nameObject(i_min)<<endl;
-    cout<<"whose estimated pose is: "<<solutions.subVector(i_min,5).toString().c_str()<<endl;
+    cout<<"the recognized object is the: "<< i_min<<endl;
+    cout<<"whose estimated pose is: "<<solutions.subrow(i_min,0,6).toString().c_str()<<endl;
     cout<<"with an error index of: "<<solutions(i_min,6)<<endl;
 
    return 0;

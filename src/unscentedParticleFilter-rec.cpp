@@ -919,21 +919,25 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &down)
 
                 cout<<"points_tmp"<<point_tmp.toString().c_str()<<endl;
 
+
                 if (--nPoints<=0)
+                {
+                    for( size_t i=0; i<points_tmp.size();i=i+down)
+                    {
+                        point_tmp=points_tmp[i];
+                        cout<<"point_tmp"<<point_tmp.toString().c_str()<<endl;
+                        get_measurements().push_back(Point(point_tmp[0],
+                                                           point_tmp[1],
+                                                           point_tmp[2]));
+                                            params.numMeas++;
+                    }
                     return true;
+                }
             }
         }
     }
 
-    for( size_t i=0; i<points_tmp.size();i=i+down)
-    {
-        point_tmp=points_tmp[i];
-        cout<<"point_tmp"<<point_tmp.toString().c_str()<<endl;
-        get_measurements().push_back(Point(point_tmp[0],
-                                           point_tmp[1],
-                                           point_tmp[2]));
-                            params.numMeas++;
-    }
+
 
         
     return false;

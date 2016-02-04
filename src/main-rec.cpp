@@ -49,7 +49,9 @@ int main(int argc, char *argv[])
         Localizer *loc5=new UnscentedParticleFilter();
         loc5->configure(rf,i);
         error_indices=loc5->localization();
+        cout<<"debug "<<end;
         loc5->saveData(error_indices,i);
+        out<<"debug 2"<<end;
         solutions(i,0)=error_indices[0];
         solutions(i,1)=error_indices[1];
         solutions(i,2)=error_indices[2];

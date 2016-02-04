@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
         solutions(i,4)=error_indices[4];
         solutions(i,5)=error_indices[5];
         solutions(i,6)=error_indices[6];
+        loc5->saveData(error_indices,i);
         cout<<"solution "<<solutions.subrow(i,0,7).toString().c_str()<<endl;
 
 

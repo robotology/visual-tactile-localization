@@ -191,11 +191,11 @@ bool UnscentedParticleFilter::step()
 
     if(t==params.numMeas)
     {
-        cout<<"debug "<<"\n";
+        cout<<"debug 1"<<"\n";
         dt_gauss2=Time::now()-t0;
-        cout<<"debug "<<"\n";
+        cout<<"debug2 "<<"\n";
         result4=particleDensity3();
-        cout<<"debug "<<"\n";
+        cout<<"debug 3"<<"\n";
         dt_gauss=Time::now()-t0;
         DT=dt_gauss-dt_gauss2;
     }
@@ -205,7 +205,7 @@ bool UnscentedParticleFilter::step()
         selectionStep(Neff,sum_squared);
     }
 
-    cout<<"debug "<<"\n";
+    cout<<"debug5 "<<"\n";
     return false;
     
 }

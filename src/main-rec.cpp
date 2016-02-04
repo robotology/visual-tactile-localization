@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     rf.setDefaultContext("../../");
     int numObjects;
     int i_min;
-    int min_error=10.0;
+    double min_error=10.0;
 
     if(!rf.find("numObjects").isNull())
         numObjects=rf.find("numObjects").asInt();

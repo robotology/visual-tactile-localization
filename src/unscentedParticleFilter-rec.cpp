@@ -463,7 +463,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 /*******************************************************************************/
 Vector UnscentedParticleFilter::particleDensity3()
 {
-    cout<<"debug1"<<endl;
+
     deque<double> probability_per_particle;
     double probability;
     Matrix diff(6,1);
@@ -483,9 +483,7 @@ Vector UnscentedParticleFilter::particleDensity3()
 
 
             Matrix temp(1,1);
-            cout<<"debug2"<<endl;
             temp=diff.transposed()*luinv(x[j].P_corr)*diff;
-            cout<<"debug3"<<endl;
 
             probability=probability+x[i].weights*exp(-0.5*(temp(0,0)));
         }
@@ -493,18 +491,22 @@ Vector UnscentedParticleFilter::particleDensity3()
     }
 
     double prob;
-    prob=0;
+    prob=0.0;
     int i_max_prob;
 
     for(size_t i=0; i<x.size(); i++)
     {
+        cout<<"debug1"<<endl;
         if(prob< probability_per_particle[i])
         {
+            cout<<"debug2"<<endl;
             prob=probability_per_particle[i];
             i_max_prob=i;
 
         }
     }
+
+    cout<<"debug3"<<endl;
 
     return x[i_max_prob].x_corr;
 	

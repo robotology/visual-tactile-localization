@@ -1091,22 +1091,22 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &i)
 
         parameters.R=R;
         // read the polyhedron from a .OFF file
-         ifstream modelFile(modelFileName.c_str());
-        if (!modelFile.is_open())
-        {
-            yError()<<"problem opening model file!";
-            return false;
-        }
+        // ifstream modelFile(modelFileName.c_str());
+        //if (!modelFile.is_open())
+        //{
+            //yError()<<"problem opening model file!";
+            //return false;
+        //}
         
-        modelFile>>get_model();
+        //modelFile>>get_model();
 
-        if (modelFile.bad())
-        {
-            yError()<<"problem reading model file!";
-            modelFile.close();
-            return false;
-        }
-        modelFile.close();
+        //if (modelFile.bad())
+        //{
+            //yError()<<"problem reading model file!";
+            //modelFile.close();
+            //return false;
+        //}
+        //modelFile.close();
 
         // read the measurements file
         ifstream measurementsFile(measurementsFileName.c_str());

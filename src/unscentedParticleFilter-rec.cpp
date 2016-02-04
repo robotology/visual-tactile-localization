@@ -469,7 +469,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 /*******************************************************************************/
 Vector UnscentedParticleFilter::particleDensity3()
 {
-
+    cout<<"debug pd3 "<<"\n";
     deque<double> probability_per_particle;
     double probability;
     Matrix diff(6,1);
@@ -495,6 +495,7 @@ Vector UnscentedParticleFilter::particleDensity3()
         }
             probability_per_particle.push_back(probability);
     }
+    cout<<"debug pd4 "<<"\n";
 
     double prob;
     prob=0.0;
@@ -510,7 +511,7 @@ Vector UnscentedParticleFilter::particleDensity3()
         }
     }
 
-
+    cout<<"debug pd5 "<<"\n";
 
     return x[i_max_prob].x_corr;
 	

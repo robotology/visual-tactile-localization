@@ -189,13 +189,9 @@ bool UnscentedParticleFilter::step()
 
     if(t==params.numMeas)
     {
-        cout<<"debug1"<<endl;
         dt_gauss2=Time::now()-t0;
-        cout<<"debug2"<<endl;
         result4=particleDensity3();
-        cout<<"debug3"<<endl;
         dt_gauss=Time::now()-t0;
-        cout<<"debug4"<<endl;
         DT=dt_gauss-dt_gauss2;
     }
     else
@@ -467,6 +463,7 @@ Vector UnscentedParticleFilter::particleDensity2()
 /*******************************************************************************/
 Vector UnscentedParticleFilter::particleDensity3()
 {
+    cout<<"debug1"<<endl;
     deque<double> probability_per_particle;
     double probability;
     Matrix diff(6,1);
@@ -486,7 +483,9 @@ Vector UnscentedParticleFilter::particleDensity3()
 
 
             Matrix temp(1,1);
+            cout<<"debug2"<<endl;
             temp=diff.transposed()*luinv(x[j].P_corr)*diff;
+            cout<<"debug3"<<endl;
 
             probability=probability+x[i].weights*exp(-0.5*(temp(0,0)));
         }

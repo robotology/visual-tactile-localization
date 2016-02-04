@@ -50,10 +50,8 @@ int main(int argc, char *argv[])
     {
         cout<<"object number: "<< i<< endl;
         Localizer *loc5=new UnscentedParticleFilter();
-        cout<<"debug"<<endl;
         loc5->configure(rf,i);
         error_indices=loc5->localization();
-
         loc5->saveData(error_indices,i);
         solutions(i,0)=error_indices[0];
         solutions(i,1)=error_indices[1];
@@ -62,6 +60,7 @@ int main(int argc, char *argv[])
         solutions(i,4)=error_indices[4];
         solutions(i,5)=error_indices[5];
         solutions(i,6)=error_indices[6];
+        cout<<"solution "<<solution.toString().c_str()<<endl;
 
 
         delete loc5;

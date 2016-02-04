@@ -194,6 +194,7 @@ bool UnscentedParticleFilter::step()
         cout<<"debug 1"<<"\n";
         dt_gauss2=Time::now()-t0;
         cout<<"debug2 "<<"\n";
+        result4.resize(6,0.0);
         result4=particleDensity3();
         cout<<"result4 "<<result4.toString().c_str()<<endl;
         cout<<"debug 3"<<"\n";
@@ -514,6 +515,7 @@ Vector UnscentedParticleFilter::particleDensity3()
 
     cout<<"debug pd5 "<<"\n";
 
+    cout<<"x[i_max_prob].x_corr"<< x[i_max_prob].x_corr.toString().c_str()<<endl;
     return x[i_max_prob].x_corr;
 	
 }

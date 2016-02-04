@@ -927,6 +927,8 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &i)
     ss << i;
     string istring = ss.str();
 
+    result4.resize(6,0.0);
+
     if (!rf.check("modelFile"+istring))
     {
         yError()<<"model file"<<istring<<"not provided!";

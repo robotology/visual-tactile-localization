@@ -504,6 +504,8 @@ Vector UnscentedParticleFilter::particleDensity3()
         }
     }
 
+    cout<<"debug"<<endl;
+
     return x[i_max_prob].x_corr;
 	
 }

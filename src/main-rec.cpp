@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
         {
             min_error=solutions(i,6);
             i_min=i;
+            cout<<"min_error "<<min_error<<endl;
         }
     }
 

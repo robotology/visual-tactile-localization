@@ -874,11 +874,12 @@ void UnscentedParticleFilter::solve()
 }
 
 /*******************************************************************************/
-bool UnscentedParticleFilter::readMeasurements(ifstream &fin)
+bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &down)
 {
     ParametersUPF &params=get_parameters();
     int state=0;
     int nPoints;
+    int count=0;
     char line[255];
     params.numMeas=0;
         
@@ -908,10 +909,15 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin)
         {
             if (isNumber && (b.size()>=3))
             {
-                get_measurements().push_back(Point(b.get(0).asDouble(),
-                                                   b.get(1).asDouble(),
-                                                   b.get(2).asDouble()));
-                                    params.numMeas++;
+                if(count==down)
+                {
+                    get_measurements().push_back(Point(b.get(0).asDouble(),
+                                                       b.get(1).asDouble(),
+                                                       b.get(2).asDouble()));
+                                        params.numMeas++;
+                                        count=0;
+                }
+                count++;
 
                 if (--nPoints<=0)
                     return true;
@@ -921,6 +927,7 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin)
         
     return false;
 }
+
 
 /*******************************************************************************/    
 
@@ -1140,6 +1147,10 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &i)
             measurementsFile.close();
             return false;
         }
+
+        if(!rf.fing("downsampling").isNull())
+            downsampling();
+
         measurementsFile.close();
         for(int i=0;  i<measurements.size(); i++)
         cout<<"measurements "<< measurements[i]<<endl;

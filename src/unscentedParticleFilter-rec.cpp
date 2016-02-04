@@ -1024,9 +1024,11 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &i)
     if (rf.find("alpha").isNull())
             parameters.alpha=rf.check("alpha",Value(1.0)).asDouble();
 
-    if (rf.find("down sampling").isNull())
-            down=1;
     down=rf.find("down sampling").asInt();
+    if (rf.find("down sampling").isNull())
+        down=1;
+
+
 
     parameters.kappa=rf.find("kappa").asDouble();
     if (rf.find("kappa").isNull())

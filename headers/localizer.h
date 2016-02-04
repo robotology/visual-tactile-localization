@@ -83,7 +83,7 @@ class Localizer
      * @param rf a previously inizialized @see Resource Finder
      * @return true/false upon succes/failure
      */
-    virtual bool configure(yarp::os::ResourceFinder &rf)=0;
+    virtual bool configure(yarp::os::ResourceFinder &rf, const int &i)=0;
     
     
     /*******************************************************************/

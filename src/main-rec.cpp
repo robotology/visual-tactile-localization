@@ -32,9 +32,9 @@ int main(int argc, char *argv[])
     rf.setDefaultContext("../../");
     int numObjects;
     int i_min;
-    int min_error=10;
+    int min_error=10.0;
 
-    if(!rf.find("numObjects").isNUll())
+    if(!rf.find("numObjects").isNull())
         numObjects=rf.find("numObjects").asInt();
     else
         numObjects=1;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 
     for(size_t i=0; i<numObjects; i++)
     {
-        if(solutions(i,6)<=min_err)
+        if(solutions(i,6)<=min_error)
         {
             min_err=solutions(i,6);
             i_min=i;

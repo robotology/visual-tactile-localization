@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-set(PROJECTNAME localizer)
+set(PROJECTNAME recognizer)
 project(${PROJECTNAME})
 
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)

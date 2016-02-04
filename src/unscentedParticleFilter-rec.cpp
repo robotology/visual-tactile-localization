@@ -90,6 +90,8 @@ bool UnscentedParticleFilter::step()
     t++;
     cout<<"t "<<t<<"\n";
     ParametersUPF &params=get_parameters();
+
+    cout<<"params num "<<params.numMeas<<endl;
     
     if( t>params.numMeas)
     {	

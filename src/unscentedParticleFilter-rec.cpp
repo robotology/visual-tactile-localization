@@ -515,6 +515,8 @@ Vector UnscentedParticleFilter::particleDensity3()
 
     cout<<"debug pd5 "<<"\n";
 
+    cout<<"i_max "<< i_max<<endl;
+
     cout<<"x[i_max_prob].x_corr"<< x[i_max_prob].x_corr.toString().c_str()<<endl;
     return x[i_max_prob].x_corr;
 	

@@ -926,9 +926,9 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &down)
         }
     }
 
-    for( size_t i=0; i<points.size();i=i+down)
+    for( size_t i=0; i<points_tmp.size();i=i+down)
     {
-        point_tmp=points[i];
+        point_tmp=points_tmp[i];
         get_measurements().push_back(Point(point_tmp[0],
                                            point_tmp[1],
                                            point_tmp[2]));

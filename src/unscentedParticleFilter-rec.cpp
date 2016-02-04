@@ -191,6 +191,7 @@ bool UnscentedParticleFilter::step()
     {
         dt_gauss2=Time::now()-t0;
         result4=particleDensity3();
+        cout<<"debug"<<endl;
         dt_gauss=Time::now()-t0;
         DT=dt_gauss-dt_gauss2;
     }
@@ -504,7 +505,7 @@ Vector UnscentedParticleFilter::particleDensity3()
         }
     }
 
-    cout<<"debug"<<endl;
+
 
     return x[i_max_prob].x_corr;
 	

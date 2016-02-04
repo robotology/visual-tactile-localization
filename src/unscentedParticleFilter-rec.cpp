@@ -93,6 +93,7 @@ bool UnscentedParticleFilter::step()
     
     if( t>params.numMeas)
     {	
+        cout<<"t greater than numMeas"<<endl;
         return true;
     }
 

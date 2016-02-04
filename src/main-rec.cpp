@@ -39,6 +39,8 @@ int main(int argc, char *argv[])
     else
         numObjects=1;
 
+    cout<<"num of obj "<<numObjects<<endl;
+
     yarp::sig::Matrix solutions;
     yarp::sig::Vector error_indices;
 
@@ -46,10 +48,12 @@ int main(int argc, char *argv[])
     solutions.resize(numObjects,7);
     for(size_t i=0; i<numObjects; i++)
     {
+        cout<<"object number: "<< i<< endl;
         Localizer *loc5=new UnscentedParticleFilter();
+        cout<<"debug"<<endl;
         loc5->configure(rf,i);
         error_indices=loc5->localization();
-        cout<<"fuori da loc"<<endl;
+
         loc5->saveData(error_indices,i);
         solutions(i,0)=error_indices[0];
         solutions(i,1)=error_indices[1];
@@ -58,7 +62,7 @@ int main(int argc, char *argv[])
         solutions(i,4)=error_indices[4];
         solutions(i,5)=error_indices[5];
         solutions(i,6)=error_indices[6];
-        cout<<"executed mupf for object numer "<<i<<endl;
+
 
         delete loc5;
     }

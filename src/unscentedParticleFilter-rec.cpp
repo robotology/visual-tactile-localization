@@ -96,8 +96,6 @@ bool UnscentedParticleFilter::step()
         return true;
     }
 
-    cout<<"debug "<<"\n";
-
     double sum=0.0;
     double sum_squared=0.0;
     double Neff=0.0;
@@ -191,13 +189,10 @@ bool UnscentedParticleFilter::step()
 
     if(t==params.numMeas)
     {
-        cout<<"debug 1"<<"\n";
         dt_gauss2=Time::now()-t0;
-        cout<<"debug2 "<<"\n";
         result4.resize(6,0.0);
         result4=particleDensity3();
         cout<<"result4 "<<result4.toString().c_str()<<endl;
-        cout<<"debug 3"<<"\n";
         dt_gauss=Time::now()-t0;
         DT=dt_gauss-dt_gauss2;
     }
@@ -207,7 +202,6 @@ bool UnscentedParticleFilter::step()
         selectionStep(Neff,sum_squared);
     }
 
-    cout<<"debug5 "<<"\n";
     return false;
     
 }
@@ -471,7 +465,6 @@ Vector UnscentedParticleFilter::particleDensity2()
 /*******************************************************************************/
 Vector UnscentedParticleFilter::particleDensity3()
 {
-    cout<<"debug pd3 "<<"\n";
     deque<double> probability_per_particle;
     double probability;
     Matrix diff(6,1);
@@ -497,8 +490,6 @@ Vector UnscentedParticleFilter::particleDensity3()
         }
             probability_per_particle.push_back(probability);
     }
-    cout<<"debug pd4 "<<"\n";
-
     double prob;
     prob=0.0;
     int i_max_prob;
@@ -513,11 +504,8 @@ Vector UnscentedParticleFilter::particleDensity3()
         }
     }
 
-    cout<<"debug pd5 "<<"\n";
-
     cout<<"i_max "<< i_max_prob<<endl;
 
-    cout<<"x[i_max_prob].x_corr"<< x[i_max_prob].x_corr.toString().c_str()<<endl;
     return x[i_max_prob].x_corr;
 	
 }
@@ -1170,6 +1158,7 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &i)
         }
 
         measurementsFile.close();
+        //cout<<"num meas "<<measurements.size()<<endl;
         for(int i=0;  i<measurements.size(); i++)
         cout<<"measurements "<< measurements[i]<<endl;
         

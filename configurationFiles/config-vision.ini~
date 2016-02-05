@@ -1,0 +1,15 @@
+downsampling                50
+numObjects          1
+modelFile0          ../../models-rec/pipeHoe1.off
+measurementsFile    ../../meas-rec/hoe3.off
+outputFile          ../../outputs/output.off
+outputFile2          ../../outputs/output_data.off
+N                   1200
+n                   6
+Q                   (0.000008,0.000008, 0.000008, 0.0008, 0.0008, 0.0008)
+R                   (0.0004, 0.0004, 0.0004)
+P0                  (0.04, 0.04, 0.04, 9.86, 2.46, 9,86)
+alpha               1
+kappa               2
+beta                20
+window_width        100

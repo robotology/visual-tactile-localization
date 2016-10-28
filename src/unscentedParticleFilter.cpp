@@ -597,13 +597,13 @@ void UnscentedParticleFilter::resampling()
         //new_x[j]=x[i];
         Vector tmp(6,0.0);
 
-        tmp[0] = Rand::scalar(x[i].x_corr[0] - x.P_corr(0,0), +x[i].x_corr[0] + x.P_corr(0,0);
-        tmp[1] = Rand::scalar(x[i].x_corr[1] - x.P_corr(1,1), +x[i].x_corr[1] + x.P_corr(1,1);
-        tmp[2] = Rand::scalar(x[i].x_corr[2] - x.P_corr(2,2), +x[i].x_corr[2] + x.P_corr(2,2);
-        tmp[3] = Rand::scalar(x[i].x_corr[3] - x.P_corr(3,3), +x[i].x_corr[3] + x.P_corr(3,3);
-        tmp[4] = Rand::scalar(x[i].x_corr[4] - x.P_corr(4,4), +x[i].x_corr[4] + x.P_corr(4,4);
-        tmp[5] = Rand::scalar(x[i].x_corr[5] - x.P_corr(5,5), +x[i].x_corr[5] + x.P_corr(5,5);
-        new_x[j]=tmp;
+        tmp[0] = Rand::scalar(x[i].x_corr[0] - x[i].P_corr(0,0), +x[i].x_corr[0] + x[i].P_corr(0,0));
+        tmp[1] = Rand::scalar(x[i].x_corr[1] - x[i].P_corr(1,1), +x[i].x_corr[1] + x[i].P_corr(1,1));
+        tmp[2] = Rand::scalar(x[i].x_corr[2] - x[i].P_corr(2,2), +x[i].x_corr[2] + x[i].P_corr(2,2));
+        tmp[3] = Rand::scalar(x[i].x_corr[3] - x[i].P_corr(3,3), +x[i].x_corr[3] + x[i].P_corr(3,3));
+        tmp[4] = Rand::scalar(x[i].x_corr[4] - x[i].P_corr(4,4), +x[i].x_corr[4] + x[i].P_corr(4,4));
+        tmp[5] = Rand::scalar(x[i].x_corr[5] - x[i].P_corr(5,5), +x[i].x_corr[5] + x[i].P_corr(5,5));
+        new_x[j].x_corr=tmp;
         new_x[j].weights=1.0/params.N;
     }
 

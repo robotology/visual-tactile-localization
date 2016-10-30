@@ -543,6 +543,7 @@ void UnscentedParticleFilter::resampling()
             i++;
         }
 
+        new_x[j]=x[i];
         Vector tmp(6,0.0);
 
         tmp[0] = Rand::scalar(x[i].x_corr[0] - x[i].P_corr(0,0), +x[i].x_corr[0] + x[i].P_corr(0,0));

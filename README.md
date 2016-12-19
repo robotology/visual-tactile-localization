@@ -1,5 +1,5 @@
 # tactile-localization
-The code distributed here provides the implementation of two different algorithms for the solution of the object tactile localization: the [Scaling Series algorithm](http://cs.stanford.edu/group/manips/publications/pdfs/Petrovskaya_2011_TRO.pdf) and a novel algorithm, the **Memory Unscented Particle Filter (MUPF)**. The MUPF can be used also for the tactile object recognition, formulated as a localization problem with multiple models. The recognition solution is given by that object model who provides the minimum localization error.
+The code distributed here provides the implementation of two different algorithms for the solution of object tactile localization: the [Scaling Series algorithm](http://cs.stanford.edu/group/manips/publications/pdfs/Petrovskaya_2011_TRO.pdf) and a novel algorithm, the **Memory Unscented Particle Filter (MUPF)**. The MUPF has been tested also on the tactile object recognition, formulated as a localization problem with multiple models. The recognition solution is chosen as that object model who provides the minimum localization error.
 
 ## Prerequisities
 
@@ -25,7 +25,8 @@ localizer num_of_trials "mupf" --from configuration file
 ```
 
 -`num_of_trial` is the number of times you want to run the algorithm and to have statistics about
--`"mupf"` string enables the use of MUPF algorithm. Otherwise, the scaling series is used.
+
+-`"mupf"` string enables the use of MUPF algorithm. Otherwise, Scaling Series is used.
 
 ## Publications
 

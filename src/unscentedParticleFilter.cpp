@@ -1204,7 +1204,7 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, con
     string str_i = ss2.str();
     string outputFileName=this->rf->check("outputFileMUPF",Value("../../outputs/outputMUPF"+str_i+".off")).
 	asString().c_str();
-    string  outputFileName2=this->rf->check("outputFileDataMUPF",Value("../../outputs/output_dataMUPF"+str_i+".off")).
+    string  outputFileName2=this->rf->check("outputFileDataMUPF",Value("../../outputs/output_dataMUPF.off")).
 	asString().c_str();
     
     
@@ -1218,14 +1218,16 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, con
     
     fout.close();
     
-    ofstream fout2(outputFileName2.c_str());
+    ofstream fout2(outputFileName2.c_str(), std::ofstream::out | std::ofstream::app);
     
     if(fout2.is_open())
     {
+	fout2<<"trial: "<<i<<endl;
 	fout2<<"most significant particle"<<endl;
-	fout2 << "solution: "<<ms_particle4.pos.subVector(0,5).toString(3,3).c_str()<<endl;
-	fout2 << "found in "<<result[7]<<" [s]"<<endl;
-	fout2<< "error_index "<<ms_particle4.error_index<<endl;
+	fout2<<"solution: "<<ms_particle4.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+	fout2<<"found in "<<result[7]<<" [s]"<<endl;
+	fout2<<"error_index "<<ms_particle4.error_index<<endl;
+	fout2<<endl;
     }
     else
 	cout<< "problem opening output_data file!";

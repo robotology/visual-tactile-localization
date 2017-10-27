@@ -203,7 +203,10 @@ protected:
      yarp::sig::Vector result4;
 
      /** For downsampling*/
-     int down;
+     int downsampling;
+
+     double max_prob;
+     double max_likelihood;
 
    
     /*******************************************************************/
@@ -358,6 +361,12 @@ protected:
      bool readMeasurements(std::ifstream &fin, const int &down);
     
      /*******************************************************************/
+
+     /*******************************************************************/
+
+     double finaleLikelihood(const int &best_part);
+     /*******************************************************************/
+     
      /** Find the particle with the highest density
      */
      yarp::sig::Vector particleDensity();
@@ -425,7 +434,7 @@ public:
      * @param rf a previously inizialized @see Resource Finder
      * @return true/false on succes/failure
      */
-     bool configure(yarp::os::ResourceFinder &rf, const int &i);
+     bool configure(yarp::os::ResourceFinder &rf);
      /*******************************************************************/
     
      /** Runs init() and solve(). Configure must be runned before and if we want to

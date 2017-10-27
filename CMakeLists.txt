@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-set(PROJECTNAME recognizer)
+set(PROJECTNAME localizer)
 project(${PROJECTNAME})
 
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
@@ -24,7 +24,7 @@ include(ICUBcontribOptions)
 icubcontrib_set_default_prefix()
 
 set(headers headers/geometryCGAL.h  headers/unscentedParticleFilter.h headers/scalingSeries.h headers/localizer.h )
-set(sources src/unscentedParticleFilter-rec.cpp src/scalingSeries.cpp src/main-rec.cpp src/localizer.cpp) 
+set(sources src/unscentedParticleFilter.cpp src/scalingSeries.cpp src/main.cpp src/localizer.cpp) 
 source_group("Source Files" FILES ${sources})
 source_group("Header Files" FILES ${headers})
 

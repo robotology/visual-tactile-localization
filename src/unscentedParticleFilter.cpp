@@ -974,14 +974,11 @@ bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &downsam
 
 /*******************************************************************************/    
 
-bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &n_obj, const int &k, const int &n_m, const int &l, const int &n_N, const int &m)
+bool UnscentedParticleFilter::configure(ResourceFinder &rf)
 {
-    stringstream ss2;
-    ss2 << n_obj;
-    str_obj = ss2.str();
     this->rf=&rf;
 
-    if (!rf.check("modelFile"+str_obj))
+    if (!rf.check("modelFile"))
     {
         yError()<<"model file not provided!";
         return false;
@@ -994,7 +991,7 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &n_obj, co
     }
 
     downsampling=rf.check("downsampling", Value(1)).asInt();
-    string modelFileName=rf.find("modelFile"+str_obj).asString().c_str();
+    string modelFileName=rf.find("modelFile").asString().c_str();
 
     string measurementsFileName=rf.find("measurementsFile"). asString().c_str();
 
@@ -1002,13 +999,9 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &n_obj, co
         measurementsFileName="../measurements.off";
 
     ParametersUPF &parameters=get_parameters();
-    //parameters.N=rf.find("N").asInt();
-    //if (rf.find("N").isNull())
-    //parameters.N=rf.check("N",Value(600)).asInt();
-    Vector aux_vectN(n_m,0.0);
-    readDiagonalMatrix("N", aux_vectN, n_N);
-    cout<<"AUX VECT N"<<aux_vectN.toString()<<endl<<endl;
-    parameters.N=aux_vectN(l);
+    parameters.N=rf.find("N").asInt();
+    if (rf.find("N").isNull())
+    parameters.N=rf.check("N",Value(600)).asInt();
 
     parameters.center0.resize(3,0.0);
     bool check=readCenter("center0",parameters.center0);
@@ -1062,10 +1055,10 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &n_obj, co
 
     yarp::sig::Vector diagQ;
     diagQ.resize(parameters.n,1);
-    stringstream ssQ;
-    ssQ << m;
-    string str_Q = ssQ.str();
-    check=readDiagonalMatrix("Qvect"+str_Q,diagQ,parameters.n);
+    // stringstream ssQ;
+    // ssQ << m;
+    // string str_Q = ssQ.str();
+    check=readDiagonalMatrix("Q",diagQ,parameters.n);
 
     cout<<"DEBUG: Q"<<diagQ.toString()<<endl;
 
@@ -1190,88 +1183,82 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf, const int &n_obj, co
     for(int i=0;  i<measurements.size(); i++)
         cout<< measurements[i]<<endl;
 
-      //parameters.window_width=rf.find("window_width").asInt();
-    Vector aux_vect(n_m,0.0);
-    readDiagonalMatrix("window_width", aux_vect, n_m);
-    cout<<"AUX VECT "<<aux_vect.toString()<<endl<<endl;
-    parameters.window_width=aux_vect(k);
-    cout<<"M VALUE "<<parameters.window_width<<endl;
+    parameters.window_width=rf.find("window_width").asInt();
+
+    // Vector aux_vect(n_m,0.0);
+    // readDiagonalMatrix("window_width", aux_vect, n_m);
+    // cout<<"AUX VECT "<<aux_vect.toString()<<endl<<endl;
+    // parameters.window_width=aux_vect(k);
+    // cout<<"M VALUE "<<parameters.window_width<<endl;
+
     //if (rf.find("window_width").isNull())
     //parameters.window_width=rf.check("window_width",Value(parameters.numMeas)).asInt();
     //cout<<"WINDOW_WIDTH "<<parameters.window_width<<endl;
 }
 
 /*******************************************************************************/
-void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, const int &i, const int &k, const int &l, const int &m)
+void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, const int &i)
 {
-     stringstream ss2,ss3,ss4, ssQ;
-     ss2 << i;
-     string str_i = ss2.str();
-     ss3 << k;
-     string str_i2 = ss3.str();
-     ss4 << l;
-     string str_i3 = ss4.str();
-     ssQ<<m;
-     string str_Q=ssQ.str();
-     string outputFileName=this->rf->check("outputFileMUPF",Value("../../outputs/outputMUPF_trial"+str_i+"_object"+str_obj+"_m_value_"+str_i2+"_N_"+str_i3+"Q"+str_Q+".off")).
-                       asString().c_str();               
+    stringstream ss2;
+    ss2 << i;
+    string str_i = ss2.str();
+    string outputFileName=this->rf->check("outputFileMUPF",Value("../../outputs/outputMUPF"+str_i+".off")).
+	asString().c_str();
+    string  outputFileName2=this->rf->check("outputFileDataMUPF",Value("../../outputs/output_dataMUPF"+str_i+".off")).
+	asString().c_str();
+
 
     ofstream fout(outputFileName.c_str());
     if(fout.is_open())
     {
-        fout<<get_model(); 
+	fout<<get_model();
     }
     else
-        cout<< "problem opening output_data file!";
-		
+	cout<< "problem opening output_data file!";
+
     fout.close();
+
+    ofstream fout2(outputFileName2.c_str());
+
+    if(fout2.is_open())
+    {
+	fout2<<"most significant particle"<<endl;
+	fout2 << "solution: "<<ms_particle4.pos.subVector(0,5).toString(3,3).c_str()<<endl;
+	fout2 << "found in "<<result[7]<<" [s]"<<endl;
+	fout2<< "error_index "<<ms_particle4.error_index<<endl;
+    }
+    else
+	cout<< "problem opening output_data file!";
+
+    fout2.close();
 }
 
 /*******************************************************************************/
-void UnscentedParticleFilter::saveStatisticsData( const yarp::sig::Matrix &solutions, const int &obj, const int &k,  const int &l, const int &m)
-{    
-    stringstream ss2;
-    ss2 << obj;
-    string str_i = ss2.str();
-    stringstream ss3,ss4, ssQ;
-    ss3 <<k;
-    string str_i2 = ss3.str();
-    ss4 << l;
-    string str_i3 = ss4.str();
-    ssQ<<m;
-    string str_Q=ssQ.str();
-    string outputFileName2=this->rf->check("outputFileMUPF",Value("../../outputs/outputStatisticsMUPF_object"+str_i+"_m_value_"+str_i2+"_N_"+str_i3+"Q"+str_Q+".off")).
-                       asString().c_str();
-    double average1, average_time,average_lik, stdev;
-    average1=0; average_time=0.0; average_lik=0.0, stdev=0.0;
+void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &solutions)
+{
+    string outputFileName2=this->rf->check("outputFileMUPF",Value("../../outputs/outputStatisticsMUPF.off")).
+	asString().c_str();
+    double average1;
+    average1=0;
+
     ofstream fout2(outputFileName2.c_str());
+
     if(fout2.is_open())
     {
-        for(int j=0; j<solutions.rows(); j++)
-        {
-            fout2<<"trial "<<j<<": "<<solutions(j,0)<<endl;
-            average1=average1+solutions(j,0);
-            average_time=average_time+solutions(j,1);
-            average_lik=average_lik+solutions(j,3);
-        }
+	for(int j=0; j<solutions.rows(); j++)
+	{
+	    fout2<<"trial "<<j<<": "<<solutions(j,0)<<endl;
+	    average1=average1+solutions(j,0);
 
-        for(int j=0; j<solutions.rows(); j++)
-        {
-            double tmp=(solutions(j,0)-average1/solutions.rows());
-            stdev+=tmp*tmp;
-        }
-        stdev/=(solutions.rows()-1);
-        stdev=sqrt(stdev);
+	}
 
-        fout2<<endl;
+	fout2<<"average "<< average1/solutions.rows()<<endl;
+	fout2<<"time "<<dt_gauss<<endl;
+	fout2<<"time DT "<<DT<<endl;
 
-        fout2<<"Average (over trials): "<< average1/solutions.rows()<<endl<<endl;
-        fout2<<"Standard deviation (over trials) "<<stdev<<endl<<endl;
-        fout2<<"Average Execution Time (over trials): "<<average_time/solutions.rows()<<endl<<endl;
-        //fout2<<"Average Maximum Likelihood (over trials): "<<average_lik/solutions.rows()<<endl;
     }
 }
-       
+
 /*******************************************************************************/      
 yarp::sig::Vector UnscentedParticleFilter::localization()
 {

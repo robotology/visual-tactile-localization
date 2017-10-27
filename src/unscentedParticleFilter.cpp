@@ -1240,8 +1240,9 @@ void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &soluti
 {
     string outputFileName2=this->rf->check("outputFileMUPF",Value("../../outputs/outputStatisticsMUPF.off")).
 	asString().c_str();
-    double average1;
-    average1=0;
+    double avg_err_index, avg_time;
+    avg_err_index = 0;
+    avg_time = 0;
     
     ofstream fout2(outputFileName2.c_str());
     
@@ -1249,14 +1250,14 @@ void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &soluti
     {
 	for(int j=0; j<solutions.rows(); j++)
 	{
-	    fout2<<"trial "<<j<<": "<<solutions(j,0)<<endl;
-	    average1=average1+solutions(j,0);
-	    
+	    fout2<<"trial "<<j<<": error index = "<<solutions(j,0)
+		 <<", time including MAP = " << solutions(j,1) << endl;
+	    avg_err_index=avg_err_index+solutions(j,0);
+	    avg_time=avg_time+solutions(j,1);
 	}
 	
-	fout2<<"average "<< average1/solutions.rows()<<endl;
-	fout2<<"time "<<dt_gauss<<endl;
-	fout2<<"time DT "<<DT<<endl;
+	fout2<<"average error index "<< avg_err_index/solutions.rows()<<endl;
+	fout2<<"average time "<<avg_time/solutions.rows()<<endl;
 	
     }
 }

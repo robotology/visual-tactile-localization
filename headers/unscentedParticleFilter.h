@@ -176,7 +176,11 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
     /** dimension of measurements
     */
     int p;
-	
+
+    /** total number of steps
+    */
+    int total_steps;
+    	
 protected:
  
     /** starting time*/

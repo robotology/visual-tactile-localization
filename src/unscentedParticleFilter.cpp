@@ -86,9 +86,9 @@ bool UnscentedParticleFilter::step()
     cout<<"t "<<t<<"\n";
     
     ParametersUPF &params=get_parameters();
-    cout<<"num tot meas "<<params.numMeas<<endl;
+    cout<<"num tot steps "<< total_steps <<endl;
     
-    if( t>params.numMeas)
+    if(t > total_steps)
     {	
         return true;
     }
@@ -1038,7 +1038,7 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     parameters.p=rf.find("p").asInt();
     if (rf.find("p").isNull())
         parameters.p=rf.check("p",Value(3)).asInt();
-    
+
     parameters.beta=rf.find("beta").asDouble();
     if (rf.find("beta").isNull())
         parameters.beta=rf.check("beta",Value(35.0)).asDouble();
@@ -1188,6 +1188,10 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
         cout<< measurements[i]<<endl;
     
     parameters.window_width=rf.find("window_width").asInt();
+
+    // eval the total number of steps
+    int points_per_step = parameters.p/3;
+    total_steps = floor(parameters.numMeas / points_per_step);
     
     // Vector aux_vect(n_m,0.0);
     // readDiagonalMatrix("window_width", aux_vect, n_m);

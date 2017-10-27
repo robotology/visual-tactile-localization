@@ -728,24 +728,28 @@ yarp::sig::Vector UnscentedParticleFilter::compute_y(const int &t, const int &k,
     Hm(2,3)=x[k].XsigmaPoints_pred(2,j);
     
     Hm=SE3inv(Hm);
-    
-    Point &m=measurements[t-1];
-    
-    double x=Hm(0,0)*m[0]+Hm(0,1)*m[1]+Hm(0,2)*m[2]+Hm(0,3);
-    double y=Hm(1,0)*m[0]+Hm(1,1)*m[1]+Hm(1,2)*m[2]+Hm(1,3);
-    double z=Hm(2,0)*m[0]+Hm(2,1)*m[1]+Hm(2,2)*m[2]+Hm(2,3);
-    
-    
-    y_pred=tree.closest_point(Point(x,y,z));
-    
-    //cout<<"y_pred "<<y_pred[0]<<" "<<y_pred[1]<<" "<<y_pred[2]<<endl;
-    
-    
-    Hm=SE3inv(Hm);
-    
-    out[0]=Hm(0,0)*y_pred[0]+Hm(0,1)*y_pred[1]+Hm(0,2)*y_pred[2]+Hm(0,3);
-    out[1]=Hm(1,0)*y_pred[0]+Hm(1,1)*y_pred[1]+Hm(1,2)*y_pred[2]+Hm(1,3);
-    out[2]=Hm(2,0)*y_pred[0]+Hm(2,1)*y_pred[1]+Hm(2,2)*y_pred[2]+Hm(2,3);
+
+    // process num_points_per_step points taken from measurements
+    int num_points_per_step = p/3;
+
+    for (int j=0; j<num_points_per_step; j++)
+    {
+	//TODO: check that the indexed measurements are available
+	Point &m=measurements[(t-1) * num_points_per_step + j];
+
+	double x=Hm(0,0)*m[0]+Hm(0,1)*m[1]+Hm(0,2)*m[2]+Hm(0,3);
+	double y=Hm(1,0)*m[0]+Hm(1,1)*m[1]+Hm(1,2)*m[2]+Hm(1,3);
+	double z=Hm(2,0)*m[0]+Hm(2,1)*m[1]+Hm(2,2)*m[2]+Hm(2,3);
+
+	y_pred=tree.closest_point(Point(x,y,z));
+	//cout<<"y_pred "<<y_pred[0]<<" "<<y_pred[1]<<" "<<y_pred[2]<<endl;
+
+	Hm=SE3inv(Hm);
+
+	out[j*3]=Hm(0,0)*y_pred[0]+Hm(0,1)*y_pred[1]+Hm(0,2)*y_pred[2]+Hm(0,3);
+	out[j*3+1]=Hm(1,0)*y_pred[0]+Hm(1,1)*y_pred[1]+Hm(1,2)*y_pred[2]+Hm(1,3);
+	out[j*3+2]=Hm(2,0)*y_pred[0]+Hm(2,1)*y_pred[1]+Hm(2,2)*y_pred[2]+Hm(2,3);
+    }
     
     return out;
 }

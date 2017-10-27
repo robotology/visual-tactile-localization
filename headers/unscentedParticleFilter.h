@@ -250,10 +250,10 @@ protected:
     yarp::sig::Matrix rpr(const yarp::sig::Vector &particle);
    
     /*******************************************************************/
-    /**Return predicted measurements, as closest point of object to measurements. 
+    /**Return predicted measurements, as vector of closest point(s) of object to measurements. 
     * Object is in pose represented by sigma point j of Unscented Transform of particle k
     * @param t index of current measurement
-    * @param  k current particle
+    * @param k current particle
     * @param j current sigma point
     * @return predicted measurement, as yarp Vector
     */ 

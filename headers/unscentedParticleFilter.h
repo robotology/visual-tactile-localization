@@ -185,28 +185,28 @@ protected:
     /** executional time*/
     double dt;
     
-     /** vector for solution with high weight*/
-     MsParticleUPF ms_particle1;
+    /** vector for solution with high weight*/
+    MsParticleUPF ms_particle1;
     
     /** vector for solution with high density*/
-     MsParticleUPF ms_particle2;
+    MsParticleUPF ms_particle2;
      
-      /** vector for solution with high density second method*/
-     MsParticleUPF ms_particle3;
+    /** vector for solution with high density second method*/
+    MsParticleUPF ms_particle3;
      
-      /** vector for solution with high density with sum of gaussians*/
-     MsParticleUPF ms_particle4;
+    /** vector for solution with high density with sum of gaussians*/
+    MsParticleUPF ms_particle4;
      
      
-     yarp::sig::Vector result;
+    yarp::sig::Vector result;
      
-     yarp::sig::Vector result4;
+    yarp::sig::Vector result4;
 
-     /** For downsampling*/
-     int downsampling;
+    /** For downsampling*/
+    int downsampling;
 
-     double max_prob;
-     double max_likelihood;
+    double max_prob;
+    double max_likelihood;
 
    
     /*******************************************************************/
@@ -259,7 +259,7 @@ protected:
     */ 
     yarp::sig::Vector compute_y(const int &t,const  int &k,const  int &j);
     
-     /*******************************************************************/ 
+    /*******************************************************************/ 
   
     /** Return likelihood (probability to have a measurement y, given object pose x)
     * @param t index of current measurements
@@ -274,7 +274,7 @@ protected:
     */
     void resampling();
     
-     /*******************************************************************/ 
+    /*******************************************************************/ 
     /** Compute Sigma Points for i-th particle
     */
     void computeSigmaPoints(const int &i);
@@ -307,32 +307,32 @@ protected:
     void computePpred(const int &i);
     
     /*******************************************************************/
-     /** Compute correction matrix for each particle in prediction step
+    /** Compute correction matrix for each particle in prediction step
      * @param i current particle
      */
-     void computeCorrectionMatrix(const int &i);
+    void computeCorrectionMatrix(const int &i);
     
-     /*******************************************************************/
-     /** Compute correction average, for each particle,using current measurement
+    /*******************************************************************/
+    /** Compute correction average, for each particle,using current measurement
      * @param i current particle
      */
-     void correctionStep(const int &i);
+    void correctionStep(const int &i);
    
     /*******************************************************************/
-     /** Compute weights for particle i, usign all measurements collected until 
+    /** Compute weights for particle i, usign all measurements collected until 
      * current iterations and compute their sum
      * @param i current particle
      * @param sum sum of weights
      */
-     void computeWeights(const int &i, double &sum);
+    void computeWeights(const int &i, double &sum);
     
     /*******************************************************************/
-     /** Normalize weights for particle i using sum and compute the sum of square weights
+    /** Normalize weights for particle i using sum and compute the sum of square weights
      * @param i current particle
      * @param sum sum of weights
      * @params sum_squared sum of squared weights
      */
-     void normalizeWeights(const int &i, const double &sum, double &sum_squared);
+    void normalizeWeights(const int &i, const double &sum, double &sum_squared);
    
     /*******************************************************************/
     /** Find particle with highest weights 
@@ -340,111 +340,111 @@ protected:
     void findMostSignificantParticle();
     
     /*******************************************************************/
-     /** If we are at third and successive measurement and if Neff=1/sum_squared
+    /** If we are at third and successive measurement and if Neff=1/sum_squared
      * is minor than N(number of particle)/20 resampling() is called
      * otherwise weights are set to 1/N
      * @param Neff 1/sum_squared
      * @param sum_squared sum of squared weights
      */
-     void selectionStep(double &Neff,const double &sum_squared);
+    void selectionStep(double &Neff,const double &sum_squared);
     
-     /*******************************************************************/
-     /** Initialize other vectors and parameters of UPF
+    /*******************************************************************/
+    /** Initialize other vectors and parameters of UPF
      */
-      void initializationUPF();
+    void initializationUPF();
     
-     /*******************************************************************/
-     /** Read measurements froma  text file
+    /*******************************************************************/
+    /** Read measurements froma  text file
      * @param fin is the ifstream associated to measurements file
      * @return true/false on succes/failure
      */
-     bool readMeasurements(std::ifstream &fin, const int &down);
-    
-     /*******************************************************************/
+    bool readMeasurements(std::ifstream &fin, const int &down);
+     
+    /*******************************************************************/
 
-     /*******************************************************************/
+    /*******************************************************************/
 
-     double finaleLikelihood(const int &best_part);
-     /*******************************************************************/
+    double finaleLikelihood(const int &best_part);
+    /*******************************************************************/
      
-     /** Find the particle with the highest density
+    /** Find the particle with the highest density
      */
-     yarp::sig::Vector particleDensity();
-     /*******************************************************************/
+    yarp::sig::Vector particleDensity();
+    /*******************************************************************/
      
      
-     /** Find the particle with the highest density
+    /** Find the particle with the highest density
    
      */
-     yarp::sig::Vector particleDensity2();
-     /*******************************************************************/
+    yarp::sig::Vector particleDensity2();
+    /*******************************************************************/
      
-     /** Find the particle with the highest rpobability
+    /** Find the particle with the highest rpobability
    
      */
-     yarp::sig::Vector particleDensity3();
-     /*******************************************************************/
+    yarp::sig::Vector particleDensity3();
+    /*******************************************************************/
      
-      /**Time with the new method
+    /**Time with the new method
    
      */
-     double dt_gauss;
-       /*******************************************************************/
-          /**Time with the new method
+    double dt_gauss;
+    /*******************************************************************/
+    /**Time with the new method
    
      */
-     double dt_gauss2;
-      /*******************************************************************/
-      double DT;
+    double dt_gauss2;
+    /*******************************************************************/
+    double DT;
      
     
 public:
     
     
-     /** constructor, derived from optimizer
+    /** constructor, derived from optimizer
      */
-     UnscentedParticleFilter();
+    UnscentedParticleFilter();
     
     
-     /** Calls step( ) until measurements finish
+    /** Calls step( ) until measurements finish
      */
-     void solve();
+    void solve();
     
-     /*******************************************************************/
+    /*******************************************************************/
     
-     /** Saves x with gretest weight, localization error and execution time 
+    /** Saves x with gretest weight, localization error and execution time 
      * in one file, and the .off model of the estimated pose object in another file 
      * @param rf a previously inizialized @see Resource Finder
      * @param ms_particle, containing estimated x, localization error and execution time
      */
-     void saveData( const yarp::sig::Vector &ms_particle,const int &y);
+    void saveData( const yarp::sig::Vector &ms_particle,const int &y);
      
-     /*******************************************************************/
+    /*******************************************************************/
     
-     /** Saves the solution and the time computed for all the trials, computes the average
+    /** Saves the solution and the time computed for all the trials, computes the average
      * of the solution and of the time of the trials 
      * @param Matrix, containing the three solutions
      */
-     void saveStatisticsData(const yarp::sig::Matrix &solutions);
+    void saveStatisticsData(const yarp::sig::Matrix &solutions);
     
-     /*******************************************************************
+    /*******************************************************************
      /**Configures all parameters needed by the algorithm, reading them from a 
      * configuration file .ini or from command line. If the user doesn't provide
      * them, they are set to default values
      * @param rf a previously inizialized @see Resource Finder
      * @return true/false on succes/failure
      */
-     bool configure(yarp::os::ResourceFinder &rf);
-     /*******************************************************************/
+    bool configure(yarp::os::ResourceFinder &rf);
+    /*******************************************************************/
     
-     /** Runs init() and solve(). Configure must be runned before and if we want to
+    /** Runs init() and solve(). Configure must be runned before and if we want to
      * save or to send the result, we have to do it in main.cpp
      * @param rf a previously inizialized @see Resource Finder
      * @return vector of 8 components: estimated x,y,z, and the 3 Euler angles,
      * localization error, execution time
      */
-     yarp::sig::Vector localization();     
-     /****************************************************************************************************/
+    yarp::sig::Vector localization();     
+    /****************************************************************************************************/
 
    
 };

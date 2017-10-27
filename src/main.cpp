@@ -58,31 +58,31 @@ int main(int argc, char *argv[])
         loc5->saveStatisticsData(solutions);
 
         delete loc5;
-   }
-   else
-   {
+    }
+    else
+    {
         error_indices.resize(0.0,8);
         solutions.resize(numTrials,2);
         for(size_t i=0; i<numTrials-1; i++)
         {
-        Localizer *loc4=new ScalingSeries();
-        loc4->configure(rf);
-        error_indices=loc4->localization();
-        loc4->saveData(error_indices,i);
-        solutions(i,0)=error_indices[6];
-        solutions(i,1)=error_indices[7];
-        delete loc4;
+	    Localizer *loc4=new ScalingSeries();
+	    loc4->configure(rf);
+	    error_indices=loc4->localization();
+	    loc4->saveData(error_indices,i);
+	    solutions(i,0)=error_indices[6];
+	    solutions(i,1)=error_indices[7];
+	    delete loc4;
+	}
+	
+	Localizer *loc4=new ScalingSeries();
+	loc4->configure(rf);
+	error_indices=loc4->localization();
+	loc4->saveData(error_indices,numTrials-1);
+	solutions(numTrials-1,0)=error_indices[6];
+	solutions(numTrials-1,1)=error_indices[7];
+	loc4->saveStatisticsData(solutions);
+	delete loc4;
+
     }
-
-    Localizer *loc4=new ScalingSeries();
-    loc4->configure(rf);
-    error_indices=loc4->localization();
-    loc4->saveData(error_indices,numTrials-1);
-    solutions(numTrials-1,0)=error_indices[6];
-    solutions(numTrials-1,1)=error_indices[7];
-    loc4->saveStatisticsData(solutions);
-    delete loc4;
-
-   }
-   return 0;
+    return 0;
 }

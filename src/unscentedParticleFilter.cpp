@@ -836,11 +836,18 @@ void UnscentedParticleFilter::correctionStep(const int &i)
 {
     yarp::sig::Vector meas;
     meas.resize(p,0.0);
-    Point &m=measurements[t-1];
-    meas[0]=m[0];
-    meas[1]=m[1];
-    meas[2]=m[2];
-    
+
+    // process num_points_per_step points for each measurement
+    int num_points_per_step = p/3;
+    for (int j=0; j<num_points_per_step; j++)
+    {
+	Point &m=measurements[(t-1) * num_points_per_step + j];
+
+	meas[j*3]=m[0];
+	meas[j*3+1]=m[1];
+	meas[j*3+2]=m[2];
+    }
+
     x[i].x_corr=x[i].x_pred+x[i].K*(meas-x[i].y_pred);
     x[i].x_corr[3]=fmod(x[i].x_corr[3],2*M_PI);
     x[i].x_corr[4]=fmod(x[i].x_corr[4],2*M_PI);

@@ -345,27 +345,44 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k)
             initial_meas=t-params.window_width;
     }
     
-    int count;
-    count=0;
+    //int count;
+    //count=0;
+
+    // process num_points_per_step points for each measurement
+    int num_points_per_step = p/3;
+
+    double squared_tot_meas_error = 0.0;
     
     for (size_t i=initial_meas; i<t; i++)
     {
-        Point &m=measurements[i];
+        //Point &m=measurements[i];
+
+	for (int j=0; j<num_points_per_step; j++)
+	{
+	    Point &m=measurements[i * num_points_per_step + j];
+
+	    double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
+	    double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
+	    double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
+
+	    squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
+
+	}
+
+	likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0)));
 	
-        double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
-        double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
-        double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
+        // count++;
 	
-        count++;
-	
-        if(t==params.numMeas)
-        {
-            likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0))*(count));
-        }
-        else
-        {
-            likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)));
-        }
+        // if(t==params.numMeas)
+        // {
+	//     yInfo() << count;
+        //     likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0))*(count));
+        // }
+        // else
+        // {
+	//likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)));
+        // }
+
     }
     
     return likelihood;

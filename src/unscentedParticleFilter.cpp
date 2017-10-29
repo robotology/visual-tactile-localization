@@ -74,6 +74,9 @@ void UnscentedParticleFilter::init()
     p=params.p;
     
     x.assign(params.N,ParticleUPF());
+    for (size_t i=0; i<params.N; i++)
+	x[i].init_meas_quantities(p);
+    
     initialRandomize();
     
     initializationUPF();
@@ -592,6 +595,8 @@ void UnscentedParticleFilter::resampling()
     u.resize(params.N, 0.0);
     new_index.resize(params.N, 0);
     new_x.assign(params.N,ParticleUPF());
+    for (size_t i=0; i<params.N; i++)
+	new_x[i].init_meas_quantities(p);
     c[0]=x[0].weights;
     
     for(size_t i=1; i<params.N; i++)

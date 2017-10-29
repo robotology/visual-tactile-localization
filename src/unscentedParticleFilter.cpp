@@ -1216,12 +1216,14 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     for(int i=0;  i<measurements.size(); i++)
         cout<< measurements[i]<<endl;
     
-    parameters.window_width=rf.find("window_width").asInt();
-
     // eval the total number of steps
     int points_per_step = parameters.p/3;
     total_steps = floor(parameters.numMeas / points_per_step);
-    
+
+    parameters.window_width=rf.find("window_width").asInt();
+    if (rf.find("window_width").isNull())
+        parameters.window_width=rf.check("window_width",Value(total_steps)).asDouble();
+
     // Vector aux_vect(n_m,0.0);
     // readDiagonalMatrix("window_width", aux_vect, n_m);
     // cout<<"AUX VECT "<<aux_vect.toString()<<endl<<endl;

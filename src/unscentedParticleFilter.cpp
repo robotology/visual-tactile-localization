@@ -192,7 +192,7 @@ bool UnscentedParticleFilter::step()
         normalizeWeights(i, sum, sum_squared);
     }
     
-    if(t==params.numMeas)
+    if(t==total_steps)
     {
         //yDebug()<<"t num meas deb";
         dt_gauss2=Time::now()-t0;

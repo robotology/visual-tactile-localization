@@ -749,13 +749,13 @@ yarp::sig::Vector UnscentedParticleFilter::compute_y(const int &t, const int &k,
     Hm(1,3)=x[k].XsigmaPoints_pred(1,j);
     Hm(2,3)=x[k].XsigmaPoints_pred(2,j);
     
-    Hm=SE3inv(Hm);
-
     // process num_points_per_step points taken from measurements
     int num_points_per_step = p/3;
 
     for (int j=0; j<num_points_per_step; j++)
     {
+	Hm=SE3inv(Hm);
+	
 	//TODO: check that the indexed measurements are available
 	Point &m=measurements[(t-1) * num_points_per_step + j];
 

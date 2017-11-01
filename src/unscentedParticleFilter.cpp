@@ -353,12 +353,12 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k)
 
     // process num_points_per_step points for each measurement
     int num_points_per_step = p/3;
-
-    double squared_tot_meas_error = 0.0;
     
     for (size_t i=initial_meas; i<t; i++)
     {
         //Point &m=measurements[i];
+
+	double squared_tot_meas_error = 0.0;
 
 	for (int j=0; j<num_points_per_step; j++)
 	{

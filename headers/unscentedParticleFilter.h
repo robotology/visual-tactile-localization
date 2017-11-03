@@ -440,11 +440,10 @@ public:
      
     /*******************************************************************/
     
-    /** Saves the solution and the time computed for all the trials, computes the average
-     * of the solution and of the time of the trials 
+    /** Saves the performance error index and the time computed for all the trials
      * @param Matrix, containing the three solutions
      */
-    void saveStatisticsData(const yarp::sig::Matrix &solutions);
+    void saveTrialsData(const yarp::sig::Matrix &solutions);
     
     /*******************************************************************
      /**Configures all parameters needed by the algorithm, reading them from a 

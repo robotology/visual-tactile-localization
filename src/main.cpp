@@ -50,18 +50,18 @@ int main(int argc, char *argv[])
             error_indices=loc5->localization();
             loc5->saveData(error_indices,i);
 
-	    // save error index for averaging
+	    // save error index
             solutions(i,0)=error_indices[6];
 
 	    // save execution time
-	    // (including MAP extraction) for averaging
+	    // (including MAP extraction)
 	    solutions(i,1)=error_indices[7];
 
             delete loc5;
         }
 
         Localizer *loc5=new UnscentedParticleFilter();
-        loc5->saveStatisticsData(solutions);
+        loc5->saveTrialsData(solutions);
 
         delete loc5;
     }

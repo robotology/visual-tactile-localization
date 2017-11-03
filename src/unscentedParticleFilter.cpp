@@ -1272,29 +1272,21 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, con
 }
 
 /*******************************************************************************/
-void UnscentedParticleFilter::saveStatisticsData(const yarp::sig::Matrix &solutions)
+void UnscentedParticleFilter::saveTrialsData(const yarp::sig::Matrix &solutions)
 {
-    string outputFileName2=this->rf->check("outputFileMUPF",Value("../../outputs/outputStatisticsMUPF.off")).
-	asString().c_str();
-    double avg_err_index, avg_time;
-    avg_err_index = 0;
-    avg_time = 0;
-    
-    ofstream fout2(outputFileName2.c_str());
-    
-    if(fout2.is_open())
+    string outputFileName="../../outputs/outputTrialsMUPF.csv";
+
+    ofstream fout(outputFileName.c_str());
+
+    if(fout.is_open())
     {
+	// print the CSV header
+	fout<<"trial;error_index;time"<<endl;
+
+	// save data for each trial
 	for(int j=0; j<solutions.rows(); j++)
-	{
-	    fout2<<"trial "<<j<<": error index = "<<solutions(j,0)
-		 <<", time including MAP = " << solutions(j,1) << endl;
-	    avg_err_index=avg_err_index+solutions(j,0);
-	    avg_time=avg_time+solutions(j,1);
-	}
-	
-	fout2<<"average error index "<< avg_err_index/solutions.rows()<<endl;
-	fout2<<"average time "<<avg_time/solutions.rows()<<endl;
-	
+	    if (!std::isnan(solutions(j,0)) && solutions(j,0) < 1)
+		fout<<j<<";"<<solutions(j,0)<<";"<<solutions(j,1)<<endl; 
     }
 }
 

@@ -107,9 +107,9 @@ class Localizer
 
     /*******************************************************************/
 
-    /** save statics data
+    /** save data regarding all the trials done within a simulation
      */
-    virtual void saveStatisticsData(const yarp::sig::Matrix &solutions)=0;
+    virtual void saveTrialsData(const yarp::sig::Matrix &solutions)=0;
     /*******************************************************************/
 
     /** send the result of the localization to a yarp port, that is opened and closed 

@@ -24,6 +24,8 @@
 #include <yarp/sig/all.h>
 #include <yarp/os/ResourceFinder.h>
 
+typedef std::vector<Point> Measure;
+
 /*******************************************************************/
 struct ParametersUPF : public Parameters
 {
@@ -170,6 +172,9 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
     
     /** This is an auxiliary vector*/
     std::deque<yarp::sig::Vector> x_most;
+
+    /**buffer of received measurements for memory feature*/
+    std::vector<Measure> meas_buffer;
     
     /** index of current measurements
      */

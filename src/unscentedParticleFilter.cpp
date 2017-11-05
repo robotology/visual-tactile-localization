@@ -75,6 +75,8 @@ void UnscentedParticleFilter::init()
     // initialize class members
     ParametersUPF &params=get_parameters();
     n=params.n;
+    // defaults to memory window width of 1 measurement
+    memory_width=1;
 
     // initialize particles and sample from initial search region
     x.assign(params.N,ParticleUPF());
@@ -90,6 +92,12 @@ void UnscentedParticleFilter::setNewMeasure(const Measure& m)
     // add the new measure received
     // to the measurements buffer
     meas_buffer.push_back(m);
+}
+
+/*******************************************************************************/
+void UnscentedParticleFilter::setMemoryWidth(const int width)
+{
+    memory_width = width;
 }
 
 /*******************************************************************************/

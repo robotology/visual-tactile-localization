@@ -176,6 +176,10 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
     /**buffer of received measurements for memory feature*/
     std::vector<Measure> meas_buffer;
 
+    /** current memory window width
+     */
+    int memory_width;
+
     /** index of current measurements
      */
     int t;
@@ -252,6 +256,12 @@ protected:
     /* @param m, a std::vector of Point points
     */
     void setNewMeasure(const Measure& m);
+
+    /*******************************************************************/   
+    /** Set the current memory window width
+    /* @param width, the width of the window
+    */
+    void setMemoryWidth(const int width);
 
     /*******************************************************************/   
     /** It is executed when UPF is finished.

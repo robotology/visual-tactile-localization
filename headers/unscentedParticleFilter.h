@@ -175,7 +175,7 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
 
     /**buffer of received measurements for memory feature*/
     std::vector<Measure> meas_buffer;
-    
+
     /** index of current measurements
      */
     int t;
@@ -246,7 +246,13 @@ protected:
     /** It is a single iteration of UPF
     */
     void step();
-   
+
+    /*******************************************************************/   
+    /** Set a new measure
+    /* @param m, a std::vector of Point points
+    */
+    void setNewMeasure(const Measure& m);
+
     /*******************************************************************/   
     /** It is executed when UPF is finished.
     *  Compute final most significant particle, in world reference system.

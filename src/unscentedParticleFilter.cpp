@@ -85,6 +85,14 @@ void UnscentedParticleFilter::init()
 }
 
 /*******************************************************************************/
+void UnscentedParticleFilter::setNewMeasure(const Measure& m)
+{
+    // add the new measure received
+    // to the measurements buffer
+    meas_buffer.push_back(m);
+}
+
+/*******************************************************************************/
 void UnscentedParticleFilter::step()
 {   
     t++;

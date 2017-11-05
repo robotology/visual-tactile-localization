@@ -225,31 +225,43 @@ void UnscentedParticleFilter::step()
 
 /*******************************************************************************/
 Vector UnscentedParticleFilter::finalize()
-{  
+{
+    // eval execution time without final MAP estimate
+    dt_gauss2=Time::now()-t0;
+
+    // eval MAP estimate
+    map_estimate=mapEstimate();
+
+    // eval execution time with final MAP estimate
+    dt_gauss=Time::now()-t0;
+    DT=dt_gauss-dt_gauss2;
+    
     Vector error_indices;
     error_indices.resize(4,0.0);
     result.resize(9,0.0);
-    cout<<"RESULT WITH GAUSSIANS "<<result4.toString().c_str()<<endl;
     
-    //save all the result wwith highest density in ms_particle2
-    ms_particle4.pos=result4;
+    //save map estimate in ms_particle4
+    ms_particle4.pos=map_estimate;
+
+    // evaluate performance index
     performanceIndex(ms_particle4);
     cout<<"error_index "<<ms_particle4.error_index<<endl;
-    //yDebug()<<"deb 1";
-    
+
+    // transform the object model taking into account the estimate found
     Matrix H=rpr(ms_particle4.pos.subVector(3,5));
     Affine affine(H(0,0),H(0,1),H(0,2),ms_particle4.pos[0],
                   H(1,0),H(1,1),H(1,2),ms_particle4.pos[1],
                   H(2,0),H(2,1),H(2,2),ms_particle4.pos[2]);
-    
     std::transform(model.points_begin(),model.points_end(),
                    model.points_begin(),affine);
-    result[0]=result4[0];
-    result[1]=result4[1];
-    result[2]=result4[2];
-    result[3]=result4[3];
-    result[4]=result4[4];
-    result[5]=result4[5];
+
+    // save results
+    result[0]=map_estimate[0];
+    result[1]=map_estimate[1];
+    result[2]=map_estimate[2];
+    result[3]=map_estimate[3];
+    result[4]=map_estimate[4];
+    result[5]=map_estimate[5];
     result[6]=ms_particle4.error_index;
     result[7]=dt_gauss;
     result[8]=max_prob;

@@ -198,8 +198,7 @@ protected:
     MsParticleUPF ms_particle4;
      
     yarp::sig::Vector result;
-     
-    yarp::sig::Vector result4;
+    yarp::sig::Vector map_estimate;
 
     /** For downsampling*/
     int downsampling;

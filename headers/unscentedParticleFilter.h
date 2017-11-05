@@ -391,15 +391,13 @@ protected:
      
      
     /** Find the particle with the highest density
-   
      */
     yarp::sig::Vector particleDensity2();
     /*******************************************************************/
      
-    /** Find the particle with the highest rpobability
-   
+    /** Compute the MAP estimate
      */
-    yarp::sig::Vector particleDensity3();
+    yarp::sig::Vector mapEstimate();
     /*******************************************************************/
      
     /**Time with the new method

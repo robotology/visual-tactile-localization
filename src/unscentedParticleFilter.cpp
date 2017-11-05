@@ -518,13 +518,26 @@ Vector UnscentedParticleFilter::particleDensity2()
 }
 
 /*******************************************************************************/
-Vector UnscentedParticleFilter::particleDensity3()
+Vector UnscentedParticleFilter::mapEstimate()
 {
     ParametersUPF &params=get_parameters();
     deque<double> probability_per_particle;
     double probability;
     Matrix diff(6,1);
-    
+
+    // corrected weights are not normalized at each step since not required
+    // normalization is done here
+    double sum_weights=0.0;
+    for(size_t i=0; i<x.size(); i++)
+    {
+	sum_weights+=x[i].weights_map;
+    }
+    for(size_t i=0; i<x.size(); i++)
+    {
+	x[i].weights_map/=sum_weights;
+    }
+
+    // extract MAP estimate
     for(size_t i=0; i<x.size(); i++)
     {
         probability=0;
@@ -541,7 +554,7 @@ Vector UnscentedParticleFilter::particleDensity3()
             Matrix temp(1,1);
             temp=diff.transposed()*luinv(x[j].P_corr)*diff;
 	    
-            probability=probability+x[i].weights*exp(-0.5*(temp(0,0)));
+            probability=probability+x[i].weights_map*exp(-0.5*(temp(0,0)));
         }
 	
         probability_per_particle.push_back(probability);

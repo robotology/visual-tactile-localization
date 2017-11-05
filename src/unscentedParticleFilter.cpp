@@ -107,7 +107,6 @@ void UnscentedParticleFilter::step()
     cout<<"t "<<t<<"\n";
     
     ParametersUPF &params=get_parameters();
-    cout<<"num tot steps "<< total_steps <<endl;
     
     double sum=0.0;
     double sum_squared=0.0;
@@ -210,18 +209,18 @@ void UnscentedParticleFilter::step()
         normalizeWeights(i, sum, sum_squared);
     }
     
-    if(t==total_steps)
-    {
-        dt_gauss2=Time::now()-t0;
-        result4=particleDensity3();
-        dt_gauss=Time::now()-t0;
-        DT=dt_gauss-dt_gauss2;
-    }
-    else
-    {
-        findMostSignificantParticle();
-        selectionStep(Neff,sum_squared);
-    }
+    // if(t==total_steps)
+    // {
+    //     dt_gauss2=Time::now()-t0;
+    //     result4=particleDensity3();
+    //     dt_gauss=Time::now()-t0;
+    //     DT=dt_gauss-dt_gauss2;
+    // }
+    // else
+    // {
+    //     findMostSignificantParticle();
+    selectionStep(Neff,sum_squared);
+    // }
 }
 
 /*******************************************************************************/

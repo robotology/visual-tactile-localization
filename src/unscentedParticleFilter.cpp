@@ -862,17 +862,18 @@ void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
 void UnscentedParticleFilter::correctionStep(const int &i)
 {
     yarp::sig::Vector meas;
-    meas.resize(p,0.0);
 
-    // process num_points_per_step points for each measurement
-    int num_points_per_step = p/3;
-    for (int j=0; j<num_points_per_step; j++)
+    // take last measurements received
+    Measure& m=meas_buffer.back();
+    meas.resize(3*m.size(),0.0);
+
+    for (int j=0; j<m.size(); j++)
     {
-	Point &m=measurements[(t-1) * num_points_per_step + j];
+	Point &p=m[j];
 
-	meas[j*3]=m[0];
-	meas[j*3+1]=m[1];
-	meas[j*3+2]=m[2];
+	meas[j*3]=p[0];
+	meas[j*3+1]=p[1];
+	meas[j*3+2]=p[2];
     }
 
     x[i].x_corr=x[i].x_pred+x[i].K*(meas-x[i].y_pred);

@@ -12,7 +12,6 @@
 #include <CGAL/IO/Polyhedron_iostream.h>
 
 #include "headers/localizer.h"
-#include "headers/scalingSeries.h"
 #include "headers/unscentedParticleFilter.h"
 
 YARP_DECLARE_DEVICES(icubmod)

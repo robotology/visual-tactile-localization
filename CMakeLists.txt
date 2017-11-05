@@ -23,8 +23,8 @@ include(ICUBcontribHelpers)
 include(ICUBcontribOptions)
 icubcontrib_set_default_prefix()
 
-set(headers headers/geometryCGAL.h  headers/unscentedParticleFilter.h headers/scalingSeries.h headers/localizer.h )
-set(sources src/unscentedParticleFilter.cpp src/scalingSeries.cpp src/main.cpp src/localizer.cpp) 
+set(headers headers/geometryCGAL.h  headers/unscentedParticleFilter.h headers/localizer.h )
+set(sources src/unscentedParticleFilter.cpp src/main.cpp src/localizer.cpp) 
 source_group("Source Files" FILES ${sources})
 source_group("Header Files" FILES ${headers})
 

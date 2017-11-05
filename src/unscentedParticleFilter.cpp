@@ -527,7 +527,6 @@ Vector UnscentedParticleFilter::particleDensity3()
     double probability;
     Matrix diff(6,1);
     
-    //yDebug()<<"t num meas deb 2 ";
     for(size_t i=0; i<x.size(); i++)
     {
         probability=0;
@@ -541,18 +540,14 @@ Vector UnscentedParticleFilter::particleDensity3()
             diff(4,0)=fmod(x[i].x_corr(4)-x[j].x_corr(4),2*M_PI);
             diff(5,0)=fmod(x[i].x_corr(5)-x[j].x_corr(5),2*M_PI);
 	    
-	    
             Matrix temp(1,1);
             temp=diff.transposed()*luinv(x[j].P_corr)*diff;
 	    
             probability=probability+x[i].weights*exp(-0.5*(temp(0,0)));
         }
 	
-        //cout<<"proba "<<probability;
-        //probability/=(pow(2*M_PI,3)*sqrt(det(x[i].P_corr)));
         probability_per_particle.push_back(probability);
     }
-    
     
     max_prob=0.0;
     int i_max_prob=0;
@@ -566,20 +561,8 @@ Vector UnscentedParticleFilter::particleDensity3()
         }
     }
     yDebug()<<"i max prob"<<i_max_prob;
-    
-    max_likelihood=0.0; double lik=0.0; double tmp;
-    
-    for(size_t i=0; i<x.size(); i++)
-    {
-        tmp=finaleLikelihood( i);
-        lik+=tmp;
-    }
-    
-    //max_likelihood=finaleLikelihood(i_max_prob)/lik;
-    
-    cout<<"i max prob "<<i_max_prob<<endl;
-    cout<<" max prob "<<max_prob<<endl;
-    // cout<<" max likelihood "<<max_likelihood<<endl;
+    yDebug()<<" max prob "<<max_prob;
+
     return x[i_max_prob].x_corr;
 }
 

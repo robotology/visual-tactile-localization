@@ -85,18 +85,13 @@ void UnscentedParticleFilter::init()
 }
 
 /*******************************************************************************/
-bool UnscentedParticleFilter::step()
+void UnscentedParticleFilter::step()
 {   
     t++;
     cout<<"t "<<t<<"\n";
     
     ParametersUPF &params=get_parameters();
     cout<<"num tot steps "<< total_steps <<endl;
-    
-    if(t > total_steps)
-    {	
-        return true;
-    }
     
     double sum=0.0;
     double sum_squared=0.0;
@@ -144,7 +139,6 @@ bool UnscentedParticleFilter::step()
 		}
 	    }
 	    
-	    
 	    x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j)+cholQ*random);
 	    
 	    x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
@@ -155,7 +149,6 @@ bool UnscentedParticleFilter::step()
 	    
         }
     }
-    
     
     for(size_t i=0; i<x.size(); i++ )
     {
@@ -183,7 +176,7 @@ bool UnscentedParticleFilter::step()
         correctionStep(i);
     }
     
-    //computer weights
+    //compute weights
     for(size_t i=0; i<x.size(); i++ )
     {
         computeWeights(i, sum);
@@ -196,21 +189,16 @@ bool UnscentedParticleFilter::step()
     
     if(t==total_steps)
     {
-        //yDebug()<<"t num meas deb";
         dt_gauss2=Time::now()-t0;
         result4=particleDensity3();
         dt_gauss=Time::now()-t0;
         DT=dt_gauss-dt_gauss2;
-        //yDebug()<<"t num meas deb 2";
     }
     else
     {
         findMostSignificantParticle();
         selectionStep(Neff,sum_squared);
     }
-    
-
-    return false;    
 }
 
 /*******************************************************************************/

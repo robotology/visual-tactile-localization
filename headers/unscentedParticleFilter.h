@@ -243,10 +243,9 @@ protected:
     void initialRandomize();
     
     /*******************************************************************/   
-    /** It is a single iteration  of UPF
-    * @return true when UPF is completed
+    /** It is a single iteration of UPF
     */
-    bool step();
+    void step();
    
     /*******************************************************************/   
     /** It is executed when UPF is finished.

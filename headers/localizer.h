@@ -142,10 +142,9 @@ class Localizer
    
     /*******************************************************************/
     
-    /** It is the execution of one iteration of ythe chosen algorithm
-     * @return true when it is completed
+    /** It is the execution of one iteration of the chosen algorithm
      */
-    virtual bool step()=0;
+    virtual void step()=0;
 
 };
 

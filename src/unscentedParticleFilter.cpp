@@ -71,11 +71,8 @@ void UnscentedParticleFilter::init()
     
     t=0;
     n=params.n;
-    p=params.p;
     
     x.assign(params.N,ParticleUPF());
-    for (size_t i=0; i<params.N; i++)
-	x[i].init_meas_quantities(p);
     
     initialRandomize();
     

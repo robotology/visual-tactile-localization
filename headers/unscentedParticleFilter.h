@@ -226,7 +226,7 @@ protected:
 
     /*******************************************************************/     
     /** Init Optimizer, set starting time=0, sample particle from initial
-    * search region, initialize matrix and vector of UPF
+    * search region, initialize some matrices and vectors of UPF
     */
     void init();
     

@@ -64,18 +64,23 @@ void UnscentedParticleFilter::initialRandomize()
 
 /*******************************************************************************/
 void UnscentedParticleFilter::init()
-{   
+{
+    // init times
     t0=Time::now();
-    GeometryCGAL::init();
-    ParametersUPF &params=get_parameters();
-    
     t=0;
+
+    // init geometry for distance computation
+    GeometryCGAL::init();
+
+    // initialize class members
+    ParametersUPF &params=get_parameters();
     n=params.n;
-    
+
+    // initialize particles and sample from initial search region
     x.assign(params.N,ParticleUPF());
-    
     initialRandomize();
-    
+
+    // complete UPF initialization
     initializationUPF();
 }
 

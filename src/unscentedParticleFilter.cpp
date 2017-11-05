@@ -871,8 +871,12 @@ void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
     // evaluate standard likelihood and
     // likelihood corrected for MAP estimate
     standard_likelihood = likelihood(t,i,map_likelihood);
-    
+
+    // evaluate standard weights
     x[i].weights=x[i].weights*standard_likelihood;
+
+    // evaluate weights corrected for MAP estimate
+    x[i].weights_map=x[i].weights*map_likelihood;
     
     sum+=x[i].weights;
 }

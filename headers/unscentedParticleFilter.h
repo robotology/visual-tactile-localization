@@ -80,6 +80,9 @@ struct ParticleUPF
     
     /** weights*/ 
     double            weights;
+
+    /** weights with correction for map estimate*/ 
+    double            weights_map;
     
     /** Matrices of correction and predicion steps*/
     yarp::sig::Matrix P_corr;

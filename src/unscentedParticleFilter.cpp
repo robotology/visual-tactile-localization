@@ -351,51 +351,42 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k)
     
     H=SE3inv(H);
     
-    if(params.window_width==params.N)
-	initial_meas=0;
-    else
-    {
-        if(t-params.window_width<0)
-            initial_meas=0;
-        else
-            initial_meas=t-params.window_width;
-    }
-    
-    int count;
-    count=0;
+    // int count;
+    // count=0;
 
-    // process num_points_per_step points for each measurement
-    int num_points_per_step = p/3;
-    
-    for (size_t i=initial_meas; i<t; i++)
-    {
-        //Point &m=measurements[i];
+    // take reverse_iterator pointing to the last measurement
+    std::vector<Measure>::reverse_iterator rit=meas_buffer.rbegin();
 
+    // process all the measures available within the memory width
+    for (size_t width = memory_width; width>0 && rit!=meas_buffer.rend(); rit++, width--)
+    {
+	// take the current measure
+	Measure& m=*rit;
+	
+	// initialize the squared measurement error for the current measure
 	double squared_tot_meas_error = 0.0;
 
-	for (int j=0; j<num_points_per_step; j++)
+	for (int j=0; j<m.size(); j++)
 	{
-	    Point &m=measurements[i * num_points_per_step + j];
+	    Point &p=m[j];
 
-	    double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
-	    double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
-	    double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
+	    double x=H(0,0)*p[0]+H(0,1)*p[1]+H(0,2)*p[2]+H(0,3);
+	    double y=H(1,0)*p[0]+H(1,1)*p[1]+H(1,2)*p[2]+H(1,3);
+	    double z=H(2,0)*p[0]+H(2,1)*p[1]+H(2,2)*p[2]+H(2,3);
 
 	    squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
-
 	}
 
-        count++;
+        // count++;
 	
-        if(t==total_steps)
-        {
-            likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0))*(count));
-        }
-        else
-        {
-	    likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0)));
-        }
-
+        // if(t==total_steps)
+        // {
+        //     likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0))*(count));
+        // }
+        // else
+        // {
+	likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0)));
+        // }
     }
     
     return likelihood;

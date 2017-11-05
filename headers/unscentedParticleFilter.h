@@ -92,8 +92,6 @@ struct ParticleUPF
     /** Predicted particles */
     yarp::sig::Vector x_pred;
     
-
-
     /** Sigma Points for average and covariance*/
     yarp::sig::Matrix XsigmaPoints_corr;
     yarp::sig::Matrix XsigmaPoints_pred;
@@ -107,18 +105,12 @@ struct ParticleUPF
                     x_pred(6,0.0),
                     x_tilde(6,1),
                     x_bar(6,0.0),
-                    //y_pred(3,0.0),
                     P_corr(6,6),
                     P_hat(6,6),
                     P_pred(6,6),
-                    //Pyy(3,3),
-                    //Pxy(6,3),
-                    //K(6,3),
-                    //A(3,1),
                     P_pred_aux(6,6),
                     XsigmaPoints_corr(6,13),
                     XsigmaPoints_pred(6,13),
-                    //YsigmaPoints_pred(3,13),
                     WsigmaPoints_average(13,0.0),
                     WsigmaPoints_covariance(13,0.0),
                     weights(std::numeric_limits<double>::infinity()) { }
@@ -136,7 +128,6 @@ struct ParticleUPF
 	    A = yarp::sig::Matrix(p,1);
 	    YsigmaPoints_pred = yarp::sig::Matrix(p,13);
 	}
-	    
 };
 
 /*******************************************************************/

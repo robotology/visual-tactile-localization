@@ -1085,9 +1085,6 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     
     yarp::sig::Vector diagQ;
     diagQ.resize(parameters.n,1);
-    // stringstream ssQ;
-    // ssQ << m;
-    // string str_Q = ssQ.str();
     check=readDiagonalMatrix("Q",diagQ,parameters.n);
     
     cout<<"DEBUG: Q"<<diagQ.toString()<<endl;
@@ -1143,7 +1140,6 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
         neigh0[4]=rf.check("neigh4",Value(0.3)).asDouble();
         neigh0[5]=rf.check("neigh5",Value(0.3)).asDouble();
     }
-    
     
     parameters.neigh=neigh0;
     
@@ -1220,16 +1216,6 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     parameters.window_width=rf.find("window_width").asInt();
     if (rf.find("window_width").isNull())
         parameters.window_width=rf.check("window_width",Value(total_steps)).asDouble();
-
-    // Vector aux_vect(n_m,0.0);
-    // readDiagonalMatrix("window_width", aux_vect, n_m);
-    // cout<<"AUX VECT "<<aux_vect.toString()<<endl<<endl;
-    // parameters.window_width=aux_vect(k);
-    // cout<<"M VALUE "<<parameters.window_width<<endl;
-    
-    //if (rf.find("window_width").isNull())
-    //parameters.window_width=rf.check("window_width",Value(parameters.numMeas)).asInt();
-    //cout<<"WINDOW_WIDTH "<<parameters.window_width<<endl;
 }
 
 /*******************************************************************************/

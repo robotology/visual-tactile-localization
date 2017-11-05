@@ -331,11 +331,12 @@ double UnscentedParticleFilter::finaleLikelihood(const int &best_part)
 }
 
 /******************************************************************************/
-double UnscentedParticleFilter::likelihood(const int &t, const int &k)
+double UnscentedParticleFilter::likelihood(const int &t, const int &k, double& map_likelihood)
 {
     double sum=0.0;
     ParametersUPF &params=get_parameters();
     double likelihood=1.0;
+    map_likelihood=1.0;
     int initial_meas;
     
     ParticleUPF &particle=x[k];
@@ -348,9 +349,11 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k)
     H(2,3)=particle.x_corr[2];
     
     H=SE3inv(H);
-    
-    // int count;
-    // count=0;
+
+    // counter required to correct likelihod
+    // for MAP estimate
+    int map_correction_count;
+    map_correction_count=memory_width;
 
     // take reverse_iterator pointing to the last measurement
     std::vector<Measure>::reverse_iterator rit=meas_buffer.rbegin();
@@ -375,16 +378,12 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k)
 	    squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
 	}
 
-        // count++;
-	
-        // if(t==total_steps)
-        // {
-        //     likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0))*(count));
-        // }
-        // else
-        // {
+	// standard likelihood
 	likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0)));
-        // }
+
+	// likelihood with correction required to evaluate MAP estimate
+	map_likelihood=map_likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0))*(map_correction_count));
+	map_correction_count--;
     }
     
     return likelihood;
@@ -866,7 +865,14 @@ void UnscentedParticleFilter::correctionStep(const int &i)
 /*******************************************************************************/
 void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
 {
-    x[i].weights=x[i].weights*likelihood(t,i);
+    double standard_likelihood;
+    double map_likelihood;
+
+    // evaluate standard likelihood and
+    // likelihood corrected for MAP estimate
+    standard_likelihood = likelihood(t,i,map_likelihood);
+    
+    x[i].weights=x[i].weights*standard_likelihood;
     
     sum+=x[i].weights;
 }

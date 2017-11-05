@@ -269,9 +269,11 @@ protected:
     /** Return likelihood (probability to have a measurement y, given object pose x)
     * @param t index of current measurements
     * @param k current particle
+    * @param map_likelihood likelihood with correction required to evaluate
+    *                       the MAP estimate
     * @return value of likelihood
     */
-    double likelihood(const int &t, const int &k);
+    double likelihood(const int &t, const int &k, double& map_likelihood);
     
     /*******************************************************************/   
     /** Realize random resampling: particle with low weights are suppresed

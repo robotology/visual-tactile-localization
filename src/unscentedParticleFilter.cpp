@@ -930,17 +930,15 @@ void UnscentedParticleFilter::initializationUPF()
     ParametersUPF &params=get_parameters();
     for(size_t i=0; i<x.size(); i++ )
     {
+	// initialize quantities using parameters
+	// obtained from the configuration file
 	x[i].weights=1.0/params.N;
 	x[i].P_corr=params.P0;
+
+	// zero matrices
 	x[i].P_hat.zero();
 	x[i].P_pred.zero();
-	x[i].XsigmaPoints_corr.resize(n,2*n+1);
-	x[i].XsigmaPoints_pred.resize(n,2*n+1);
-	x[i].YsigmaPoints_pred.resize(p,2*n+1);
-	x[i].WsigmaPoints_average.resize(2*n+1,0.0);
-	x[i].WsigmaPoints_covariance.resize(2*n+1,0.0);
     }
-    
 }
 
 /*******************************************************************************/

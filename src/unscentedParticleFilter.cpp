@@ -1222,14 +1222,6 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     cout<<"measurements "<<endl;
     for(int i=0;  i<measurements.size(); i++)
         cout<< measurements[i]<<endl;
-    
-    // eval the total number of steps
-    int points_per_step = parameters.p/3;
-    total_steps = floor(parameters.numMeas / points_per_step);
-
-    parameters.window_width=rf.find("window_width").asInt();
-    if (rf.find("window_width").isNull())
-        parameters.window_width=rf.check("window_width",Value(total_steps)).asDouble();
 }
 
 /*******************************************************************************/

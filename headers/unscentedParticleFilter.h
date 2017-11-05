@@ -116,20 +116,6 @@ struct ParticleUPF
                     WsigmaPoints_average(13,0.0),
                     WsigmaPoints_covariance(13,0.0),
                     weights(std::numeric_limits<double>::infinity()) { }
-
-    /** Initializion of quantities dependant on the size of the measurement vector
-     *
-     *  p is the size of the measurement vector
-     */
-    void init_meas_quantities(int p)
-	{
-	    y_pred = yarp::sig::Vector(p,0.0);
-	    Pyy = yarp::sig::Matrix(p,p);
-	    Pxy = yarp::sig::Matrix(6,p);
-	    K = yarp::sig::Matrix(6,p);
-	    A = yarp::sig::Matrix(p,1);
-	    YsigmaPoints_pred = yarp::sig::Matrix(p,13);
-	}
 };
 
 /*******************************************************************/
@@ -323,6 +309,13 @@ protected:
     * @param i current particle
     */
     void predictionStep(const int &i);
+
+    /*******************************************************************/
+    /** resize matrices and vectors, within a particle, 
+    * whose size depends on the size of the current measurement vector
+    *  @param i current particle
+    */
+    void resizeParticle(const int &i);
     
     /*******************************************************************/
     /**Initializes all matrices  necessary for UKF step for each particle

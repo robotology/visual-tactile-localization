@@ -120,6 +120,13 @@ void UnscentedParticleFilter::step()
     cholQ(n,n);
     
     RandnScalar prova;
+
+    // resize quantities that depends
+    // on the size of the measurement vector
+    for(size_t i=0; i<x.size(); i++ )
+    {
+        resizeParticle(i);
+    }
     
     //initialize Matrix for UKF
     for(size_t i=0; i<x.size(); i++ )
@@ -598,8 +605,6 @@ void UnscentedParticleFilter::resampling()
     u.resize(params.N, 0.0);
     new_index.resize(params.N, 0);
     new_x.assign(params.N,ParticleUPF());
-    for (size_t i=0; i<params.N; i++)
-	new_x[i].init_meas_quantities(p);
     c[0]=x[0].weights;
     
     for(size_t i=1; i<params.N; i++)
@@ -788,6 +793,20 @@ void UnscentedParticleFilter::predictionStep(const int &i)
     x[i].x_pred[5]=fmod(x[i].x_pred[5],2*M_PI);
     
     x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
+}
+
+/*******************************************************************************/
+void UnscentedParticleFilter::resizeParticle(const int &i)
+{
+    // take the size of the last measurement received
+    int p = 3*meas_buffer.back().size();
+    
+    x[i].y_pred.resize(p,0.0);
+    x[i].Pyy.resize(p,p);
+    x[i].Pxy.resize(n,p);
+    x[i].K.resize(n,p);
+    x[i].A.resize(p,1);
+    x[i].YsigmaPoints_pred.resize(p,2*n+1);
 }
 
 /*******************************************************************************/

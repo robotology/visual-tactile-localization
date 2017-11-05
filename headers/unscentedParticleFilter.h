@@ -174,14 +174,6 @@ class UnscentedParticleFilter : public GeometryCGAL, public Localizer
      */
     int n;
 
-    /** dimension of measurements
-    */
-    int p;
-
-    /** total number of steps
-    */
-    int total_steps;
-    	
 protected:
  
     /** starting time*/
@@ -202,7 +194,6 @@ protected:
     /** vector for solution with high density with sum of gaussians*/
     MsParticleUPF ms_particle4;
      
-     
     yarp::sig::Vector result;
      
     yarp::sig::Vector result4;
@@ -211,8 +202,6 @@ protected:
     int downsampling;
 
     double max_prob;
-    double max_likelihood;
-
    
     /*******************************************************************/
     /** Get parameters necessary for UnscentedParticleFilter class

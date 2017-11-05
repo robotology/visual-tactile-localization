@@ -273,7 +273,7 @@ protected:
     * @param j current sigma point
     * @return predicted measurement, as yarp Vector
     */ 
-    yarp::sig::Vector compute_y(const int &t,const  int &k,const  int &j);
+    yarp::sig::Vector computeY(const int &t,const  int &k,const  int &j);
     
     /*******************************************************************/ 
   

@@ -168,7 +168,7 @@ void UnscentedParticleFilter::step()
 	    x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
 	    x[i].XsigmaPoints_pred(5,j)=fmod(x[i].XsigmaPoints_pred(5,j),2*M_PI);
 	    
-	    x[i].YsigmaPoints_pred.setCol(j,compute_y(t,i,j));
+	    x[i].YsigmaPoints_pred.setCol(j,computeY(t,i,j));
 	    
         }
     }
@@ -740,7 +740,7 @@ void UnscentedParticleFilter::computeSigmaPoints(const int &i)
 }
 
 /*******************************************************************************/
-yarp::sig::Vector UnscentedParticleFilter::compute_y(const int &t, const int &k, const int &j)
+yarp::sig::Vector UnscentedParticleFilter::computeY(const int &t, const int &k, const int &j)
 {
     ParametersUPF &params=get_parameters();
     Point y_pred;

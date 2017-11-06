@@ -781,6 +781,51 @@ yarp::sig::Vector UnscentedParticleFilter::computeY(const int &t, const int &k, 
 }
 
 /*******************************************************************************/
+yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &t, const int &k, const int &j)
+{
+    ParametersUPF &params=get_parameters();
+    Point y_pred;
+    yarp::sig::Vector out;
+    
+    ParticleUPF &particle=x[k];
+
+    // evaluate attitude of particle
+    Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
+    Hm.transposed();
+    
+    // evaluate real attitude
+    Matrix Hreal=rpr(params.real_pose.subVector(3,5));
+    Hreal.transposed();
+
+    // evaluate rotational part of the required transformation
+    Matrix H=Hm*Hreal.transposed();
+    // evaluate translational part of required transformation
+    Hm(0,3)=x[k].XsigmaPoints_pred(0,j);
+    Hm(1,3)=x[k].XsigmaPoints_pred(1,j);
+    Hm(2,3)=x[k].XsigmaPoints_pred(2,j);
+
+    // take last measurements received
+    Measure& m=meas_buffer.back();
+    out.resize(3*m.size(),0.0);
+
+    // evaluate ideal measurement equation
+    for (int j=0; j<m.size(); j++)
+    {
+	// evaluate difference between measurement and real pose
+	Point &p=m[j];
+	Point diff=Point(p[0]-params.real_pose[0],
+			 p[1]-params.real_pose[1],
+			 p[2]-params.real_pose[2]);
+
+	out[j*3]=Hm(0,0)*diff[0]+Hm(0,1)*diff[1]+Hm(0,2)*diff[2]+Hm(0,3);
+	out[j*3+1]=Hm(1,0)*diff[0]+Hm(1,1)*diff[1]+Hm(1,2)*diff[2]+Hm(1,3);
+	out[j*3+2]=Hm(2,0)*diff[0]+Hm(2,1)*diff[1]+Hm(2,2)*diff[2]+Hm(2,3);
+    }
+    
+    return out;
+}
+
+/*******************************************************************************/
 void UnscentedParticleFilter::predictionStep(const int &i)
 {
     x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
@@ -1364,6 +1409,19 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     parameters.err_index_thr=rf.find("err_index_thr").asDouble();
     if (rf.find("err_index_thr").isNull())
         parameters.err_index_thr=rf.check("err_index_thr",Value(1.0)).asDouble();
+
+    // get real pose from confguration file
+    yarp::sig::Vector real_pose;
+    real_pose.resize(parameters.n,1);
+    
+    check=readDiagonalMatrix("real_pose",real_pose,parameters.n);
+    
+    if(!check)
+    {
+	real_pose.resize(parameters.n, 0.0);
+    }
+    
+    parameters.real_pose=real_pose;
 }
 
 /*******************************************************************************/

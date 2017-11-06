@@ -69,7 +69,9 @@ struct ParametersUPF : public Parameters
     yarp::sig::Vector center0;
     yarp::sig::Vector radius0;  
     yarp::sig::Vector neigh;
-       
+
+    /** Real pose*/
+    yarp::sig::Vector real_pose;       
 };
 
 /*******************************************************************/
@@ -261,6 +263,18 @@ protected:
     * @return predicted measurement, as yarp Vector
     */ 
     yarp::sig::Vector computeY(const int &t,const  int &k,const  int &j);
+
+    /*******************************************************************/
+    /**Return ideal predicted measurements as a vector of point(s) on the surface
+    * of the object. The points are placed on the surface of the object exactly
+    * where they should be according to the measurements.
+    * Object is in pose represented by sigma point j of Unscented Transform of particle k
+    * @param t index of current measurement
+    * @param k current particle
+    * @param j current sigma point
+    * @return predicted measurement, as yarp Vector
+    */ 
+    yarp::sig::Vector computeYIdeal(const int &t, const int &k, const int &j);
     
     /*******************************************************************/ 
   

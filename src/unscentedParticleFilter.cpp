@@ -1057,7 +1057,7 @@ void UnscentedParticleFilter::solve_standard_mupf()
     int n_contacts = params.fixed_num_contacts;
 
     // process all measurements
-    for(size_t i=0; i<measurements.size(); i+=n_contacts)
+    for(size_t i=0; i+n_contacts-1<measurements.size(); i+=n_contacts)
     {
 	// simulate n measure per time step
 	Measure m;
@@ -1127,9 +1127,9 @@ void UnscentedParticleFilter::solve_experimental_mupf()
     int n_contacts = params.fixed_num_contacts;
 
     // use no memory hereafter
-    setMemoryWidth(1);
+    //setMemoryWidth(1);
 
-    for(; i<measurements.size(); i+=n_contacts)
+    for(; i+n_contacts-1<measurements.size(); i+=n_contacts)
     {
 	Measure m;
 

@@ -939,19 +939,25 @@ void UnscentedParticleFilter::selectionStep(double &Neff,const double &sum_squar
     ParametersUPF &params=get_parameters();
     
     Neff=1.0/sum_squared;
-    
-    if(Neff< params.N/20.0 && t>=3)
+
+    if (params.always_resample)
     {
 	resampling();
     }
-    if( t<3)
+    else
     {
-        for(size_t j=0;  j<x.size(); j++)
-        {
-    	    x[j].weights=1.0/params.N;
-        }
+	if(Neff< params.N/20.0 && t>=3)
+	{
+	    resampling();
+	}
+	if( t<3)
+	{
+	    for(size_t j=0;  j<x.size(); j++)
+	    {
+		x[j].weights=1.0/params.N;
+	    }
+	}
     }
-    
     for(size_t i=0; i<x.size(); i++)
     {
         x[i].P_corr=x[i].P_hat;
@@ -1347,6 +1353,10 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     parameters.fixed_num_contacts=rf.find("fixed_num_contacts").asInt();
     if (rf.find("fixed_num_contacts").isNull())
         parameters.fixed_num_contacts=rf.check("fixed_num_contacts",Value(1)).asInt();
+
+    parameters.always_resample=rf.find("always_resample").asBool();
+    if (rf.find("always_resample").isNull())
+        parameters.always_resample=rf.check("always_resample",Value(false)).asBool();
 }
 
 /*******************************************************************************/

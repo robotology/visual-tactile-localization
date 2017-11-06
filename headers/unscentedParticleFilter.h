@@ -46,6 +46,9 @@ struct ParametersUPF : public Parameters
 
     /**fixed number of contact points per step input*/
     int fixed_num_contacts;
+
+    /**whether to resample at each step or not*/
+    bool always_resample;
    
     /** Unscented Transform parameters*/
     double            beta;

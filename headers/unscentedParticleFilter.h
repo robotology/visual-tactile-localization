@@ -212,12 +212,6 @@ protected:
     /** Get parameters necessary for UnscentedParticleFilter class
     */
     ParametersUPF &get_parameters();
-
-    /*******************************************************************/     
-    /** Init Optimizer, set starting time=0, sample particle from initial
-    * search region, initialize some matrices and vectors of UPF
-    */
-    void init();
     
     /*******************************************************************/   
     /** Sample particle from initial search region,
@@ -242,13 +236,6 @@ protected:
     /* @param width, the width of the window
     */
     void setMemoryWidth(const int width);
-
-    /*******************************************************************/   
-    /** It is executed when UPF is finished.
-    *  Compute final most significant particle, in world reference system.
-    * @return most significant particle, as yarp Vector
-    */ 
-    yarp::sig::Vector finalize();
     
     /*******************************************************************/ 
     /** Compute roll pitch roll rototranslation matrix.
@@ -422,13 +409,25 @@ public:
      */
     UnscentedParticleFilter();
     
-    
+    /*******************************************************************/     
+    /** Init Optimizer, set starting time=0, sample particle from initial
+    * search region, initialize some matrices and vectors of UPF
+    */
+    void init();
+
     /** Calls step( ) until measurements finish
      */
     void solve();
     
     /*******************************************************************/
     
+    /*******************************************************************/   
+    /** It is executed when UPF is finished.
+    *  Compute final most significant particle, in world reference system.
+    * @return most significant particle, as yarp Vector
+    */ 
+    yarp::sig::Vector finalize();
+
     /** Saves x with gretest weight, localization error and execution time 
      * in one file, and the .off model of the estimated pose object in another file 
      * @param rf a previously inizialized @see Resource Finder

@@ -977,11 +977,33 @@ void UnscentedParticleFilter::initializationUPF()
 /*******************************************************************************/
 void UnscentedParticleFilter::solve()
 {
-    bool finished=false;
-    while(finished==false)
+    // this method shows an example of how to use
+    // the new interface to process measurements
+    // with one contact point per step time
+    // and a fixed memory window width
+
+    // this method will be removed
+
+    ParametersUPF &params=get_parameters();
+
+    // use always the same window width
+    setMemoryWidth(params.window_width);
+
+    // process all measurements
+    for(size_t i=0; i<measurements.size(); i++)
     {
-        finished=UnscentedParticleFilter::step();
+	// simulate n measure per time step
+	Measure m;
+
+	m.push_back(measurements[i]);
+
+	// set new measure in internal buffer
+	setNewMeasure(m);
+
+	// step
+	step();
     }
+
 }
 
 /*******************************************************************************/

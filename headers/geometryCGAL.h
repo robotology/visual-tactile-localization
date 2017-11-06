@@ -63,9 +63,6 @@ public:
         tree.insert(faces(model).first,faces(model).second,model);
         tree.accelerate_distance_queries();
     }
-    
-    /***************************************************************************/
-    virtual bool step() = 0;
 
     /***************************************************************************/
     virtual yarp::sig::Vector finalize() = 0;

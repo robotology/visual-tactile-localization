@@ -39,55 +39,35 @@ int main(int argc, char *argv[])
     yarp::sig::Matrix solutions;
     yarp::sig::Vector error_indices;
 
-    if(!strcmp(argv[2],"mupf"))
+    //if(!strcmp(argv[2],"mupf"))
+    solutions.resize(numTrials,4);
+    for(size_t i=0; i<numTrials; i++)
     {
-        solutions.resize(numTrials,4);
-        for(size_t i=0; i<numTrials; i++)
-        {
-            Localizer *loc5=new UnscentedParticleFilter();
-            loc5->configure(rf);
-            error_indices=loc5->localization();
-            loc5->saveData(error_indices,i);
+	UnscentedParticleFilter *upf=new UnscentedParticleFilter();
 
-	    // save error index
-            solutions(i,0)=error_indices[6];
+	// initialize
+	upf->configure(rf);
+	upf->init();
 
-	    // save execution time
-	    // (including MAP extraction)
-	    solutions(i,1)=error_indices[7];
+	// solve
+	upf->solve();
+	error_indices=upf->finalize();
 
-            delete loc5;
-        }
+	// save data
+	upf->saveData(error_indices,i);
+	// save error index
+	solutions(i,0)=error_indices[6];
+	// save execution time
+	// (including MAP extraction)
+	solutions(i,1)=error_indices[7];
 
-        Localizer *loc5=new UnscentedParticleFilter();
-        loc5->saveTrialsData(solutions);
-
-        delete loc5;
+	delete upf;
     }
-    // else
-    // {
-    //     error_indices.resize(0.0,8);
-    //     solutions.resize(numTrials,2);
-    //     for(size_t i=0; i<numTrials-1; i++)
-    //     {
-    // 	    Localizer *loc4=new ScalingSeries();
-    // 	    loc4->configure(rf);
-    // 	    error_indices=loc4->localization();
-    // 	    loc4->saveData(error_indices,i);
-    // 	    solutions(i,0)=error_indices[6];
-    // 	    solutions(i,1)=error_indices[7];
-    // 	    delete loc4;
-    // 	}
-	
-    // 	Localizer *loc4=new ScalingSeries();
-    // 	loc4->configure(rf);
-    // 	error_indices=loc4->localization();
-    // 	loc4->saveData(error_indices,numTrials-1);
-    // 	solutions(numTrials-1,0)=error_indices[6];
-    // 	solutions(numTrials-1,1)=error_indices[7];
-    // 	loc4->saveStatisticsData(solutions);
-    // 	delete loc4;
 
-    // }
+    Localizer *upf=new UnscentedParticleFilter();
+    upf->saveTrialsData(solutions);
+
+    delete upf;
+
     return 0;
 }

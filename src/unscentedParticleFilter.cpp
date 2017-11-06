@@ -1408,7 +1408,8 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, con
 /*******************************************************************************/
 void UnscentedParticleFilter::saveTrialsData(const yarp::sig::Matrix &solutions)
 {
-    string outputFileName="../../outputs/outputTrialsMUPF.csv";
+    string outputFilePath=this->rf->check("trialsFilePath",Value("../../outputs/")).asString();
+    string outputFileName=outputFilePath + "outputTrialsMUPF.csv";
 
     ofstream fout(outputFileName.c_str());
 
@@ -1422,4 +1423,6 @@ void UnscentedParticleFilter::saveTrialsData(const yarp::sig::Matrix &solutions)
 	    if (!std::isnan(solutions(j,0)) && solutions(j,0) < 1)
 		fout<<j<<";"<<solutions(j,0)<<";"<<solutions(j,1)<<endl; 
     }
+    else
+	cout<< "problem opening output_data file!";
 }

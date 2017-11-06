@@ -77,8 +77,10 @@ int main(int argc, char *argv[])
     }
 
     Localizer *upf=new UnscentedParticleFilter();
+    upf->configure(rf);
+    
     upf->saveTrialsData(solutions);
-
+        
     delete upf;
 
     return 0;

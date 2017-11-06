@@ -1328,13 +1328,3 @@ void UnscentedParticleFilter::saveTrialsData(const yarp::sig::Matrix &solutions)
 		fout<<j<<";"<<solutions(j,0)<<";"<<solutions(j,1)<<endl; 
     }
 }
-
-/*******************************************************************************/      
-yarp::sig::Vector UnscentedParticleFilter::localization()
-{
-    yarp::sig::Vector result;
-    
-    init();
-    solve();
-    return result=finalize();
-};

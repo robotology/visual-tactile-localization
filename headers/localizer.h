@@ -88,16 +88,6 @@ class Localizer
     
     /*******************************************************************/
     
-    /** returns the estimated pose x, the localization error and the execution
-     * time
-     * @param rf a previously inizialized @see Resource Finder
-     * @return vector consisting of x, localization error and execution
-     */
-    virtual yarp::sig::Vector localization()=0;
-    
-    /*******************************************************************/
-    
-    
     /** save the result of the localization in an output file
      * @param rf a previously inizialized @see Resource Finder
      * @param ms_particle is a Vector of 8 components: the estimated 

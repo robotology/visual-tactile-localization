@@ -453,16 +453,6 @@ public:
     bool configure(yarp::os::ResourceFinder &rf);
     /*******************************************************************/
     
-    /** Runs init() and solve(). Configure must be runned before and if we want to
-     * save or to send the result, we have to do it in main.cpp
-     * @param rf a previously inizialized @see Resource Finder
-     * @return vector of 8 components: estimated x,y,z, and the 3 Euler angles,
-     * localization error, execution time
-     */
-    yarp::sig::Vector localization();     
-    /****************************************************************************************************/
-
-   
 };
 
 

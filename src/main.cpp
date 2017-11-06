@@ -39,8 +39,12 @@ int main(int argc, char *argv[])
     yarp::sig::Matrix solutions;
     yarp::sig::Vector error_indices;
 
-    //if(!strcmp(argv[2],"mupf"))
     solutions.resize(numTrials,4);
+
+    if(strcmp(argv[2],"standard_mupf") &&
+       strcmp(argv[2],"experimental_mupf"))
+       return 0;
+       
     for(size_t i=0; i<numTrials; i++)
     {
 	UnscentedParticleFilter *upf=new UnscentedParticleFilter();
@@ -50,7 +54,10 @@ int main(int argc, char *argv[])
 	upf->init();
 
 	// solve
-	upf->solve();
+	if(!strcmp(argv[2],"standard_mupf"))
+	{
+	    upf->solve_standard_mupf();
+	}
 	error_indices=upf->finalize();
 
 	// save data

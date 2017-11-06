@@ -977,6 +977,11 @@ void UnscentedParticleFilter::initializationUPF()
 /*******************************************************************************/
 void UnscentedParticleFilter::solve()
 {
+}
+
+/*******************************************************************************/
+void UnscentedParticleFilter::solve_standard_mupf()
+{
     // this method shows an example of how to use
     // the new interface to process measurements
     // with one contact point per step time

@@ -415,9 +415,10 @@ public:
     */
     void init();
 
-    /** Calls step( ) until measurements finish
+    /** solvers for testing purposes
      */
     void solve();
+    void solve_standard_mupf();
     
     /*******************************************************************/
     

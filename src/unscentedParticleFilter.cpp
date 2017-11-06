@@ -984,7 +984,7 @@ void UnscentedParticleFilter::solve_standard_mupf()
 {
     // this method shows an example of how to use
     // the new interface to process measurements
-    // with one contact point per step time
+    // with one or multiple contact points per step time
     // and a fixed memory window width
 
     // this method will be removed
@@ -994,13 +994,18 @@ void UnscentedParticleFilter::solve_standard_mupf()
     // use always the same window width
     setMemoryWidth(params.window_width);
 
+    // use always the same number of contact
+    // points per time step
+    int n_contacts = params.fixed_num_contacts;
+
     // process all measurements
-    for(size_t i=0; i<measurements.size(); i++)
+    for(size_t i=0; i<measurements.size(); i+=n_contacts)
     {
 	// simulate n measure per time step
 	Measure m;
 
-	m.push_back(measurements[i]);
+	for(size_t j=0; j<n_contacts; j++)
+	    m.push_back(measurements[i+j]);
 
 	// set new measure in internal buffer
 	setNewMeasure(m);
@@ -1008,7 +1013,6 @@ void UnscentedParticleFilter::solve_standard_mupf()
 	// step
 	step();
     }
-
 }
 
 /*******************************************************************************/

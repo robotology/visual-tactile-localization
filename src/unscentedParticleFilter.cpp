@@ -1039,6 +1039,9 @@ void UnscentedParticleFilter::solve_experimental_mupf()
     // use this window width for (phase 1)
     setMemoryWidth(params.window_width);
 
+    // threshold
+    double thr=params.err_index_thr;
+
     size_t i;
     for(i=0; i<measurements.size(); i++)
     {
@@ -1061,7 +1064,7 @@ void UnscentedParticleFilter::solve_experimental_mupf()
 
 	// evaluate performance index
 	performanceIndex(p);
-	if(p.error_index < 0.009)
+	if(p.error_index < thr)
 	    break;
     }
 
@@ -1357,6 +1360,10 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     parameters.always_resample=rf.find("always_resample").asBool();
     if (rf.find("always_resample").isNull())
         parameters.always_resample=rf.check("always_resample",Value(false)).asBool();
+
+    parameters.err_index_thr=rf.find("err_index_thr").asDouble();
+    if (rf.find("err_index_thr").isNull())
+        parameters.err_index_thr=rf.check("err_index_thr",Value(1.0)).asDouble();
 }
 
 /*******************************************************************************/

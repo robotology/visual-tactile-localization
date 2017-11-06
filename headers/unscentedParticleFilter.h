@@ -49,6 +49,9 @@ struct ParametersUPF : public Parameters
 
     /**whether to resample at each step or not*/
     bool always_resample;
+
+    /**error index threshold used in the solve_experimental_mupf solver*/
+    double err_index_thr;
    
     /** Unscented Transform parameters*/
     double            beta;

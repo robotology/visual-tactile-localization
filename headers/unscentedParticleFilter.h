@@ -43,6 +43,9 @@ struct ParametersUPF : public Parameters
 	
     /**dimension of measurements*/
     int p;
+
+    /**fixed number of contact points per step input*/
+    int fixed_num_contacts;
    
     /** Unscented Transform parameters*/
     double            beta;

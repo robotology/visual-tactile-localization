@@ -1239,6 +1239,14 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     cout<<"measurements "<<endl;
     for(int i=0;  i<measurements.size(); i++)
         cout<< measurements[i]<<endl;
+
+    parameters.window_width=rf.find("window_width").asInt();
+    if (rf.find("window_width").isNull())
+        parameters.window_width=rf.check("window_width",Value(parameters.numMeas)).asInt();
+
+    parameters.fixed_num_contacts=rf.find("fixed_num_contacts").asInt();
+    if (rf.find("fixed_num_contacts").isNull())
+        parameters.fixed_num_contacts=rf.check("fixed_num_contacts",Value(1)).asInt();
 }
 
 /*******************************************************************************/

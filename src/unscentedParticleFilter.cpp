@@ -166,8 +166,15 @@ void UnscentedParticleFilter::step()
 	    x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
 	    x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
 	    x[i].XsigmaPoints_pred(5,j)=fmod(x[i].XsigmaPoints_pred(5,j),2*M_PI);
-	    
-	    x[i].YsigmaPoints_pred.setCol(j,computeY(t,i,j));
+
+	    if(params.use_ideal_meas_eqn)
+	    {
+		x[i].YsigmaPoints_pred.setCol(j,computeYIdeal(t,i,j));
+	    }
+	    else
+	    {
+		x[i].YsigmaPoints_pred.setCol(j,computeY(t,i,j));
+	    }
 	    
         }
     }
@@ -1409,6 +1416,10 @@ bool UnscentedParticleFilter::configure(ResourceFinder &rf)
     parameters.err_index_thr=rf.find("err_index_thr").asDouble();
     if (rf.find("err_index_thr").isNull())
         parameters.err_index_thr=rf.check("err_index_thr",Value(1.0)).asDouble();
+
+    parameters.use_ideal_meas_eqn=rf.find("use_ideal_meas_eqn").asBool();
+    if (rf.find("use_ideal_meas_eqn").isNull())
+        parameters.use_ideal_meas_eqn=rf.check("use_ideal_meas_eqn",Value(false)).asBool();
 
     // get real pose from confguration file
     yarp::sig::Vector real_pose;

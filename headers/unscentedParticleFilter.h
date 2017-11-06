@@ -50,6 +50,9 @@ struct ParametersUPF : public Parameters
     /**whether to resample at each step or not*/
     bool always_resample;
 
+    /**whether to use the ideal measurement equation or not*/
+    bool use_ideal_meas_eqn;
+
     /**error index threshold used in the solve_experimental_mupf solver*/
     double err_index_thr;
    

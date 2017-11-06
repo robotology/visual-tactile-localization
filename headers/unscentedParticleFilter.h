@@ -419,6 +419,7 @@ public:
      */
     void solve();
     void solve_standard_mupf();
+    void solve_experimental_mupf();
     
     /*******************************************************************/
     

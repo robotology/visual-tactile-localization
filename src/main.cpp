@@ -58,6 +58,11 @@ int main(int argc, char *argv[])
 	{
 	    upf->solve_standard_mupf();
 	}
+	else if(!strcmp(argv[2],"experimental_mupf"))
+	{
+	    upf->solve_experimental_mupf();
+	}
+
 	error_indices=upf->finalize();
 
 	// save data

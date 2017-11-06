@@ -1016,6 +1016,75 @@ void UnscentedParticleFilter::solve_standard_mupf()
 }
 
 /*******************************************************************************/
+void UnscentedParticleFilter::solve_experimental_mupf()
+{
+    // this method shows an example of how to use
+    // the new interface to process measurements
+    // with one contact point until the performance error index (phase 1)
+    // is below a given threshold and then
+    // with multiple contact points (phase 2)
+
+    // this method will be removed
+
+    ParametersUPF &params=get_parameters();
+
+    // phase 1
+
+    // use this window width for (phase 1)
+    setMemoryWidth(params.window_width);
+
+    size_t i;
+    for(i=0; i<measurements.size(); i++)
+    {
+	// one contact per time step
+	Measure m;
+
+	m.push_back(measurements[i]);
+
+	// set new measure in internal buffer
+	setNewMeasure(m);
+
+	// step
+	step();
+
+	// eval MAP estimate
+	yarp::sig::Vector map_estimate;
+	MsParticleUPF p;
+	map_estimate=mapEstimate();
+	p.pos=map_estimate;
+
+	// evaluate performance index
+	performanceIndex(p);
+	if(p.error_index < 0.009)
+	    break;
+    }
+
+    // phase 2
+
+    // use params.fixed_num_contacts points 
+    // per time step hereafter
+    int n_contacts = params.fixed_num_contacts;
+
+    // use no memory hereafter
+    setMemoryWidth(1);
+
+    for(; i<measurements.size(); i+=n_contacts)
+    {
+	Measure m;
+
+	for(size_t j=0; j<n_contacts; j++)
+	    m.push_back(measurements[i+j]);
+
+	// set new measure in internal buffer
+	setNewMeasure(m);
+
+	// step
+	step();
+    }
+
+}
+
+/*******************************************************************************/
 bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &downsampling)
 {
     ParametersUPF &params=get_parameters();

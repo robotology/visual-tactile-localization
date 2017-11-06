@@ -938,19 +938,19 @@ void UnscentedParticleFilter::selectionStep(double &Neff,const double &sum_squar
 {
     ParametersUPF &params=get_parameters();
     
-    // Neff=1.0/sum_squared;
+    Neff=1.0/sum_squared;
     
-    // if(Neff< params.N/20.0 && t>=3)
-    // {
-    resampling();
-    // }
-    // if( t<3)
-    // {
-    //     for(size_t j=0;  j<x.size(); j++)
-    //     {
-    // 	    x[j].weights=1.0/params.N;
-    //     }
-    // }
+    if(Neff< params.N/20.0 && t>=3)
+    {
+	resampling();
+    }
+    if( t<3)
+    {
+        for(size_t j=0;  j<x.size(); j++)
+        {
+    	    x[j].weights=1.0/params.N;
+        }
+    }
     
     for(size_t i=0; i<x.size(); i++)
     {

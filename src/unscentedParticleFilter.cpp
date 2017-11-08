@@ -590,8 +590,6 @@ Vector UnscentedParticleFilter::mapEstimate()
             i_max_prob=i;
         }
     }
-    yDebug()<<"i max prob"<<i_max_prob;
-    yDebug()<<" max prob "<<max_prob;
 
     return x[i_max_prob].x_corr;
 }
@@ -1094,6 +1092,13 @@ void UnscentedParticleFilter::solve_experimental_mupf()
     // threshold
     double thr=params.err_index_thr;
 
+    // likelihoods
+    // MAP extraction is tricky in this experiment since in
+    // phase 2 we will change the memory width
+    //
+    std::vector<std::vector<double> > likelihoods_1(params.N, std::vector<double>());
+    std::vector<std::vector<double> > likelihoods_2(params.N, std::vector<double>());
+
     size_t i;
     for(i=0; i<measurements.size(); i++)
     {
@@ -1116,8 +1121,13 @@ void UnscentedParticleFilter::solve_experimental_mupf()
 
 	// evaluate performance index
 	performanceIndex(p);
+	yInfo()<<p.error_index;
 	if(p.error_index < thr)
 	    break;
+
+	double tmp;
+	for(size_t j=0; j<params.N; j++)
+	    likelihoods_1[j].push_back(likelihood(t,j,tmp));
     }
 
     // phase 2
@@ -1127,7 +1137,10 @@ void UnscentedParticleFilter::solve_experimental_mupf()
     int n_contacts = params.fixed_num_contacts;
 
     // use no memory hereafter
-    //setMemoryWidth(1);
+    setMemoryWidth(1);
+
+    // always resample
+    params.always_resample = true;
 
     for(; i+n_contacts-1<measurements.size(); i+=n_contacts)
     {
@@ -1141,8 +1154,29 @@ void UnscentedParticleFilter::solve_experimental_mupf()
 
 	// step
 	step();
+
+	double tmp;
+	for(size_t j=0; j<params.N; j++)
+	    likelihoods_2[j].push_back(likelihood(t,j,tmp));
     }
 
+    // fix map_weights for MAP estimate
+    double likelihood_fix=1.0;
+    for (size_t i=0; i<params.N; i++)
+    {
+	std::vector<double> &lik_1=likelihoods_1[i];
+	size_t j,k;
+	for(j=params.window_width-1, k=lik_1.size()-1; j>0 && k>=0; j--, k--)
+	{
+	    likelihood_fix*=pow(lik_1[k],j);
+	}
+	std::vector<double> &lik_2=likelihoods_2[i];
+	for(size_t m=0; m<lik_2.size(); m++)
+	{
+	    likelihood_fix*=pow(lik_2[m],params.window_width-1);
+	}
+	x[i].weights_map = x[i].weights*likelihood_fix;
+    }
 }
 
 /*******************************************************************************/

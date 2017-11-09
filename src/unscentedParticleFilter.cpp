@@ -328,7 +328,6 @@ double UnscentedParticleFilter::finaleLikelihood(const int &best_part)
     ParticleUPF &particle=x[best_part];
     
     Matrix H=rpr(particle.x_corr.subVector(3,5));
-    H.transposed();
     
     H(0,3)=particle.x_corr[0];
     H(1,3)=particle.x_corr[1];
@@ -361,7 +360,6 @@ double UnscentedParticleFilter::likelihood(const int &t, const int &k, double& m
     ParticleUPF &particle=x[k];
     
     Matrix H=rpr(particle.x_corr.subVector(3,5));
-    H.transposed();
     
     H(0,3)=particle.x_corr[0];
     H(1,3)=particle.x_corr[1];
@@ -647,7 +645,6 @@ void UnscentedParticleFilter::performanceIndex( MsParticleUPF &ms_particle)
     ms_particle.error_index=0;
     
     Matrix H=rpr(ms_particle.pos.subVector(3,5));
-    H.transposed();
     H(0,3)=ms_particle.pos[0];
     H(1,3)=ms_particle.pos[1];
     H(2,3)=ms_particle.pos[2];
@@ -751,8 +748,6 @@ yarp::sig::Vector UnscentedParticleFilter::computeY(const int &t, const int &k, 
     
     Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
     
-    Hm.transposed();
-    
     Hm(0,3)=x[k].XsigmaPoints_pred(0,j);
     Hm(1,3)=x[k].XsigmaPoints_pred(1,j);
     Hm(2,3)=x[k].XsigmaPoints_pred(2,j);
@@ -796,11 +791,9 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &t, const int
 
     // evaluate attitude of particle
     Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
-    Hm.transposed();
     
     // evaluate real attitude
     Matrix Hreal=rpr(params.real_pose.subVector(3,5));
-    Hreal.transposed();
 
     // evaluate rotational part of the required transformation
     Matrix H=Hm*Hreal.transposed();

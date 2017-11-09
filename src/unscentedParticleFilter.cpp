@@ -798,9 +798,9 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &t, const int
     // evaluate rotational part of the required transformation
     Matrix H=Hm*Hreal.transposed();
     // evaluate translational part of required transformation
-    Hm(0,3)=x[k].XsigmaPoints_pred(0,j);
-    Hm(1,3)=x[k].XsigmaPoints_pred(1,j);
-    Hm(2,3)=x[k].XsigmaPoints_pred(2,j);
+    H(0,3)=x[k].XsigmaPoints_pred(0,j);
+    H(1,3)=x[k].XsigmaPoints_pred(1,j);
+    H(2,3)=x[k].XsigmaPoints_pred(2,j);
 
     // take last measurements received
     Measure& m=meas_buffer.back();
@@ -815,9 +815,9 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &t, const int
 			 p[1]-params.real_pose[1],
 			 p[2]-params.real_pose[2]);
 
-	out[j*3]=Hm(0,0)*diff[0]+Hm(0,1)*diff[1]+Hm(0,2)*diff[2]+Hm(0,3);
-	out[j*3+1]=Hm(1,0)*diff[0]+Hm(1,1)*diff[1]+Hm(1,2)*diff[2]+Hm(1,3);
-	out[j*3+2]=Hm(2,0)*diff[0]+Hm(2,1)*diff[1]+Hm(2,2)*diff[2]+Hm(2,3);
+	out[j*3]=H(0,0)*diff[0]+H(0,1)*diff[1]+H(0,2)*diff[2]+H(0,3);
+	out[j*3+1]=H(1,0)*diff[0]+H(1,1)*diff[1]+H(1,2)*diff[2]+H(1,3);
+	out[j*3+2]=H(2,0)*diff[0]+H(2,1)*diff[1]+H(2,2)*diff[2]+H(2,3);
     }
     
     return out;

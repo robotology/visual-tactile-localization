@@ -881,6 +881,8 @@ void UnscentedParticleFilter::computePpred(const int &i)
 /*******************************************************************************/
 void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
 {
+    ParametersUPF &params=get_parameters();
+    
     for(size_t j=0; j<2*n+1; j++)
     {
         x[i].A.setCol(0,x[i].YsigmaPoints_pred.getCol(j)-x[i].y_pred);
@@ -895,6 +897,13 @@ void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
 	
         x[i].Pxy=x[i].Pxy+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].A.transposed();
     }
+
+    //add measurement noise covariance matrix to Pyy
+    Measure& m=meas_buffer.back();
+    yarp::sig::Matrix R(3 * m.size(), 3 * m.size());
+    yarp::sig::Vector diag_R(3 * m.size(), params.R(0,0));
+    R.diagonal(diag_R);
+    x[i].Pyy = x[i].Pyy + R;
 }
 
 /*******************************************************************************/

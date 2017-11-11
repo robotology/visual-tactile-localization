@@ -985,7 +985,10 @@ void UnscentedParticleFilter::selectionStep(double &Neff,const double &sum_squar
 
     if (params.always_resample)
     {
-	resampling();
+	if(Neff< params.N/20.0)
+	{
+	    resampling();
+	}
     }
     else
     {

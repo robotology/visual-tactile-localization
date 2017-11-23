@@ -453,17 +453,17 @@ public:
     */ 
     yarp::sig::Vector finalize();
 
-    /** Saves x with gretest weight, localization error and execution time 
-     * in one file, and the .off model of the estimated pose object in another file 
+    /** Saves the .off model of the estimated pose object x
      * @param rf a previously inizialized @see Resource Finder
-     * @param ms_particle, containing estimated x, localization error and execution time
+     * @param ms_particle, containing estimated x
      */
     void saveData( const yarp::sig::Vector &ms_particle,const int &y);
      
     /*******************************************************************/
     
-    /** Saves the performance error index and the time computed for all the trials
-     * @param Matrix, containing the three solutions
+    /** Saves the performance error index, the execution and the solution
+     *  for all the trials
+     * @param Matrix, containing the data to be saved
      */
     void saveTrialsData(const yarp::sig::Matrix &solutions);
     

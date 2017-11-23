@@ -1482,9 +1482,6 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, con
     string str_i = ss2.str();
     string outputFileName=this->rf->check("outputFileMUPF",Value("../../outputs/outputMUPF"+str_i+".off")).
 	asString().c_str();
-    string  outputFileName2=this->rf->check("outputFileDataMUPF",Value("../../outputs/output_dataMUPF.off")).
-	asString().c_str();
-    
     
     ofstream fout(outputFileName.c_str());
     if(fout.is_open())
@@ -1495,22 +1492,6 @@ void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, con
 	cout<< "problem opening output_data file!";
     
     fout.close();
-    
-    ofstream fout2(outputFileName2.c_str(), std::ofstream::out | std::ofstream::app);
-    
-    if(fout2.is_open())
-    {
-	fout2<<"trial: "<<i<<endl;
-	fout2<<"most significant particle"<<endl;
-	fout2<<"solution: "<<ms_particle4.pos.subVector(0,5).toString(3,3).c_str()<<endl;
-	fout2<<"found in "<<result[7]<<" [s]"<<endl;
-	fout2<<"error_index "<<ms_particle4.error_index<<endl;
-	fout2<<endl;
-    }
-    else
-	cout<< "problem opening output_data file!";
-    
-    fout2.close();
 }
 
 /*******************************************************************************/
@@ -1524,12 +1505,16 @@ void UnscentedParticleFilter::saveTrialsData(const yarp::sig::Matrix &solutions)
     if(fout.is_open())
     {
 	// print the CSV header
-	fout<<"trial;error_index;time"<<endl;
+	fout<<"trial;error_index;time;sol_x;sol_y;sol_z;sol_phi;sol_theta;sol_psi"<<endl;
 
 	// save data for each trial
 	for(int j=0; j<solutions.rows(); j++)
-	    if (!std::isnan(solutions(j,0)) && solutions(j,0) < 1)
-		fout<<j<<";"<<solutions(j,0)<<";"<<solutions(j,1)<<endl; 
+	{
+	    fout<<j<<";"<<solutions(j,0)<<";"<<solutions(j,1)<<";";
+	    fout<<solutions(j,2)<<";"<<solutions(j,3)<<";"<<solutions(j,4)<<";";
+	    fout<<solutions(j,5)<<";"<<solutions(j,6)<<";"<<solutions(j,7);
+	    fout<<endl;
+	}
     }
     else
 	cout<< "problem opening output_data file!";

@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     yarp::sig::Matrix solutions;
     yarp::sig::Vector error_indices;
 
-    solutions.resize(numTrials,4);
+    solutions.resize(numTrials,8);
 
     if(strcmp(argv[2],"standard_mupf") &&
        strcmp(argv[2],"experimental_mupf"))
@@ -72,7 +72,14 @@ int main(int argc, char *argv[])
 	// save execution time
 	// (including MAP extraction)
 	solutions(i,1)=error_indices[7];
-
+	// save solutions
+	solutions(i,2)=error_indices[0];
+	solutions(i,3)=error_indices[1];
+	solutions(i,4)=error_indices[2];
+	solutions(i,5)=error_indices[3];	
+	solutions(i,6)=error_indices[4];
+	solutions(i,7)=error_indices[5];
+		
 	delete upf;
     }
 

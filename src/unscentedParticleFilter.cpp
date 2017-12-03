@@ -1,82 +1,674 @@
-/*
- * Copyright: (C) 2015 iCub Facility - Istituto Italiano di Tecnologia
- * Authors: Ugo Pattacini
- * CopyPolicy: Released under the terms of the GNU GPL v2.0.
-*/
+/******************************************************************************
+ *                                                                            *
+ * Copyright (C) 2017 Fondazione Istituto Italiano di Tecnologia (IIT)        *
+ * All Rights Reserved.                                                       *
+ *                                                                            *
+ ******************************************************************************/
 
-#include <iostream>
+/**
+ * @author: Giulia Vezzani <giulia.vezzani@iit.it>
+ * @author: Nicola Piga <nicolapiga@gmail.com>
+ */
+
+// std 
 #include <string>
 #include <fstream>
-#include <algorithm>
-#include <cmath>
 
+// yarp
 #include <yarp/os/all.h>
 #include <yarp/math/Math.h>
-#include <yarp/math/api.h>
 #include <yarp/math/Rand.h>
-#include <yarp/math/RandnVector.h>
 #include <yarp/math/RandnScalar.h>
 #include <yarp/math/SVD.h>
-#include <yarp/os/ResourceFinder.h>
 
-#include <iCub/ctrl/math.h>
+// CGAL
 #include <CGAL/IO/Polyhedron_iostream.h>
 
+//
 #include "headers/unscentedParticleFilter.h"
 
 typedef CGAL::Aff_transformation_3<K> Affine;
 
-using namespace std;
-using namespace yarp::os;
-using namespace yarp::sig;
 using namespace yarp::math;
-using namespace iCub::ctrl;
 
-
-/*******************************************************************************/
-UnscentedParticleFilter::UnscentedParticleFilter() : GeometryCGAL()
-{   
-    parameters=new ParametersUPF;   // owned by GeometryCGAL
+bool UnscentedParticleFilter::readCenter(const std::string &tag, yarp::sig::Vector &center0)
+{      
+    if (yarp::os::Bottle *b=this->rf->find(tag.c_str()).asList())
+	if (b->size()>=3)
+	{   
+	    center0[0]=b->get(0).asDouble();
+	    center0[1]=b->get(1).asDouble();
+	    center0[2]=b->get(2).asDouble();
+	    return true;
+	}
+    
+    return false;
 }
-
-/*******************************************************************************/
-ParametersUPF &UnscentedParticleFilter::get_parameters()
+    
+bool UnscentedParticleFilter::readRadius(const std::string &tag, yarp::sig::Vector &radius0)
 {
-    return *static_cast<ParametersUPF*>(parameters);
+    if (yarp::os::Bottle *b=this->rf->find(tag.c_str()).asList())
+        if (b->size()>=3)
+        {
+            radius0[0]=b->get(0).asDouble();           
+            radius0[1]=b->get(1).asDouble();            
+            radius0[2]=b->get(2).asDouble();
+				
+            return true;
+        }
+    
+    return false;
+}
+    
+bool UnscentedParticleFilter::readDiagonalMatrix(const std::string &tag, yarp::sig::Vector &diag,\
+						 const int &dimension)
+{
+    if (yarp::os::Bottle *b=this->rf->find(tag.c_str()).asList())
+        if (b->size()>=dimension)
+        {
+            for(size_t i; i<dimension; i++)
+                diag[i]=b->get(i).asDouble();
+
+            return true;
+        }
+
+    return false;
 }
 
-/*******************************************************************************/
+void UnscentedParticleFilter::initializationUPF()
+{
+    for(size_t i=0; i<x.size(); i++ )
+    {
+	// initialize quantities using parameters
+	// obtained from the configuration file
+	x[i].weights=1.0/params.N;
+	x[i].P_corr=params.P0;
+
+	// zero matrices
+	x[i].P_hat.zero();
+	x[i].P_pred.zero();
+    }
+}
+
 void UnscentedParticleFilter::initialRandomize()
 {
     for (size_t i=0; i<x.size(); i++)
     {
         ParticleUPF &particle=x[i];
-        ParametersUPF &params=get_parameters();
         
-        particle.x_corr[0]=Rand::scalar(params.center0[0]-params.radius0[0],params.center0[0]+params.radius0[0]);
-        particle.x_corr[1]=Rand::scalar(params.center0[1]-params.radius0[1],params.center0[1]+params.radius0[1]);
-        particle.x_corr[2]=Rand::scalar(params.center0[2]-params.radius0[2],params.center0[2]+params.radius0[2]);
-        particle.x_corr[3]=Rand::scalar(0,2*M_PI);
-        particle.x_corr[4]=Rand::scalar(0,M_PI);
-        particle.x_corr[5]=Rand::scalar(0,2*M_PI);           
+        particle.x_corr[0]=yarp::math::Rand::scalar(params.center0[0]-params.radius0[0],params.center0[0]+params.radius0[0]);
+        particle.x_corr[1]=yarp::math::Rand::scalar(params.center0[1]-params.radius0[1],params.center0[1]+params.radius0[1]);
+        particle.x_corr[2]=yarp::math::Rand::scalar(params.center0[2]-params.radius0[2],params.center0[2]+params.radius0[2]);
+        particle.x_corr[3]=yarp::math::Rand::scalar(0,2*M_PI);
+        particle.x_corr[4]=yarp::math::Rand::scalar(0,M_PI);
+        particle.x_corr[5]=yarp::math::Rand::scalar(0,2*M_PI);           
     }
 }
 
-/*******************************************************************************/
+void UnscentedParticleFilter::resizeParticle(const int &i)
+{
+    // take the size of the last measurement received
+    int p = 3*meas_buffer.back().size();
+    
+    x[i].y_pred.resize(p,0.0);
+    x[i].Pyy.resize(p,p);
+    x[i].Pxy.resize(params.n,p);
+    x[i].K.resize(params.n,p);
+    x[i].A.resize(p,1);
+    x[i].YsigmaPoints_pred.resize(p,2*params.n+1);
+}
+
+void UnscentedParticleFilter::initializeUKFMatrix(const int &i)
+{
+    x[i].Pyy.zero();
+    x[i].Pxy.zero();
+    x[i].K.zero();
+    x[i].P_pred_aux.zero();
+}
+
+void UnscentedParticleFilter::computeSigmaPoints(const int &i)
+{
+    yarp::sig::Vector aux;
+    
+    yarp::sig::Matrix S,U,V,G;
+    yarp::sig::Vector s;
+    s.resize(params.n,0.0);
+    U.resize(params.n,params.n);
+    S.resize(params.n,params.n);
+    V.resize(params.n,params.n);
+    G.resize(params.n,params.n);
+    
+    yarp::math::SVD((params.n+params.lambda)*x[i].P_corr,U,s,V);
+    
+    for(size_t k=0; k<params.n; k++)
+    {
+        s[k]=sqrt(s[k]);
+    }
+    S.diagonal(s);
+    G=U*S;
+    
+    x[i].XsigmaPoints_corr.setCol(0,x[i].x_corr);
+    
+    for(size_t j=1; j<params.n+1; j++)
+    {
+        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr+G.getCol(j-1));
+	
+        x[i].XsigmaPoints_corr(3,j)=fmod(x[i].XsigmaPoints_corr(3,j),2*M_PI);
+        x[i].XsigmaPoints_corr(4,j)=fmod(x[i].XsigmaPoints_corr(4,j),2*M_PI);
+        x[i].XsigmaPoints_corr(5,j)=fmod(x[i].XsigmaPoints_corr(5,j),2*M_PI);
+    }
+    
+    for(size_t j=params.n+1; j<2*params.n+1; j++)
+    {
+        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr-G.getCol(j-1-params.n));
+	
+        x[i].XsigmaPoints_corr(3,j)=fmod(x[i].XsigmaPoints_corr(3,j),2*M_PI);
+        x[i].XsigmaPoints_corr(4,j)=fmod(x[i].XsigmaPoints_corr(4,j),2*M_PI);
+        x[i].XsigmaPoints_corr(5,j)=fmod(x[i].XsigmaPoints_corr(5,j),2*M_PI);
+    }
+    
+    x[i].WsigmaPoints_covariance[0]=params.lambda/(params.n+params.lambda)+1-pow(params.alpha,2.0)+params.beta;
+    x[i].WsigmaPoints_average[0]=params.lambda/(params.n+params.lambda);
+    
+    for(size_t j=1; j<2*params.n+1; j++)
+    {
+        x[i].WsigmaPoints_covariance[j]=1/(2*(params.n+params.lambda));
+        x[i].WsigmaPoints_average[j]=1/(2*(params.n+params.lambda));
+    }
+}
+
+yarp::sig::Matrix UnscentedParticleFilter::rpr(const yarp::sig::Vector &particle)
+{
+    yarp::sig::Matrix H(4,4);
+    double phi=particle[0];
+    double theta=particle[1];
+    double psi=particle[2];
+    H(0,0)=cos(phi)*cos(theta)*cos(psi)-sin(phi)*sin(psi);
+    H(0,1)=-cos(phi)*cos(theta)*sin(psi)-sin(phi)*cos(psi);
+    H(0,2)=cos(phi)*sin(theta);
+    H(1,0)=sin(phi)*cos(theta)*cos(psi)+cos(phi)*sin(psi);
+    H(1,1)=-sin(phi)*cos(theta)*sin(psi)+cos(phi)*cos(psi);
+    H(1,2)=sin(phi)*sin(theta) ;
+    H(2,0)= -sin(theta)*cos(psi);
+    H(2,1)=sin(theta)*sin(psi) ;
+    H(2,2)=cos(theta) ;
+    
+    return H;    
+}
+
+yarp::sig::Vector UnscentedParticleFilter::computeY(const int &k, const int &j)
+{
+    Point y_pred;
+    yarp::sig::Vector out;
+    
+    ParticleUPF &particle=x[k];
+    
+    yarp::sig::Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
+    
+    Hm(0,3)=x[k].XsigmaPoints_pred(0,j);
+    Hm(1,3)=x[k].XsigmaPoints_pred(1,j);
+    Hm(2,3)=x[k].XsigmaPoints_pred(2,j);
+
+    // take last measurements received
+    Measure& m=meas_buffer.back();
+    out.resize(3*m.size(),0.0);
+
+    // evaluate measurement equation
+    for (int j=0; j<m.size(); j++)
+    {
+	Hm=SE3inv(Hm);
+	
+	Point &p=m[j];
+
+	double x=Hm(0,0)*p[0]+Hm(0,1)*p[1]+Hm(0,2)*p[2]+Hm(0,3);
+	double y=Hm(1,0)*p[0]+Hm(1,1)*p[1]+Hm(1,2)*p[2]+Hm(1,3);
+	double z=Hm(2,0)*p[0]+Hm(2,1)*p[1]+Hm(2,2)*p[2]+Hm(2,3);
+
+	y_pred=tree.closest_point(Point(x,y,z));
+
+	Hm=SE3inv(Hm);
+
+	out[j*3]=Hm(0,0)*y_pred[0]+Hm(0,1)*y_pred[1]+Hm(0,2)*y_pred[2]+Hm(0,3);
+	out[j*3+1]=Hm(1,0)*y_pred[0]+Hm(1,1)*y_pred[1]+Hm(1,2)*y_pred[2]+Hm(1,3);
+	out[j*3+2]=Hm(2,0)*y_pred[0]+Hm(2,1)*y_pred[1]+Hm(2,2)*y_pred[2]+Hm(2,3);
+    }
+    
+    return out;
+}
+
+yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &k, const int &j)
+{
+    Point y_pred;
+    yarp::sig::Vector out;
+    
+    ParticleUPF &particle=x[k];
+
+    // evaluate attitude of particle
+    yarp::sig::Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
+    
+    // evaluate real attitude
+    yarp::sig::Matrix Hreal=rpr(real_pose.subVector(3,5));
+
+    // evaluate rotational part of the required transformation
+    yarp::sig::Matrix H=Hm*Hreal.transposed();
+    // evaluate translational part of required transformation
+    H(0,3)=x[k].XsigmaPoints_pred(0,j);
+    H(1,3)=x[k].XsigmaPoints_pred(1,j);
+    H(2,3)=x[k].XsigmaPoints_pred(2,j);
+
+    // take last measurements received
+    Measure& m=meas_buffer.back();
+    out.resize(3*m.size(),0.0);
+
+    // evaluate ideal measurement equation
+    for (int j=0; j<m.size(); j++)
+    {
+	// evaluate difference between measurement and real pose
+	Point &p=m[j];
+	Point diff=Point(p[0]-real_pose[0],
+			 p[1]-real_pose[1],
+			 p[2]-real_pose[2]);
+
+	out[j*3]=H(0,0)*diff[0]+H(0,1)*diff[1]+H(0,2)*diff[2]+H(0,3);
+	out[j*3+1]=H(1,0)*diff[0]+H(1,1)*diff[1]+H(1,2)*diff[2]+H(1,3);
+	out[j*3+2]=H(2,0)*diff[0]+H(2,1)*diff[1]+H(2,2)*diff[2]+H(2,3);
+    }
+    
+    return out;
+}
+
+void UnscentedParticleFilter::predictionStep(const int &i)
+{
+    x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
+    x[i].x_pred[3]=fmod(x[i].x_pred[3],2*M_PI);
+    x[i].x_pred[4]=fmod(x[i].x_pred[4],2*M_PI);
+    x[i].x_pred[5]=fmod(x[i].x_pred[5],2*M_PI);
+    
+    x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
+}
+
+void UnscentedParticleFilter::computePpred(const int &i)
+{
+    for(size_t j=0; j<2*params.n+1; j++)
+    {
+        x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
+	
+        x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
+	
+    }
+    x[i].P_pred=x[i].P_pred_aux;
+    
+    for(size_t j=3; j<6; j++)
+    {
+        for(size_t k=3; k<6; k++)
+        {
+            x[i].P_pred(j,k)=fmod(x[i].P_pred(j,k),2*M_PI);
+        }
+    }
+}
+
+void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
+{
+    for(size_t j=0; j<2*params.n+1; j++)
+    {
+        x[i].A.setCol(0,x[i].YsigmaPoints_pred.getCol(j)-x[i].y_pred);
+	
+        x[i].Pyy=x[i].Pyy+x[i].WsigmaPoints_covariance[j]*x[i].A*x[i].A.transposed();
+	
+        x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
+	
+        x[i].x_tilde(3,0)=fmod(x[i].x_tilde(3,0),2*M_PI);
+        x[i].x_tilde(4,0)=fmod(x[i].x_tilde(4,0),2*M_PI);
+        x[i].x_tilde(5,0)=fmod(x[i].x_tilde(5,0),2*M_PI);
+	
+        x[i].Pxy=x[i].Pxy+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].A.transposed();
+    }
+
+    //add measurement noise covariance matrix to Pyy
+    Measure& m=meas_buffer.back();
+    yarp::sig::Matrix R(3 * m.size(), 3 * m.size());
+    yarp::sig::Vector diag_R(3 * m.size(), params.R);
+    R.diagonal(diag_R);
+    x[i].Pyy = x[i].Pyy + R;
+}
+
+void UnscentedParticleFilter::correctionStep(const int &i)
+{
+    yarp::sig::Vector meas;
+
+    // take last measurements received
+    Measure& m=meas_buffer.back();
+    meas.resize(3*m.size(),0.0);
+
+    for (int j=0; j<m.size(); j++)
+    {
+	Point &p=m[j];
+
+	meas[j*3]=p[0];
+	meas[j*3+1]=p[1];
+	meas[j*3+2]=p[2];
+    }
+
+    x[i].x_corr=x[i].x_pred+x[i].K*(meas-x[i].y_pred);
+    x[i].x_corr[3]=fmod(x[i].x_corr[3],2*M_PI);
+    x[i].x_corr[4]=fmod(x[i].x_corr[4],2*M_PI);
+    x[i].x_corr[5]=fmod(x[i].x_corr[5],2*M_PI);
+    x[i].P_hat=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
+    
+    for(size_t j=3; j<6; j++)
+    {
+        for(size_t k=3; k<6; k++)
+        {
+            x[i].P_hat(j,k)=fmod(x[i].P_hat(j,k),2*M_PI);
+        }
+    }
+}
+
+double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
+{
+    double sum=0.0;
+    double likelihood=1.0;
+    map_likelihood=1.0;
+    int initial_meas;
+    
+    ParticleUPF &particle=x[k];
+    
+    yarp::sig::Matrix H=rpr(particle.x_corr.subVector(3,5));
+    
+    H(0,3)=particle.x_corr[0];
+    H(1,3)=particle.x_corr[1];
+    H(2,3)=particle.x_corr[2];
+    
+    H=SE3inv(H);
+
+    // counter required to correct likelihod
+    // for MAP estimate
+    int map_correction_count;
+    map_correction_count=params.memory_width;
+
+    // take reverse_iterator pointing to the last measurement
+    std::vector<Measure>::reverse_iterator rit=meas_buffer.rbegin();
+
+    // process all the measures available within the memory width
+    for (size_t width = params.memory_width; width>0 && rit!=meas_buffer.rend(); rit++, width--)
+    {
+	// take the current measure
+	Measure& m=*rit;
+	
+	// initialize the squared measurement error for the current measure
+	double squared_tot_meas_error = 0.0;
+
+	for (int j=0; j<m.size(); j++)
+	{
+	    Point &p=m[j];
+
+	    double x=H(0,0)*p[0]+H(0,1)*p[1]+H(0,2)*p[2]+H(0,3);
+	    double y=H(1,0)*p[0]+H(1,1)*p[1]+H(1,2)*p[2]+H(1,3);
+	    double z=H(2,0)*p[0]+H(2,1)*p[1]+H(2,2)*p[2]+H(2,3);
+
+	    squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
+	}
+
+	// standard likelihood
+	likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R));
+
+	// likelihood with correction required to evaluate MAP estimate
+	map_likelihood=map_likelihood*exp(-0.5*squared_tot_meas_error/(params.R)*(map_correction_count));
+	map_correction_count--;
+    }
+    
+    return likelihood;
+}	
+
+void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
+{
+    double standard_likelihood;
+    double map_likelihood;
+
+    // evaluate standard likelihood and
+    // likelihood corrected for MAP estimate
+    standard_likelihood = likelihood(i,map_likelihood);
+
+    // evaluate standard weights
+    x[i].weights=x[i].weights*standard_likelihood;
+
+    // evaluate weights corrected for MAP estimate
+    x[i].weights_map=x[i].weights*map_likelihood;
+    
+    sum+=x[i].weights;
+}
+
+void UnscentedParticleFilter::normalizeWeights(const int &i,const double &sum, double &sum_squared)
+{
+    x[i].weights=x[i].weights/sum;
+    sum_squared+=pow(x[i].weights,2.0);
+}
+
+void UnscentedParticleFilter::resampling()
+{	
+    std::deque<ParticleUPF> new_x;
+    yarp::sig::Vector c,u, new_index;
+    
+    //Initialization
+    c.resize(params.N, 0.0);
+    u.resize(params.N, 0.0);
+    new_index.resize(params.N, 0);
+    new_x.assign(params.N,ParticleUPF());
+    c[0]=x[0].weights;
+    
+    for(size_t i=1; i<params.N; i++)
+    {
+        c[i]=c[i-1]+x[i].weights;
+    }
+    
+    int i=0;
+    u[0]=yarp::math::Rand::scalar(0,1)/params.N;
+    
+    for(size_t j=0; j<params.N; j++)
+    {
+        u[j]=u[0]+1.0/params.N*j;
+	
+        while(u[j]>c[i])
+        {
+            i++;
+        }
+	
+        //new_x[j]=x[i];
+	yarp::sig::Vector tmp(6,0.0);
+	
+        tmp[0] = yarp::math::Rand::scalar(x[i].x_corr[0] - x[i].P_corr(0,0), +x[i].x_corr[0] + x[i].P_corr(0,0));
+        tmp[1] = yarp::math::Rand::scalar(x[i].x_corr[1] - x[i].P_corr(1,1), +x[i].x_corr[1] + x[i].P_corr(1,1));
+        tmp[2] = yarp::math::Rand::scalar(x[i].x_corr[2] - x[i].P_corr(2,2), +x[i].x_corr[2] + x[i].P_corr(2,2));
+        tmp[3] = yarp::math::Rand::scalar(x[i].x_corr[3] - x[i].P_corr(3,3), +x[i].x_corr[3] + x[i].P_corr(3,3));
+        tmp[4] = yarp::math::Rand::scalar(x[i].x_corr[4] - x[i].P_corr(4,4), +x[i].x_corr[4] + x[i].P_corr(4,4));
+        tmp[5] = yarp::math::Rand::scalar(x[i].x_corr[5] - x[i].P_corr(5,5), +x[i].x_corr[5] + x[i].P_corr(5,5));
+        new_x[j].x_corr=tmp;
+        new_x[j].weights=1.0/params.N;
+    }
+    
+    x=new_x;
+}
+
+void UnscentedParticleFilter::selectionStep(double &Neff,const double &sum_squared)
+{
+    Neff=1.0/sum_squared;
+    
+    if (params.resample_in_first_iters || t >= 3)
+    {	
+	if(Neff < params.N/20.0)
+	    resampling();
+    }
+
+    if (!params.resample_in_first_iters && t < 3)
+    {
+	for(size_t j=0;  j<x.size(); j++)
+	{
+	    x[j].weights=1.0/params.N;
+	}
+    }
+
+    for(size_t i=0; i<x.size(); i++)
+    {
+        x[i].P_corr=x[i].P_hat;
+    }
+}
+
+bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
+{
+    yInfo()<<"UPF configuration";
+    
+    // assign the resource finder
+    this->rf=&rf;
+
+    // read the number of particles
+    params.N=rf.find("N").asInt();
+    if (rf.find("N").isNull())
+	params.N=rf.check("N",yarp::os::Value(600)).asInt();
+    yInfo()<<"Number of particles:"<<params.N;
+
+    // read the center of the initial research region
+    params.center0.resize(3,0.0);
+    bool check=readCenter("center0",params.center0);
+    if(!check)
+    {
+        params.center0[0]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
+        params.center0[1]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
+        params.center0[2]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
+    }
+    yInfo()<<"Center of initial research region:"<<params.center0.toString();
+
+    // read the radius of the initial research region
+    params.radius0.resize(3,0.0);
+    check=readRadius("radius0",params.radius0);
+    if(!check)
+    {
+        params.radius0[0]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
+        params.radius0[1]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
+        params.radius0[2]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
+    }
+    yInfo()<<"Radius of initial research region:"<<params.radius0.toString();
+
+    // read the number of DoFs
+    params.n=rf.find("n").asInt();
+    if (rf.find("n").isNull())
+        params.n=rf.check("n",yarp::os::Value(6)).asInt();
+    yInfo()<<"Number of DoF:"<<params.n;
+
+    // read the parameter beta for the Unscented Transform
+    params.beta=rf.find("beta").asDouble();
+    if (rf.find("beta").isNull())
+        params.beta=rf.check("beta",yarp::os::Value(35.0)).asDouble();
+    yInfo()<<"Unscented Transform Beta:"<<params.beta;
+
+    // read the parameter alpha for the Unscented Transform
+    params.alpha=rf.find("alpha").asDouble();
+    if (rf.find("alpha").isNull())
+        params.alpha=rf.check("alpha",yarp::os::Value(1.0)).asDouble();
+    yInfo()<<"Unscented Transform Alpha:"<<params.alpha;
+
+    // read the parameter kappa for the Unscented Transform
+    params.kappa=rf.find("kappa").asDouble();
+    if (rf.find("kappa").isNull())
+        params.kappa=rf.check("kappa",yarp::os::Value(2.0)).asDouble();
+    yInfo()<<"Unscented Transform Kappa:"<<params.kappa;
+
+    // compute the parameter lambda for the Unscented Transform
+    params.lambda=pow(params.alpha,2.0)*(6+params.kappa)-6;
+    yInfo()<<"Unscented Transform Lambda:"<<params.lambda;
+
+    // load the width of the memory window
+    params.memory_width=rf.find("memoryWidth").asInt();
+    if (rf.find("memoryWidth").isNull())
+        params.memory_width=rf.check("memoryWidth",yarp::os::Value(1)).asInt();
+    yInfo()<<"UPF memory width :"<<params.memory_width;
+
+    // read the flag resampleInFirstIters
+    params.resample_in_first_iters=rf.find("resampleInFirstIters").asBool();
+    if (rf.find("resampleInFirstIters").isNull())
+        params.resample_in_first_iters=rf.check("resampleInFirstIters",yarp::os::Value(true)).asBool();
+    yInfo()<<"UPF resample in first iterations:"<<params.resample_in_first_iters;
+    
+    // read the ideal measurement equation enabler
+    params.use_ideal_meas_eqn=rf.find("useIdealMeasEqn").asBool();
+    if (rf.find("useIdealMeasEqn").isNull())
+        params.use_ideal_meas_eqn=rf.check("useIdealMeasEqn",yarp::os::Value(false)).asBool();
+    yInfo()<<"UPF use ideal measurement equation :"<<params.use_ideal_meas_eqn;
+    
+    // read the values of the system noise covariance matrix
+    yarp::sig::Vector diagQ;
+    diagQ.resize(params.n,1);
+    check=readDiagonalMatrix("Q",diagQ,params.n);
+    if(!check)
+    {
+        diagQ[0]=rf.check("Q1",yarp::os::Value(0.0001)).asDouble();
+        diagQ[1]=rf.check("Q2",yarp::os::Value(0.0001)).asDouble();
+        diagQ[2]=rf.check("Q3",yarp::os::Value(0.0001)).asDouble();
+        diagQ[3]=rf.check("Q4",yarp::os::Value(0.001)).asDouble();
+        diagQ[4]=rf.check("Q5",yarp::os::Value(0.001)).asDouble();
+        diagQ[5]=rf.check("Q6",yarp::os::Value(0.001)).asDouble();
+    }
+    yarp::sig::Matrix Q;
+    params.Q.resize(params.n,params.n);
+    params.Q.diagonal(diagQ);
+    yInfo()<<"UKF Q:"<<params.Q.toString();
+
+    // read the noise scalar variance R
+    params.R=rf.find("R").asDouble();
+    if (rf.find("R").isNull())
+        params.R=rf.check("R",yarp::os::Value(0.0001)).asDouble();
+    yInfo()<<"UKF R (scalar):"<<params.R;
+    
+    // read the values of the initial state covariance matrix
+    yarp::sig::Vector diagP0;
+    diagP0.resize(params.n,1);
+    check=readDiagonalMatrix("P0",diagP0,params.n);
+    if(!check)
+    {
+        diagP0[0]=rf.check("P01",yarp::os::Value(0.04)).asDouble();
+        diagP0[1]=rf.check("P02",yarp::os::Value(0.04)).asDouble();
+        diagP0[2]=rf.check("P03",yarp::os::Value(0.04)).asDouble();
+        diagP0[3]=rf.check("P04",yarp::os::Value(pow(M_PI,2.0))).asDouble();
+        diagP0[4]=rf.check("P05",yarp::os::Value(pow(M_PI/2.0,2.0))).asDouble();
+        diagP0[5]=rf.check("P06",yarp::os::Value(pow(M_PI,2.0))).asDouble();
+    }
+    params.P0.resize(params.n,params.n);
+    params.P0.diagonal(diagP0);
+    yInfo()<<"UKF P0:"<<params.P0.toString();
+
+    // read triangular mesh model filename
+    if (!rf.check("modelFile"))
+    {
+        yError()<<"model file not provided!";
+        return false;
+    }
+    std::string modelFileName=rf.find("modelFile").asString().c_str();
+    // read the polyhedron from a .OFF file
+    std::ifstream modelFile(modelFileName.c_str());
+    if (!modelFile.is_open())
+    {
+        yError()<<"problem opening model file!";
+        return false;
+    }
+    modelFile>>getModel();
+    if (modelFile.bad())
+    {
+        yError()<<"problem reading model file!";
+        modelFile.close();
+        return false;
+    }
+    modelFile.close();
+    yInfo()<<"Model file loaded successfully";
+
+    return true;
+}
+
 void UnscentedParticleFilter::init()
 {
-    // init times
-    t0=Time::now();
+    // init index of iteration
     t=0;
 
     // init geometry for distance computation
     GeometryCGAL::init();
-
-    // initialize class members
-    ParametersUPF &params=get_parameters();
-    n=params.n;
-    // defaults to memory window width of 1 measurement
-    memory_width=1;
 
     // initialize particles and sample from initial search region
     x.assign(params.N,ParticleUPF());
@@ -86,7 +678,6 @@ void UnscentedParticleFilter::init()
     initializationUPF();
 }
 
-/*******************************************************************************/
 void UnscentedParticleFilter::setNewMeasure(const Measure& m)
 {
     // add the new measure received
@@ -94,31 +685,27 @@ void UnscentedParticleFilter::setNewMeasure(const Measure& m)
     meas_buffer.push_back(m);
 }
 
-/*******************************************************************************/
-void UnscentedParticleFilter::setMemoryWidth(const int width)
+void UnscentedParticleFilter::setRealPose(const yarp::sig::Vector &pose)
 {
-    memory_width = width;
+    // assign the current real pose
+    real_pose = pose;
 }
 
-/*******************************************************************************/
 void UnscentedParticleFilter::step()
 {   
     t++;
-    cout<<"t "<<t<<"\n";
-    
-    ParametersUPF &params=get_parameters();
-    
+
     double sum=0.0;
     double sum_squared=0.0;
     double Neff=0.0;
     
     yarp::sig::Vector random;
-    random.resize(n,0.0);
+    random.resize(params.n,0.0);
     
     yarp::sig::Matrix cholQ;
-    cholQ(n,n);
+    cholQ(params.n,params.n);
     
-    RandnScalar prova;
+    yarp::math::RandnScalar prova;
 
     // resize quantities that depends
     // on the size of the measurement vector
@@ -142,9 +729,9 @@ void UnscentedParticleFilter::step()
     //propagate particle in the future
     for(size_t i=0; i<x.size(); i++ )
     {
-        for(size_t j=0; j<2*n+1; j++)
+        for(size_t j=0; j<2*params.n+1; j++)
         {
-            for( size_t l=0; l<n; l++)
+            for( size_t l=0; l<params.n; l++)
             {		
                 random[l]=prova.RandnScalar::get(0.0, 1.0);
             }
@@ -155,7 +742,7 @@ void UnscentedParticleFilter::step()
 	    
 	    for(size_t k=0; k<6; k++)
 	    {
-		for( size_t l=0; l<n; l++)
+		for( size_t l=0; l<params.n; l++)
 		{
 		    cholQ(k,l)=sqrt(cholQ(k,l));
 		}
@@ -169,11 +756,11 @@ void UnscentedParticleFilter::step()
 
 	    if(params.use_ideal_meas_eqn)
 	    {
-		x[i].YsigmaPoints_pred.setCol(j,computeYIdeal(t,i,j));
+		x[i].YsigmaPoints_pred.setCol(j,computeYIdeal(i,j));
 	    }
 	    else
 	    {
-		x[i].YsigmaPoints_pred.setCol(j,computeY(t,i,j));
+		x[i].YsigmaPoints_pred.setCol(j,computeY(i,j));
 	    }
 	    
         }
@@ -215,332 +802,15 @@ void UnscentedParticleFilter::step()
     {
         normalizeWeights(i, sum, sum_squared);
     }
-    
-    // if(t==total_steps)
-    // {
-    //     dt_gauss2=Time::now()-t0;
-    //     result4=particleDensity3();
-    //     dt_gauss=Time::now()-t0;
-    //     DT=dt_gauss-dt_gauss2;
-    // }
-    // else
-    // {
-    //     findMostSignificantParticle();
+
     selectionStep(Neff,sum_squared);
-    // }
 }
 
-/*******************************************************************************/
-Vector UnscentedParticleFilter::finalize()
+yarp::sig::Vector UnscentedParticleFilter::getEstimate()
 {
-    // eval execution time without final MAP estimate
-    dt_gauss2=Time::now()-t0;
-
-    // eval MAP estimate
-    map_estimate=mapEstimate();
-
-    // eval execution time with final MAP estimate
-    dt_gauss=Time::now()-t0;
-    DT=dt_gauss-dt_gauss2;
-    
-    Vector error_indices;
-    error_indices.resize(4,0.0);
-    result.resize(9,0.0);
-    
-    //save map estimate in ms_particle4
-    ms_particle4.pos=map_estimate;
-
-    // evaluate performance index
-    performanceIndex(ms_particle4);
-    cout<<"error_index "<<ms_particle4.error_index<<endl;
-
-    // transform the object model taking into account the estimate found
-    Matrix H=rpr(ms_particle4.pos.subVector(3,5));
-    Affine affine(H(0,0),H(0,1),H(0,2),ms_particle4.pos[0],
-                  H(1,0),H(1,1),H(1,2),ms_particle4.pos[1],
-                  H(2,0),H(2,1),H(2,2),ms_particle4.pos[2]);
-    std::transform(model.points_begin(),model.points_end(),
-                   model.points_begin(),affine);
-
-    // save results
-    result[0]=map_estimate[0];
-    result[1]=map_estimate[1];
-    result[2]=map_estimate[2];
-    result[3]=map_estimate[3];
-    result[4]=map_estimate[4];
-    result[5]=map_estimate[5];
-    result[6]=ms_particle4.error_index;
-    result[7]=dt_gauss;
-    result[8]=max_prob;
-    return result;
-}
-
-/*******************************************************************************/
-Vector UnscentedParticleFilter::particleDensity()
-{	
-    ParametersUPF &params=get_parameters();
-    deque<double> Mahalanobis_distance;
-    
-    for(size_t i=0; i<x.size(); i++)
-    {
-        Mahalanobis_distance.push_back(0);
-        for(size_t j=0; j<x.size(); j++)
-        {
-            Matrix diff(6,1);
-	    
-            diff(0,0)=x[i].x_corr(0)-x[j].x_corr(0);
-            diff(1,0)=x[i].x_corr(1)-x[j].x_corr(1);
-            diff(2,0)=x[i].x_corr(2)-x[j].x_corr(2);
-            diff(3,0)=fmod(x[i].x_corr(3)-x[j].x_corr(3),2*M_PI);
-            diff(4,0)=fmod(x[i].x_corr(4)-x[j].x_corr(4),2*M_PI);
-            diff(5,0)=fmod(x[i].x_corr(5)-x[j].x_corr(5),2*M_PI);
-	    
-	    
-            Matrix temp(1,1);
-            temp=diff.transposed()*luinv(params.Q)*diff;
-            Mahalanobis_distance[i]=Mahalanobis_distance[i]+sqrt(temp(0,0));
-        }
-    }
-    
-    double Mahalanobis_minimum_distance;
-    int i_min_dist;
-    Mahalanobis_minimum_distance=10000000000;
-    for(size_t i=0; i<x.size(); i++)
-    {
-        if( Mahalanobis_minimum_distance> Mahalanobis_distance[i])
-        {
-            Mahalanobis_minimum_distance=Mahalanobis_distance[i];
-            i_min_dist=i;
-        }
-    }
-    
-    cout<<"i_min_dist "<<i_min_dist<<endl;
-    return x[i_min_dist].x_corr;
-    
-}
-
-/******************************************************************************/
-double UnscentedParticleFilter::finaleLikelihood(const int &best_part)
-{
-    ParametersUPF &params=get_parameters();
-    double likelihood=1.0;
-    
-    ParticleUPF &particle=x[best_part];
-    
-    Matrix H=rpr(particle.x_corr.subVector(3,5));
-    
-    H(0,3)=particle.x_corr[0];
-    H(1,3)=particle.x_corr[1];
-    H(2,3)=particle.x_corr[2];
-    
-    H=SE3inv(H);
-    
-    for (size_t i=0; i<params.numMeas; i++)
-    {
-        Point &m=measurements[i];
-	
-        double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
-        double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
-        double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
-        likelihood=likelihood*exp(-0.5*tree.squared_distance(Point(x,y,z))/(params.R(0,0)));
-    }
-    
-    return likelihood/(sqrt(2*M_PI)*params.R(0,0));
-}
-
-/******************************************************************************/
-double UnscentedParticleFilter::likelihood(const int &t, const int &k, double& map_likelihood)
-{
-    double sum=0.0;
-    ParametersUPF &params=get_parameters();
-    double likelihood=1.0;
-    map_likelihood=1.0;
-    int initial_meas;
-    
-    ParticleUPF &particle=x[k];
-    
-    Matrix H=rpr(particle.x_corr.subVector(3,5));
-    
-    H(0,3)=particle.x_corr[0];
-    H(1,3)=particle.x_corr[1];
-    H(2,3)=particle.x_corr[2];
-    
-    H=SE3inv(H);
-
-    // counter required to correct likelihod
-    // for MAP estimate
-    int map_correction_count;
-    map_correction_count=memory_width;
-
-    // take reverse_iterator pointing to the last measurement
-    std::vector<Measure>::reverse_iterator rit=meas_buffer.rbegin();
-
-    // process all the measures available within the memory width
-    for (size_t width = memory_width; width>0 && rit!=meas_buffer.rend(); rit++, width--)
-    {
-	// take the current measure
-	Measure& m=*rit;
-	
-	// initialize the squared measurement error for the current measure
-	double squared_tot_meas_error = 0.0;
-
-	for (int j=0; j<m.size(); j++)
-	{
-	    Point &p=m[j];
-
-	    double x=H(0,0)*p[0]+H(0,1)*p[1]+H(0,2)*p[2]+H(0,3);
-	    double y=H(1,0)*p[0]+H(1,1)*p[1]+H(1,2)*p[2]+H(1,3);
-	    double z=H(2,0)*p[0]+H(2,1)*p[1]+H(2,2)*p[2]+H(2,3);
-
-	    squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
-	}
-
-	// standard likelihood
-	likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0)));
-
-	// likelihood with correction required to evaluate MAP estimate
-	map_likelihood=map_likelihood*exp(-0.5*squared_tot_meas_error/(params.R(0,0))*(map_correction_count));
-	map_correction_count--;
-    }
-    
-    return likelihood;
-}	
-
-/*******************************************************************************/
-Vector UnscentedParticleFilter::particleDensity2()
-{	
-    ParametersUPF &params=get_parameters();
-    //compute number of particles in each neighrboard
-    deque<int> number_per_neigh;
-    deque<Vector> particle_per_particle;
-    deque<double> Mahalanobis_distance;
-    Vector neigh=params.neigh;
-    double percentage=params.percent;
-    for(size_t i=0; i<x.size(); i++)
-    {
-        Vector index_of_particle;
-	
-        Vector check_on_dimensions;
-        check_on_dimensions.resize(6,0.0);
-        int count=0;
-	
-        for(size_t j=0; j<x.size(); j++)
-        {
-            check_on_dimensions.resize(6,0.0);
-            int sum=0;
-	    
-            if((x[j].x_corr[0]<=x[i].x_corr[0]+neigh[0]) && (x[j].x_corr[0]>=x[i].x_corr[0]-neigh[0]))
-            {
-                check_on_dimensions[0]=1;
-            }
-            if((x[j].x_corr[1]<=x[i].x_corr[1]+neigh[1]) && (x[j].x_corr[1]>=x[i].x_corr[1]-neigh[1]))
-            {
-		check_on_dimensions[1]=1;
-            }
-            if((x[j].x_corr[2]<=x[i].x_corr[2]+neigh[2]) && (x[j].x_corr[2]>=x[i].x_corr[2]-neigh[2]))
-            {
-                check_on_dimensions[2]=1;
-            }
-	    
-            if((x[j].x_corr[4]<=fmod(x[i].x_corr[4]+neigh[4],2*M_PI)) && (x[j].x_corr[4]>=fmod(x[i].x_corr[4]-neigh[4],2*M_PI)))
-            {
-                check_on_dimensions[4]=1;
-            }
-            if((x[j].x_corr[5]<=fmod(x[i].x_corr[5]+neigh[5],2*M_PI)) && (x[j].x_corr[5]>=fmod(x[i].x_corr[5]-neigh[5],2*M_PI)))
-            {
-                check_on_dimensions[5]=1;
-            }
-            if((x[j].x_corr[3]<=fmod(x[i].x_corr[3]+neigh[3],2*M_PI)) && (x[j].x_corr[3]>=fmod(x[i].x_corr[3]-neigh[3],2*M_PI)))
-            {
-                check_on_dimensions[3]=1;
-            }
-	    
-            sum=check_on_dimensions[0]+check_on_dimensions[1]+check_on_dimensions[2]+check_on_dimensions[3]+check_on_dimensions[4]+check_on_dimensions[5];
-            if(sum==6)
-            {
-                count++;
-                index_of_particle.push_back(j);
-            }
-	    
-        }
-	
-        particle_per_particle.push_back(index_of_particle);
-        number_per_neigh.push_back(count);
-	
-    }
-    int max_numer_per_part;
-    max_numer_per_part=0;
-    
-    for(size_t i=0; i<number_per_neigh.size();i++)
-    {
-        if(max_numer_per_part<number_per_neigh[i])
-        {
-            max_numer_per_part=number_per_neigh[i];
-        }
-    }
-    cout<<"max num per part "<<max_numer_per_part<<endl;
-    int l;
-    Vector index_of_particle2;
-    for(size_t i=0; i<x.size(); i++)
-    {
-        if(number_per_neigh[i]>=percentage*max_numer_per_part)
-        {
-            index_of_particle2.push_back(i);
-            double mahalanobis_dist;
-            mahalanobis_dist=0;
-	    
-            for(size_t j=0; j<particle_per_particle[i].size(); j++)
-            {
-                Vector temp2;
-                temp2=particle_per_particle[i];
-                l=temp2[j];
-		
-                Matrix diff(6,1);
-		
-                diff(0,0)=x[i].x_corr(0)-x[l].x_corr(0);
-                diff(1,0)=x[i].x_corr(1)-x[l].x_corr(1);
-                diff(2,0)=x[i].x_corr(2)-x[l].x_corr(2);
-                diff(3,0)=fmod(x[i].x_corr(3)-x[l].x_corr(3),2*M_PI);
-                diff(4,0)=fmod(x[i].x_corr(4)-x[l].x_corr(4),2*M_PI);
-                diff(5,0)=fmod(x[i].x_corr(5)-x[l].x_corr(5),2*M_PI);
-		
-		
-                Matrix temp(1,1);
-                temp=diff.transposed()*luinv(params.Q)*diff;
-                mahalanobis_dist=mahalanobis_dist+sqrt(temp(0,0));
-		
-            }
-            Mahalanobis_distance.push_back(mahalanobis_dist/particle_per_particle[i].size());
-        }
-    }
-    
-    double Mahalanobis_minimum_distance;
-    int i_min_dist;
-    Mahalanobis_minimum_distance=10000000000;
-    
-    //cout<<"maha size "<<Mahalanobis_distance.size()<<endl;
-    // cout<<"index size "<<index_of_particle2.size()<<endl;
-    
-    for(size_t i=0; i<Mahalanobis_distance.size(); i++)
-    {
-        if( Mahalanobis_minimum_distance> Mahalanobis_distance[i])
-        {
-            //cout<<"Mhaln "<<Mahalanobis_distance[i]<<endl;
-            Mahalanobis_minimum_distance=Mahalanobis_distance[i];
-            i_min_dist=index_of_particle2[i];
-        }
-    }
-    //cout<<"i_min_dist "<<i_min_dist<<endl;
-    return x[i_min_dist].x_corr;
-}
-
-/*******************************************************************************/
-Vector UnscentedParticleFilter::mapEstimate()
-{
-    ParametersUPF &params=get_parameters();
-    deque<double> probability_per_particle;
+    std::deque<double> probability_per_particle;
     double probability;
-    Matrix diff(6,1);
+    yarp::sig::Matrix diff(6,1);
 
     // corrected weights are not normalized at each step since not required
     // normalization is done here
@@ -568,7 +838,7 @@ Vector UnscentedParticleFilter::mapEstimate()
             diff(4,0)=fmod(x[i].x_corr(4)-x[j].x_corr(4),2*M_PI);
             diff(5,0)=fmod(x[i].x_corr(5)-x[j].x_corr(5),2*M_PI);
 	    
-            Matrix temp(1,1);
+            yarp::sig::Matrix temp(1,1);
             temp=diff.transposed()*luinv(x[j].P_corr)*diff;
 	    
             probability=probability+x[i].weights_map*exp(-0.5*(temp(0,0)));
@@ -592,930 +862,45 @@ Vector UnscentedParticleFilter::mapEstimate()
     return x[i_max_prob].x_corr;
 }
 
-/*******************************************************************************/
-void UnscentedParticleFilter::resampling()
-{	
-    std::deque<ParticleUPF> new_x;
-    Vector c,u, new_index;
-    ParametersUPF &params=get_parameters();
-    
-    //Initialization
-    c.resize(params.N, 0.0);
-    u.resize(params.N, 0.0);
-    new_index.resize(params.N, 0);
-    new_x.assign(params.N,ParticleUPF());
-    c[0]=x[0].weights;
-    
-    for(size_t i=1; i<params.N; i++)
-    {
-        c[i]=c[i-1]+x[i].weights;
-    }
-    
-    int i=0;
-    u[0]=Rand::scalar(0,1)/params.N;
-    
-    for(size_t j=0; j<params.N; j++)
-    {
-        u[j]=u[0]+1.0/params.N*j;
-	
-        while(u[j]>c[i])
-        {
-            i++;
-        }
-	
-        //new_x[j]=x[i];
-        Vector tmp(6,0.0);
-	
-        tmp[0] = Rand::scalar(x[i].x_corr[0] - x[i].P_corr(0,0), +x[i].x_corr[0] + x[i].P_corr(0,0));
-        tmp[1] = Rand::scalar(x[i].x_corr[1] - x[i].P_corr(1,1), +x[i].x_corr[1] + x[i].P_corr(1,1));
-        tmp[2] = Rand::scalar(x[i].x_corr[2] - x[i].P_corr(2,2), +x[i].x_corr[2] + x[i].P_corr(2,2));
-        tmp[3] = Rand::scalar(x[i].x_corr[3] - x[i].P_corr(3,3), +x[i].x_corr[3] + x[i].P_corr(3,3));
-        tmp[4] = Rand::scalar(x[i].x_corr[4] - x[i].P_corr(4,4), +x[i].x_corr[4] + x[i].P_corr(4,4));
-        tmp[5] = Rand::scalar(x[i].x_corr[5] - x[i].P_corr(5,5), +x[i].x_corr[5] + x[i].P_corr(5,5));
-        new_x[j].x_corr=tmp;
-        new_x[j].weights=1.0/params.N;
-    }
-    
-    x=new_x;
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::performanceIndex( MsParticleUPF &ms_particle)
-{ 
-    ms_particle.error_index=0;
-    
-    Matrix H=rpr(ms_particle.pos.subVector(3,5));
-    H(0,3)=ms_particle.pos[0];
-    H(1,3)=ms_particle.pos[1];
-    H(2,3)=ms_particle.pos[2];
+double UnscentedParticleFilter::evalPerformanceIndex(const yarp::sig::Vector &estimate,
+						     const std::deque<Point> &points)
+{
+    yarp::sig::Matrix H=rpr(estimate.subVector(3,5));
+    H(0,3)=estimate[0];
+    H(1,3)=estimate[1];
+    H(2,3)=estimate[2];
     H=SE3inv(H);
-    
-    for (size_t i=0; i<measurements.size(); i++)
+
+    double error_index=0;
+    for (size_t i=0; i<points.size(); i++)
     {
-        Point &m=measurements[i];
+        const Point &m=points[i];
 	
         double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
         double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
         double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
 	
-        ms_particle.error_index+=sqrt(tree.squared_distance(Point(x,y,z)));
+	error_index+=sqrt(tree.squared_distance(Point(x,y,z)));
     }
     
-    ms_particle.error_index=ms_particle.error_index/measurements.size();
+    error_index/=points.size();
+
+    return error_index;
 }
 
-/*******************************************************************************/
-Matrix UnscentedParticleFilter::rpr(const Vector &particle)
+void UnscentedParticleFilter::transformObject(const yarp::sig::Vector &estimate,
+					      Polyhedron &transformed)
 {
-    Matrix H(4,4);
-    double phi=particle[0];
-    double theta=particle[1];
-    double psi=particle[2];
-    H(0,0)=cos(phi)*cos(theta)*cos(psi)-sin(phi)*sin(psi);
-    H(0,1)=-cos(phi)*cos(theta)*sin(psi)-sin(phi)*cos(psi);
-    H(0,2)=cos(phi)*sin(theta);
-    H(1,0)=sin(phi)*cos(theta)*cos(psi)+cos(phi)*sin(psi);
-    H(1,1)=-sin(phi)*cos(theta)*sin(psi)+cos(phi)*cos(psi);
-    H(1,2)=sin(phi)*sin(theta) ;
-    H(2,0)= -sin(theta)*cos(psi);
-    H(2,1)=sin(theta)*sin(psi) ;
-    H(2,2)=cos(theta) ;
-    
-    return H;    
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::computeSigmaPoints(const int &i)
-{
-    ParametersUPF &params=get_parameters();
-    yarp::sig::Vector aux;
-    
-    yarp::sig::Matrix S,U,V,G;
-    yarp::sig::Vector s;
-    s.resize(n,0.0);
-    U.resize(n,n);
-    S.resize(n,n);
-    V.resize(n,n);
-    G.resize(n,n);
-    
-    SVD((n+params.lambda)*x[i].P_corr,U,s,V);
-    
-    for(size_t k=0; k<n; k++)
-    {
-        s[k]=sqrt(s[k]);
-    }
-    S.diagonal(s);
-    G=U*S;
-    
-    x[i].XsigmaPoints_corr.setCol(0,x[i].x_corr);
-    
-    for(size_t j=1; j<n+1; j++)
-    {
-        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr+G.getCol(j-1));
-	
-        x[i].XsigmaPoints_corr(3,j)=fmod(x[i].XsigmaPoints_corr(3,j),2*M_PI);
-        x[i].XsigmaPoints_corr(4,j)=fmod(x[i].XsigmaPoints_corr(4,j),2*M_PI);
-        x[i].XsigmaPoints_corr(5,j)=fmod(x[i].XsigmaPoints_corr(5,j),2*M_PI);
-    }
-    
-    for(size_t j=n+1; j<2*n+1; j++)
-    {
-        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr-G.getCol(j-1-n));
-	
-        x[i].XsigmaPoints_corr(3,j)=fmod(x[i].XsigmaPoints_corr(3,j),2*M_PI);
-        x[i].XsigmaPoints_corr(4,j)=fmod(x[i].XsigmaPoints_corr(4,j),2*M_PI);
-        x[i].XsigmaPoints_corr(5,j)=fmod(x[i].XsigmaPoints_corr(5,j),2*M_PI);
-    }
-    
-    x[i].WsigmaPoints_covariance[0]=params.lambda/(n+params.lambda)+1-pow(params.alpha,2.0)+params.beta;
-    x[i].WsigmaPoints_average[0]=params.lambda/(n+params.lambda);
-    
-    for(size_t j=1; j<2*n+1; j++)
-    {
-        x[i].WsigmaPoints_covariance[j]=1/(2*(n+params.lambda));
-        x[i].WsigmaPoints_average[j]=1/(2*(n+params.lambda));
-    }
-}
-
-/*******************************************************************************/
-yarp::sig::Vector UnscentedParticleFilter::computeY(const int &t, const int &k, const int &j)
-{
-    ParametersUPF &params=get_parameters();
-    Point y_pred;
-    yarp::sig::Vector out;
-    
-    ParticleUPF &particle=x[k];
-    
-    Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
-    
-    Hm(0,3)=x[k].XsigmaPoints_pred(0,j);
-    Hm(1,3)=x[k].XsigmaPoints_pred(1,j);
-    Hm(2,3)=x[k].XsigmaPoints_pred(2,j);
-
-    // take last measurements received
-    Measure& m=meas_buffer.back();
-    out.resize(3*m.size(),0.0);
-
-    // evaluate measurement equation
-    for (int j=0; j<m.size(); j++)
-    {
-	Hm=SE3inv(Hm);
-	
-	Point &p=m[j];
-
-	double x=Hm(0,0)*p[0]+Hm(0,1)*p[1]+Hm(0,2)*p[2]+Hm(0,3);
-	double y=Hm(1,0)*p[0]+Hm(1,1)*p[1]+Hm(1,2)*p[2]+Hm(1,3);
-	double z=Hm(2,0)*p[0]+Hm(2,1)*p[1]+Hm(2,2)*p[2]+Hm(2,3);
-
-	y_pred=tree.closest_point(Point(x,y,z));
-	//cout<<"y_pred "<<y_pred[0]<<" "<<y_pred[1]<<" "<<y_pred[2]<<endl;
-
-	Hm=SE3inv(Hm);
-
-	out[j*3]=Hm(0,0)*y_pred[0]+Hm(0,1)*y_pred[1]+Hm(0,2)*y_pred[2]+Hm(0,3);
-	out[j*3+1]=Hm(1,0)*y_pred[0]+Hm(1,1)*y_pred[1]+Hm(1,2)*y_pred[2]+Hm(1,3);
-	out[j*3+2]=Hm(2,0)*y_pred[0]+Hm(2,1)*y_pred[1]+Hm(2,2)*y_pred[2]+Hm(2,3);
-    }
-    
-    return out;
-}
-
-/*******************************************************************************/
-yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &t, const int &k, const int &j)
-{
-    ParametersUPF &params=get_parameters();
-    Point y_pred;
-    yarp::sig::Vector out;
-    
-    ParticleUPF &particle=x[k];
-
-    // evaluate attitude of particle
-    Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
-    
-    // evaluate real attitude
-    Matrix Hreal=rpr(params.real_pose.subVector(3,5));
-
-    // evaluate rotational part of the required transformation
-    Matrix H=Hm*Hreal.transposed();
-    // evaluate translational part of required transformation
-    H(0,3)=x[k].XsigmaPoints_pred(0,j);
-    H(1,3)=x[k].XsigmaPoints_pred(1,j);
-    H(2,3)=x[k].XsigmaPoints_pred(2,j);
-
-    // take last measurements received
-    Measure& m=meas_buffer.back();
-    out.resize(3*m.size(),0.0);
-
-    // evaluate ideal measurement equation
-    for (int j=0; j<m.size(); j++)
-    {
-	// evaluate difference between measurement and real pose
-	Point &p=m[j];
-	Point diff=Point(p[0]-params.real_pose[0],
-			 p[1]-params.real_pose[1],
-			 p[2]-params.real_pose[2]);
-
-	out[j*3]=H(0,0)*diff[0]+H(0,1)*diff[1]+H(0,2)*diff[2]+H(0,3);
-	out[j*3+1]=H(1,0)*diff[0]+H(1,1)*diff[1]+H(1,2)*diff[2]+H(1,3);
-	out[j*3+2]=H(2,0)*diff[0]+H(2,1)*diff[1]+H(2,2)*diff[2]+H(2,3);
-    }
-    
-    return out;
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::predictionStep(const int &i)
-{
-    x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
-    x[i].x_pred[3]=fmod(x[i].x_pred[3],2*M_PI);
-    x[i].x_pred[4]=fmod(x[i].x_pred[4],2*M_PI);
-    x[i].x_pred[5]=fmod(x[i].x_pred[5],2*M_PI);
-    
-    x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::resizeParticle(const int &i)
-{
-    // take the size of the last measurement received
-    int p = 3*meas_buffer.back().size();
-    
-    x[i].y_pred.resize(p,0.0);
-    x[i].Pyy.resize(p,p);
-    x[i].Pxy.resize(n,p);
-    x[i].K.resize(n,p);
-    x[i].A.resize(p,1);
-    x[i].YsigmaPoints_pred.resize(p,2*n+1);
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::initializeUKFMatrix(const int &i)
-{
-    x[i].Pyy.zero();
-    x[i].Pxy.zero();
-    x[i].K.zero();
-    x[i].P_pred_aux.zero();
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::computePpred(const int &i)
-{
-    for(size_t j=0; j<2*n+1; j++)
-    {
-        x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
-	
-        x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
-	
-    }
-    x[i].P_pred=x[i].P_pred_aux;
-    
-    for(size_t j=3; j<6; j++)
-    {
-        for(size_t k=3; k<6; k++)
-        {
-            x[i].P_pred(j,k)=fmod(x[i].P_pred(j,k),2*M_PI);
-        }
-    }
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
-{
-    ParametersUPF &params=get_parameters();
-    
-    for(size_t j=0; j<2*n+1; j++)
-    {
-        x[i].A.setCol(0,x[i].YsigmaPoints_pred.getCol(j)-x[i].y_pred);
-	
-        x[i].Pyy=x[i].Pyy+x[i].WsigmaPoints_covariance[j]*x[i].A*x[i].A.transposed();
-	
-        x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
-	
-        x[i].x_tilde(3,0)=fmod(x[i].x_tilde(3,0),2*M_PI);
-        x[i].x_tilde(4,0)=fmod(x[i].x_tilde(4,0),2*M_PI);
-        x[i].x_tilde(5,0)=fmod(x[i].x_tilde(5,0),2*M_PI);
-	
-        x[i].Pxy=x[i].Pxy+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].A.transposed();
-    }
-
-    //add measurement noise covariance matrix to Pyy
-    Measure& m=meas_buffer.back();
-    yarp::sig::Matrix R(3 * m.size(), 3 * m.size());
-    yarp::sig::Vector diag_R(3 * m.size(), params.R(0,0));
-    R.diagonal(diag_R);
-    x[i].Pyy = x[i].Pyy + R;
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::correctionStep(const int &i)
-{
-    yarp::sig::Vector meas;
-
-    // take last measurements received
-    Measure& m=meas_buffer.back();
-    meas.resize(3*m.size(),0.0);
-
-    for (int j=0; j<m.size(); j++)
-    {
-	Point &p=m[j];
-
-	meas[j*3]=p[0];
-	meas[j*3+1]=p[1];
-	meas[j*3+2]=p[2];
-    }
-
-    x[i].x_corr=x[i].x_pred+x[i].K*(meas-x[i].y_pred);
-    x[i].x_corr[3]=fmod(x[i].x_corr[3],2*M_PI);
-    x[i].x_corr[4]=fmod(x[i].x_corr[4],2*M_PI);
-    x[i].x_corr[5]=fmod(x[i].x_corr[5],2*M_PI);
-    x[i].P_hat=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
-    
-    for(size_t j=3; j<6; j++)
-    {
-        for(size_t k=3; k<6; k++)
-        {
-            x[i].P_hat(j,k)=fmod(x[i].P_hat(j,k),2*M_PI);
-        }
-    }
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
-{
-    double standard_likelihood;
-    double map_likelihood;
-
-    // evaluate standard likelihood and
-    // likelihood corrected for MAP estimate
-    standard_likelihood = likelihood(t,i,map_likelihood);
-
-    // evaluate standard weights
-    x[i].weights=x[i].weights*standard_likelihood;
-
-    // evaluate weights corrected for MAP estimate
-    x[i].weights_map=x[i].weights*map_likelihood;
-    
-    sum+=x[i].weights;
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter:: normalizeWeights(const int &i,const double &sum, double &sum_squared)
-{
-    x[i].weights=x[i].weights/sum;
-    sum_squared+=pow(x[i].weights,2.0);
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::findMostSignificantParticle()
-{
-    double larger_weights=0.0;
-    int index_most=0;
-    
-    //find most significant particle
-    for(size_t i=0; i< x.size(); i++)
-    {
-        if(larger_weights<=x[i].weights|| i==0)
-        {
-            larger_weights=x[i].weights;
-            index_most=i;
-        }
-    }
-    
-    //cout<<"index_most "<<index_most<<endl;
-    x_most.push_back(x[index_most].x_corr);
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::selectionStep(double &Neff,const double &sum_squared)
-{
-    ParametersUPF &params=get_parameters();
-    
-    Neff=1.0/sum_squared;
-
-    if (params.always_resample)
-    {
-	if(Neff< params.N/20.0)
-	{
-	    resampling();
-	}
-    }
-    else
-    {
-	if(Neff< params.N/20.0 && t>=3)
-	{
-	    resampling();
-	}
-	if( t<3)
-	{
-	    for(size_t j=0;  j<x.size(); j++)
-	    {
-		x[j].weights=1.0/params.N;
-	    }
-	}
-    }
-    for(size_t i=0; i<x.size(); i++)
-    {
-        x[i].P_corr=x[i].P_hat;
-    }
-}
-/*******************************************************************************/
-void UnscentedParticleFilter::initializationUPF()
-{
-    ParametersUPF &params=get_parameters();
-    for(size_t i=0; i<x.size(); i++ )
-    {
-	// initialize quantities using parameters
-	// obtained from the configuration file
-	x[i].weights=1.0/params.N;
-	x[i].P_corr=params.P0;
-
-	// zero matrices
-	x[i].P_hat.zero();
-	x[i].P_pred.zero();
-    }
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::solve()
-{
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::solve_standard_mupf()
-{
-    // this method shows an example of how to use
-    // the new interface to process measurements
-    // with one or multiple contact points per step time
-    // and a fixed memory window width
-
-    // this method will be removed
-
-    ParametersUPF &params=get_parameters();
-
-    // use always the same window width
-    setMemoryWidth(params.window_width);
-
-    // use always the same number of contact
-    // points per time step
-    int n_contacts = params.fixed_num_contacts;
-
-    // process all measurements
-    for(size_t i=0; i+n_contacts-1<measurements.size(); i+=n_contacts)
-    {
-	// simulate n measure per time step
-	Measure m;
-
-	for(size_t j=0; j<n_contacts; j++)
-	    m.push_back(measurements[i+j]);
-
-	// set new measure in internal buffer
-	setNewMeasure(m);
-
-	// step
-	step();
-    }
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::solve_experimental_mupf()
-{
-    // this method shows an example of how to use
-    // the new interface to process measurements
-    // with one contact point until the performance error index (phase 1)
-    // is below a given threshold and then
-    // with multiple contact points (phase 2)
-
-    // this method will be removed
-
-    ParametersUPF &params=get_parameters();
-
-    // phase 1
-
-    // use this window width for (phase 1)
-    setMemoryWidth(params.window_width);
-
-    // threshold
-    double thr=params.err_index_thr;
-
-    // likelihoods
-    // MAP extraction is tricky in this experiment since in
-    // phase 2 we will change the memory width
-    //
-    std::vector<std::vector<double> > likelihoods_1(params.N, std::vector<double>());
-    std::vector<std::vector<double> > likelihoods_2(params.N, std::vector<double>());
-
-    size_t i;
-    for(i=0; i<measurements.size(); i++)
-    {
-	// one contact per time step
-	Measure m;
-
-	m.push_back(measurements[i]);
-
-	// set new measure in internal buffer
-	setNewMeasure(m);
-
-	// step
-	step();
-
-	// eval MAP estimate
-	yarp::sig::Vector map_estimate;
-	MsParticleUPF p;
-	map_estimate=mapEstimate();
-	p.pos=map_estimate;
-
-	// evaluate performance index
-	performanceIndex(p);
-	yInfo()<<p.error_index;
-	if(p.error_index < thr)
-	    break;
-
-	double tmp;
-	for(size_t j=0; j<params.N; j++)
-	    likelihoods_1[j].push_back(likelihood(t,j,tmp));
-    }
-
-    // phase 2
-
-    // use params.fixed_num_contacts points 
-    // per time step hereafter
-    int n_contacts = params.fixed_num_contacts;
-
-    // use no memory hereafter
-    setMemoryWidth(1);
-
-    // always resample
-    params.always_resample = true;
-
-    for(; i+n_contacts-1<measurements.size(); i+=n_contacts)
-    {
-	Measure m;
-
-	for(size_t j=0; j<n_contacts; j++)
-	    m.push_back(measurements[i+j]);
-
-	// set new measure in internal buffer
-	setNewMeasure(m);
-
-	// step
-	step();
-
-	double tmp;
-	for(size_t j=0; j<params.N; j++)
-	    likelihoods_2[j].push_back(likelihood(t,j,tmp));
-    }
-
-    // fix map_weights for MAP estimate
-    double likelihood_fix=1.0;
-    for (size_t i=0; i<params.N; i++)
-    {
-	std::vector<double> &lik_1=likelihoods_1[i];
-	size_t j,k;
-	for(j=params.window_width-1, k=lik_1.size()-1; j>0 && k>=0; j--, k--)
-	{
-	    likelihood_fix*=pow(lik_1[k],j);
-	}
-	std::vector<double> &lik_2=likelihoods_2[i];
-	for(size_t m=0; m<lik_2.size(); m++)
-	{
-	    likelihood_fix*=pow(lik_2[m],params.window_width-1);
-	}
-	x[i].weights_map = x[i].weights*likelihood_fix;
-    }
-}
-
-/*******************************************************************************/
-bool UnscentedParticleFilter::readMeasurements(ifstream &fin, const int &downsampling)
-{
-    ParametersUPF &params=get_parameters();
-    int state=0;
-    int nPoints;
-    char line[255];
-    params.numMeas=0;
-    
-    while (!fin.eof())
-    {
-        fin.getline(line,sizeof(line),'\n');
-        Bottle b(line);
-        Value firstItem=b.get(0);
-        bool isNumber=firstItem.isInt() || firstItem.isDouble();
-        
-        if (state==0)
-        {
-            string tmp=firstItem.asString().c_str();
-            std::transform(tmp.begin(),tmp.end(),tmp.begin(),::toupper);
-            if (tmp=="OFF")
-                state++;
-	}
-	else if (state==1)
-	{
-	    if (isNumber)
-	    {
-		nPoints=firstItem.asInt();
-		state++;
-	    }
-	}
-	else if (state==2)
-	{
-	    if (isNumber && (b.size()>=3))
-	    {
-		get_measurements().push_back(Point(b.get(0).asDouble(),
-						   b.get(1).asDouble(),
-						   b.get(2).asDouble()));
-		params.numMeas++;
-		nPoints-=downsampling;
-		if (nPoints<=0)
-		    return true;
-	    }
-	}
-    }
-    
-    return false;
-}
-
-/*******************************************************************************/    
-
-bool UnscentedParticleFilter::configure(ResourceFinder &rf)
-{
-    this->rf=&rf;
-    
-    if (!rf.check("modelFile"))
-    {
-        yError()<<"model file not provided!";
-        return false;
-    }
-    
-    if (!rf.check("measurementsFile"))
-    {
-        yError()<<"measurements file not provided!";
-        return false;
-    }
-    
-    downsampling=rf.check("downsampling", Value(1)).asInt();
-    string modelFileName=rf.find("modelFile").asString().c_str();
-    
-    string measurementsFileName=rf.find("measurementsFile"). asString().c_str();
-    
-    if(rf.find("measurementsFile").isNull())
-        measurementsFileName="../measurements.off";
-    
-    ParametersUPF &parameters=get_parameters();
-    parameters.N=rf.find("N").asInt();
-    if (rf.find("N").isNull())
-	parameters.N=rf.check("N",Value(600)).asInt();
-    
-    parameters.center0.resize(3,0.0);
-    bool check=readCenter("center0",parameters.center0);
-    
-    if(!check)
-    {
-        parameters.center0[0]=rf.check("center0",Value(0.2)).asDouble();
-        parameters.center0[1]=rf.check("center0",Value(0.2)).asDouble();
-        parameters.center0[2]=rf.check("center0",Value(0.2)).asDouble();
-    }
-    
-    parameters.radius0.resize(3,0.0);
-    
-    check=readRadius("radius0",parameters.radius0);
-    
-    if(!check)
-    {
-        parameters.radius0[0]=rf.check("radius0",Value(0.2)).asDouble();
-        parameters.radius0[1]=rf.check("radius0",Value(0.2)).asDouble();
-        parameters.radius0[2]=rf.check("radius0",Value(0.2)).asDouble();
-    }
-    
-    cout<<"RADIUS "<<parameters.radius0.toString()<<endl;
-    cout<<"CENTER "<<parameters.center0.toString()<<endl;
-    
-    parameters.n=rf.find("n").asInt();
-    if (rf.find("n").isNull())
-        parameters.n=rf.check("n",Value(6)).asInt();
-    
-    parameters.p=rf.find("p").asInt();
-    if (rf.find("p").isNull())
-        parameters.p=rf.check("p",Value(3)).asInt();
-
-    parameters.beta=rf.find("beta").asDouble();
-    if (rf.find("beta").isNull())
-        parameters.beta=rf.check("beta",Value(35.0)).asDouble();
-    
-    parameters.alpha=rf.find("alpha").asDouble();
-    if (rf.find("alpha").isNull())
-        parameters.alpha=rf.check("alpha",Value(1.0)).asDouble();
-    
-    parameters.kappa=rf.find("kappa").asDouble();
-    if (rf.find("kappa").isNull())
-        parameters.kappa=rf.check("kappa",Value(2.0)).asDouble();
-    
-    parameters.lambda=pow(parameters.alpha,2.0)*(6+parameters.kappa)-6;
-    
-    parameters.percent=rf.find("percentage").asDouble();
-    if (rf.find("percentage").isNull())
-        parameters.percent=rf.check("percentage",Value(0.85)).asDouble();
-    
-    yarp::sig::Vector diagQ;
-    diagQ.resize(parameters.n,1);
-    check=readDiagonalMatrix("Q",diagQ,parameters.n);
-    
-    cout<<"DEBUG: Q"<<diagQ.toString()<<endl;
-    
-    if(!check)
-    {
-        diagQ[0]=rf.check("Q1",Value(0.0001)).asDouble();
-        diagQ[1]=rf.check("Q2",Value(0.0001)).asDouble();
-        diagQ[2]=rf.check("Q3",Value(0.0001)).asDouble();
-        diagQ[3]=rf.check("Q4",Value(0.001)).asDouble();
-        diagQ[4]=rf.check("Q5",Value(0.001)).asDouble();
-        diagQ[5]=rf.check("Q6",Value(0.001)).asDouble();
-    }
-    
-    yarp::sig::Vector diagR;
-    diagR.resize(parameters.p,1);
-    
-    check=readDiagonalMatrix("R",diagR,parameters.p);
-    
-    if(!check)
-    {
-        diagR[0]=rf.check("R1",Value(0.0001)).asDouble();
-        diagR[1]=rf.check("R2",Value(0.0001)).asDouble();
-        diagR[2]=rf.check("R3",Value(0.0001)).asDouble();
-    }
-    
-    yarp::sig::Vector diagP0;
-    diagP0.resize(parameters.n,1);
-    
-    check=readDiagonalMatrix("P0",diagP0,parameters.n);
-    
-    if(!check)
-    {
-        diagP0[0]=rf.check("P01",Value(0.04)).asDouble();
-        diagP0[1]=rf.check("P02",Value(0.04)).asDouble();
-        diagP0[2]=rf.check("P03",Value(0.04)).asDouble();
-        diagP0[3]=rf.check("P04",Value(pow(M_PI,2.0))).asDouble();
-        diagP0[4]=rf.check("P05",Value(pow(M_PI/2.0,2.0))).asDouble();
-        diagP0[5]=rf.check("P06",Value(pow(M_PI,2.0))).asDouble();
-    }
-    
-    yarp::sig::Vector neigh0;
-    neigh0.resize(parameters.n,1);
-    
-    check=readDiagonalMatrix("neigh",neigh0,parameters.n);
-    
-    if(!check)
-    {
-        neigh0[0]=rf.check("neigh0",Value(0.08)).asDouble();
-        neigh0[1]=rf.check("neigh1",Value(0.08)).asDouble();
-        neigh0[2]=rf.check("neigh2",Value(0.08)).asDouble();
-        neigh0[3]=rf.check("neigh3",Value(0.3)).asDouble();
-        neigh0[4]=rf.check("neigh4",Value(0.3)).asDouble();
-        neigh0[5]=rf.check("neigh5",Value(0.3)).asDouble();
-    }
-    
-    parameters.neigh=neigh0;
-    
-    cout<<"perc "<<parameters.percent<<endl;
-    cout<<"neigh "<<parameters.neigh.toString(6,3)<<endl;
-    
-    yarp::sig::Matrix Q;
-    Q.resize(parameters.n,parameters.n);
-    
-    yarp::sig::Matrix R;
-    R.resize(parameters.p,parameters.p);
-    
-    yarp::sig::Matrix P0;
-    P0.resize(parameters.n,parameters.n);
-    
-    for(size_t i=0; i<parameters.n; i++)
-    {
-        Q(i,i)=diagQ[i];
-        P0(i,i)=diagP0[i];
-    }
-    
-    parameters.Q=Q;
-    parameters.P0=P0;
-    
-    for(size_t i=0; i<parameters.p; i++)
-    {
-	R(i,i)=diagR[i];
-    }
-    
-    parameters.R=R;
-    
-    // read the polyhedron from a .OFF file
-    ifstream modelFile(modelFileName.c_str());
-    if (!modelFile.is_open())
-    {
-        yError()<<"problem opening model file!";
-        return false;
-    }
-    
-    modelFile>>get_model();
-    
-    if (modelFile.bad())
-    {
-        yError()<<"problem reading model file!";
-        modelFile.close();
-        return false;
-    }
-    modelFile.close();
-    
-    // read the measurements file
-    ifstream measurementsFile(measurementsFileName.c_str());
-    if (!measurementsFile.is_open())
-    {
-        yError()<<"problem opening measurements file!";
-        modelFile.close();
-        return false;
-    }
-    if (!readMeasurements(measurementsFile, downsampling))
-    {
-        yError()<<"problem reading measurements file!";
-        modelFile.close();
-        measurementsFile.close();
-        return false;
-    }
-    measurementsFile.close();
-    cout<<"measurements "<<endl;
-    for(int i=0;  i<measurements.size(); i++)
-        cout<< measurements[i]<<endl;
-
-    parameters.window_width=rf.find("window_width").asInt();
-    if (rf.find("window_width").isNull())
-        parameters.window_width=rf.check("window_width",Value(parameters.numMeas)).asInt();
-
-    parameters.fixed_num_contacts=rf.find("fixed_num_contacts").asInt();
-    if (rf.find("fixed_num_contacts").isNull())
-        parameters.fixed_num_contacts=rf.check("fixed_num_contacts",Value(1)).asInt();
-
-    parameters.always_resample=rf.find("always_resample").asBool();
-    if (rf.find("always_resample").isNull())
-        parameters.always_resample=rf.check("always_resample",Value(false)).asBool();
-
-    parameters.err_index_thr=rf.find("err_index_thr").asDouble();
-    if (rf.find("err_index_thr").isNull())
-        parameters.err_index_thr=rf.check("err_index_thr",Value(1.0)).asDouble();
-
-    parameters.use_ideal_meas_eqn=rf.find("use_ideal_meas_eqn").asBool();
-    if (rf.find("use_ideal_meas_eqn").isNull())
-        parameters.use_ideal_meas_eqn=rf.check("use_ideal_meas_eqn",Value(false)).asBool();
-
-    // get real pose from confguration file
-    yarp::sig::Vector real_pose;
-    real_pose.resize(parameters.n,1);
-    
-    check=readDiagonalMatrix("real_pose",real_pose,parameters.n);
-    
-    if(!check)
-    {
-	real_pose.resize(parameters.n, 0.0);
-    }
-    
-    parameters.real_pose=real_pose;
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::saveData(const yarp::sig::Vector &ms_particle, const int &i)
-{
-    stringstream ss2;
-    ss2 << i;
-    string str_i = ss2.str();
-    string outputFileName=this->rf->check("outputFileMUPF",Value("../../outputs/outputMUPF"+str_i+".off")).
-	asString().c_str();
-    
-    ofstream fout(outputFileName.c_str());
-    if(fout.is_open())
-    {
-	fout<<get_model();
-    }
-    else
-	cout<< "problem opening output_data file!";
-    
-    fout.close();
-}
-
-/*******************************************************************************/
-void UnscentedParticleFilter::saveTrialsData(const yarp::sig::Matrix &solutions)
-{
-    string outputFilePath=this->rf->check("trialsFilePath",Value("../../outputs/")).asString();
-    string outputFileName=outputFilePath + "outputTrialsMUPF.csv";
-
-    ofstream fout(outputFileName.c_str());
-
-    if(fout.is_open())
-    {
-	// print the CSV header
-	fout<<"trial;error_index;time;sol_x;sol_y;sol_z;sol_phi;sol_theta;sol_psi"<<endl;
-
-	// save data for each trial
-	for(int j=0; j<solutions.rows(); j++)
-	{
-	    fout<<j<<";"<<solutions(j,0)<<";"<<solutions(j,1)<<";";
-	    fout<<solutions(j,2)<<";"<<solutions(j,3)<<";"<<solutions(j,4)<<";";
-	    fout<<solutions(j,5)<<";"<<solutions(j,6)<<";"<<solutions(j,7);
-	    fout<<endl;
-	}
-    }
-    else
-	cout<< "problem opening output_data file!";
+    // eval the homogeneous transformation
+    yarp::sig::Matrix H=rpr(estimate.subVector(3,5));
+    Affine affine(H(0,0),H(0,1),H(0,2),estimate[0],
+                  H(1,0),H(1,1),H(1,2),estimate[1],
+                  H(2,0),H(2,1),H(2,2),estimate[2]);
+
+    // allocate storage
+    transformed = getModel();
+
+    // transform the object model taking into account the estimate
+    std::transform(model.points_begin(),model.points_end(),
+                   transformed.points_begin(),affine);
 }

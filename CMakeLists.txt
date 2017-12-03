@@ -1,13 +1,22 @@
-# Copyright: (C) 2015 iCub Facility - Istituto Italiano di Tecnologia
-# Authors: Giulia Vezzani
-# CopyPolicy: Released under the terms of the GNU GPL v2.0.
+##############################################################################
+#                                                                            #
+# Copyright (C) 2017 Fondazione Istituto Italiano di Tecnologia (IIT)        #
+# All Rights Reserved.                                                       #
+#                                                                            #
+##############################################################################
 
-cmake_minimum_required(VERSION 2.8)
+#
+# author: Giulia Vezzani <giulia.vezzani@iit.it>
+# author: Nicola Piga <nicolapiga@gmail.com>
+#
+
+cmake_minimum_required(VERSION 3.1)
 
 set(PROJECTNAME localizer)
 project(${PROJECTNAME})
 
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
+set (CMAKE_CXX_STANDARD 11)
 
 find_package(YARP)
 find_package(ICUB)
@@ -23,8 +32,8 @@ include(ICUBcontribHelpers)
 include(ICUBcontribOptions)
 icubcontrib_set_default_prefix()
 
-set(headers headers/geometryCGAL.h  headers/unscentedParticleFilter.h headers/localizer.h )
-set(sources src/unscentedParticleFilter.cpp src/main.cpp src/localizer.cpp) 
+set(headers headers/geometryCGAL.h headers/unscentedParticleFilter.h headers/localizer.h)
+set(sources src/unscentedParticleFilter.cpp src/localizer.cpp src/main.cpp) 
 source_group("Source Files" FILES ${sources})
 source_group("Header Files" FILES ${headers})
 

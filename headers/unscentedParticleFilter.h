@@ -1,483 +1,393 @@
-/** May 2015- Univerity of Florence
- *  @author Giulia Vezzani
- *  Permission is granted to copy, distribute, and/or modify this program
- * under the terms of the GNU General Public License, version 2 or any
- * later version published by the Free Software Foundation.
- *
- * A copy of the license can be found at
- * http://www.robotcub.org/icub/license/gpl.txt
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details
- */ 
+/******************************************************************************
+ *                                                                            *
+ * Copyright (C) 2017 Fondazione Istituto Italiano di Tecnologia (IIT)        *
+ * All Rights Reserved.                                                       *
+ *                                                                            *
+ ******************************************************************************/
 
-#ifndef UPFINTERFACE_H
-#define UPFINTERFACE_H
+/**
+ * @author: Giulia Vezzani <giulia.vezzani@iit.it>
+ * @author: Nicola Piga <nicolapiga@gmail.com>
+ */
 
-#include "localizer.h"
-#include "geometryCGAL.h"
+#ifndef UNSCENTED_PARTICLE_FILTER_H
+#define UNSCENTED_PARTICLE_FILTER_H
+
+// std
 #include <string>
-#include <iostream>
-#include <fstream>
+
+// yarp
 #include <yarp/sig/all.h>
 #include <yarp/os/ResourceFinder.h>
 
+// CGAL
+#include "geometryCGAL.h"
+
 typedef std::vector<Point> Measure;
 
-/*******************************************************************/
-struct ParametersUPF : public Parameters
+/**
+ * Struct that contains the parameters of the Unscented Particle Filter.
+ */
+struct ParametersUPF
 {
-    /**number of particles*/
+    // number of particles
     int N;
     
-    /** width of the window to compute likelihood */
-    int window_width;
-    
-    /**number of measurement for measurementFile*/
-    int numMeas;
-	
-    /**number of degree of freedom*/
+    // number of DoFs
     int n;
+
+    // width of memory window
+    int memory_width;
 	
-    /**dimension of measurements*/
-    int p;
+    // whether to resample also in the first iterations or not
+    bool resample_in_first_iters;
 
-    /**fixed number of contact points per step input*/
-    int fixed_num_contacts;
-
-    /**whether to resample at each step or not*/
-    bool always_resample;
-
-    /**whether to use the ideal measurement equation or not*/
+    // whether to use the ideal measurement equation or not
     bool use_ideal_meas_eqn;
-
-    /**error index threshold used in the solve_experimental_mupf solver*/
-    double err_index_thr;
    
-    /** Unscented Transform parameters*/
-    double            beta;
-    double            kappa;
-    double            alpha;
-    double           lambda;
-    double           percent;
+    // Unscented Transform parameters
+    double beta;
+    double kappa;
+    double alpha;
+    double lambda;
+    double percent;
     
-    /** Covariance matrix of process noise Q, measurement noise R and of initial estimate*/
+    // covariance matrix of system noise Q
     yarp::sig::Matrix Q;
-    yarp::sig::Matrix R;
+    // scalar measurement noise variance R
+    double R;
+    // coavariance matrix of initial guess P0
     yarp::sig::Matrix P0;
     
-    /**  Dimension of initial area*/
+    // size of the initial research area
     yarp::sig::Vector center0;
     yarp::sig::Vector radius0;  
     yarp::sig::Vector neigh;
-
-    /** Real pose*/
-    yarp::sig::Vector real_pose;       
 };
 
-/*******************************************************************/
+/**
+ * Struct that contains the quantities related to each particle.
+ */
 struct ParticleUPF
 {
-    /** Particles after correction step*/
+    // weights
+    double weights;
+    // weights with correction for map estimate
+    double weights_map;
+
+    // particle after correction step
     yarp::sig::Vector x_corr;
+    // predicted state
+    yarp::sig::Vector x_pred;
+    // predicted measurement
+    yarp::sig::Vector y_pred;
     
-    /** Auxiliary matrix for operations*/
+    // estimated state covariance matrix
+    yarp::sig::Matrix P_corr;
+    // predicted state covariance matrix
+    yarp::sig::Matrix P_pred;
+    // predicted measurement covariance matrix
+    yarp::sig::Matrix Pyy;
+    // predicted state-measurement covariance matrix
+    yarp::sig::Matrix Pxy;
+
+    // auxiliary quantities
     yarp::sig::Matrix x_tilde;
     yarp::sig::Vector x_bar;
     yarp::sig::Matrix A;
     yarp::sig::Matrix P_pred_aux;
-    
-    /** Prediction measurements */
-    yarp::sig::Vector y_pred;
-    
-    /** weights*/ 
-    double            weights;
-
-    /** weights with correction for map estimate*/ 
-    double            weights_map;
-    
-    /** Matrices of correction and predicion steps*/
-    yarp::sig::Matrix P_corr;
     yarp::sig::Matrix P_hat;
-    yarp::sig::Matrix P_pred;
     
-    /** Matrice, Pyy and Pxx, for compute correction gain K*/
-    yarp::sig::Matrix Pyy;
-    yarp::sig::Matrix Pxy;
+    // UKF Kalman gain
     yarp::sig::Matrix K;
     
-    /** Predicted particles */
-    yarp::sig::Vector x_pred;
-    
-    /** Sigma Points for average and covariance*/
+    // Sigma Points for Unscented Transformation
     yarp::sig::Matrix XsigmaPoints_corr;
     yarp::sig::Matrix XsigmaPoints_pred;
     yarp::sig::Matrix YsigmaPoints_pred;
     yarp::sig::Vector WsigmaPoints_average;
     yarp::sig::Vector WsigmaPoints_covariance;
     
-    /** Particle initializaion
-     */
+    // initialization
     ParticleUPF() : x_corr(6,0.0),
-                    x_pred(6,0.0),
-                    x_tilde(6,1),
-                    x_bar(6,0.0),
-                    P_corr(6,6),
-                    P_hat(6,6),
-                    P_pred(6,6),
-                    P_pred_aux(6,6),
-                    XsigmaPoints_corr(6,13),
-                    XsigmaPoints_pred(6,13),
-                    WsigmaPoints_average(13,0.0),
-                    WsigmaPoints_covariance(13,0.0),
-                    weights(std::numeric_limits<double>::infinity()) { }
+	            x_pred(6,0.0),
+	            x_tilde(6,1),
+	            x_bar(6,0.0),
+	            P_corr(6,6),
+	            P_hat(6,6),
+	            P_pred(6,6),
+	            P_pred_aux(6,6),
+	            XsigmaPoints_corr(6,13),
+	            XsigmaPoints_pred(6,13),
+	            WsigmaPoints_average(13,0.0),
+	            WsigmaPoints_covariance(13,0.0),
+	            weights(std::numeric_limits<double>::infinity()),
+	            weights_map(std::numeric_limits<double>::infinity()) { }
 };
 
-/*******************************************************************/
-
-struct MsParticleUPF
-{
-    /** average of most significant particle*/
-    yarp::sig::Vector pos;
-    
-    /** error index associated to most significant particle*/
-    double            error_index;
-    
-    /** MsParticle initialization 
-     */
-    MsParticleUPF() : pos(6,0.0),
-                 error_index(std::numeric_limits<double>::infinity()) { }
-};
-
-/*******************************************************************/
-
-/** This class is the mplementation of the Memory Unscented Particle Filter
- * (MUPF), for 6d localization problem
- * It works with 3d object model, consisting of triangular meshes, in .off
- * format 
- * This class is derived from  abstract class localizator and from  abstract 
- * class optimizer The last one is necessary to use CGAL for distances calculus
+/** 
+ *  This class is the implementation of the Memory Unscented Particle Filter (MUPF)
+ *  that solves the 6D localization problem.
+ *
+ *  It requires the 3D object model of the object to be localized. 
+ *  The model is provided as a triangular mesh in a .OFF (Object File Format) file.
+ *
+ *  This class is derived from the abstract class GeometryCGAL required to 
+ *  evaluate distances from a measurement to the object using the CGAL library.
  */
-class UnscentedParticleFilter : public GeometryCGAL, public Localizer
+class UnscentedParticleFilter : public GeometryCGAL
 {
-    /** all particles are  in x
-     * to each particle all matrixes and vectors for UPF are associated
-     */
+private:
+    // resource finder
+    yarp::os::ResourceFinder *rf;
+
+    // storage for all the particles
     std::deque<ParticleUPF> x;
     
-    /** most significatn particle*/
-    ParticleUPF            ms_particle;
-    
-    /** This is a point of the current measurements*/
-    std::deque<Point>  current_measurement;
-    
-    /** This is an auxiliary vector*/
-    std::deque<yarp::sig::Vector> x_most;
-
-    /**buffer of received measurements for memory feature*/
+    // buffer of received measurements for memory feature
     std::vector<Measure> meas_buffer;
+    
+    // current real pose
+    yarp::sig::Vector real_pose;
 
-    /** current memory window width
-     */
-    int memory_width;
+    // parameters of the UPF
+    ParametersUPF params;
 
-    /** index of current measurements
-     */
+    // index of current iteration
     int t;
-    
-    /** degree of freedom
-     */
-    int n;
 
-protected:
- 
-    /** starting time*/
-    double t0;
-    
-    /** executional time*/
-    double dt;
-    
-    /** vector for solution with high weight*/
-    MsParticleUPF ms_particle1;
-    
-    /** vector for solution with high density*/
-    MsParticleUPF ms_particle2;
-     
-    /** vector for solution with high density second method*/
-    MsParticleUPF ms_particle3;
-     
-    /** vector for solution with high density with sum of gaussians*/
-    MsParticleUPF ms_particle4;
-     
+    ///////////////////////////////////////////////////////////////
+    // remove me from here
+    ///////////////////////////////////////////////////////////////
+    //
+    yarp::sig::Vector map_estimate_pose;
     yarp::sig::Vector result;
-    yarp::sig::Vector map_estimate;
-
-    /** For downsampling*/
-    int downsampling;
-
+    double dt;
     double max_prob;
-   
-    /*******************************************************************/
-    /** Get parameters necessary for UnscentedParticleFilter class
-    */
-    ParametersUPF &get_parameters();
+    double dt_gauss;
+    double dt_gauss2;
+    double DT;
+    ///////////////////////////////////////////////////////////////
+
+    /** 
+     * Read the coordinates of the center of the research region 
+     * and save them in center0.
+     * @param the tag of the center within the internal resource finder rf
+     * @param vector in which coordinates are returned
+     * @return true/false upon succes/failure
+     */
+    bool readCenter(const std::string &tag, yarp::sig::Vector &center0);
     
-    /*******************************************************************/   
-    /** Sample particle from initial search region,
-    * specified by radius0 and center0. Radius0 and center0 are set by default to 0.2 and 0.2 m.
-    * They can be changed throw command line or in a config.ini
-    */
+    /** 
+     * Read the coordinates of the radius of the research region and save them in radius0.
+     * @param tag the tag of radius within the internal resource finder rf
+     * @param radius0 vector in which coordinates are returned
+     * @return true/false upon succes/failure
+     */
+    bool readRadius(const std::string &tag, yarp::sig::Vector &radius0);
+    
+    /** 
+     * Read the values on the diagonal line of a diagonal matrix 
+     * stored as tag within the internal resource finder rf and 
+     * store them in the vector diag.
+     * @param tag the tag of the matrix in the internal resource finder rf
+     * @param diag the vector in which values are returned
+     * @param dimension the dimension of the matrix
+     * @return true/false upon succes/failure
+     */
+    bool readDiagonalMatrix(const std::string &tag, yarp::sig::Vector &diag, const int &dimension);
+
+    /** 
+     * Initialize some quantities of the UPF
+     */
+    void initializationUPF();
+
+    /**
+     * Sample particles from the initial search region.
+     * The size of the region can be specified using the parameters 'radius0'
+     * and 'center0' in a .ini configuration file or in the command line arguments.
+     */
     void initialRandomize();
-    
-    /*******************************************************************/   
-    /** It is a single iteration of UPF
-    */
-    void step();
 
-    /*******************************************************************/   
-    /** Set a new measure
-    /* @param m, a std::vector of Point points
-    */
-    void setNewMeasure(const Measure& m);
-
-    /*******************************************************************/   
-    /** Set the current memory window width
-    /* @param width, the width of the window
-    */
-    void setMemoryWidth(const int width);
-    
-    /*******************************************************************/ 
-    /** Compute roll pitch roll rototranslation matrix.
-    * @param particle, whose first three components are the coordinate 
-    *         of origin of the reference system, the last three the
-    *         representation of its orientation with Euler angles, zyz
-    * @return the yarp Matrix of rototranslation 
-    */
-    yarp::sig::Matrix rpr(const yarp::sig::Vector &particle);
-   
-    /*******************************************************************/
-    /**Return predicted measurements, as vector of closest point(s) of object to measurements. 
-    * Object is in pose represented by sigma point j of Unscented Transform of particle k
-    * @param t index of current measurement
-    * @param k current particle
-    * @param j current sigma point
-    * @return predicted measurement, as yarp Vector
-    */ 
-    yarp::sig::Vector computeY(const int &t,const  int &k,const  int &j);
-
-    /*******************************************************************/
-    /**Return ideal predicted measurements as a vector of point(s) on the surface
-    * of the object. The points are placed on the surface of the object exactly
-    * where they should be according to the measurements.
-    * Object is in pose represented by sigma point j of Unscented Transform of particle k
-    * @param t index of current measurement
-    * @param k current particle
-    * @param j current sigma point
-    * @return predicted measurement, as yarp Vector
-    */ 
-    yarp::sig::Vector computeYIdeal(const int &t, const int &k, const int &j);
-    
-    /*******************************************************************/ 
-  
-    /** Return likelihood (probability to have a measurement y, given object pose x)
-    * @param t index of current measurements
-    * @param k current particle
-    * @param map_likelihood likelihood with correction required to evaluate
-    *                       the MAP estimate
-    * @return value of likelihood
-    */
-    double likelihood(const int &t, const int &k, double& map_likelihood);
-    
-    /*******************************************************************/   
-    /** Realize random resampling: particle with low weights are suppresed
-    * Particle with high weights are duplicated
-    */
-    void resampling();
-    
-    /*******************************************************************/ 
-    /** Compute Sigma Points for i-th particle
-    */
-    void computeSigmaPoints(const int &i);
-    
-    /*******************************************************************/
-    /** Compute performance index (average among measurementsof minimum
-    * distance of each measurement to object) and ms_particle.error_index 
-    * is modified
-    * @param ms_particle is the most significant particle,ms_particle.pos is
-    * used to compute performancce index that is saved in ms_particle.error_index
-    */
-    void performanceIndex(MsParticleUPF &ms_particle);
-  
-    /*******************************************************************/
-    /** Executes prediction step of Unscented Kalman Filter for each particle
-    * @param i current particle
-    */
-    void predictionStep(const int &i);
-
-    /*******************************************************************/
-    /** resize matrices and vectors, within a particle, 
-    * whose size depends on the size of the current measurement vector
-    *  @param i current particle
-    */
+    /** 
+     * Resize matrices and vectors, within a particle,
+     * whose size depends on the size of the current measurement vector.
+     * @param i index of the current particle
+     */
     void resizeParticle(const int &i);
-    
-    /*******************************************************************/
-    /**Initializes all matrices  necessary for UKF step for each particle
-    *  @param i current particle
-    */
+
+    /**
+     * Initialize the matrices required within the UKF step of the UPF
+     * @param i index of the current particle
+     */
     void initializeUKFMatrix(const int &i);
+
+    /** 
+     * Compute Sigma Points for the i-th particle
+     */
+    void computeSigmaPoints(const int &i);
+
+    /**
+     * Compute a ZYZ rototranslation matrix with null translational part.
+     * @param vector containing the position and attitude part of the particle 
+     * @return a rototranslation matrix
+     */
+    yarp::sig::Matrix rpr(const yarp::sig::Vector &particle);
+        
+    /**
+     * Compute the predicted measurement as the vector of closest point(s)
+     * of the object to the measurement.
+     * 
+     * The object is in the pose represented by the sigma point j
+     * of the particle k.
+     *
+     * @param k index of the current particle
+     * @param j index of the current sigma point
+     * @return predicted measurement as a yarp::sig::Vector
+     */
+    yarp::sig::Vector computeY(const int &k, const int &j);
+
+    /**
+     * Compute the predicted measurement as the vector of point(s)
+     * origintaing from the contact with the surface of the object
+     * as if the contact takes place with the object in the pose
+     * represented by the sigma point j of the particle k.
+     *
+     * @param k index of the current particle
+     * @param j index of the current sigma point
+     * @return ideal predicted measurement as a yarp::sig::Vector
+     */
+    yarp::sig::Vector computeYIdeal(const int &k, const int &j);
+
+    /** 
+     * Execute the prediction step required within the UPF.
+     */
+    void predictionStep(const int &i);
     
-    /*******************************************************************/
-    /** Compute prediciton matrix for each particle in prediction step
-    * @param i current particle
-    */
+    /**
+     * Compute the predicted state covariance matrix.
+     * @param i index of the current particle
+     */
     void computePpred(const int &i);
     
-    /*******************************************************************/
-    /** Compute correction matrix for each particle in prediction step
-     * @param i current particle
+    /** 
+     * Compute matrices required to correct the predicted state
+     * with the measurements.
+     * @param i index of the current particle
      */
     void computeCorrectionMatrix(const int &i);
-    
-    /*******************************************************************/
-    /** Compute correction average, for each particle,using current measurement
-     * @param i current particle
+
+    /** 
+     * Execute the UKF correction step.
+     * @param i index of the current particle
      */
     void correctionStep(const int &i);
-   
-    /*******************************************************************/
-    /** Compute weights for particle i, usign all measurements collected until 
-     * current iterations and compute their sum
-     * @param i current particle
-     * @param sum sum of weights
+    
+    /** 
+     * Compute the likelihood required within the UPF.
+     * @param k index of the current particle
+     * @param map_likelihood value of likelihood with MAP correction
+     * @return the value of the likelihood
+     */
+    double likelihood(const int &k, double& map_likelihood);
+
+    /** 
+     * Compute weight for particle i and 
+     * update the sum of all the weights.
+     * @param i index of the current particle
+     * @param sum sum of the weights
      */
     void computeWeights(const int &i, double &sum);
     
-    /*******************************************************************/
-    /** Normalize weights for particle i using sum and compute the sum of square weights
-     * @param i current particle
-     * @param sum sum of weights
-     * @params sum_squared sum of squared weights
+    /** 
+     * Normalize weight for particle i using the sum and 
+     * compute the sum of squared weights.
+     * @param i index of the current particle
+     * @param sum sum of the weights
+     * @params sum_squared sum of the squared weights
      */
     void normalizeWeights(const int &i, const double &sum, double &sum_squared);
-   
-    /*******************************************************************/
-    /** Find particle with highest weights 
-    */
-    void findMostSignificantParticle();
     
-    /*******************************************************************/
-    /** If we are at third and successive measurement and if Neff=1/sum_squared
-     * is minor than N(number of particle)/20 resampling() is called
-     * otherwise weights are set to 1/N
+    /** 
+     * Execute the resampling step required within the UPF.
+     */
+    void resampling();
+   
+    /** 
+     * Execute resampling if the iteration index is greater 
+     * than 3 and if the criterion based on Neffective is satisfied.
+     * Otherwise weights are set to 1/N.
+     *
+     * If get_parameters().always_resample is true only the 
+     * criterion based on Neffective is considered.
+     * 
      * @param Neff 1/sum_squared
      * @param sum_squared sum of squared weights
      */
     void selectionStep(double &Neff,const double &sum_squared);
-    
-    /*******************************************************************/
-    /** Initialize other vectors and parameters of UPF
-     */
-    void initializationUPF();
-    
-    /*******************************************************************/
-    /** Read measurements froma  text file
-     * @param fin is the ifstream associated to measurements file
-     * @return true/false on succes/failure
-     */
-    bool readMeasurements(std::ifstream &fin, const int &down);
-     
-    /*******************************************************************/
-
-    /*******************************************************************/
-
-    double finaleLikelihood(const int &best_part);
-    /*******************************************************************/
-     
-    /** Find the particle with the highest density
-     */
-    yarp::sig::Vector particleDensity();
-    /*******************************************************************/
-     
-     
-    /** Find the particle with the highest density
-     */
-    yarp::sig::Vector particleDensity2();
-    /*******************************************************************/
-     
-    /** Compute the MAP estimate
-     */
-    yarp::sig::Vector mapEstimate();
-    /*******************************************************************/
-     
-    /**Time with the new method
-   
-     */
-    double dt_gauss;
-    /*******************************************************************/
-    /**Time with the new method
-   
-     */
-    double dt_gauss2;
-    /*******************************************************************/
-    double DT;
-     
-    
+             
 public:
-    
-    
-    /** constructor, derived from optimizer
-     */
-    UnscentedParticleFilter();
-    
-    /*******************************************************************/     
-    /** Init Optimizer, set starting time=0, sample particle from initial
-    * search region, initialize some matrices and vectors of UPF
-    */
-    void init();
-
-    /** solvers for testing purposes
-     */
-    void solve();
-    void solve_standard_mupf();
-    void solve_experimental_mupf();
-    
-    /*******************************************************************/
-    
-    /*******************************************************************/   
-    /** It is executed when UPF is finished.
-    *  Compute final most significant particle, in world reference system.
-    * @return most significant particle, as yarp Vector
-    */ 
-    yarp::sig::Vector finalize();
-
-    /** Saves the .off model of the estimated pose object x
-     * @param rf a previously inizialized @see Resource Finder
-     * @param ms_particle, containing estimated x
-     */
-    void saveData( const yarp::sig::Vector &ms_particle,const int &y);
-     
-    /*******************************************************************/
-    
-    /** Saves the performance error index, the execution and the solution
-     *  for all the trials
-     * @param Matrix, containing the data to be saved
-     */
-    void saveTrialsData(const yarp::sig::Matrix &solutions);
-    
-    /*******************************************************************
-     /**Configures all parameters needed by the algorithm, reading them from a 
-     * configuration file .ini or from command line. If the user doesn't provide
-     * them, they are set to default values
+    /**
+     * Configures all parameters needed by the algorithm.
      * @param rf a previously inizialized @see Resource Finder
      * @return true/false on succes/failure
      */
     bool configure(yarp::os::ResourceFinder &rf);
-    /*******************************************************************/
-    
-};
 
+    /** 
+     * Init the CGAL distance computation engine, 
+     * set the iteration index to 0 and store the current time,
+     * sample particles from the initial research region
+     * and initialize some matrices and vectors of UPF.
+     */
+    void init();
+
+    /**
+     * Provide a new measurement to the algorithm.
+     * @param m a std::vector of Point points
+     */
+    void setNewMeasure(const Measure &m);
+
+    /**
+     * Provide the current real position.
+     * @param pose a yarp::sig::Vector containing the real pose
+     */
+    void setRealPose(const yarp::sig::Vector &pose);
+    
+    /**
+     * Single iteration of the algorithm.
+     */
+    void step();
+
+    /** 
+     * Compute the MAP estimate.
+     */
+    yarp::sig::Vector getEstimate();
+
+    /** 
+     * Compute the performance index
+     * (average of distances between a given set of contact points 
+     * and the object in a given estimated pose).
+     *
+     * @param estimate the estimate found by the algorithm
+     * @param points a std::deque<Point> of Point points
+     * @return the performance index
+     */
+    double evalPerformanceIndex(const yarp::sig::Vector &estimate,
+				const std::deque<Point> &points);
+    
+    /** 
+     * Transform the model of the object with coordinates 
+     * expressed in object fixed frame into the model of the object
+     * in a given estimated pose with coordinates expressed in robot
+     * frame.
+     *
+     * @param estimate the estimate found by the algorithm
+     * @param transformed the transformed object model
+     * @return the transformed model as a Polyhedron
+     */
+    void transformObject(const yarp::sig::Vector &estimate,
+			 Polyhedron &transformed);
+};
 
 #endif

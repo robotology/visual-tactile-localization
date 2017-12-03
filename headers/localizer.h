@@ -1,142 +1,124 @@
-/** May 2015- Univerity of Florence
- *  @author Giulia Vezzani
- *  Permission is granted to copy, distribute, and/or modify this program
- * under the terms of the GNU General Public License, version 2 or any
- * later version published by the Free Software Foundation.
- *
- * A copy of the license can be found at
- * http://www.robotcub.org/icub/license/gpl.txt
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details
- */ 
- 
-#ifndef LOCALIZATOR_H
-#define LOCALIZATOR_H
+/******************************************************************************
+ *                                                                            *
+ * Copyright (C) 2017 Fondazione Istituto Italiano di Tecnologia (IIT)        *
+ * All Rights Reserved.                                                       *
+ *                                                                            *
+ ******************************************************************************/
 
-#include <iostream>
-#include <string>
-#include <yarp/sig/all.h>
-#include <yarp/os/ResourceFinder.h>
-
-
-
-/**Allows to localize a 3D object using tactile sensors. This is an abstract base class.
- * It provides some virtual methods and some pure virtual methods.
- * It can be used to achieve offline or online localization with a generic 
- * localization algorithm, saving the results on files or sending them through a port.
- * The not pure methods are define to work in the case in which the problem is a problem of 6D
- * localization and pose object is represented by x,y,z and three Euler angle (roll pitch roll)
+/**
+ * @author: Giulia Vezzani <giulia.vezzani@iit.it>
+ * @author: Nicola Piga <nicolapiga@gmail.com>
  */
-class Localizer
+
+#ifndef LOCALIZER_H
+#define LOCALIZER_H
+
+#include "headers/unscentedParticleFilter.h"
+#include "headers/geometryCGAL.h"
+
+/** 
+ *  Results of the algorithm.
+ */
+struct Results
 {
-    
-    protected:
-    
-    yarp::os::ResourceFinder *rf;
-    
-    /*******************************************************************/
-    
-    /** read the coordinates of the center of the research region and save them in center0
-     * @param rf a previously inizialized @see Resource Finder
-     * @param the tag of center in an input file
-     * @param vector in which coordinates are saved
-     * @return true/false upon succes/failure
-     */
-    virtual bool readCenter(const std::string &tag, yarp::sig::Vector &center0);
-    
-    /*******************************************************************/
-    
-    /** read the coordinates of the radius of the research region and save them in radius0
-     * @param rf a previously inizialized @see Resource Finder
-     * @param tag the tag of radius in an input file
-     * @param radius0 vector in which coordinates are saved
-     * @return true/false upon succes/failure
-     */
-    virtual bool readRadius(const std::string &tag, yarp::sig::Vector &radius0);
-    
-    /*******************************************************************/
-    
-    /** read the value on the diagonal line of a diagonal matrix and save them in the vector diag
-     * @param rf a previously inizialized @see Resource Finder
-     * @param tag the tag of the matrix in an input file
-     * @param diag the vector in which values are saved
-     * @param dimension the dimension of the matrix
-     * @return true/false upon succes/failure
-     */
-    virtual bool readDiagonalMatrix(const std::string &tag,  yarp::sig::Vector &diag, const int &dimension);
-    
-    /*******************************************************************/
-    
-    public:
-    
-    /** class destructor
-     */
-    virtual ~Localizer(){};
-    
-    /*******************************************************************/
-   
-    /** configure parameters, input data and output files for the localization.
-     * If some parameters are not provided by the user, they are set to default values ( see code)
-     * @param rf a previously inizialized @see Resource Finder
-     * @return true/false upon succes/failure
-     */
-    virtual bool configure(yarp::os::ResourceFinder &rf)=0;
-    
-    
-    /*******************************************************************/
-    
-    /** save the result of the localization in an output file
-     * @param rf a previously inizialized @see Resource Finder
-     * @param ms_particle is a Vector of 8 components: the estimated 
-     * x,y,z,phi,theta,psi, the final localization error and the execution time
-     */
-    virtual void saveData(const yarp::sig::Vector &ms_particle, const int &i)=0;
+    // estimated pose    
+    yarp::sig::Vector estimate;
 
-    /*******************************************************************/
+    // performance index
+    double perf_index;
 
-    /** save data regarding all the trials done within a simulation
-     */
-    virtual void saveTrialsData(const yarp::sig::Matrix &solutions)=0;
-    /*******************************************************************/
+    // final time without MAP estimate
+    double tf_no_map;
 
-    /** send the result of the localization to a yarp port, that is opened and closed 
-     * in this function
-     * @param rf a previously inizialized @see Resource Finder
-     * @param ms_particle is a Vector of 8 components: the estimated 
-     * x,y,z,phi,theta,psi, the final localization error and the execution time
-     */
-     virtual void sendData(const  yarp::sig::Vector &ms_particle);
+    // final time with MAP estimate
+    double tf;
 
-    /*******************************************************************/
-    
-    /** It is the execution of chosen localization algorithm
-     */
-    virtual void solve()=0;
-
-   /*******************************************************************/
-   
-    /** initialize optimizer, get parameters
-     *  initialize functions of the chosen localization algorithm
-     */
-    virtual void init()=0;
-    /*******************************************************************/
-     
-    /** It is executed when the algorithm is finished.
-     *  Compute final most significant particle, in world reference system.
-     * @return most significant particle, as yarp Vector
-     */ 
-    virtual yarp::sig::Vector finalize()=0;
-   
-    /*******************************************************************/
-    
-    /** It is the execution of one iteration of the chosen algorithm
-     */
-    virtual void step()=0;
-
+    // initialization
+    Results() : estimate(6,0.0),
+	        tf_no_map(0),
+	        tf(0) { }
 };
 
-/*************************************************************************************************/
+/** 
+ *  This class is the implementation of the Memory Unscented Particle Filter (MUPF)
+ *  that solves the 6D localization problem offline.
+ */
+class Localizer : public yarp::os::RFModule
+{
+private:
+
+    // resource finder
+    yarp::os::ResourceFinder *rf;
+    
+    // pointer to Unscented Particle Filter
+    UnscentedParticleFilter *upf;
+
+    // measurements
+    std::deque<Point> measurements;
+
+    // results
+    std::vector<Results> results;
+
+    // number of trials
+    int num_trials;
+
+    // fixed number of contact points per time step
+    int n_contacts;
+
+    // real pose
+    yarp::sig::Vector real_pose;
+    
+   /*
+    * Load a measurements file. 
+    * The file path is taken using the tag "measurementsFile" from a
+    * previously instantiated @see Resource Finder.
+    * @param rf a previously instantiated @see Resource Finder
+    * @param meas a std::vector<Point> vector of Point points
+    * @return true/false depending on the outcome
+    */
+    bool loadMeasurements(const yarp::os::ResourceFinder &rf);
+
+    /*
+     * Load the require parameters using a
+     * previously instantiated @see Resource Finder.
+     * @param rf a previously instantiated @see Resource Finder
+     * @return true/false depending on the outcome
+     */
+    bool loadParameters(const yarp::os::ResourceFinder &rf);
+
+    /*
+     * Save a Polyhedron model as a .OFF (Object File Format) file.
+     *
+     * @param model a Polyhedron model
+     * @param filename the output file name
+     * @return true/false depending on the outcome
+     */
+    bool saveModel(const Polyhedron &model, const std::string &filename);    
+
+    /**
+     * Save the performance error index, the execution time 
+     * and the solution found for all the trials.
+     * @param results the results to be saved
+     * @return true/false depending on the outcome
+     */
+    bool saveResults(const std::vector<Results> &results);
+    
+public:
+    /*
+     * Configure the module.
+     * @param rf a previously instantiated @see ResourceFinder
+     */
+    bool configure(yarp::os::ResourceFinder &rf) override;
+    
+    /*
+     * Define the behavior of this module.
+     */
+    bool updateModule() override;
+
+    /*
+     * Define the cleanup behavior.
+     */
+    bool close() override;    
+};
+
 #endif

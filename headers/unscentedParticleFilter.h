@@ -215,11 +215,12 @@ private:
     void computeSigmaPoints(const int &i);
 
     /**
-     * Compute a ZYZ rototranslation matrix with null translational part.
-     * @param vector containing the position and attitude part of the particle 
+     * Compute a rototranslation matrix. 
+     * Angles should be provided as Euler ZYZ.
+     * @param pose yarp::sig::Vector containing the position and attitude
      * @return a rototranslation matrix
      */
-    yarp::sig::Matrix rpr(const yarp::sig::Vector &particle);
+    yarp::sig::Matrix homogeneousTransform(const yarp::sig::Vector &pose);
         
     /**
      * Compute the predicted measurement as the vector of closest point(s)

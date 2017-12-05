@@ -177,21 +177,28 @@ void UnscentedParticleFilter::computeSigmaPoints(const int &i)
     }
 }
 
-yarp::sig::Matrix UnscentedParticleFilter::rpr(const yarp::sig::Vector &particle)
+yarp::sig::Matrix UnscentedParticleFilter::homogeneousTransform(const yarp::sig::Vector &pose)
 {
     yarp::sig::Matrix H(4,4);
-    double phi=particle[0];
-    double theta=particle[1];
-    double psi=particle[2];
+
+    // translational part
+    H(0,3)=pose[0];
+    H(1,3)=pose[1];
+    H(2,3)=pose[2];
+
+    // attitude part is obtained from Euler ZYZ
+    double phi=pose[3];
+    double theta=pose[4];
+    double psi=pose[5];
     H(0,0)=cos(phi)*cos(theta)*cos(psi)-sin(phi)*sin(psi);
     H(0,1)=-cos(phi)*cos(theta)*sin(psi)-sin(phi)*cos(psi);
     H(0,2)=cos(phi)*sin(theta);
     H(1,0)=sin(phi)*cos(theta)*cos(psi)+cos(phi)*sin(psi);
     H(1,1)=-sin(phi)*cos(theta)*sin(psi)+cos(phi)*cos(psi);
-    H(1,2)=sin(phi)*sin(theta) ;
+    H(1,2)=sin(phi)*sin(theta);
     H(2,0)= -sin(theta)*cos(psi);
-    H(2,1)=sin(theta)*sin(psi) ;
-    H(2,2)=cos(theta) ;
+    H(2,1)=sin(theta)*sin(psi);
+    H(2,2)=cos(theta);
     
     return H;    
 }
@@ -204,10 +211,7 @@ yarp::sig::Vector UnscentedParticleFilter::computeY(const int &k, const int &j)
     ParticleUPF &particle=x[k];
 
     // evaluate transformation from object fixed frame to robot frame
-    yarp::sig::Matrix Ho2r=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
-    Ho2r(0,3)=x[k].XsigmaPoints_pred(0,j);
-    Ho2r(1,3)=x[k].XsigmaPoints_pred(1,j);
-    Ho2r(2,3)=x[k].XsigmaPoints_pred(2,j);
+    yarp::sig::Matrix Ho2r=homogeneousTransform(particle.XsigmaPoints_pred.getCol(j));
 
     // evalute transformation from robot frame to object fixed rame
     yarp::sig::Matrix Hr2o=SE3inv(Ho2r);
@@ -243,14 +247,14 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &k, const int
     ParticleUPF &particle=x[k];
 
     // evaluate attitude of particle
-    yarp::sig::Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
+    yarp::sig::Matrix Hm=homogeneousTransform(particle.XsigmaPoints_pred.getCol(j));
     
     // evaluate real attitude
-    yarp::sig::Matrix Hreal=rpr(real_pose.subVector(3,5));
+    yarp::sig::Matrix Hreal=homogeneousTransform(real_pose);
 
     // evaluate rotational part of the required transformation
     yarp::sig::Matrix H=Hm*Hreal.transposed();
-    // evaluate translational part of required transformation
+    // override translational part of required transformation
     H(0,3)=x[k].XsigmaPoints_pred(0,j);
     H(1,3)=x[k].XsigmaPoints_pred(1,j);
     H(2,3)=x[k].XsigmaPoints_pred(2,j);
@@ -372,12 +376,7 @@ double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
     
     ParticleUPF &particle=x[k];
     
-    yarp::sig::Matrix H=rpr(particle.x_corr.subVector(3,5));
-    
-    H(0,3)=particle.x_corr[0];
-    H(1,3)=particle.x_corr[1];
-    H(2,3)=particle.x_corr[2];
-    
+    yarp::sig::Matrix H=homogeneousTransform(particle.x_corr);
     H=SE3inv(H);
 
     // counter required to correct likelihod
@@ -864,10 +863,7 @@ yarp::sig::Vector UnscentedParticleFilter::getEstimate()
 double UnscentedParticleFilter::evalPerformanceIndex(const yarp::sig::Vector &estimate,
 						     const std::deque<Point> &points)
 {
-    yarp::sig::Matrix H=rpr(estimate.subVector(3,5));
-    H(0,3)=estimate[0];
-    H(1,3)=estimate[1];
-    H(2,3)=estimate[2];
+    yarp::sig::Matrix H=homogeneousTransform(estimate);
     H=SE3inv(H);
 
     double error_index=0;
@@ -891,10 +887,10 @@ void UnscentedParticleFilter::transformObject(const yarp::sig::Vector &estimate,
 					      Polyhedron &transformed)
 {
     // eval the homogeneous transformation
-    yarp::sig::Matrix H=rpr(estimate.subVector(3,5));
-    Affine affine(H(0,0),H(0,1),H(0,2),estimate[0],
-                  H(1,0),H(1,1),H(1,2),estimate[1],
-                  H(2,0),H(2,1),H(2,2),estimate[2]);
+    yarp::sig::Matrix H=homogeneousTransform(estimate);
+    Affine affine(H(0,0),H(0,1),H(0,2),H(0,3),
+                  H(1,0),H(1,1),H(1,2),H(1,3),
+                  H(2,0),H(2,1),H(2,2),H(2,3));
 
     // allocate storage
     transformed = getModel();

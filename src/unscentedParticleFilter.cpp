@@ -847,7 +847,7 @@ yarp::sig::Vector UnscentedParticleFilter::getEstimate()
         probability_per_particle.push_back(probability);
     }
     
-    max_prob=0.0;
+    double max_prob=0.0;
     int i_max_prob=0;
     
     for(size_t i=0; i<x.size(); i++)

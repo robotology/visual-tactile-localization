@@ -156,19 +156,6 @@ private:
     // index of current iteration
     int t;
 
-    ///////////////////////////////////////////////////////////////
-    // remove me from here
-    ///////////////////////////////////////////////////////////////
-    //
-    yarp::sig::Vector map_estimate_pose;
-    yarp::sig::Vector result;
-    double dt;
-    double max_prob;
-    double dt_gauss;
-    double dt_gauss2;
-    double DT;
-    ///////////////////////////////////////////////////////////////
-
     /** 
      * Read the coordinates of the center of the research region 
      * and save them in center0.

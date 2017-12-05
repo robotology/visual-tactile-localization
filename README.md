@@ -53,10 +53,10 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 ## Notes on implementation
 
 ## Offline localizer
-The [localizer](headers/localizer.h) is implemented as a `yarp::os::RFModule` that uses the [interface](headers/headers/unscentedParticleFilter.h) of the MUPF. The [main](src/main.cpp) instantiates the RFModule.
+The [localizer](headers/localizer.h) is implemented as a `yarp::os::RFModule` that uses the [interface](headers/unscentedParticleFilter.h) of the MUPF. The [main](src/main.cpp) instantiates the RFModule.
 
 ## MUPF Filter
-The filter can be used through the [interface](headers/headers/unscentedParticleFilter.h).
+The filter can be used through the [interface](headers/unscentedParticleFilter.h).
 
 The main methods offered are
 

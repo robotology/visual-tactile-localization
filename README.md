@@ -1,44 +1,102 @@
-# tactile-localization
-The code distributed here provides the implementation of two different algorithms for the solution of object tactile localization: the [Scaling Series algorithm](http://cs.stanford.edu/group/manips/publications/pdfs/Petrovskaya_2011_TRO.pdf) and a novel algorithm, the **Memory Unscented Particle Filter (MUPF)**. The MUPF has been tested also on the tactile object recognition, formulated as a localization problem with multiple models. The recognition solution is chosen as that object model who provides the minimum localization error.
+# visual-tactile-localization
 
-## Prerequisities
+The code distributed here provides a reviewed implementation of the **Memory Unscented Particle Filter (MUPF)** algorithm for tactile localization.
 
-Before compiling the code you are required to install 
+With respect to the original implementation the reviewed implementation offers:
+- handling of multiple contact points per time step;
+- implementation of an ideal measurement equation for testing purposes;
+- new [interface]() to supply measurements to the filter as a `std::vector` of a variable number of
+  CGAL::Simple_cartesian<double>::Point_3 Point points.                                                                       
 
-1. [YARP](http://www.icub.org, and all the detailed information can be found at http://wiki.icub.org/wiki/Manual#Six._Software.2C_Compiling_YARP_and_iCub)
-2. [CGAL](http://doc.cgal.org/latest/Surface_reconstruction_points_3/)
+## Requirements
+- [YARP](http://www.yarp.it/)
+- [CGAL](https://www.cgal.org/)
 
-## How to compile
-An example of compilation in Linux is given by:
+## How to build (Linux)
+Simply clone this repository to `$TAC_LOC` and then
 ```
-mkdir build
-cd build
-ccmake ..
-make install
+mkdir $TAC_LAC/build
+cd $TAC_LAC/build
+cmake ../
+make
 ```
+The executable `localizer` can be found in `$TAC_LOC/build/bin`.
 
-## How to run 
-You can run one of the algorithm typing in the command line:
+## How to run the offline localizer
+You can run an __offline localizer__ taking measurements from a file as
+```
+cd $TAC_LOC/build/bin
+./localizer --from $CONF_FILE_PATH
+```
+where `$CONF_FILE_PATH` is the path of a configuration file containing the following parameters:
+- `modelFile`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing the triangular mesh of the object;
+- `measurementsFile`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing the contact points (measurements) as the vertices of the `.OFF` file;
+- `modelOutputPath`, where to save the `.OFF` file containing the model of the object in the estimated pose, one file for each trial;
+- `trialsOutputPath`, where to save a `.CSV` file containing a summary about all the trials (execution time, performance index, solutions found, etc);
+- `radius0`, radius of the initial research region as a list of three doubles;
+- `center0`, center of the initial research region as a list of three doubles;
+- `N`, number of particles;
+- `n`, number of DoFs;
+- `Q`, 6-dimensional system noise covariance matrix as a list of six doubles;
+- `R`, scalar measurement noise variance;
+- `P0`, 6-dimensional covariance matrix of the initial state as a list of six doubls;
+- `alpha`, Unscented Transform parameter;
+- `kappa`, Unscented Transform parameter;
+- `beta`, Unscented Transform parameter;
+- `memoryWidth`, width of the memory window of the Memory UPF;
+- `resampleInFirstIters`, whether to resample also in the first two iterations of the algorithm (true/false);
+- `useIdealMeasEqn`, whether to use the ideal measurement equation or not (true/false);
+- `numTrials`, number of trials to be executed as an integer;
+- `numContacts`, fixed number of contact points to be processed at each time step;
+- `realPose`, real pose of the object used by the ideal measurement equation.
+
+## Notes on implementation
+
+## Offline localizer
+The [localizer](headers/localizer.h) is implemented as a `yarp::os::RFModule` that uses the [interface](headers/headers/unscentedParticleFilter.h) of the MUPF. The [main](src/main.cpp) instantiates the RFModule.
+
+## MUPF Filter
+The filter can be used through the [interface](headers/headers/unscentedParticleFilter.h).
+
+The main methods offered are
 
 ```
-localizer num_of_trials "mupf" --from configuration file
+bool configure(yarp::os::ResourceFinder &rf);
 ```
-
--`num_of_trial` is the number of times you want to run the algorithm and to have statistics about
-
--`"mupf"` string enables the use of MUPF algorithm. Otherwise, Scaling Series is used.
-
-## Publications
-
-Memory Unscented Particle Filter for 6-DOF Tactile Localization,
-G. Vezzani, U. Pattacini, G. Battistelli, L. Chisci, L. Natale, 
-_submitted to IEEE Transaction on Robotics_, 2016,
-preprint available on [arxiv:1607.02757v2](https://arxiv.org/abs/1607.02757v2)
-
-A Novel Bayesian Filtering Approach to Tactile Object Recognition,
-G. Vezzani, N. Jamali, U. Pattacini, G. Battistelli, L. Chisci, L. Natale, 
-IEEE International Conference on Humanoid Robots, 2016, pp. 250 - 263
+that takes a previously instantiated `yarp::os::ResourceFinder` and configure the filter.
 
 
-[![DOI:10.5281/zenodo.163860](https://zenodo.org/badge/20254/tacman-fp7/tactile-localization.svg)](https://zenodo.org/badge/latestdoi/20254/tacman-fp7/tactile-localization)
+```
+void init();
+```
+that reset the filter.
 
+```
+void setNewMeasure(const Measure &m);
+```
+that set a new measure.
+
+```
+void setRealPose(const yarp::sig::Vector &pose);
+```
+that set the real pose used to evaluate the ideal measurement equation.
+
+```
+void step();
+```
+that perform a filtering step.
+
+```
+yarp::sig::Vector getEstimate();
+```
+that extract the MAP estimate.
+```
+double evalPerformanceIndex(const yarp::sig::Vector &estimate, const std::deque<Point> &points);
+```
+that evaluates the performance index taking into account the estimate given, the contact points given and
+the model loaded through the configuration file.
+```
+void transformObject(const yarp::sig::Vector &estimate, Polyhedron &transformed);  
+```
+that transform the model of the object, with coordinates expressed in a object fixed reference frame, into a model
+of the object in the estimated pose given with coordinates expressed in robot reference frame.

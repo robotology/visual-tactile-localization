@@ -202,12 +202,15 @@ yarp::sig::Vector UnscentedParticleFilter::computeY(const int &k, const int &j)
     yarp::sig::Vector out;
     
     ParticleUPF &particle=x[k];
-    
-    yarp::sig::Matrix Hm=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
-    
-    Hm(0,3)=x[k].XsigmaPoints_pred(0,j);
-    Hm(1,3)=x[k].XsigmaPoints_pred(1,j);
-    Hm(2,3)=x[k].XsigmaPoints_pred(2,j);
+
+    // evaluate transformation from object fixed frame to robot frame
+    yarp::sig::Matrix Ho2r=rpr(particle.XsigmaPoints_pred.getCol(j).subVector(3,5));
+    Ho2r(0,3)=x[k].XsigmaPoints_pred(0,j);
+    Ho2r(1,3)=x[k].XsigmaPoints_pred(1,j);
+    Ho2r(2,3)=x[k].XsigmaPoints_pred(2,j);
+
+    // evalute transformation from robot frame to object fixed rame
+    yarp::sig::Matrix Hr2o=SE3inv(Ho2r);
 
     // take last measurements received
     Measure& m=meas_buffer.back();
@@ -216,21 +219,17 @@ yarp::sig::Vector UnscentedParticleFilter::computeY(const int &k, const int &j)
     // evaluate measurement equation
     for (int j=0; j<m.size(); j++)
     {
-	Hm=SE3inv(Hm);
-	
 	Point &p=m[j];
 
-	double x=Hm(0,0)*p[0]+Hm(0,1)*p[1]+Hm(0,2)*p[2]+Hm(0,3);
-	double y=Hm(1,0)*p[0]+Hm(1,1)*p[1]+Hm(1,2)*p[2]+Hm(1,3);
-	double z=Hm(2,0)*p[0]+Hm(2,1)*p[1]+Hm(2,2)*p[2]+Hm(2,3);
+	double x=Hr2o(0,0)*p[0]+Hr2o(0,1)*p[1]+Hr2o(0,2)*p[2]+Hr2o(0,3);
+	double y=Hr2o(1,0)*p[0]+Hr2o(1,1)*p[1]+Hr2o(1,2)*p[2]+Hr2o(1,3);
+	double z=Hr2o(2,0)*p[0]+Hr2o(2,1)*p[1]+Hr2o(2,2)*p[2]+Hr2o(2,3);
 
 	y_pred=tree.closest_point(Point(x,y,z));
 
-	Hm=SE3inv(Hm);
-
-	out[j*3]=Hm(0,0)*y_pred[0]+Hm(0,1)*y_pred[1]+Hm(0,2)*y_pred[2]+Hm(0,3);
-	out[j*3+1]=Hm(1,0)*y_pred[0]+Hm(1,1)*y_pred[1]+Hm(1,2)*y_pred[2]+Hm(1,3);
-	out[j*3+2]=Hm(2,0)*y_pred[0]+Hm(2,1)*y_pred[1]+Hm(2,2)*y_pred[2]+Hm(2,3);
+	out[j*3]=Ho2r(0,0)*y_pred[0]+Ho2r(0,1)*y_pred[1]+Ho2r(0,2)*y_pred[2]+Ho2r(0,3);
+	out[j*3+1]=Ho2r(1,0)*y_pred[0]+Ho2r(1,1)*y_pred[1]+Ho2r(1,2)*y_pred[2]+Ho2r(1,3);
+	out[j*3+2]=Ho2r(2,0)*y_pred[0]+Ho2r(2,1)*y_pred[1]+Ho2r(2,2)*y_pred[2]+Ho2r(2,3);
     }
     
     return out;

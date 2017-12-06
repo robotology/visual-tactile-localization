@@ -487,9 +487,9 @@ void UnscentedParticleFilter::resampling()
     x=new_x;
 }
 
-void UnscentedParticleFilter::selectionStep(double &Neff,const double &sum_squared)
+void UnscentedParticleFilter::selectionStep(const double &sum_squared)
 {
-    Neff=1.0/sum_squared;
+    double Neff=1.0/sum_squared;
     
     if (params.resample_in_first_iters || t >= 3)
     {	
@@ -698,8 +698,7 @@ void UnscentedParticleFilter::step()
 
     double sum=0.0;
     double sum_squared=0.0;
-    double Neff=0.0;
-    
+
     yarp::sig::Vector random;
     random.resize(params.n,0.0);
     
@@ -804,7 +803,7 @@ void UnscentedParticleFilter::step()
         normalizeWeights(i, sum, sum_squared);
     }
 
-    selectionStep(Neff,sum_squared);
+    selectionStep(sum_squared);
 }
 
 yarp::sig::Vector UnscentedParticleFilter::getEstimate()

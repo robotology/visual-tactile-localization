@@ -309,10 +309,9 @@ private:
      * If get_parameters().always_resample is true only the 
      * criterion based on Neffective is considered.
      * 
-     * @param Neff 1/sum_squared
      * @param sum_squared sum of squared weights
      */
-    void selectionStep(double &Neff,const double &sum_squared);
+    void selectionStep(const double &sum_squared);
              
 public:
     /**

@@ -746,62 +746,27 @@ void UnscentedParticleFilter::step()
     yarp::math::RandnScalar normal_gen;
     normal_gen.init();
 
-    // resize quantities that depends
-    // on the size of the measurement vector
+    // process all the particles
     for(size_t i=0; i<x.size(); i++ )
     {
         resizeParticle(i);
-    }
-    
-    //initialize Matrix for UKF
-    for(size_t i=0; i<x.size(); i++ )
-    {
         initializeUKFMatrix(i);
-    }
-    
-    //compute sigmaPoints
-    for(size_t i=0; i<x.size(); i++ )
-    {
         computeSigmaPoints(i);
-    }
-    
-    for(size_t i=0; i<x.size(); i++ )
-    {
      	predictionStep(i, normal_gen);
-    }
-    
-    for(size_t i=0; i<x.size(); i++ )
-    {
         computePpred(i);
-    }
-    
-    //correction
-    for(size_t i=0; i<x.size(); i++ )
-    {
         computeCorrectionMatrix(i);
-    }
-    
-    for(size_t i=0; i<x.size(); i++)
-    {
         x[i].K=x[i].Pxy*luinv(x[i].Pyy);
-    }
-    
-    for(size_t i=0; i<x.size(); i++)
-    {
         correctionStep(i);
-    }
-    
-    //compute weights
-    for(size_t i=0; i<x.size(); i++ )
-    {
         computeWeights(i, sum);
     }
-    
+
+    // normalize weights
     for (size_t i=0; i<x.size(); i++)
     {
         normalizeWeights(i, sum, sum_squared);
     }
 
+    // resampling strategies
     selectionStep(sum_squared);
 }
 

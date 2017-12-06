@@ -668,6 +668,9 @@ void UnscentedParticleFilter::init()
     // init index of iteration
     t=0;
 
+    // empty the measurements buffer
+    meas_buffer.clear();
+
     // initialize particles and sample from initial search region
     x.assign(params.N,ParticleUPF());
     initialRandomize();

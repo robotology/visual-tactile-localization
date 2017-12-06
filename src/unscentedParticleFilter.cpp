@@ -657,6 +657,9 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     modelFile.close();
     yInfo()<<"Model file loaded successfully";
 
+    // init CGAL
+    GeometryCGAL::init();
+
     return true;
 }
 
@@ -664,9 +667,6 @@ void UnscentedParticleFilter::init()
 {
     // init index of iteration
     t=0;
-
-    // init geometry for distance computation
-    GeometryCGAL::init();
 
     // initialize particles and sample from initial search region
     x.assign(params.N,ParticleUPF());

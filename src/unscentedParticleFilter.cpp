@@ -280,8 +280,51 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &k, const int
     return out;
 }
 
-void UnscentedParticleFilter::predictionStep(const int &i)
+void UnscentedParticleFilter::predictionStep(const int &i,
+					     yarp::math::RandnScalar &normal_gen)
 {
+    yarp::sig::Vector random;
+    random.resize(params.n,0.0);
+    
+    yarp::sig::Matrix cholQ;
+    cholQ(params.n,params.n);
+
+    for(size_t j=0; j<2*params.n+1; j++)
+    {
+	for( size_t l=0; l<params.n; l++)
+	{		
+	    random[l]=normal_gen.RandnScalar::get(0.0, 1.0);
+	}
+	    
+	cholQ=params.Q;
+
+	//since Q is diagonal, chol(Q) is sqrt of its member on diagonal
+	    
+	for(size_t k=0; k<6; k++)
+	{
+	    for( size_t l=0; l<params.n; l++)
+	    {
+		cholQ(k,l)=sqrt(cholQ(k,l));
+	    }
+	}
+	    
+	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j)+cholQ*random);
+	    
+	x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
+	x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
+	x[i].XsigmaPoints_pred(5,j)=fmod(x[i].XsigmaPoints_pred(5,j),2*M_PI);
+
+	if(params.use_ideal_meas_eqn)
+	{
+	    x[i].YsigmaPoints_pred.setCol(j,computeYIdeal(i,j));
+	}
+	else
+	{
+	    x[i].YsigmaPoints_pred.setCol(j,computeY(i,j));
+	}
+	    
+    }
+
     x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
     x[i].x_pred[3]=fmod(x[i].x_pred[3],2*M_PI);
     x[i].x_pred[4]=fmod(x[i].x_pred[4],2*M_PI);
@@ -699,13 +742,9 @@ void UnscentedParticleFilter::step()
     double sum=0.0;
     double sum_squared=0.0;
 
-    yarp::sig::Vector random;
-    random.resize(params.n,0.0);
-    
-    yarp::sig::Matrix cholQ;
-    cholQ(params.n,params.n);
-    
-    yarp::math::RandnScalar prova;
+    // normal distribution generator
+    yarp::math::RandnScalar normal_gen;
+    normal_gen.init();
 
     // resize quantities that depends
     // on the size of the measurement vector
@@ -726,49 +765,9 @@ void UnscentedParticleFilter::step()
         computeSigmaPoints(i);
     }
     
-    //propagate particle in the future
     for(size_t i=0; i<x.size(); i++ )
     {
-        for(size_t j=0; j<2*params.n+1; j++)
-        {
-            for( size_t l=0; l<params.n; l++)
-            {		
-                random[l]=prova.RandnScalar::get(0.0, 1.0);
-            }
-	    
-	    cholQ=params.Q;
-
-	    //since Q is diagonal, chol(Q) is sqrt of its member on diagonal
-	    
-	    for(size_t k=0; k<6; k++)
-	    {
-		for( size_t l=0; l<params.n; l++)
-		{
-		    cholQ(k,l)=sqrt(cholQ(k,l));
-		}
-	    }
-	    
-	    x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j)+cholQ*random);
-	    
-	    x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
-	    x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
-	    x[i].XsigmaPoints_pred(5,j)=fmod(x[i].XsigmaPoints_pred(5,j),2*M_PI);
-
-	    if(params.use_ideal_meas_eqn)
-	    {
-		x[i].YsigmaPoints_pred.setCol(j,computeYIdeal(i,j));
-	    }
-	    else
-	    {
-		x[i].YsigmaPoints_pred.setCol(j,computeY(i,j));
-	    }
-	    
-        }
-    }
-    
-    for(size_t i=0; i<x.size(); i++ )
-    {
-     	predictionStep(i);
+     	predictionStep(i, normal_gen);
     }
     
     for(size_t i=0; i<x.size(); i++ )

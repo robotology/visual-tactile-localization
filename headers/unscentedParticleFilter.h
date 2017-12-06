@@ -19,6 +19,7 @@
 // yarp
 #include <yarp/sig/all.h>
 #include <yarp/os/ResourceFinder.h>
+#include <yarp/math/RandnScalar.h>
 
 // CGAL
 #include "geometryCGAL.h"
@@ -249,8 +250,9 @@ private:
 
     /** 
      * Execute the prediction step required within the UPF.
+     * @param normal_gen a previously initialized @see RandnScalar normal distribution generator
      */
-    void predictionStep(const int &i);
+    void predictionStep(const int &i, yarp::math::RandnScalar &normal_gen);
     
     /**
      * Compute the predicted state covariance matrix.

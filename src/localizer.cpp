@@ -156,7 +156,7 @@ bool Localizer::loadParameters(const yarp::os::ResourceFinder &rf)
         return false;
     }
     num_trials = num_trials_value.asInt();
-    yInfo() << "Localizer: number of particles:" << num_trials;    
+    yInfo() << "Localizer: number of trials:" << num_trials;    
 
     // load the fixed number of contact points per time step
     yarp::os::Value n_contacts_value = rf.find("numContacts");

@@ -344,6 +344,10 @@ bool Localizer::updateModule()
     	    for(size_t j=0; j<n_contacts; j++)
     		m.push_back(measurements[k+j]);
 
+	    // set zero inputs
+	    yarp::sig::Vector zero_in(3, 0.0);
+	    upf->setNewInput(zero_in);
+
     	    // set new measure
     	    upf->setNewMeasure(m);
 

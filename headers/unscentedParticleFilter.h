@@ -78,6 +78,8 @@ struct ParticleUPF
 
     // particle after correction step
     yarp::sig::Vector x_corr;
+    // previoust value of x_corr
+    yarp::sig::Vector x_corr_prev;    
     // predicted state
     yarp::sig::Vector x_pred;
     // predicted measurement
@@ -111,6 +113,7 @@ struct ParticleUPF
     
     // initialization
     ParticleUPF() : x_corr(6,0.0),
+	            x_corr_prev(6,0.0),
 	            x_pred(6,0.0),
 	            x_tilde(6,1),
 	            x_bar(6,0.0),
@@ -150,6 +153,10 @@ private:
     
     // current real pose
     yarp::sig::Vector real_pose;
+
+    // new and last system input
+    yarp::sig::Vector input;
+    yarp::sig::Vector last_input;
 
     // parameters of the UPF
     ParametersUPF params;
@@ -282,6 +289,17 @@ private:
     double likelihood(const int &k, double& map_likelihood);
 
     /** 
+     * Eval a multivariate gaussian.
+     * @param x a yarp::sig::Vector containing the argument
+     * @param mean a yarp::sig::Vector containing the mean
+     * @param covariance a yarp::sig::Matrix containing the covariance
+     * @return the value of the density.
+     */
+    double multivariateGaussian(const yarp::sig::Vector &x,
+				const yarp::sig::Vector &mean,
+				const yarp::sig::Matrix &covariance);
+    
+    /** 
      * Compute weight for particle i and 
      * update the sum of all the weights.
      * @param i index of the current particle
@@ -331,6 +349,12 @@ public:
      */
     void init();
 
+    /**
+     * Provide a new system input to the algorithm.
+     * @param in a yarp::sig::Vector containing the input
+     */
+    void setNewInput(const yarp::sig::Vector &in);
+    
     /**
      * Provide a new measurement to the algorithm.
      * @param m a std::vector of Point points

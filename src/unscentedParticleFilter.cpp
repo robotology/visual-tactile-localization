@@ -309,6 +309,10 @@ void UnscentedParticleFilter::predictionStep(const int &i,
 	}
 	    
 	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j)+cholQ*random);
+
+	// use system input in the prediction
+	for(size_t k=0; k<3; k++)
+	    x[i].XsigmaPoints_pred(k,j) += last_input[k];
 	    
 	x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
 	x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
@@ -459,22 +463,55 @@ double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
     }
     
     return likelihood;
-}	
+}
+
+double UnscentedParticleFilter::multivariateGaussian(const yarp::sig::Vector &x,
+						     const yarp::sig::Vector &mean,
+						     const yarp::sig::Matrix &covariance)
+{
+    double value;
+    
+    // eval the difference x - mean
+    yarp::sig::Vector diff = x - mean;
+
+    // wrap angular errors
+    for (size_t i=3; i<6; i++)
+	diff[i] = fmod(diff[i], 2 * M_PI);
+
+    // eval the density
+    yarp::sig::Matrix diff_m(x.size(), 1);
+    diff_m.setCol(0, diff);
+
+    yarp::sig::Matrix tmp(1,1);
+    tmp = diff_m.transposed() * yarp::math::luinv(covariance) * diff_m;
+
+    value = exp(-0.5 * tmp(0, 0));
+
+    return value;
+}
 
 void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
 {
     double standard_likelihood;
     double map_likelihood;
+    double tran_prob;
 
     // evaluate standard likelihood and
     // likelihood corrected for MAP estimate
     standard_likelihood = likelihood(i,map_likelihood);
 
+    // evalute transition probability
+    yarp::sig::Vector mean = x[i].x_corr_prev;
+    for(size_t i=0; i<3; i++)
+	mean[i] += last_input[i];
+
+    tran_prob = multivariateGaussian(x[i].x_corr, mean, params.Q);
+
     // evaluate standard weights
-    x[i].weights=x[i].weights*standard_likelihood;
+    x[i].weights=x[i].weights * standard_likelihood * tran_prob;
 
     // evaluate weights corrected for MAP estimate
-    x[i].weights_map=x[i].weights*map_likelihood;
+    x[i].weights_map=x[i].weights * map_likelihood * tran_prob;
     
     sum+=x[i].weights;
 }
@@ -714,12 +751,22 @@ void UnscentedParticleFilter::init()
     // empty the measurements buffer
     meas_buffer.clear();
 
+    // clear system input
+    last_input.resize(3, 0.0);
+    input.resize(3, 0.0);
+
     // initialize particles and sample from initial search region
     x.assign(params.N,ParticleUPF());
     initialRandomize();
 
     // complete UPF initialization
     initializationUPF();
+}
+
+void UnscentedParticleFilter::setNewInput(const yarp::sig::Vector &in)
+{
+    // set the new system input received
+    input = in;
 }
 
 void UnscentedParticleFilter::setNewMeasure(const Measure& m)
@@ -768,6 +815,16 @@ void UnscentedParticleFilter::step()
 
     // resampling strategies
     selectionStep(sum_squared);
+
+    // update system input
+    last_input = input;
+
+    // update previous value of x_corr
+    for (size_t i=0; i<x.size(); i++)
+    {
+	x[i].x_corr_prev = x[i].x_corr;
+    }
+
 }
 
 yarp::sig::Vector UnscentedParticleFilter::getEstimate()

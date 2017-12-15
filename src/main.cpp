@@ -14,7 +14,7 @@
 #include <yarp/os/all.h>
 
 //
-#include "headers/localizer.h"
+#include "headers/localizer-motion.h"
 
 /*
  * main
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     rf.configure(argc,argv);
 
     // instantiate the localizer
-    Localizer localizer;
+    LocalizerMotion localizer;
 
     localizer.runModule(rf);
 }

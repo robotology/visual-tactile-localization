@@ -32,15 +32,26 @@ include(ICUBcontribHelpers)
 include(ICUBcontribOptions)
 icubcontrib_set_default_prefix()
 
-set(headers headers/geometryCGAL.h headers/unscentedParticleFilter.h headers/localizer.h)
-set(sources src/unscentedParticleFilter.cpp src/localizer.cpp src/main.cpp) 
-source_group("Source Files" FILES ${sources})
-source_group("Header Files" FILES ${headers})
-
+include_directories(${PROJECT_SOURCE_DIR}/headers/vcglib)
 include_directories(${YARP_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR} )
 include(${CGAL_USE_FILE})
 include(CGAL_CreateSingleSourceCGALProgram)
+
+set(headers
+  headers/geometryCGAL.h
+  headers/unscentedParticleFilter.h
+  headers/localizer.h
+  headers/localizer-motion.h
+  headers/motionGenerator.h
+  headers/fakePointCloud.h)
+set(sources
+  src/unscentedParticleFilter.cpp
+  src/localizer.cpp
+  src/localizer-motion.cpp
+  src/motionGenerator.cpp
+  src/fakePointCloud.cpp
+  src/main.cpp) 
 
 add_executable(${PROJECTNAME} ${headers} ${sources})
 target_link_libraries(${PROJECTNAME} ${YARP_LIBRARIES})

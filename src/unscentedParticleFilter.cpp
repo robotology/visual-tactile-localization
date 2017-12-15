@@ -490,6 +490,16 @@ double UnscentedParticleFilter::multivariateGaussian(const yarp::sig::Vector &x,
     return value;
 }
 
+double UnscentedParticleFilter::tranProbability(const int &i,
+						const int &j)
+{
+    // evaluate transition probability
+    yarp::sig::Vector mean = x[j].x_corr_prev;
+    mean.setSubvector(0, mean.subVector(0,2) + last_input);
+
+    return multivariateGaussian(x[i].x_corr, mean, params.Q_prev);
+}
+
 void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
 {
     double standard_likelihood;
@@ -500,12 +510,8 @@ void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
     // likelihood corrected for MAP estimate
     standard_likelihood = likelihood(i,map_likelihood);
 
-    // evalute transition probability
-    yarp::sig::Vector mean = x[i].x_corr_prev;
-    for(size_t i=0; i<3; i++)
-	mean[i] += last_input[i];
-
-    tran_prob = multivariateGaussian(x[i].x_corr, mean, params.Q);
+    // evaluate transition probability
+    tran_prob = tranProbability(i, i);
 
     // evaluate standard weights
     x[i].weights=x[i].weights * standard_likelihood * tran_prob;
@@ -679,6 +685,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     yarp::sig::Matrix Q;
     params.Q.resize(params.n,params.n);
     params.Q.diagonal(diagQ);
+    params.Q_prev = params.Q;
     yInfo()<<"UKF Q:"<<params.Q.toString();
 
     // read the noise scalar variance R
@@ -821,15 +828,12 @@ void UnscentedParticleFilter::step()
     {
 	x[i].x_corr_prev = x[i].x_corr;
     }
-
+    // update previous value of Q
+    params.Q_prev = params.Q;
 }
 
 yarp::sig::Vector UnscentedParticleFilter::getEstimate()
 {
-    std::deque<double> probability_per_particle;
-    double probability;
-    yarp::sig::Matrix diff(6,1);
-
     // corrected weights are not normalized at each step since not required
     // normalization is done here
     double sum_weights=0.0;
@@ -843,37 +847,34 @@ yarp::sig::Vector UnscentedParticleFilter::getEstimate()
     }
 
     // extract MAP estimate
+    std::deque<double> probability_per_particle;
+    double sum_tran_probability;
+    double meas_likelihood;
     for(size_t i=0; i<x.size(); i++)
     {
-        probability=0;
-	
+	// sum of transition probabilites
+        sum_tran_probability = 0;
+
         for(size_t j=0; j<x.size(); j++)
-        {
-            diff(0,0)=x[i].x_corr(0)-x[j].x_corr(0);
-            diff(1,0)=x[i].x_corr(1)-x[j].x_corr(1);
-            diff(2,0)=x[i].x_corr(2)-x[j].x_corr(2);
-            diff(3,0)=fmod(x[i].x_corr(3)-x[j].x_corr(3),2*M_PI);
-            diff(4,0)=fmod(x[i].x_corr(4)-x[j].x_corr(4),2*M_PI);
-            diff(5,0)=fmod(x[i].x_corr(5)-x[j].x_corr(5),2*M_PI);
-	    
-            yarp::sig::Matrix temp(1,1);
-            temp=diff.transposed()*luinv(x[j].P_corr)*diff;
-	    
-            probability=probability+x[i].weights_map*exp(-0.5*(temp(0,0)));
-        }
-	
-        probability_per_particle.push_back(probability);
+            sum_tran_probability += tranProbability(i, j);
+
+	// measurements likelihood
+	double tmp;
+	meas_likelihood = likelihood(i, tmp);
+
+	// store probability
+        probability_per_particle.push_back(meas_likelihood * sum_tran_probability);
     }
-    
-    double max_prob=0.0;
-    int i_max_prob=0;
-    
+
+    // find arg max
+    double max_prob = 0.0;
+    int i_max_prob = 0;
     for(size_t i=0; i<x.size(); i++)
     {
-        if(max_prob< probability_per_particle[i])
+        if(max_prob < probability_per_particle[i])
         {
-            max_prob=probability_per_particle[i];
-            i_max_prob=i;
+            max_prob = probability_per_particle[i];
+            i_max_prob = i;
         }
     }
 

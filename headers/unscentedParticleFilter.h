@@ -55,6 +55,8 @@ struct ParametersUPF
     
     // covariance matrix of system noise Q
     yarp::sig::Matrix Q;
+    //
+    yarp::sig::Matrix Q_prev;
     // scalar measurement noise variance R
     double R;
     // coavariance matrix of initial guess P0
@@ -298,6 +300,13 @@ private:
     double multivariateGaussian(const yarp::sig::Vector &x,
 				const yarp::sig::Vector &mean,
 				const yarp::sig::Matrix &covariance);
+    /** 
+     * Compute the transition probability.
+     * @param i the index of the particle to consider for the current state
+     * @param j the index of the particle to consisder for the previous state
+     * @return the transition probability
+     */
+    double tranProbability(const int &i, const int &j);
     
     /** 
      * Compute weight for particle i and 

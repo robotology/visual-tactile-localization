@@ -263,6 +263,6 @@ Each phase is a `struct` that have to be filled with (almost) all these quantiti
 
 __It is not required__ to fill all the fields of the struct `LocalizationPhase` for the phases __other than the first__. In fact the method `LocalizerMotion::updateModule` uses the method `LocalizerMotion::configureLocPhase` that configures each localization phase before performing the first filtering step associated to that motion phase and helps the user in filling some fields of the struct.
 In particular 
-- if a motion phase is configured with the `holdDisplFromPrevious` set to `true` then the displacement is copied from the previous phase and the initial conditions of a phase are set equal to the final conditions of the previous step;
+- if a motion phase is configured with the `holdDisplFromPrevious` set to `true` then the displacement is copied from the previous phase and the initial conditions of a phase are set equal to the final conditions of the previous phase;
 - if a motion phase is `LocalizationType::Static` then the final conditions are automatically set equal to the initial conditions;
 - if a motion phase is configured with the `holdDisplFromPrevious` set to `false` a new displacement vector __have__ to be specified for that phase and the initial position of the __new__ reference point, expressed in robot reference frame, is automatically calculated taking into account the final yaw attitude of the previous phase.

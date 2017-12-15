@@ -253,7 +253,7 @@ Each phase is a `struct` that have to be filled with (almost) all these quantiti
 
 > For `LocalizationType::Motion` phases it must be a `FakePointCloud` loaded with a __Vertex only__ model of the object containing, e.g., the location of few contact points used in an hypothetic __pushing__ phase.
 
--`mg`, pointer to a `MotionGenerator`;
+- `mg`, pointer to a `MotionGenerator`;
 > For `LocalizationType::Static` phases it should be a `StaticMotionGenerator`.
 
 > For `LocalizationType::Motion` phases it should be a `PolynomialMotionGenerator`.

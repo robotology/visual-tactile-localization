@@ -1,6 +1,8 @@
-# visual-tactile-localization
+# visual-tactile-localization with motion scenario
 
 The code distributed here provides a reviewed implementation of the **Memory Unscented Particle Filter (MUPF)** algorithm for visual-tactile localization.
+
+(The previous __static only__ implementation can be found [here](https://github.com/robotology-playground/tactile-localization/releases/tag/v3.0)).
 
 With respect to the original implementation the reviewed implementation offers:
 - handling of multiple contact points per time step;

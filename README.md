@@ -54,6 +54,7 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `memoryWidth`, width of the memory window of the Memory UPF (__it should be put to 1 during motion scenarios__);
 - `resampleInFirstIters`, whether to resample also in the first two iterations of the algorithm (true/false);
 - `useIdealMeasEqn`, whether to use the ideal measurement equation or not (true/false);
+- `observerOrigin`, a 3D tuple containing the origin of the observer and used to generate a more realistic point cloud;
 - `numContacts`, fixed number of contact points to be processed at each time step during __static__ motion phases (see the section [Integration](#integration) for more details on this setting).
 
 ## Notes on an example motion scenario
@@ -148,9 +149,9 @@ void transformModel(simpleTriMesh &mesh_out);
 that transform the model (both mesh or point cloud depending on the type of file loaded with `FakePointCloud::loadObjectModel`) using the current pose set with `FakePointCloud::setPose`.
 
  ```    
- void samplePointCloud(std::vector<Point> &cloud, const int &num_points);
+ void samplePointCloud(std::vector<Point> &cloud,const yarp::sig::Vector &obs_origin, const int &num_points);
  ```
-that create a point cloud by Disk Poisson sampling the whole surface of the object in the current pose set with `FakePointCloud::setPose`. It requires a model of the object containing a triangular mesh and not a point cloud (i.e. a Vertex only model).
+that create a point cloud by Disk Poisson sampling the whole surface of the object in the current pose set with `FakePointCloud::setPose` and taking the points visible to the observer whose origin is at `obs_origin`. It requires a model of the object containing a triangular mesh and not a point cloud (i.e. a Vertex only model).
 
 ```
 void getPointCloud(std::vector<Point> &cloud);

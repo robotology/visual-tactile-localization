@@ -147,11 +147,11 @@ void UnscentedParticleFilter::computeSigmaPoints(const int &i)
     S.diagonal(s);
     G=U*S;
     
-    x[i].XsigmaPoints_corr.setCol(0,x[i].x_corr);
+    x[i].XsigmaPoints_corr.setCol(0,x[i].x_corr_prev);
     
     for(size_t j=1; j<params.n+1; j++)
     {
-        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr+G.getCol(j-1));
+        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev+G.getCol(j-1));
 	
         x[i].XsigmaPoints_corr(3,j)=fmod(x[i].XsigmaPoints_corr(3,j),2*M_PI);
         x[i].XsigmaPoints_corr(4,j)=fmod(x[i].XsigmaPoints_corr(4,j),2*M_PI);
@@ -160,7 +160,7 @@ void UnscentedParticleFilter::computeSigmaPoints(const int &i)
     
     for(size_t j=params.n+1; j<2*params.n+1; j++)
     {
-        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr-G.getCol(j-1-params.n));
+        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev-G.getCol(j-1-params.n));
 	
         x[i].XsigmaPoints_corr(3,j)=fmod(x[i].XsigmaPoints_corr(3,j),2*M_PI);
         x[i].XsigmaPoints_corr(4,j)=fmod(x[i].XsigmaPoints_corr(4,j),2*M_PI);
@@ -310,7 +310,7 @@ void UnscentedParticleFilter::predictionStep(const int &i,
 	    
 	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j)+cholQ*random);
 
-	// use system input in the prediction
+	//use system input in the prediction
 	for(size_t k=0; k<3; k++)
 	    x[i].XsigmaPoints_pred(k,j) += last_input[k];
 	    
@@ -551,16 +551,7 @@ void UnscentedParticleFilter::resampling()
             i++;
         }
 	
-        //new_x[j]=x[i];
-	yarp::sig::Vector tmp(6,0.0);
-	
-        tmp[0] = yarp::math::Rand::scalar(x[i].x_corr[0] - x[i].P_corr(0,0), +x[i].x_corr[0] + x[i].P_corr(0,0));
-        tmp[1] = yarp::math::Rand::scalar(x[i].x_corr[1] - x[i].P_corr(1,1), +x[i].x_corr[1] + x[i].P_corr(1,1));
-        tmp[2] = yarp::math::Rand::scalar(x[i].x_corr[2] - x[i].P_corr(2,2), +x[i].x_corr[2] + x[i].P_corr(2,2));
-        tmp[3] = yarp::math::Rand::scalar(x[i].x_corr[3] - x[i].P_corr(3,3), +x[i].x_corr[3] + x[i].P_corr(3,3));
-        tmp[4] = yarp::math::Rand::scalar(x[i].x_corr[4] - x[i].P_corr(4,4), +x[i].x_corr[4] + x[i].P_corr(4,4));
-        tmp[5] = yarp::math::Rand::scalar(x[i].x_corr[5] - x[i].P_corr(5,5), +x[i].x_corr[5] + x[i].P_corr(5,5));
-        new_x[j].x_corr=tmp;
+        new_x[j]=x[i];	
         new_x[j].weights=1.0/params.N;
     }
     
@@ -573,7 +564,7 @@ void UnscentedParticleFilter::selectionStep(const double &sum_squared)
     
     if (params.resample_in_first_iters || t >= 3)
     {	
-	if(Neff < params.N/20.0)
+	if(Neff < params.N/20.0);
 	    resampling();
     }
 
@@ -780,6 +771,12 @@ void UnscentedParticleFilter::setRealPose(const yarp::sig::Vector &pose)
 {
     // assign the current real pose
     real_pose = pose;
+}
+
+void UnscentedParticleFilter::setQ(const yarp::sig::Vector &covariance)
+{
+    // assign a new covariance matrix
+    params.Q.diagonal(covariance);
 }
 
 void UnscentedParticleFilter::step()

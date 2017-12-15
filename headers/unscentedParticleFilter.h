@@ -366,6 +366,13 @@ public:
      * @param pose a yarp::sig::Vector containing the real pose
      */
     void setRealPose(const yarp::sig::Vector &pose);
+
+    /**
+     * Set the system noise covariance matrix.
+     * @param covariance a yarp::sig::Vector containing the diagonal
+     * entries of the matrix Q
+     */
+    void setQ(const yarp::sig::Vector &covariance);
     
     /**
      * Single iteration of the algorithm.

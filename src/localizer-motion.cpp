@@ -70,6 +70,38 @@ bool LocalizerMotion::loadParameters(const yarp::os::ResourceFinder &rf)
         return false;
     }
 
+    // load the origin of the observer
+    observer_origin.resize(3, 0.0);
+    yarp::os::Value observer_origin_value = rf.find("observerOrigin");
+    if (!rf.find("observerOrigin").isNull())
+    {
+	yarp::os::Bottle *b = observer_origin_value.asList();
+	if (b->size() >= 3)
+	{
+	    for(size_t i; i<3; i++)
+	    {
+		if(!b->get(i).isDouble())
+		{
+		    yError() << "invalid observer origin provided.";
+		    return false;
+		}
+		observer_origin[i] = b->get(i).asDouble();
+	    }
+	}
+	else
+	{
+	    yError() << "observer origin should contain 3 scalars.";
+	    return false;
+	}
+    }
+    else
+    {
+	yError() << "observer origin not provided.";
+	return false;
+    }
+    yInfo() << "Localizer: observer origin"
+	    << observer_origin.toString();
+
     return true;
 }
 

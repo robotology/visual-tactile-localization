@@ -127,7 +127,9 @@ private:
     // fake point cloud engines
     FakePointCloud pc_whole;
     FakePointCloud pc_contacts_1;
-    FakePointCloud pc_contacts_2;    
+    FakePointCloud pc_contacts_2;
+    // observer origin
+    yarp::sig::Vector observer_origin;
 
     // static pose generator
     StaticMotionGenerator static_mg;
@@ -210,6 +212,7 @@ public:
 	                cur_yaw(0),
                         prev_vel(3, 0.0),
 	                prev_ref_vel(3, 0.0),
+	                observer_origin(3, 0.0),
 	                current_phase(0) { };
     /*
      * Configure the module.

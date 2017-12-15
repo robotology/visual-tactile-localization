@@ -304,9 +304,18 @@ bool LocalizerMotion::performLocalization(int &current_phase)
     pose[3] = cur_yaw;
     lp.pc->setPose(pose);
     if (lp.type == LocalizationType::Static)
-	lp.pc->samplePointCloud(meas, lp.num_points);
+	lp.pc->samplePointCloud(meas,
+				observer_origin,
+				lp.num_points);
     else if (lp.type == LocalizationType::Motion)
 	lp.pc->getPointCloud(meas);
+
+    // check if there are measurements
+    if (meas.size() == 0)
+    {
+	yError() << "No measurements available from the fake point cloud.";
+	return true;
+    }
 
     // set real pose
     upf->setRealPose(pose);

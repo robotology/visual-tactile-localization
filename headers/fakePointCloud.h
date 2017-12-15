@@ -104,11 +104,13 @@ public:
      * Sample a point cloud obtained by Disk Poismson sampling
      * the object in the current pose set.
      * @param cloud a std::vector<Point> of Point points
+     * @param obs_origin a yarp::sig::Vector containing the origin of the observer
      * @param num_points the "approximate" number of points requested
      * containing the cloud
      * @return true on success 
      */
     void samplePointCloud(std::vector<Point> &cloud,
+			  const yarp::sig::Vector &obs_origin,
 			  const int &num_points);
     /*
      * Get the original point cloud representing the loaded model

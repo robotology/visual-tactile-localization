@@ -8,7 +8,6 @@
 /**
  * @author: Nicola Piga <nicolapiga@gmail.com>
  */
-
 #include "headers/fakePointCloud.h"
 
 // yarp
@@ -18,6 +17,8 @@
 // mesh IO
 #include <wrap/io_trimesh/import_off.h>
 #include <wrap/io_trimesh/export_off.h>
+
+using namespace yarp::math;
 
 // mesh IO
 typedef vcg::tri::io::ImporterOFF<simpleTriMesh> simpleTriMeshImporter;
@@ -86,6 +87,7 @@ void FakePointCloud::transformModel(simpleTriMesh &mesh_out)
 }
 
 void FakePointCloud::samplePointCloud(std::vector<Point> &cloud,
+				      const yarp::sig::Vector &obs_origin,
 				      const int &num_points)
 {
     // transform the model using the current pose set
@@ -125,14 +127,39 @@ void FakePointCloud::samplePointCloud(std::vector<Point> &cloud,
 					   radius,
 					   poiss_params);
     vcg::tri::UpdateBounding<simpleTriMesh>::Box(poiss_mesh);
+    vcg::tri::UpdateNormal<simpleTriMesh>::PerVertex(mesh);    
 
     // store the vertices in the cloud
     for (VertexIterator vi = poiss_mesh.vert.begin();
 	 vi != poiss_mesh.vert.end();
 	 vi++)
     {
-	const vcg::Point3f p = vi->cP();
-	cloud.push_back(Point(p[0], p[1], p[2]));
+	// extract the point
+	const auto p = vi->cP();
+	yarp::sig::Vector point(3, 0.0);
+	point[0] = p[0];
+	point[1] = p[1];
+	point[2] = p[2];	
+
+	// extract the associated normal
+	const auto n = vi->cN();
+	yarp::sig::Vector normal(3, 0.0);
+	normal[0] = n[0];
+	normal[1] = n[1];
+	normal[2] = n[2];
+
+	// eval vector from observer to point
+	yarp::sig::Vector diff = point - obs_origin;
+
+	// evaluate angle between diff and
+	// the normal at the point considered
+	double angle = acos(yarp::math::dot(diff, normal) /
+	                    yarp::math::norm(diff) /
+	                    yarp::math::norm(normal));
+	
+	// take the point if the angle is greater than 90 degrees
+	if(angle > M_PI/2.0)
+	    cloud.push_back(Point(p[0], p[1], p[2]));
     }
 }
 

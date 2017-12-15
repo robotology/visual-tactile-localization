@@ -5,7 +5,7 @@ The code distributed here provides a reviewed implementation of the **Memory Uns
 With respect to the original implementation the reviewed implementation offers:
 - handling of multiple contact points per time step;
 - implementation of an ideal measurement equation for testing purposes;
-- new [interface]() to supply measurements to the filter as a `std::vector` of a variable number of
+- new [interface](https://github.com/robotology-playground/tactile-localization/blob/master/headers/unscentedParticleFilter.h) to supply measurements to the filter as a `std::vector` of a variable number of
   CGAL::Simple_cartesian<double>::Point_3 Point points.
   
 Additional features such as including a __motion model__ in the filter can be found in the branch [feature/motion_model](https://github.com/robotology-playground/tactile-localization/tree/feature/motion_model).

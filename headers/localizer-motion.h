@@ -27,12 +27,37 @@ struct Results
 {
     // real pose
     yarp::sig::Vector real;
-    
+
+    // position of the reference point
+    yarp::sig::Vector ref_pos;
+
     // estimated pose    
     yarp::sig::Vector estimate;
 
+    // angular velocity
+    double yaw_rate;
+
+    // velocity of reference point
+    yarp::sig::Vector ref_vel;
+
+    // velocity of the center of the object
+    yarp::sig::Vector vel;
+    
+    // observer origin
+    yarp::sig::Vector obs_origin;
+
+    // execution time of filtering step
+    double exec_time;
+
+    // type of LocalizationPhase
+    LocalizationType loc_type;
+
     Results() : real(6, 0.0),
-	        estimate(6, 0.0) {}
+	        estimate(6, 0.0),	
+	        ref_pos(3, 0.0),	
+	        ref_vel(3, 0.0),      	
+	        vel(3, 0.0),
+	        obs_origin(3, 0.0) { };
 };
 
 /** 
@@ -111,10 +136,12 @@ private:
 
     // current object pose
     yarp::sig::Vector cur_pos;
+    yarp::sig::Vector cur_ref_pos;
     yarp::sig::Vector cur_vel;
     yarp::sig::Vector cur_ref_vel;    
     yarp::sig::Vector cur_att;
     double cur_yaw;
+    double cur_yaw_rate;
     // previous velocity
     yarp::sig::Vector prev_vel;
     yarp::sig::Vector prev_ref_vel;
@@ -186,8 +213,12 @@ private:
     bool saveMeas(const std::vector<Measure> &meas, const std::string &filename);
 
     void saveLocalizationStep(const yarp::sig::Vector &real_pose,
-			      const std::vector<Measure> &meas);
-
+			      const yarp::sig::Vector &ref_pose,
+			      const yarp::sig::Vector &vel,
+			      const yarp::sig::Vector &ref_vel,
+			      const double &yaw_rate,
+			      const std::vector<Measure> &meas,
+			      const double &exec_time);
     /*
      * Configure the current localization phase.
      *
@@ -206,10 +237,12 @@ public:
      * Constructor.
      */
     LocalizerMotion() : cur_pos(3, 0.0),
+                        cur_ref_pos(3, 0.0),	
                         cur_vel(3, 0.0),
 	                cur_ref_vel(3, 0.0),
                         cur_att(3, 0.0),
 	                cur_yaw(0),
+	                cur_yaw_rate(0),	
                         prev_vel(3, 0.0),
 	                prev_ref_vel(3, 0.0),
 	                observer_origin(3, 0.0),

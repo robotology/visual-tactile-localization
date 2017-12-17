@@ -98,15 +98,19 @@ public:
     /*
      * Get the current position and velocity of the center of
      * the object and the velocity of the reference point.
-     * @param pos yarp::sig::Vector where position is stored
-     * @param vel yarp::sig::Vector where velocity is stored
-     * @param ref_vel yarp::sig::Vector where velocity is stored
+     * @param pos yarp::sig::Vector where position of the center is stored
+     * @param ref_pos yarp::sig::Vector where position of the reference point is stored
+     * @param vel yarp::sig::Vector where velocity of the center is stored
+     * @param ref_vel yarp::sig::Vector where reference velocity is stored
      * @param yaw yaw attitude of the object
+     * @param yaw_rate yaw rate of the object
      */
     virtual void getMotion(yarp::sig::Vector &pos,
+			   yarp::sig::Vector &ref_pos,			   
 			   yarp::sig::Vector &vel,
 			   yarp::sig::Vector &ref_vel,			   
-	                   double &yaw) = 0;
+	                   double &yaw,
+			   double &yaw_rate) = 0;
 };
 
 /*
@@ -118,14 +122,23 @@ class StaticMotionGenerator : public MotionGenerator
 public:
     /*
      * Get the initial pose of the object and its zero velocity
-     * @param pos yarp::sig::Vector where position is stored
-     * @param vel yarp::sig::Vector where velocity is stored
+     * @param pos yarp::sig::Vector where position of the
+     *        center is stored
+     * @param ref_pos yarp::sig::Vector where position 
+     *        of the reference point is stored
+     * @param vel yarp::sig::Vector where velocity of the
+     *        center is stored
+     * @param ref_vel yarp::sig::Vector where velocity of 
+     *        the reference point is stored
      * @param yaw double where the yaw angle is stored
+     * @param yaw_rate double where the yaw rate is stored
      */
     void getMotion(yarp::sig::Vector &pos,
+		   yarp::sig::Vector &ref_pos,
 		   yarp::sig::Vector &vel,
 		   yarp::sig::Vector &ref_vel,
-	           double &yaw) override;
+	           double &yaw,
+	           double &yaw_rate) override;
 };
 
 /*
@@ -202,14 +215,23 @@ public:
      * The velocity of the center of the object is obtained from the velocity
      * of the reference point and the yaw only angular velocity of the object.
      * The position of the center of the object is obtained by integrating the
-     * velocity of the center of the object.
-     * @param pos yarp::sig::Vector where position is stored
-     * @param vel yarp::sig::Vector where velocity is stored
+     * @param pos yarp::sig::Vector where position of the
+     *        center is stored
+     * @param ref_pos yarp::sig::Vector where position 
+     *        of the reference point is stored
+     * @param vel yarp::sig::Vector where velocity of the
+     *        center is stored
+     * @param ref_vel yarp::sig::Vector where velocity of 
+     *        the reference point is stored
+     * @param yaw double where the yaw angle is stored
+     * @param yaw_rate double where the yaw rate is stored
      */
     void getMotion(yarp::sig::Vector &pos,
+		   yarp::sig::Vector &ref_pos,		   
 		   yarp::sig::Vector &vel,
 		   yarp::sig::Vector &ref_vel,		   
-	           double &yaw) override;    
+	           double &yaw,
+		   double &yaw_rate) override;    
 };
 
 #endif

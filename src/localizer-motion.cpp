@@ -106,7 +106,7 @@ bool LocalizerMotion::loadParameters(const yarp::os::ResourceFinder &rf)
 }
 
 bool LocalizerMotion::saveModel(const Polyhedron &model,
-			  const std::string &file_name)
+				const std::string &file_name)
 {    
     // get the output path if specified
     std::string outputPath;    
@@ -158,26 +158,39 @@ bool LocalizerMotion::saveResults(const std::vector<Results> &results)
 	     << "x_real;" << "y_real;" << "z_real;"
 	     << "phi_real;" << "theta_real;" << "psi_real;"	    
 	     << "x_sol;"   << "y_sol;"     << "z_sol;"
-	     << "phi_sol;" << "theta_sol;" << "psi_sol"
+	     << "phi_sol;" << "theta_sol;" << "psi_sol;"
+	     << "vel_x;"   << "vel_y;" << "vel_z;"
+	     << "ref_pos_x;" << "ref_pos_y;" << "ref_pos_z;"	    
+	     << "ref_vel_x;" << "ref_vel_y;" << "ref_vel_z;"
+	     << "yaw_rate;"
+	     << "obs_orig_x;" << "obs_orig_y;" << "obs_orig_z;"
+	     << "exec_time;"
+	     << "localization_type"
 	     << std::endl;
 
 	// save data for each trial
 	for(size_t i=0; i<results.size(); i++)
 	{
-	    fout << i <<";"
-		 << results[i].real[0] << ";"
-		 << results[i].real[1] << ";"
-		 << results[i].real[2] << ";"
-		 << results[i].real[3] << ";"
-		 << results[i].real[4] << ";"
-		 << results[i].real[5] << ";"
-		 << results[i].estimate[0] << ";"
-		 << results[i].estimate[1] << ";"
-		 << results[i].estimate[2] << ";"
-		 << results[i].estimate[3] << ";"
-		 << results[i].estimate[4] << ";"
-		 << results[i].estimate[5] << ";"
-		 << std::endl;
+	    fout << i << ";";
+	    for(size_t j=0; j<6; j++)
+		fout << results[i].real[j] << ";";
+	    for(size_t j=0; j<6; j++)
+		fout << results[i].estimate[j] << ";";
+	    for(size_t j=0; j<3; j++)
+		fout << results[i].vel[j] << ";";
+	    for(size_t j=0; j<3; j++)
+		fout << results[i].ref_pos[j] << ";";
+	    for(size_t j=0; j<3; j++)
+		fout << results[i].ref_vel[j] << ";";
+	    fout << results[i].yaw_rate << ";";
+	    for(size_t j=0; j<3; j++)
+		fout << results[i].obs_origin[j] << ";";
+	    fout << results[i].exec_time << ";";
+	    if (results[i].loc_type == LocalizationType::Static)
+		fout << 0;
+	    else
+		fout << 1;
+	    fout << std::endl;
 	}
     }
     else
@@ -193,7 +206,8 @@ bool LocalizerMotion::saveResults(const std::vector<Results> &results)
     return true;
 }
 
-bool LocalizerMotion::saveMeas(const std::vector<Measure> &meas, const std::string &filename)
+bool LocalizerMotion::saveMeas(const std::vector<Measure> &meas,
+			       const std::string &filename)
 {
     // get the output path if specified
     std::string outputPath;    
@@ -251,7 +265,12 @@ bool LocalizerMotion::saveMeas(const std::vector<Measure> &meas, const std::stri
 }
 
 void LocalizerMotion::saveLocalizationStep(const yarp::sig::Vector &real_pose,
-					   const std::vector<Measure> &meas)
+					   const yarp::sig::Vector &ref_pos,
+					   const yarp::sig::Vector &vel,
+					   const yarp::sig::Vector &ref_vel,
+					   const double &yaw_rate,
+					   const std::vector<Measure> &meas,
+					   const double &exec_time)
 {
     // extract MAP estimate
     yarp::sig::Vector est = upf->getEstimate();
@@ -269,10 +288,19 @@ void LocalizerMotion::saveLocalizationStep(const yarp::sig::Vector &real_pose,
     // save measurements
     saveMeas(meas, "meas" + std::to_string(n_steps) + ".off");
 
+    // get current localization phase
+    LocalizationPhase &lp = phases[current_phase];
+
     // save results
     Results result;
     result.real = real_pose;
+    result.ref_pos = ref_pos;
     result.estimate = est;
+    result.vel = vel;
+    result.ref_vel = ref_vel;
+    result.yaw_rate = yaw_rate;
+    result.obs_origin = observer_origin;
+    result.loc_type = lp.type;
     results.push_back(result);
 }
 
@@ -293,9 +321,11 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 
     // get pose from generator    
     lp.mg->getMotion(cur_pos,
-		  cur_vel,
-		  cur_ref_vel,
-		  cur_yaw);
+		     cur_ref_pos,
+		     cur_vel,
+		     cur_ref_vel,
+		     cur_yaw,
+		     cur_yaw_rate);
 
     // get measurements from fake point cloud
     yarp::sig::Vector pose(6, 0.0);
@@ -321,6 +351,9 @@ bool LocalizerMotion::performLocalization(int &current_phase)
     upf->setRealPose(pose);
 
     // perform localization
+    double t_i;
+    double t_f;
+    yarp::os::SystemClock clock;
     if(lp.type == LocalizationType::Static)
     {	
 	for(size_t k=0; k+n_contacts-1< meas.size(); k+=n_contacts)	
@@ -337,6 +370,7 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	    for(size_t j=0; j<n_contacts; j++)
 		m.push_back(meas[k+j]);
 	    one_meas.push_back(m);
+	    
 	
 	    // set zero inputs
 	    yarp::sig::Vector zero_in(3, 0.0);
@@ -346,10 +380,13 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	    upf->setNewMeasure(m);
 
 	    // step
+	    t_i = clock.now();
 	    upf->step();
-
+	    t_f = clock.now();
+	    
 	    // save all data
-	    saveLocalizationStep(pose, one_meas);
+	    saveLocalizationStep(pose, cur_ref_pos, cur_vel, cur_ref_vel,
+				 cur_yaw_rate, one_meas, t_f-t_i);
 	}
     }	
     else if(lp.type == LocalizationType::Motion)
@@ -377,10 +414,13 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	upf->setNewMeasure(m);
 
 	// step
+	t_i = clock.now();
 	upf->step();
-
+	t_f = clock.now();
+	
 	// save all data
-	saveLocalizationStep(pose, one_meas);
+	saveLocalizationStep(pose, cur_ref_pos, cur_vel, cur_ref_vel,
+			     cur_yaw_rate, one_meas, t_f-t_i);
     }
 
     return false;

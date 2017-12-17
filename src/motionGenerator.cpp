@@ -62,9 +62,11 @@ void MotionGenerator::reset()
 }
 
 void StaticMotionGenerator::getMotion(yarp::sig::Vector &pos,
+				      yarp::sig::Vector &ref_pos,
 				      yarp::sig::Vector &vel,
 				      yarp::sig::Vector &ref_vel,				      
-				      double &yaw)
+				      double &yaw,
+				      double &yaw_rate)
 {
     // compute initial yaw rotation
     yarp::sig::Matrix yaw_rot;
@@ -76,7 +78,9 @@ void StaticMotionGenerator::getMotion(yarp::sig::Vector &pos,
     yaw_rot = yarp::math::axis2dcm(axis_angle).submatrix(0, 2,
 							 0, 2);
 
-    // return the initial position of the center of the object    
+    // return the initial position of reference point and of
+    // the center of the object
+    ref_pos = ref_pos_0;
     pos = ref_pos_0 + yaw_rot * displToCenter;
 
     // return the initial yaw angle of the object
@@ -84,6 +88,7 @@ void StaticMotionGenerator::getMotion(yarp::sig::Vector &pos,
 
     // return zero velocities
     ref_vel = vel = 0;
+    yaw_rate = 0;
 }
 
 void PolynomialMotionGenerator::setFinalRefPosition(const yarp::sig::Vector &pos)
@@ -147,16 +152,20 @@ bool PolynomialMotionGenerator::step()
 }
 
 void PolynomialMotionGenerator::getMotion(yarp::sig::Vector &pos,
+					  yarp::sig::Vector &ref_pos,
 					  yarp::sig::Vector &vel,
 					  yarp::sig::Vector &ref_vel,					  
-                                          double &yaw)
+                                          double &yaw,
+					  double &yaw_rate)
 {
+    // get refence point position
+    ref_pos = traj.subVector(0,2);
     // eval position using forward Euler integration
     pos = posCenter = posCenter + velCenter * dt;
 
     // get current yaw and yaw_dot
     yaw = traj[3];
-    double yaw_dot = traj_derivative[3];
+    yaw_rate = traj_derivative[3];
 
     // eval velocity
 
@@ -174,8 +183,8 @@ void PolynomialMotionGenerator::getMotion(yarp::sig::Vector &pos,
     yarp::sig::Vector vel_rot(3, 0.0);
     yarp::sig::Vector tmp(2, 0.0);
     tmp = yaw_rot * displToCenter.subVector(0,1);
-    vel_rot[0] = -tmp[1] * yaw_dot;
-    vel_rot[1] =  tmp[0] * yaw_dot;
+    vel_rot[0] = -tmp[1] * yaw_rate;
+    vel_rot[1] =  tmp[0] * yaw_rate;
 
     // total velocity
     ref_vel = traj_derivative.subVector(0, 2);    

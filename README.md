@@ -41,7 +41,7 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `auxCloud2File`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing very few contact points used during an additional pushing phase;
 - `modelOutputPath`, where to save the `.OFF` file containing the model of the object in the real and estimated pose, one file is saved for each filtering step;
 - `measOutputPath`, where to save the `.OFF` file containing the measurements used in each filtering step, one file is saved for each filtering step;
-- `resultsOutputPath` where to save a `.CSV` file containing a summary about all the filtering steps (real pose, estimated pose for each step);
+- `resultsOutputPath` where to save a `.CSV` file containing a summary about all the filtering steps (real pose, estimated pose, position and velocity of the reference point, yaw rate, origin of the observer and execution time for each step);
 - `radius0`, radius of the initial research region as a list of three doubles;
 - `center0`, center of the initial research region as a list of three doubles;
 - `N`, number of particles;

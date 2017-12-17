@@ -165,7 +165,11 @@ private:
     PolynomialMotionGenerator motion_mg;
 
     // number of steps performed
-    int n_steps;    
+    int n_steps;
+
+    // whether to use or not the velocity of the center of 
+    // the object as the input to the filter
+    bool use_center_velocity;
 
     // state of the simulation
     State state;

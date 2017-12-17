@@ -102,6 +102,12 @@ bool LocalizerMotion::loadParameters(const yarp::os::ResourceFinder &rf)
     yInfo() << "Localizer: observer origin"
 	    << observer_origin.toString();
 
+    // load the flag useCenterVelocity
+    use_center_velocity = rf.find("useCenterVelocity").asBool();
+    if (rf.find("useCenterVelocity").isNull())
+        use_center_velocity = rf.check("useCenterVelocity",yarp::os::Value(false)).asBool();
+    yInfo() << "Localizer: use real velocity as input:" << use_center_velocity;
+
     return true;
 }
 
@@ -405,7 +411,12 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	upf->setRealPose(pose);
 
 	// set inputs
-	upf->setNewInput(prev_ref_vel * getPeriod());
+	yarp::sig::Vector input;
+	if (use_center_velocity)
+	    input = prev_vel * getPeriod();
+	else
+	    input = prev_ref_vel * getPeriod();
+	upf->setNewInput(input);
 	// update velocity
 	prev_vel = cur_vel;
 	prev_ref_vel = cur_ref_vel;

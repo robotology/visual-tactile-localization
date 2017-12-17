@@ -55,6 +55,7 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `resampleInFirstIters`, whether to resample also in the first two iterations of the algorithm (true/false);
 - `useIdealMeasEqn`, whether to use the ideal measurement equation or not (true/false);
 - `observerOrigin`, a 3D tuple containing the origin of the observer and used to generate a more realistic point cloud;
+- `useCenterVelocity`, whether to use or not the velocity of the center of the object as input to the filter (see the section [Integration](#integration) for more details on this setting);
 - `numContacts`, fixed number of contact points to be processed at each time step during __static__ motion phases (see the section [Integration](#integration) for more details on this setting).
 
 ## Notes on an example motion scenario
@@ -161,6 +162,7 @@ that return the original point cloud loaded with `FakePointCloud::loadObjectMode
 ### Trajectory generator
 Trajectories are generated using the classes `StaticMotionGenerator` and `PolynomialMotionGenerator` available through this [interface](headers/motionGenerator.h).
 
+#### Abstract class `MotionGenerator`
 An abstract class `MotionGenerator` offers the following methods
 
 ```
@@ -201,14 +203,16 @@ void reset();
 that reset the internal time of the trajectory to a value equal to `-1 * sampling_period` with `sampling_period` the sampling period set with `MotionGenerator::setPeriod`. This way the first time `MotionGenerator::step` is called the method `MotionGenerator::getMotion` returns the state of the trajectory at time `t=0`.
 
 ```     
-virtual void getMotion(yarp::sig::Vector &pos, yarp::sig::Vector &vel, yarp::sig::Vector &ref_vel, double &yaw) = 0;
+virtual void getMotion(yarp::sig::Vector &pos, yarp::sig::Vector &ref_pos, yarp::sig::Vector &vel, yarp::sig::Vector &ref_vel, double &yaw, double &yaw_rate) = 0;
 ```
-that is pure virtual method and must be implemented. It returns the current position `pos` of the center of the object, the current linear velocity `vel` of the center of the object (obtained composing the velocity of the reference point and the angular velocity of the object), the current linear velocity `ref_vel` of the reference point and the current yaw attitude `yaw` of the object.
+that is pure virtual method and must be implemented. It returns the current position `pos` of the center of the object, the current position `ref_pos` of the reference point, the current linear velocity `vel` of the center of the object (obtained composing the velocity of the reference point and the angular velocity of the object), the current linear velocity `ref_vel` of the reference point, the current yaw attitude `yaw` of the object and the current yaw rate `yaw_rate` of the object.
 
+#### Derived class `StaticMotionGenerator`
 A derived class from `MotionGenerator` is `StaticMotionGenerator`. 
 
 The method `StaticMotionGenerator::getMotion` always returns the initial position and attitude and zero velocity.
 
+#### Derived class `PolynomialMotionGenerator`
 Another derived class is `PolynomialMotionGenerator` that generates 5-th order trajectories for each cartesian coordinate of the reference point and for the yaw angle. The velocity of the center of the object is obtained taking into account the displacment from the reference point to the center and the instantaneous angular velocity. The position of the center of the object is obtained by forward Euler integrating the velocity of the center of the object. All the trajectories are with zero initial and final velocity and acceleration.
 
 It offers the following methods
@@ -228,7 +232,7 @@ void initTrajectory();
 that initialize the trajectory taking into account the duration of the trajectory and the initial and final conditions.
 
 ```
-void getMotion(yarp::sig::Vector &pos, yarp::sig::Vector &vel, yarp::sig::Vector &ref_vel, double &yaw) override;    
+void getMotion(yarp::sig::Vector &pos, yarp::sig::Vector &ref_pos, yarp::sig::Vector &vel, yarp::sig::Vector &ref_vel, double &yaw, double &yaw_rate) override;    
 
 ```
 that overrides the pure virtual method of `MotionGenerator`.
@@ -238,6 +242,7 @@ All the classes presented above are combined together in `LocalizerMotion`.
 
 In order to specify multi-phase trajectories the method `LocalizerMotion` expects that all the motion phases are specified in the method `LocalizerMotion::updateModule`. To this end the private member `std::vector<LocalizationPhase> LocalizerMotion::phases` have to be filled with `LocalizationPhase` phases.
 
+#### Struct `LocalizationPhase`
 Each phase is a `struct` that have to be filled with (almost) all these quantities
 - `type`, the type of phase, it can be `LocalizationType::Static` or `LocalizationType::Motion`;
 - `displ`, the displacement from the reference point to the center of the object to be used during this motion phase;
@@ -261,8 +266,12 @@ Each phase is a `struct` that have to be filled with (almost) all these quantiti
 
 - `num_points`, the number of points of the point clouds used in an iteration of a `LocalizationType::Static` phase.
 
+#### Configuration of a localization phase
 __It is not required__ to fill all the fields of the struct `LocalizationPhase` for the phases __other than the first__. In fact the method `LocalizerMotion::updateModule` uses the method `LocalizerMotion::configureLocPhase` that configures each localization phase before performing the first filtering step associated to that motion phase and helps the user in filling some fields of the struct.
 In particular 
 - if a motion phase is configured with the `holdDisplFromPrevious` set to `true` then the displacement is copied from the previous phase and the initial conditions of a phase are set equal to the final conditions of the previous phase;
 - if a motion phase is `LocalizationType::Static` then the final conditions are automatically set equal to the initial conditions;
 - if a motion phase is configured with the `holdDisplFromPrevious` set to `false` a new displacement vector __have__ to be specified for that phase and the initial position of the __new__ reference point, expressed in robot reference frame, is automatically calculated taking into account the final yaw attitude of the previous phase.
+
+#### Velocity of the center vs. velocity of the reference point
+Please note that depending on the option `useCenterVelocity` specified in the configuration file the filter will use the velocity of the center of the object (`useCenterVelocity = true`) or the velocity of the reference point (`useCenterVelocity = false`).

@@ -52,6 +52,9 @@ bool FakePointCloud::loadObjectModel(const std::string &file_path)
     // update bounding box
     vcg::tri::UpdateBounding<simpleTriMesh>::Box(mesh);
 
+    // update vertex normals
+    vcg::tri::UpdateNormal<simpleTriMesh>::PerVertex(mesh);        
+
     // update face normals
     if(mesh.fn>0)
     	vcg::tri::UpdateNormal<simpleTriMesh>::PerFace(mesh);
@@ -127,7 +130,6 @@ void FakePointCloud::samplePointCloud(std::vector<Point> &cloud,
 					   radius,
 					   poiss_params);
     vcg::tri::UpdateBounding<simpleTriMesh>::Box(poiss_mesh);
-    vcg::tri::UpdateNormal<simpleTriMesh>::PerVertex(mesh);    
 
     // store the vertices in the cloud
     for (VertexIterator vi = poiss_mesh.vert.begin();
@@ -139,7 +141,7 @@ void FakePointCloud::samplePointCloud(std::vector<Point> &cloud,
 	yarp::sig::Vector point(3, 0.0);
 	point[0] = p[0];
 	point[1] = p[1];
-	point[2] = p[2];	
+	point[2] = p[2];
 
 	// extract the associated normal
 	const auto n = vi->cN();

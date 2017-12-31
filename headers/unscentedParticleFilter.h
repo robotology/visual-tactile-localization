@@ -37,9 +37,6 @@ struct ParametersUPF
     // number of DoFs
     int n;
 
-    // width of memory window
-    int memory_width;
-	
     // whether to resample also in the first iterations or not
     bool resample_in_first_iters;
 
@@ -152,8 +149,8 @@ private:
     // storage for all the particles
     std::deque<ParticleUPF> x;
     
-    // buffer of received measurements for memory feature
-    std::vector<Measure> meas_buffer;
+    // current measure
+    Measure curr_meas;
     
     // current real pose
     yarp::sig::Vector real_pose;

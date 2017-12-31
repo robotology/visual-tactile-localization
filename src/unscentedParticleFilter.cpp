@@ -108,7 +108,7 @@ void UnscentedParticleFilter::initialRandomize()
 void UnscentedParticleFilter::resizeParticle(const int &i)
 {
     // take the size of the last measurement received
-    int p = 3*meas_buffer.back().size();
+    int p = 3*curr_meas.size();
     
     x[i].y_pred.resize(p,0.0);
     x[i].Pyy.resize(p,p);
@@ -217,13 +217,12 @@ yarp::sig::Vector UnscentedParticleFilter::computeY(const int &k, const int &j)
     yarp::sig::Matrix Hr2o=SE3inv(Ho2r);
 
     // take last measurements received
-    Measure& m=meas_buffer.back();
-    out.resize(3*m.size(),0.0);
+    out.resize(3*curr_meas.size(),0.0);
 
     // evaluate measurement equation
-    for (int j=0; j<m.size(); j++)
+    for (int j=0; j<curr_meas.size(); j++)
     {
-	Point &p=m[j];
+	Point &p=curr_meas[j];
 
 	double x=Hr2o(0,0)*p[0]+Hr2o(0,1)*p[1]+Hr2o(0,2)*p[2]+Hr2o(0,3);
 	double y=Hr2o(1,0)*p[0]+Hr2o(1,1)*p[1]+Hr2o(1,2)*p[2]+Hr2o(1,3);
@@ -260,14 +259,13 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &k, const int
     H(2,3)=x[k].XsigmaPoints_pred(2,j);
 
     // take last measurements received
-    Measure& m=meas_buffer.back();
-    out.resize(3*m.size(),0.0);
+    out.resize(3*curr_meas.size(),0.0);
 
     // evaluate ideal measurement equation
-    for (int j=0; j<m.size(); j++)
+    for (int j=0; j<curr_meas.size(); j++)
     {
 	// evaluate difference between measurement and real pose
-	Point &p=m[j];
+	Point &p=curr_meas[j];
 	Point diff=Point(p[0]-real_pose[0],
 			 p[1]-real_pose[1],
 			 p[2]-real_pose[2]);
@@ -375,9 +373,8 @@ void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
     }
 
     //add measurement noise covariance matrix to Pyy
-    Measure& m=meas_buffer.back();
-    yarp::sig::Matrix R(3 * m.size(), 3 * m.size());
-    yarp::sig::Vector diag_R(3 * m.size(), params.R);
+    yarp::sig::Matrix R(3 * curr_meas.size(), 3 * curr_meas.size());
+    yarp::sig::Vector diag_R(3 * curr_meas.size(), params.R);
     R.diagonal(diag_R);
     x[i].Pyy = x[i].Pyy + R;
 }
@@ -387,12 +384,11 @@ void UnscentedParticleFilter::correctionStep(const int &i)
     yarp::sig::Vector meas;
 
     // take last measurements received
-    Measure& m=meas_buffer.back();
-    meas.resize(3*m.size(),0.0);
+    meas.resize(3*curr_meas.size(),0.0);
 
-    for (int j=0; j<m.size(); j++)
+    for (int j=0; j<curr_meas.size(); j++)
     {
-	Point &p=m[j];
+	Point &p=curr_meas[j];
 
 	meas[j*3]=p[0];
 	meas[j*3+1]=p[1];
@@ -426,41 +422,22 @@ double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
     yarp::sig::Matrix H=homogeneousTransform(particle.x_corr);
     H=SE3inv(H);
 
-    // counter required to correct likelihod
-    // for MAP estimate
-    int map_correction_count;
-    map_correction_count=params.memory_width;
+    // initialize the squared measurement error for the current measure
+    double squared_tot_meas_error = 0.0;
 
-    // take reverse_iterator pointing to the last measurement
-    std::vector<Measure>::reverse_iterator rit=meas_buffer.rbegin();
-
-    // process all the measures available within the memory width
-    for (size_t width = params.memory_width; width>0 && rit!=meas_buffer.rend(); rit++, width--)
+    for (int j=0; j<curr_meas.size(); j++)
     {
-	// take the current measure
-	Measure& m=*rit;
-	
-	// initialize the squared measurement error for the current measure
-	double squared_tot_meas_error = 0.0;
+	Point &p=curr_meas[j];
 
-	for (int j=0; j<m.size(); j++)
-	{
-	    Point &p=m[j];
+	double x=H(0,0)*p[0]+H(0,1)*p[1]+H(0,2)*p[2]+H(0,3);
+	double y=H(1,0)*p[0]+H(1,1)*p[1]+H(1,2)*p[2]+H(1,3);
+	double z=H(2,0)*p[0]+H(2,1)*p[1]+H(2,2)*p[2]+H(2,3);
 
-	    double x=H(0,0)*p[0]+H(0,1)*p[1]+H(0,2)*p[2]+H(0,3);
-	    double y=H(1,0)*p[0]+H(1,1)*p[1]+H(1,2)*p[2]+H(1,3);
-	    double z=H(2,0)*p[0]+H(2,1)*p[1]+H(2,2)*p[2]+H(2,3);
-
-	    squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
-	}
-
-	// standard likelihood
-	likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R));
-
-	// likelihood with correction required to evaluate MAP estimate
-	map_likelihood=map_likelihood*exp(-0.5*squared_tot_meas_error/(params.R)*(map_correction_count));
-	map_correction_count--;
+	squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
     }
+
+    // standard likelihood
+    likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R));
     
     return likelihood;
 }
@@ -651,12 +628,6 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     params.lambda=pow(params.alpha,2.0)*(6+params.kappa)-6;
     yInfo()<<"Unscented Transform Lambda:"<<params.lambda;
 
-    // load the width of the memory window
-    params.memory_width=rf.find("memoryWidth").asInt();
-    if (rf.find("memoryWidth").isNull())
-        params.memory_width=rf.check("memoryWidth",yarp::os::Value(1)).asInt();
-    yInfo()<<"UPF memory width :"<<params.memory_width;
-
     // read the flag resampleInFirstIters
     params.resample_in_first_iters=rf.find("resampleInFirstIters").asBool();
     if (rf.find("resampleInFirstIters").isNull())
@@ -746,9 +717,6 @@ void UnscentedParticleFilter::init()
     // init index of iteration
     t=0;
 
-    // empty the measurements buffer
-    meas_buffer.clear();
-
     // clear system input
     last_input.resize(3, 0.0);
     input.resize(3, 0.0);
@@ -769,9 +737,8 @@ void UnscentedParticleFilter::setNewInput(const yarp::sig::Vector &in)
 
 void UnscentedParticleFilter::setNewMeasure(const Measure& m)
 {
-    // add the new measure received
-    // to the measurements buffer
-    meas_buffer.push_back(m);
+    // set the new measure
+    curr_meas = m;
 }
 
 void UnscentedParticleFilter::setRealPose(const yarp::sig::Vector &pose)

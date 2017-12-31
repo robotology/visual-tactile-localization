@@ -270,7 +270,8 @@ bool LocalizerMotion::saveMeas(const std::vector<Measure> &meas,
     return true;
 }
 
-void LocalizerMotion::saveLocalizationStep(const yarp::sig::Vector &real_pose,
+void LocalizerMotion::saveLocalizationStep(const yarp::sig::Vector &est_pose,
+                                           const yarp::sig::Vector &real_pose,
 					   const yarp::sig::Vector &ref_pos,
 					   const yarp::sig::Vector &vel,
 					   const yarp::sig::Vector &ref_vel,
@@ -278,9 +279,6 @@ void LocalizerMotion::saveLocalizationStep(const yarp::sig::Vector &real_pose,
 					   const std::vector<Measure> &meas,
 					   const double &exec_time)
 {
-    // extract MAP estimate
-    yarp::sig::Vector est = upf->getEstimate();
-
     // save real pose
     Polyhedron real_model;
     upf->transformObject(real_pose, real_model);
@@ -288,7 +286,7 @@ void LocalizerMotion::saveLocalizationStep(const yarp::sig::Vector &real_pose,
 
     // save estimated pose
     Polyhedron est_model;
-    upf->transformObject(est, est_model);
+    upf->transformObject(est_pose, est_model);
     saveModel(est_model, "estPose" + std::to_string(n_steps) + ".off");
 
     // save measurements
@@ -301,12 +299,13 @@ void LocalizerMotion::saveLocalizationStep(const yarp::sig::Vector &real_pose,
     Results result;
     result.real = real_pose;
     result.ref_pos = ref_pos;
-    result.estimate = est;
+    result.estimate = est_pose;
     result.vel = vel;
     result.ref_vel = ref_vel;
     result.yaw_rate = yaw_rate;
     result.obs_origin = observer_origin;
     result.loc_type = lp.type;
+    result.exec_time = exec_time;
     results.push_back(result);
 }
 
@@ -359,7 +358,8 @@ bool LocalizerMotion::performLocalization(int &current_phase)
     // perform localization
     double t_i;
     double t_f;
-    yarp::os::SystemClock clock;
+    double diff;
+    yarp::sig::Vector est_pose(6, 0.0);    
     if(lp.type == LocalizationType::Static)
     {	
 	for(size_t k=0; k+n_contacts-1< meas.size(); k+=n_contacts)	
@@ -385,14 +385,17 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	    // set new measure
 	    upf->setNewMeasure(m);
 
-	    // step
-	    t_i = clock.now();
+	    // step and estimate
+	    t_i = yarp::os::SystemClock::nowSystem();
 	    upf->step();
-	    t_f = clock.now();
+	    est_pose = upf->getEstimate();	    
+	    t_f = yarp::os::SystemClock::nowSystem();
+	    diff = t_f - t_i;
 	    
 	    // save all data
-	    saveLocalizationStep(pose, cur_ref_pos, cur_vel, cur_ref_vel,
-				 cur_yaw_rate, one_meas, t_f-t_i);
+	    saveLocalizationStep(est_pose, pose, cur_ref_pos,
+				 cur_vel, cur_ref_vel,
+				 cur_yaw_rate, one_meas, diff);
 	}
     }	
     else if(lp.type == LocalizationType::Motion)
@@ -424,14 +427,17 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	// set new measure
 	upf->setNewMeasure(m);
 
-	// step
-	t_i = clock.now();
+	// step and estimate
+	t_i = yarp::os::SystemClock::nowSystem();
 	upf->step();
-	t_f = clock.now();
+	est_pose = upf->getEstimate();
+	t_f = yarp::os::SystemClock::nowSystem();
+	diff = t_f - t_i;	
 	
 	// save all data
-	saveLocalizationStep(pose, cur_ref_pos, cur_vel, cur_ref_vel,
-			     cur_yaw_rate, one_meas, t_f-t_i);
+	saveLocalizationStep(est_pose, pose, cur_ref_pos,
+			     cur_vel, cur_ref_vel,
+			     cur_yaw_rate, one_meas, diff);
     }
 
     return false;
@@ -524,9 +530,9 @@ void LocalizerMotion::configureLocPhase(const int &current_phase)
 	// settings for the motion scenario
 	// the artificial noise has a greater covariance
 	// in the yaw component
-	Q.setSubvector(0, yarp::sig::Vector(5, 0.000001));
-	Q[2] = 1.0e-10;
-	Q[5] = 0.01;
+    	Q.setSubvector(0, yarp::sig::Vector(5, 0.000001));
+    	Q[2] = 1.0e-10;
+    	Q[5] = 0.01;
     }
     upf->setQ(Q);	    
 
@@ -584,14 +590,14 @@ bool LocalizerMotion::updateModule()
     	static1.displ[0] = 0.0282;
     	static1.displ[1] = -0.0090;
     	static1.displ[2] = -0.0006;
-	
+
     	// set initial conditions
     	static1.ref_pos_0[0] = 0.1;
     	static1.ref_pos_0[1] = 0.1;
     	static1.yaw_0 = 0.0;
 
 	// set number of iterations
-	static1.duration = 2;
+	static1.duration = 20;
 	static1.step_time = 1;
 
 	// set motion generator
@@ -599,7 +605,7 @@ bool LocalizerMotion::updateModule()
 
 	// set fake point cloud
 	static1.pc = &pc_whole;
-	static1.num_points = 100;
+	static1.num_points = 150;
 	/*
 	 */
 
@@ -611,8 +617,8 @@ bool LocalizerMotion::updateModule()
 
 	// set final conditions
 	motion1.ref_pos_f = static1.ref_pos_0;
-	motion1.ref_pos_f[0] = 0.3;
-	motion1.yaw_f = static1.yaw_0 - M_PI/8.0;
+	motion1.ref_pos_f[0] += 0.2;
+	motion1.yaw_f = static1.yaw_0- M_PI/8.0;
 
 	// set duration and step time
 	motion1.duration = 2.5;
@@ -633,7 +639,7 @@ bool LocalizerMotion::updateModule()
 				  true);
 	
 	// set number of iterations
-	static2.duration = 1;
+	static2.duration = 20;
 	static2.step_time = 1;
 
 	// set motion generator
@@ -641,7 +647,7 @@ bool LocalizerMotion::updateModule()
 
 	// set fake point cloud
 	static2.pc = &pc_whole;
-	static2.num_points = 100;
+	static2.num_points = 150;
 	/*
 	 */
 
@@ -652,14 +658,26 @@ bool LocalizerMotion::updateModule()
 
 	// change reference point
 	motion2.displ[0] = -0.0282;
-    	motion2.displ[1] = -0.0090;
-    	motion2.displ[2] = -0.0006;
+	motion2.displ[1] = -0.0090;
+	motion2.displ[2] = -0.0006;
 
 	// set final conditions
-	motion2.ref_pos_f[0] = 0.3521;
-	motion2.ref_pos_f[1] = 0.3784;
-	motion2.yaw_f = static1.yaw_0 - M_PI/4.0;
-
+	// take into account the change of the reference point
+	yarp::sig::Vector center_to_old_disp = -1 * (static1.displ);
+	yarp::sig::Vector center_to_new_disp = -1 * (motion2.displ);
+	yarp::sig::Vector axis_angle(4, 0.0);
+	yarp::sig::Matrix yaw_rot;
+	axis_angle[2] = 1.0;
+	axis_angle[3] = motion1.yaw_f;
+	yaw_rot = yarp::math::axis2dcm(axis_angle).submatrix(0, 2,
+							     0, 2);
+	motion2.ref_pos_f = motion1.ref_pos_f +
+	    yaw_rot * (center_to_new_disp - center_to_old_disp);
+	//
+	
+	motion2.ref_pos_f[1] += 0.2;
+	motion2.yaw_f = static1.yaw_0 - M_PI/4.0;	
+	
 	// set duration and step time
 	motion2.duration = 2.5;
 	motion2.step_time = getPeriod();
@@ -676,7 +694,7 @@ bool LocalizerMotion::updateModule()
 	LocalizationPhase static3(LocalizationType::Static,
 				  true);
 	// set number of iterations
-	static3.duration = 1;
+	static3.duration = 3;
 	static3.step_time = 1;
 
 	// set motion generator
@@ -684,7 +702,7 @@ bool LocalizerMotion::updateModule()
 
 	// set fake point cloud
 	static3.pc = &pc_whole;
-	static3.num_points = 100;	
+	static3.num_points = 150;	
 
 	/*
 	 * add phases to the list

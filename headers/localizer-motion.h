@@ -216,7 +216,8 @@ private:
      */
     bool saveMeas(const std::vector<Measure> &meas, const std::string &filename);
 
-    void saveLocalizationStep(const yarp::sig::Vector &real_pose,
+    void saveLocalizationStep(const yarp::sig::Vector &est_pose,
+			      const yarp::sig::Vector &real_pose,
 			      const yarp::sig::Vector &ref_pose,
 			      const yarp::sig::Vector &vel,
 			      const yarp::sig::Vector &ref_vel,

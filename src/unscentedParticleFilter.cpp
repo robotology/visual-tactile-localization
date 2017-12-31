@@ -81,7 +81,7 @@ void UnscentedParticleFilter::initializationUPF()
     {
 	// initialize quantities using parameters
 	// obtained from the configuration file
-	x[i].weights=1.0/params.N;
+	x[i].prev_weights=x[i].weights=1.0/params.N;
 	x[i].P_corr=params.P0;
 
 	// zero matrices
@@ -308,7 +308,7 @@ void UnscentedParticleFilter::predictionStep(const int &i,
 	    }
 	}
 	    
-	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j)+cholQ*random);
+	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j));//+cholQ*random);
 
 	//use system input in the prediction
 	for(size_t k=0; k<3; k++)
@@ -346,7 +346,7 @@ void UnscentedParticleFilter::computePpred(const int &i)
         x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
 	
     }
-    x[i].P_pred=x[i].P_pred_aux;
+    x[i].P_pred=x[i].P_pred_aux + params.Q;
     
     for(size_t j=3; j<6; j++)
     {
@@ -514,10 +514,10 @@ void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
     tran_prob = tranProbability(i, i);
 
     // evaluate standard weights
-    x[i].weights=x[i].weights * standard_likelihood * tran_prob;
+    x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob;
 
     // evaluate weights corrected for MAP estimate
-    x[i].weights_map=x[i].weights * map_likelihood * tran_prob;
+    x[i].weights_map=x[i].prev_weights * map_likelihood * tran_prob;
     
     sum+=x[i].weights;
 }
@@ -856,7 +856,7 @@ yarp::sig::Vector UnscentedParticleFilter::getEstimate()
         sum_tran_probability = 0;
 
         for(size_t j=0; j<x.size(); j++)
-            sum_tran_probability += tranProbability(i, j);
+            sum_tran_probability += tranProbability(i, j) * x[j].prev_weights;
 
 	// measurements likelihood
 	double tmp;
@@ -865,6 +865,12 @@ yarp::sig::Vector UnscentedParticleFilter::getEstimate()
 	// store probability
         probability_per_particle.push_back(meas_likelihood * sum_tran_probability);
     }
+
+    // update the weights for the next step
+    for(size_t i=0; i<x.size(); i++)
+    {
+	x[i].prev_weights = x[i].weights;
+    }    
 
     // find arg max
     double max_prob = 0.0;

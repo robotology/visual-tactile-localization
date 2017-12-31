@@ -338,10 +338,13 @@ bool LocalizerMotion::performLocalization(int &current_phase)
     pose.setSubvector(0, cur_pos);
     pose[3] = cur_yaw;
     lp.pc->setPose(pose);
+
     if (lp.type == LocalizationType::Static)
+    {	
 	lp.pc->samplePointCloud(meas,
 				observer_origin,
 				lp.num_points);
+    }	
     else if (lp.type == LocalizationType::Motion)
 	lp.pc->getPointCloud(meas);
 
@@ -349,7 +352,7 @@ bool LocalizerMotion::performLocalization(int &current_phase)
     if (meas.size() == 0)
     {
 	yError() << "No measurements available from the fake point cloud.";
-	return true;
+	return false;
     }
 
     // set real pose
@@ -440,7 +443,7 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 			     cur_yaw_rate, one_meas, diff);
     }
 
-    return false;
+    return true;
 }
 
 void LocalizerMotion::configureLocPhase(const int &current_phase)
@@ -551,7 +554,7 @@ bool LocalizerMotion::configure(yarp::os::ResourceFinder &rf)
     // initialize the fakePointCloud engines
     pc_whole.loadObjectModel(model_file_name);
     pc_contacts_1.loadObjectModel(aux_cloud_1_file_name);
-    pc_contacts_2.loadObjectModel(aux_cloud_2_file_name);    
+    pc_contacts_2.loadObjectModel(aux_cloud_2_file_name);
 
     // instantiate the UPF
     upf = new UnscentedParticleFilter;
@@ -730,7 +733,13 @@ bool LocalizerMotion::updateModule()
 	configureLocPhase(current_phase);
 
 	// perform localization
-	performLocalization(current_phase);
+	if (!performLocalization(current_phase))
+	{
+	    // stop module due to an error
+	    // during the localization
+
+	    return false;
+	}
     }
     else if (state == State::end)
     {

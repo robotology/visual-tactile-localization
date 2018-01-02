@@ -51,7 +51,6 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `alpha`, Unscented Transform parameter;
 - `kappa`, Unscented Transform parameter;
 - `beta`, Unscented Transform parameter;
-- `memoryWidth`, width of the memory window of the Memory UPF (__it should be put to 1 during motion scenarios__);
 - `resampleInFirstIters`, whether to resample also in the first two iterations of the algorithm (true/false);
 - `useIdealMeasEqn`, whether to use the ideal measurement equation or not (true/false);
 - `observerOrigin`, a 3D tuple containing the origin of the observer and used to generate a more realistic point cloud;

@@ -493,7 +493,8 @@ void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
     tran_prob = tranProbability(i, i);
 
     // evaluate weights
-    x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob;
+    x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob /
+	multivariateGaussian(x[i].x_corr, x[i].x_corr, x[i].P_hat);
     
     sum+=x[i].weights;
 }

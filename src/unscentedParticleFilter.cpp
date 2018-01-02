@@ -492,11 +492,8 @@ void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
     // evaluate transition probability
     tran_prob = tranProbability(i, i);
 
-    // evaluate standard weights
+    // evaluate weights
     x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob;
-
-    // evaluate weights corrected for MAP estimate
-    x[i].weights_map=x[i].prev_weights * map_likelihood * tran_prob;
     
     sum+=x[i].weights;
 }
@@ -803,18 +800,6 @@ void UnscentedParticleFilter::step()
 
 yarp::sig::Vector UnscentedParticleFilter::getEstimate()
 {
-    // corrected weights are not normalized at each step since not required
-    // normalization is done here
-    double sum_weights=0.0;
-    for(size_t i=0; i<x.size(); i++)
-    {
-	sum_weights+=x[i].weights_map;
-    }
-    for(size_t i=0; i<x.size(); i++)
-    {
-	x[i].weights_map/=sum_weights;
-    }
-
     // extract MAP estimate
     std::deque<double> probability_per_particle;
     double sum_tran_probability;

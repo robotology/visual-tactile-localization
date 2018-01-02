@@ -73,8 +73,6 @@ struct ParticleUPF
     // weights
     double weights;
     double prev_weights;
-    // weights with correction for map estimate
-    double weights_map;
 
     // particle after correction step
     yarp::sig::Vector x_corr;
@@ -126,8 +124,7 @@ struct ParticleUPF
 	            WsigmaPoints_average(13,0.0),
 	            WsigmaPoints_covariance(13,0.0),
 	            weights(std::numeric_limits<double>::infinity()),
-	            prev_weights(std::numeric_limits<double>::infinity()),
-	            weights_map(std::numeric_limits<double>::infinity()) { }
+	            prev_weights(std::numeric_limits<double>::infinity()) { }
 };
 
 /** 

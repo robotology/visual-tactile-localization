@@ -462,7 +462,9 @@ double UnscentedParticleFilter::multivariateGaussian(const yarp::sig::Vector &x,
     yarp::sig::Matrix tmp(1,1);
     tmp = diff_m.transposed() * yarp::math::luinv(covariance) * diff_m;
 
-    value = exp(-0.5 * tmp(0, 0));
+    value = exp(-0.5 * tmp(0, 0)) /
+	sqrt(pow(2 * M_PI, x.size()) *
+	     yarp::math::det(covariance));
 
     return value;
 }

@@ -340,6 +340,8 @@ void UnscentedParticleFilter::computePpred(const int &i)
     for(size_t j=0; j<2*params.n+1; j++)
     {
         x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
+	for(size_t k=3; k<6; k++)
+	    x[i].x_tilde(k,0)=fmod(x[i].x_tilde(k,0),2*M_PI);
 	
         x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
 	
@@ -350,7 +352,7 @@ void UnscentedParticleFilter::computePpred(const int &i)
     {
         for(size_t k=3; k<6; k++)
         {
-            x[i].P_pred(j,k)=fmod(x[i].P_pred(j,k),2*M_PI);
+            x[i].P_pred(j,k)=fmod(x[i].P_pred(j,k),pow(2*M_PI, 2.0));
         }
     }
 }
@@ -362,13 +364,11 @@ void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
         x[i].A.setCol(0,x[i].YsigmaPoints_pred.getCol(j)-x[i].y_pred);
 	
         x[i].Pyy=x[i].Pyy+x[i].WsigmaPoints_covariance[j]*x[i].A*x[i].A.transposed();
-	
+
         x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
-	
-        x[i].x_tilde(3,0)=fmod(x[i].x_tilde(3,0),2*M_PI);
-        x[i].x_tilde(4,0)=fmod(x[i].x_tilde(4,0),2*M_PI);
-        x[i].x_tilde(5,0)=fmod(x[i].x_tilde(5,0),2*M_PI);
-	
+	for(size_t k=3; k<6; k++)
+	    x[i].x_tilde(k,0)=fmod(x[i].x_tilde(k,0),2*M_PI);
+		
         x[i].Pxy=x[i].Pxy+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].A.transposed();
     }
 
@@ -405,7 +405,7 @@ void UnscentedParticleFilter::correctionStep(const int &i)
     {
         for(size_t k=3; k<6; k++)
         {
-            x[i].P_hat(j,k)=fmod(x[i].P_hat(j,k),2*M_PI);
+            x[i].P_hat(j,k)=fmod(x[i].P_hat(j,k),pow(2*M_PI,2.0));
         }
     }
 }

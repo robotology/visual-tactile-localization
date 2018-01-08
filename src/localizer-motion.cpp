@@ -462,8 +462,8 @@ void LocalizerMotion::configureLocPhase(const int &current_phase)
 	// set initial conditions equal to 
 	// the final conditions of the previous step
 	LocalizationPhase &prev_phase = phases[current_phase-1];
-	cur_phase.ref_pos_0 = prev_phase.ref_pos_f;
-	cur_phase.yaw_0 = prev_phase.yaw_f;
+	cur_phase.ref_pos_0 = prev_phase.ref_pos_0 + prev_phase.delta_pos;
+	cur_phase.yaw_0 = prev_phase.yaw_0 + prev_phase.delta_yaw;
 
 	if (cur_phase.holdDisplFromPrevious)
 	    // copy displacement from reference point to
@@ -483,7 +483,7 @@ void LocalizerMotion::configureLocPhase(const int &current_phase)
 	    yarp::sig::Matrix yaw_rot;
 
 	    axis_angle[2] = 1.0;
-	    axis_angle[3] = prev_phase.yaw_f;
+	    axis_angle[3] = prev_phase.yaw_0 + prev_phase.delta_yaw;
 	    yaw_rot = yarp::math::axis2dcm(axis_angle).submatrix(0, 2,
 								0, 2);
 
@@ -496,8 +496,8 @@ void LocalizerMotion::configureLocPhase(const int &current_phase)
     {
 	// in case of static localization final and initial
 	// conditions are the same
-	cur_phase.ref_pos_f = cur_phase.ref_pos_0;
-	cur_phase.yaw_f = cur_phase.yaw_0;
+	cur_phase.delta_pos = 0;
+	cur_phase.delta_yaw = 0;
     }
 
     // configure motion generator
@@ -514,8 +514,8 @@ void LocalizerMotion::configureLocPhase(const int &current_phase)
 	PolynomialMotionGenerator *pmg;
 	pmg = (PolynomialMotionGenerator*)(&mg);
 	// configure final conditions of trajectory
-	pmg->setFinalRefPosition(cur_phase.ref_pos_f);
-	pmg->setFinalYaw(cur_phase.yaw_f);
+	pmg->setFinalRefPosition(cur_phase.ref_pos_0 + cur_phase.delta_pos);
+	pmg->setFinalYaw(cur_phase.yaw_0 + cur_phase.delta_yaw);
 	pmg->initTrajectory();		
     }
     mg.reset();	    
@@ -535,7 +535,7 @@ void LocalizerMotion::configureLocPhase(const int &current_phase)
 	// in the yaw component
     	Q.setSubvector(0, yarp::sig::Vector(5, 0.000001));
     	Q[2] = 1.0e-10;
-    	Q[5] = 0.01;
+    	Q[3] = 0.01;
     }
     upf->setQ(Q);	    
 
@@ -587,27 +587,20 @@ bool LocalizerMotion::updateModule()
 	/*
 	 * Static phase #1
 	 */
-	LocalizationPhase static1(LocalizationType::Static);
+	LocalizationPhase static1(LocalizationType::Static,
+				  6, 1, &static_mg, &pc_whole);
 
 	// set displacement from ref point to center
-    	static1.displ[0] = 0.0282;
-    	static1.displ[1] = -0.0090;
-    	static1.displ[2] = -0.0006;
+    	static1.displ[0] = 0.0283;
+    	static1.displ[1] = 0.0083;
+    	static1.displ[2] = -0.0029;
 
     	// set initial conditions
     	static1.ref_pos_0[0] = 0.1;
     	static1.ref_pos_0[1] = 0.1;
     	static1.yaw_0 = 0.0;
 
-	// set number of iterations
-	static1.duration = 20;
-	static1.step_time = 1;
-
-	// set motion generator
-	static1.mg = &static_mg;
-
-	// set fake point cloud
-	static1.pc = &pc_whole;
+	// set number of points in point cloud
 	static1.num_points = 150;
 	/*
 	 */
@@ -616,22 +609,12 @@ bool LocalizerMotion::updateModule()
 	 * Motion phase #1
 	 */
 	LocalizationPhase motion1(LocalizationType::Motion,
-				  true);
+				  2.5, getPeriod(), &motion_mg,
+				  &pc_contacts_1,true);
 
-	// set final conditions
-	motion1.ref_pos_f = static1.ref_pos_0;
-	motion1.ref_pos_f[0] += 0.2;
-	motion1.yaw_f = static1.yaw_0- M_PI/8.0;
-
-	// set duration and step time
-	motion1.duration = 2.5;
-	motion1.step_time = getPeriod();
-
-	// set motion generator
-	motion1.mg = &motion_mg;
-
-	// set fake point cloud
-	motion1.pc = &pc_contacts_1;
+	// set position and angular displacement
+	motion1.delta_pos[0] = 0.2;
+	motion1.delta_yaw = -M_PI/8.0;
 	/*
 	 */
 
@@ -639,17 +622,9 @@ bool LocalizerMotion::updateModule()
 	 * Static phase #2
 	 */
 	LocalizationPhase static2(LocalizationType::Static,
+				  6, 1, &static_mg, &pc_whole,
 				  true);
-	
-	// set number of iterations
-	static2.duration = 20;
-	static2.step_time = 1;
-
-	// set motion generator
-	static2.mg = &static_mg;
-
-	// set fake point cloud
-	static2.pc = &pc_whole;
+	// set number of points in point cloud
 	static2.num_points = 150;
 	/*
 	 */
@@ -657,54 +632,27 @@ bool LocalizerMotion::updateModule()
 	/*
 	 * Motion phase #2
 	 */
-	LocalizationPhase motion2(LocalizationType::Motion);
+	LocalizationPhase motion2(LocalizationType::Motion,
+				  2.5, getPeriod(), &motion_mg,
+				  &pc_contacts_2);
 
 	// change reference point
-	motion2.displ[0] = -0.0282;
-	motion2.displ[1] = -0.0090;
-	motion2.displ[2] = -0.0006;
+	motion2.displ[0] = -0.0283;
+	motion2.displ[1] = 0.0083;
+	motion2.displ[2] = -0.0029;
 
-	// set final conditions
-	// take into account the change of the reference point
-	yarp::sig::Vector center_to_old_disp = -1 * (static1.displ);
-	yarp::sig::Vector center_to_new_disp = -1 * (motion2.displ);
-	yarp::sig::Vector axis_angle(4, 0.0);
-	yarp::sig::Matrix yaw_rot;
-	axis_angle[2] = 1.0;
-	axis_angle[3] = motion1.yaw_f;
-	yaw_rot = yarp::math::axis2dcm(axis_angle).submatrix(0, 2,
-							     0, 2);
-	motion2.ref_pos_f = motion1.ref_pos_f +
-	    yaw_rot * (center_to_new_disp - center_to_old_disp);
-	//
+	// set position and angular displacement	
+	motion2.delta_pos[1] = 0.2;
+	motion2.delta_yaw = - M_PI/8.0;	
 	
-	motion2.ref_pos_f[1] += 0.2;
-	motion2.yaw_f = static1.yaw_0 - M_PI/4.0;	
-	
-	// set duration and step time
-	motion2.duration = 2.5;
-	motion2.step_time = getPeriod();
-
-	// set motion generator
-	motion2.mg = &motion_mg;
-
-	// set fake point cloud
-	motion2.pc = &pc_contacts_2;
 
 	/*
 	 * Static phase #3
 	 */
 	LocalizationPhase static3(LocalizationType::Static,
+				  6, 1, &static_mg, &pc_whole,
 				  true);
-	// set number of iterations
-	static3.duration = 3;
-	static3.step_time = 1;
-
-	// set motion generator
-	static3.mg = &static_mg;
-
-	// set fake point cloud
-	static3.pc = &pc_whole;
+	// set number of points in point cloud
 	static3.num_points = 150;	
 
 	/*

@@ -76,17 +76,17 @@ struct LocalizationPhase
     // from the previous localization phase settings
     bool holdDisplFromPrevious;
     
-    // initial pose of the reference point
+    // initial position of the reference point
     yarp::sig::Vector ref_pos_0;
 
     // initial yaw angle
     double yaw_0;
 
-    // final pose of the reference point
-    yarp::sig::Vector ref_pos_f;
+    // change in position of the reference point
+    yarp::sig::Vector delta_pos;
 
-    // final yaw angle
-    double yaw_f;
+    // change in yaw angle
+    double delta_yaw;
 
     // step time
     // may be used as a counter for static localization
@@ -109,11 +109,20 @@ struct LocalizationPhase
     MotionGenerator *mg;
 
     LocalizationPhase(const LocalizationType type,
+		      const double &duration,
+		      const double &step_time,
+		      MotionGenerator *mg,
+		      FakePointCloud *pc,
 		      const bool holdDispl = false)
                      : initialized(false),
+	               duration(duration),
+	               step_time(step_time),
+	               mg(mg),
+	               pc(pc),
                        holdDisplFromPrevious(holdDispl),
 	               ref_pos_0(3, 0.0),
-	               ref_pos_f(3, 0.0),
+	               delta_pos(3, 0.0),
+	               delta_yaw(0),
 	               displ(3, 0.0),
 	               type(type){ };
 };

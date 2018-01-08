@@ -248,8 +248,8 @@ Each phase is a `struct` that have to be filled with (almost) all these quantiti
 - `holdDisplFromPrevious`, that decides whether to inherit the displacement from the previous phase. The phases belonging to `phases` are handled in a `FIFO` way;
 - `ref_pos_0`, the initial position of the reference point;
 - `yaw_0`, the initial yaw angle;
-- `ref_pos_f`, the final position of the reference point;
-- `yaw_f`, the final yaw angle;
+- `delta_pos`, the relative displacement between the initial and final position of the referene point;
+- `delta_yaw`, the relative change between the initial and final yaw angle;
 - `step_time`, the sampling period of the trajectory associated to the phase;
 - `duration`, the total duration of the trajectory associated to the phase;
 > for `LocalizationType::Static` phases the `step_time` and `duration` fields should be used to decide how many iterations of static localization have to be performed. To have `n` iterations it suffices to set `step_time` to `1` and `duration` to `n`.
@@ -268,8 +268,9 @@ Each phase is a `struct` that have to be filled with (almost) all these quantiti
 #### Configuration of a localization phase
 __It is not required__ to fill all the fields of the struct `LocalizationPhase` for the phases __other than the first__. In fact the method `LocalizerMotion::updateModule` uses the method `LocalizerMotion::configureLocPhase` that configures each localization phase before performing the first filtering step associated to that motion phase and helps the user in filling some fields of the struct.
 In particular 
-- if a motion phase is configured with the `holdDisplFromPrevious` set to `true` then the displacement is copied from the previous phase and the initial conditions of a phase are set equal to the final conditions of the previous phase;
-- if a motion phase is `LocalizationType::Static` then the final conditions are automatically set equal to the initial conditions;
+- the initial conditions of a phase are set equal to the final conditions of the previous phase;
+- if a motion phase is configured with the `holdDisplFromPrevious` set to `true` then the displacement is copied from the previous phase;
+- if a motion phase is `LocalizationType::Static` then the displacements are automatically set to 0;
 - if a motion phase is configured with the `holdDisplFromPrevious` set to `false` a new displacement vector __have__ to be specified for that phase and the initial position of the __new__ reference point, expressed in robot reference frame, is automatically calculated taking into account the final yaw attitude of the previous phase.
 
 #### Velocity of the center vs. velocity of the reference point

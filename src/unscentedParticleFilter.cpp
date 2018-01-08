@@ -186,19 +186,33 @@ yarp::sig::Matrix UnscentedParticleFilter::homogeneousTransform(const yarp::sig:
     H(1,3)=pose[1];
     H(2,3)=pose[2];
 
-    // attitude part is obtained from Euler ZYZ
+    // // attitude part is obtained from Euler ZYZ
+    // double phi=pose[3];
+    // double theta=pose[4];
+    // double psi=pose[5];
+    // H(0,0)=cos(phi)*cos(theta)*cos(psi)-sin(phi)*sin(psi);
+    // H(0,1)=-cos(phi)*cos(theta)*sin(psi)-sin(phi)*cos(psi);
+    // H(0,2)=cos(phi)*sin(theta);
+    // H(1,0)=sin(phi)*cos(theta)*cos(psi)+cos(phi)*sin(psi);
+    // H(1,1)=-sin(phi)*cos(theta)*sin(psi)+cos(phi)*cos(psi);
+    // H(1,2)=sin(phi)*sin(theta);
+    // H(2,0)= -sin(theta)*cos(psi);
+    // H(2,1)=sin(theta)*sin(psi);
+    // H(2,2)=cos(theta);
+
+    // attitude part is obtained from Euler ZYX
     double phi=pose[3];
     double theta=pose[4];
     double psi=pose[5];
-    H(0,0)=cos(phi)*cos(theta)*cos(psi)-sin(phi)*sin(psi);
-    H(0,1)=-cos(phi)*cos(theta)*sin(psi)-sin(phi)*cos(psi);
-    H(0,2)=cos(phi)*sin(theta);
-    H(1,0)=sin(phi)*cos(theta)*cos(psi)+cos(phi)*sin(psi);
-    H(1,1)=-sin(phi)*cos(theta)*sin(psi)+cos(phi)*cos(psi);
-    H(1,2)=sin(phi)*sin(theta);
-    H(2,0)= -sin(theta)*cos(psi);
-    H(2,1)=sin(theta)*sin(psi);
-    H(2,2)=cos(theta);
+    H(0,0)=cos(phi)*cos(theta);
+    H(0,1)=cos(phi)*sin(theta)*sin(psi)-sin(phi)*cos(psi);
+    H(0,2)=cos(phi)*sin(theta)*cos(psi)+sin(phi)*sin(psi);
+    H(1,0)=sin(phi)*cos(theta);
+    H(1,1)=sin(phi)*sin(theta)*sin(psi)+cos(phi)*cos(psi);
+    H(1,2)=sin(phi)*sin(theta)*cos(psi)-cos(phi)*sin(psi);
+    H(2,0)=-sin(theta);
+    H(2,1)=cos(theta)*sin(psi);
+    H(2,2)=cos(theta)*cos(psi);
     
     return H;    
 }

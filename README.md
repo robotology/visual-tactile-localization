@@ -39,9 +39,9 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `modelFile`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing the triangular mesh of the object;
 - `auxCloud1File`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing very few contact points used during a pushing phase;
 - `auxCloud2File`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing very few contact points used during an additional pushing phase;
-- `modelOutputPath`, where to save the `.OFF` file containing the model of the object in the real and estimated pose, one file is saved for each filtering step;
-- `measOutputPath`, where to save the `.OFF` file containing the measurements used in each filtering step, one file is saved for each filtering step;
-- `resultsOutputPath` where to save a `.CSV` file containing a summary about all the filtering steps (real pose, estimated pose, position and velocity of the reference point, yaw rate, origin of the observer and execution time for each step);
+- `modelOutputPath`, where to save the `.OFF` file containing the model of the object in the real and estimated pose, one file is saved for each filtering step in `modelOutputPath/trial<i>/` where `i` is the index of the current trial;
+- `measOutputPath`, where to save the `.OFF` file containing the measurements used in each filtering step, one file is saved for each filtering step in `measOutputPath/trial<i>/` where `i` is the index of the current trial;
+- `resultsOutputPath` where to save a `.CSV` file containing a summary about all the filtering steps (real pose, estimated pose, position and velocity of the reference point, yaw rate, origin of the observer and execution time for each step). The file is saved in `resultsOutputPath/trial<i>` where `i` is the index of the current trial;
 - `radius0`, radius of the initial research region as a list of three doubles;
 - `center0`, center of the initial research region as a list of three doubles;
 - `N`, number of particles;
@@ -55,7 +55,8 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `useIdealMeasEqn`, whether to use the ideal measurement equation or not (true/false);
 - `observerOrigin`, a 3D tuple containing the origin of the observer and used to generate a more realistic point cloud;
 - `useCenterVelocity`, whether to use or not the velocity of the center of the object as input to the filter (see the section [Integration](#integration) for more details on this setting);
-- `numContacts`, fixed number of contact points to be processed at each time step during __static__ motion phases (see the section [Integration](#integration) for more details on this setting).
+- `numContacts`, fixed number of contact points to be processed at each time step during __static__ motion phases (see the section [Integration](#integration) for more details on this setting);
+- `numTrials`, number of trials to be performed.
 
 ## Notes on an example motion scenario
 An example configuration file is [available](https://github.com/robotology-playground/tactile-localization/blob/feature/motion_model/configurationFiles/configMustard_sim_motion.ini).

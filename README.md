@@ -36,6 +36,7 @@ cd $TAC_LOC/build/bin
 ./localizer --from $CONF_FILE_PATH
 ```
 where `$CONF_FILE_PATH` is the path of a configuration file containing the following parameters:
+- `numTrials`, number of trials to be performed;
 - `modelFile`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing the triangular mesh of the object;
 - `auxCloud1File`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing very few contact points used during a pushing phase;
 - `auxCloud2File`, path of the [`.OFF`](https://en.wikipedia.org/wiki/OFF_(file_format)) containing very few contact points used during an additional pushing phase;
@@ -55,8 +56,7 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `useIdealMeasEqn`, whether to use the ideal measurement equation or not (true/false);
 - `observerOrigin`, a 3D tuple containing the origin of the observer and used to generate a more realistic point cloud;
 - `useCenterVelocity`, whether to use or not the velocity of the center of the object as input to the filter (see the section [Integration](#integration) for more details on this setting);
-- `numContacts`, fixed number of contact points to be processed at each time step during __static__ motion phases (see the section [Integration](#integration) for more details on this setting);
-- `numTrials`, number of trials to be performed.
+- `numContacts`, fixed number of contact points to be processed at each time step during __static__ motion phases (see the section [Integration](#integration) for more details on this setting).
 
 ## Notes on an example motion scenario
 An example configuration file is [available](https://github.com/robotology-playground/tactile-localization/blob/feature/motion_model/configurationFiles/configMustard_sim_motion.ini).
@@ -240,10 +240,10 @@ that overrides the pure virtual method of `MotionGenerator`.
 ### Integration
 All the classes presented above are combined together in `LocalizerMotion`.
 
-In order to specify multi-phase trajectories the method `LocalizerMotion` expects that all the motion phases are specified using the method `LocalizerMotion::setLocPhase`. In this implementation this happens in the method `main` in the file [main](src/main.cpp).
+In order to specify multi-phase trajectories the class `LocalizerMotion` expects that all the motion phases are specified using the method `LocalizerMotion::setLocPhase`. In this implementation this happens in the method `main` in the file [main](src/main.cpp).
 
-# Struct `LocalizationPhase`
-Each phase is a `struct` that have to be filled with (almost) all following quantities
+#### Struct `LocalizationPhase`
+Each phase is represented using a `struct` that have to be filled with (almost) all following quantities
 - `type`, the type of phase, it can be `LocalizationType::Static` or `LocalizationType::Motion`;
 - `displ`, the displacement from the reference point to the center of the object to be used during this motion phase;
 - `holdDisplFromPrevious`, that decides whether to inherit the displacement from the previous phase. The phases belonging to `phases` are handled in a `FIFO` way;
@@ -270,8 +270,8 @@ Each phase is a `struct` that have to be filled with (almost) all following quan
 __It is not required__ to fill all the fields of the struct `LocalizationPhase` for the phases __other than the first__. In fact the method `LocalizerMotion::updateModule` uses the method `LocalizerMotion::configureLocPhase` that configures each localization phase before performing the first filtering step associated to that motion phase and helps the user in filling some fields of the struct.
 In particular 
 - the initial conditions of a phase are set equal to the final conditions of the previous phase;
-- if a motion phase is configured with the `holdDisplFromPrevious` set to `true` then the displacement is copied from the previous phase;
 - if a motion phase is `LocalizationType::Static` then the displacements are automatically set to 0;
+- if a motion phase is configured with the `holdDisplFromPrevious` set to `true` then the displacement is copied from the previous phase;
 - if a motion phase is configured with the `holdDisplFromPrevious` set to `false` a new displacement vector __have__ to be specified for that phase and the initial position of the __new__ reference point, expressed in robot reference frame, is automatically calculated taking into account the final yaw attitude of the previous phase.
 
 #### Velocity of the center vs. velocity of the reference point

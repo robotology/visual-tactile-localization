@@ -17,7 +17,6 @@
 #include "headers/fakePointCloud.h"
 #include "headers/motionGenerator.h"
 
-enum class State { init , run, end };
 enum class LocalizationType { Static, Motion };
 
 /** 
@@ -139,6 +138,9 @@ private:
     // number of trials to be performed
     int n_trials;
     int current_trial;
+
+    // step time
+    double step_time;
     
     // fixed number of contact points per time step
     // for estimation during static phase
@@ -158,24 +160,9 @@ private:
     // previous velocity
     yarp::sig::Vector prev_vel;
     yarp::sig::Vector prev_ref_vel;
-
-    // models file names
-    std::string model_file_name;
-    std::string aux_cloud_1_file_name;
-    std::string aux_cloud_2_file_name;
-
-    // fake point cloud engines
-    FakePointCloud pc_whole;
-    FakePointCloud pc_contacts_1;
-    FakePointCloud pc_contacts_2;
+    
     // observer origin
     yarp::sig::Vector observer_origin;
-
-    // static pose generator
-    StaticMotionGenerator static_mg;
-
-    // motion generator
-    PolynomialMotionGenerator motion_mg;
 
     // number of steps performed
     int n_steps;
@@ -183,9 +170,6 @@ private:
     // whether to use or not the velocity of the center of 
     // the object as the input to the filter
     bool use_center_velocity;
-
-    // state of the simulation
-    State state;
 
     // vector of localization phases
     std::vector<LocalizationPhase> phases;
@@ -283,7 +267,18 @@ public:
     /*
      * Define the cleanup behavior.
      */
-    bool close() override;    
+    bool close() override;
+
+    /*
+     * Add a localization phase to the experiment.
+     */
+    void addLocPhase(const LocalizationPhase& lp);
+
+    /*
+     * Set the step time.
+     */
+    void setStepTime(const double& step_time);
+    
 };
 
 #endif

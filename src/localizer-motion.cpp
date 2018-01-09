@@ -62,30 +62,6 @@ bool LocalizerMotion::loadParameters(const yarp::os::ResourceFinder &rf)
     yInfo() << "Localizer: number of contact points per step:"
 	    << n_contacts;
 
-    // load the file name of the object model
-    model_file_name = rf.find("modelFile").asString();
-    if (rf.find("modelFile").isNull())
-    {
-        yError() << "object model file not provided. Check your configuration.";
-        return false;
-    }
-
-    // load the file name of the auxiliary point cloud 1
-    aux_cloud_1_file_name = rf.find("auxCloud1File").asString();
-    if (rf.find("auxCloud1File").isNull())
-    {
-        yError() << "Auxiliary point cloud 1 file not provided. Check your configuration.";
-        return false;
-    }
-
-    // load the file name of the auxiliary point cloud 2
-    aux_cloud_2_file_name = rf.find("auxCloud2File").asString();
-    if (rf.find("auxCloud2File").isNull())
-    {
-        yError() << "Auxiliary point cloud 2 file not provided. Check your configuration.";
-        return false;
-    }
-
     // load the origin of the observer
     observer_origin.resize(3, 0.0);
     yarp::os::Value observer_origin_value = rf.find("observerOrigin");
@@ -454,9 +430,9 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	// set inputs
 	yarp::sig::Vector input;
 	if (use_center_velocity)
-	    input = prev_vel * getPeriod();
+	    input = prev_vel * step_time;
 	else
-	    input = prev_ref_vel * getPeriod();
+	    input = prev_ref_vel * step_time;
 	upf->setNewInput(input);
 	
 	// update velocity for next step
@@ -587,11 +563,6 @@ bool LocalizerMotion::configure(yarp::os::ResourceFinder &rf)
     if(!loadParameters(rf))
     	return false;
 
-    // initialize the fakePointCloud engines
-    pc_whole.loadObjectModel(model_file_name);
-    pc_contacts_1.loadObjectModel(aux_cloud_1_file_name);
-    pc_contacts_2.loadObjectModel(aux_cloud_2_file_name);
-
     // instantiate the UPF
     upf = new UnscentedParticleFilter;
 
@@ -599,9 +570,6 @@ bool LocalizerMotion::configure(yarp::os::ResourceFinder &rf)
     if(!upf->configure(rf))
 	return false;
     upf->init();
-
-    //set the initial state
-    state = State::init;
 
     // reset the index of the current phase
     current_phase = 0;
@@ -622,118 +590,54 @@ double LocalizerMotion::getPeriod()
 
 bool LocalizerMotion::updateModule()
 {
-    if(state == State::init)
+    // check if the module should stop
+    if (isStopping())
+	return false;
+    
+    // check if the phases are all done
+    if (current_phase == phases.size())
     {
-	// setup the localization experiment
+	// save results
+	saveResults(results);
 
-	// static phase 1
-	LocalizationPhase static1(LocalizationType::Static,
-				  6, 1, &static_mg, &pc_whole);
-	// set displacement from ref point to center
-    	static1.displ[0] = 0.0283;
-    	static1.displ[1] = 0.0083;
-    	static1.displ[2] = -0.0029;
-    	// set initial conditions
-    	static1.ref_pos_0[0] = 0.1;
-    	static1.ref_pos_0[1] = 0.1;
-    	static1.yaw_0 = 0.0;
-	// set number of points in point cloud
-	static1.num_points = 150;
+	// clean the vector results
+	results.clear();
 
-	// motion phase 1
-	LocalizationPhase motion1(LocalizationType::Motion,
-				  2.5, getPeriod(), &motion_mg,
-				  &pc_contacts_1,true);
-	// set position and angular displacement
-	motion1.delta_pos[0] = 0.2;
-	motion1.delta_yaw = -M_PI/8.0;
+	// reset the index of the current phase
+	current_phase = 0;
 
-	// static phase 2
-	LocalizationPhase static2(LocalizationType::Static,
-				  6, 1, &static_mg, &pc_whole,
-				  true);
-	static2.num_points = 150;
+	// reset the number of steps
+	n_steps = 0;
 
-	// motion phase 2
-	LocalizationPhase motion2(LocalizationType::Motion,
-				  2.5, getPeriod(), &motion_mg,
-				  &pc_contacts_2);
-	// change reference point
-	motion2.displ[0] = -0.0283;
-	motion2.displ[1] = 0.0083;
-	motion2.displ[2] = -0.0029;
-	// set position and angular displacement	
-	motion2.delta_pos[1] = 0.2;
-	motion2.delta_yaw = - M_PI/8.0;	
-	
-	// static phase 3
-	LocalizationPhase static3(LocalizationType::Static,
-				  6, 1, &static_mg, &pc_whole,
-				  true);
-	// set number of points in point cloud
-	static3.num_points = 150;	
-
-	// add phases to the list
-	phases.push_back(static1);
-	phases.push_back(motion1);
-	phases.push_back(static2);
-	phases.push_back(motion2);
-	phases.push_back(static3);	
-
-	// switch state
-	state = State::run;
-    }
-    else if (state == State::run)
-    {
-	// check if the phases are all done
-	if (current_phase == phases.size())
-	{
-	    // save results
-	    saveResults(results);
-
-	    // clean the vector results
-	    results.clear();
-
-	    // reset the index of the current phase
-	    current_phase = 0;
-
-	    // reset the number of steps
-	    n_steps = 0;
-
-	    // reset all the phases
-	    for(size_t i=0; i<phases.size(); i++)
-		phases[i].initialized = false;
+	// reset all the phases
+	for(size_t i=0; i<phases.size(); i++)
+	    phases[i].initialized = false;
 	    
-	    // reset the fiter
-	    upf->init();
+	// reset the fiter
+	upf->init();
 
-	    // step the number of trials
-	    current_trial++;
+	// step the number of trials
+	current_trial++;
 
-	    // check if the trials are all done
-	    if (current_trial == n_trials)
-	    {
-		state = State::end;
-	    }
-
-	    return true;
-	}
-	
-	// configure localization phase
-	configureLocPhase(current_phase);
-
-	// perform localization
-	if (!performLocalization(current_phase))
+	// check if the trials are all done
+	if (current_trial == n_trials)
 	{
-	    // stop module due to an error
-	    // during the localization
-
+	    // stop the module
 	    return false;
 	}
+
+	return true;
     }
-    else if (state == State::end)
+	
+    // configure localization phase
+    configureLocPhase(current_phase);
+
+    // perform localization
+    if (!performLocalization(current_phase))
     {
-	// stop module
+	// stop module due to an error
+	// during the localization
+
 	return false;
     }
 
@@ -744,4 +648,15 @@ bool LocalizerMotion::close()
 {
     // delete the UPF instance
     delete upf;
+}
+
+void LocalizerMotion::addLocPhase(const LocalizationPhase& lp)
+{
+    // add localization phase to the internal vector
+    phases.push_back(lp);
+}
+
+void LocalizerMotion::setStepTime(const double& step_time)
+{
+    this->step_time = step_time;
 }

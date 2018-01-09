@@ -59,7 +59,7 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `numContacts`, fixed number of contact points to be processed at each time step during __static__ motion phases (see the section [Integration](#integration) for more details on this setting).
 
 ## Notes on an example motion scenario
-An example configuration file is [available](https://github.com/robotology-playground/tactile-localization/blob/feature/motion_model/configurationFiles/configMustard_sim_motion.ini).
+An example configuration file is [available](configurationFiles/configMustard_sim_motion.ini).
 
 The model used in the simulated scenario is that of a mustard bottle (taken from the [YCB dataset](http://www.ycbbenchmarks.com/object-models/)). The mustard bootle moves according to the following plan
 - it stands still initially (measurements are simulated by Disk Poisson sampling the model `modelFile` - in this phase localization "using" vision is simulated);

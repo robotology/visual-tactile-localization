@@ -138,6 +138,9 @@ bool LocalizerMotion::saveModel(const Polyhedron &model,
     else
 	outputPath = path_value.asString();
 
+    // append trial number
+    outputPath += "trial" + std::to_string(current_trial) + "/";
+
     // file name
     std::string outputFileName = outputPath + file_name;
 
@@ -167,6 +170,9 @@ bool LocalizerMotion::saveResults(const std::vector<Results> &results)
 	outputPath = "../../outputs/";
     else
 	outputPath = path_value.asString();
+
+    // append trial number
+    outputPath += "trial" + std::to_string(current_trial) + "/";
 
     // file name
     std::string outputFileName = outputPath + "results.csv";
@@ -238,6 +244,9 @@ bool LocalizerMotion::saveMeas(const std::vector<Measure> &meas,
 	outputPath = "../../outputs/";
     else
 	outputPath = path_value.asString();
+
+    // append trial number
+    outputPath += "trial" + std::to_string(current_trial) + "/";
 
     // file name
     std::string outputFileName = outputPath + filename;
@@ -594,8 +603,14 @@ bool LocalizerMotion::configure(yarp::os::ResourceFinder &rf)
     //set the initial state
     state = State::init;
 
+    // reset the index of the current phase
+    current_phase = 0;
+
     // reset the number of steps
     n_steps = 0;
+
+    // reset the number of trials
+    current_trial = 0;
 
     return true;
 }
@@ -673,7 +688,33 @@ bool LocalizerMotion::updateModule()
 	// check if the phases are all done
 	if (current_phase == phases.size())
 	{
-	    state = State::end;
+	    // save results
+	    saveResults(results);
+
+	    // clean the vector results
+	    results.clear();
+
+	    // reset the index of the current phase
+	    current_phase = 0;
+
+	    // reset the number of steps
+	    n_steps = 0;
+
+	    // reset all the phases
+	    for(size_t i=0; i<phases.size(); i++)
+		phases[i].initialized = false;
+	    
+	    // reset the fiter
+	    upf->init();
+
+	    // step the number of trials
+	    current_trial++;
+
+	    // check if the trials are all done
+	    if (current_trial == n_trials)
+	    {
+		state = State::end;
+	    }
 
 	    return true;
 	}
@@ -692,9 +733,6 @@ bool LocalizerMotion::updateModule()
     }
     else if (state == State::end)
     {
-	// save results
-	saveResults(results);	
-
 	// stop module
 	return false;
     }

@@ -263,8 +263,7 @@ public:
 	                cur_yaw_rate(0),	
                         prev_vel(3, 0.0),
 	                prev_ref_vel(3, 0.0),
-	                observer_origin(3, 0.0),
-	                current_phase(0) { };
+	                observer_origin(3, 0.0) { };
     /*
      * Configure the module.
      * @param rf a previously instantiated @see ResourceFinder

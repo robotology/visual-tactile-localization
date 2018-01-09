@@ -98,6 +98,12 @@ void FakePointCloud::samplePointCloud(std::vector<Point> &cloud,
     transformModel(mesh_cp);
     
     // perform Poisson Disk Sampling
+
+    // since this functions considers only points
+    // visibile to the observer placed at obs_origin
+    // in order to have num_points a greater number
+    // of points have to be sampled
+    int num_points_eff = num_points * 2 + 25;
     
     // some default parametrs as found in MeshLab
     int oversampling = 20;
@@ -111,7 +117,7 @@ void FakePointCloud::samplePointCloud(std::vector<Point> &cloud,
     // with the given number of points
     simpleTriMesh::ScalarType radius;
     radius = triMeshSurfSampler::ComputePoissonDiskRadius(mesh_cp,
-							  num_points);
+							  num_points_eff);
 
     // generate preliminar montecarlo sampling with uniform probability
     simpleTriMesh montecarlo_mesh;
@@ -119,7 +125,7 @@ void FakePointCloud::samplePointCloud(std::vector<Point> &cloud,
     mc_sampler.qualitySampling=true;
     triMeshSurfSampler::Montecarlo(mesh_cp,
 				   mc_sampler,
-				   num_points * oversampling);
+				   num_points_eff * oversampling);
     montecarlo_mesh.bbox = mesh.bbox;
 
     // generate poisson disk samples by pruning the montecarlo cloud
@@ -131,9 +137,9 @@ void FakePointCloud::samplePointCloud(std::vector<Point> &cloud,
 					   poiss_params);
     vcg::tri::UpdateBounding<simpleTriMesh>::Box(poiss_mesh);
 
-    // store the vertices in the cloud
+    // store up to num_points vertices in the cloud
     for (VertexIterator vi = poiss_mesh.vert.begin();
-	 vi != poiss_mesh.vert.end();
+	 cloud.size() < num_points && vi != poiss_mesh.vert.end();
 	 vi++)
     {
 	// extract the point

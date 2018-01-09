@@ -584,80 +584,54 @@ bool LocalizerMotion::updateModule()
     {
 	// setup the localization experiment
 
-	/*
-	 * Static phase #1
-	 */
+	// static phase 1
 	LocalizationPhase static1(LocalizationType::Static,
 				  6, 1, &static_mg, &pc_whole);
-
 	// set displacement from ref point to center
     	static1.displ[0] = 0.0283;
     	static1.displ[1] = 0.0083;
     	static1.displ[2] = -0.0029;
-
     	// set initial conditions
     	static1.ref_pos_0[0] = 0.1;
     	static1.ref_pos_0[1] = 0.1;
     	static1.yaw_0 = 0.0;
-
 	// set number of points in point cloud
 	static1.num_points = 150;
-	/*
-	 */
 
-	/*
-	 * Motion phase #1
-	 */
+	// motion phase 1
 	LocalizationPhase motion1(LocalizationType::Motion,
 				  2.5, getPeriod(), &motion_mg,
 				  &pc_contacts_1,true);
-
 	// set position and angular displacement
 	motion1.delta_pos[0] = 0.2;
 	motion1.delta_yaw = -M_PI/8.0;
-	/*
-	 */
 
-	/*
-	 * Static phase #2
-	 */
+	// static phase 2
 	LocalizationPhase static2(LocalizationType::Static,
 				  6, 1, &static_mg, &pc_whole,
 				  true);
-	// set number of points in point cloud
 	static2.num_points = 150;
-	/*
-	 */
 
-	/*
-	 * Motion phase #2
-	 */
+	// motion phase 2
 	LocalizationPhase motion2(LocalizationType::Motion,
 				  2.5, getPeriod(), &motion_mg,
 				  &pc_contacts_2);
-
 	// change reference point
 	motion2.displ[0] = -0.0283;
 	motion2.displ[1] = 0.0083;
 	motion2.displ[2] = -0.0029;
-
 	// set position and angular displacement	
 	motion2.delta_pos[1] = 0.2;
 	motion2.delta_yaw = - M_PI/8.0;	
 	
-
-	/*
-	 * Static phase #3
-	 */
+	// static phase 3
 	LocalizationPhase static3(LocalizationType::Static,
 				  6, 1, &static_mg, &pc_whole,
 				  true);
 	// set number of points in point cloud
 	static3.num_points = 150;	
 
-	/*
-	 * add phases to the list
-	 */
+	// add phases to the list
 	phases.push_back(static1);
 	phases.push_back(motion1);
 	phases.push_back(static2);

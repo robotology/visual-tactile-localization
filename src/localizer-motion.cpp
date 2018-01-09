@@ -203,7 +203,7 @@ bool LocalizerMotion::saveResults(const std::vector<Results> &results)
     {
 	fout.close();
 	
-    	yError() << "problem opening transformed model output file!";
+    	yError() << "problem opening results output file!";
 	return false;
     }
     
@@ -226,7 +226,7 @@ bool LocalizerMotion::saveMeas(const std::vector<Measure> &meas,
     // file name
     std::string outputFileName = outputPath + filename;
 
-    // save the results
+    // save the measures
     std::ofstream fout(outputFileName.c_str());
     if(fout.is_open())
     {
@@ -295,7 +295,7 @@ void LocalizerMotion::saveLocalizationStep(const yarp::sig::Vector &est_pose,
     // get current localization phase
     LocalizationPhase &lp = phases[current_phase];
 
-    // save results
+    // store overall results
     Results result;
     result.real = real_pose;
     result.ref_pos = ref_pos;

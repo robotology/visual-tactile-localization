@@ -246,25 +246,24 @@ In order to specify multi-phase trajectories the class `LocalizerMotion` expects
 Each phase is represented using a `struct` that have to be filled with (almost) all following quantities
 - `type`, the type of phase, it can be `LocalizationType::Static` or `LocalizationType::Motion`;
 - `displ`, the displacement from the reference point to the center of the object to be used during this motion phase;
-- `holdDisplFromPrevious`, that decides whether to inherit the displacement from the previous phase. The phases belonging to `phases` are handled in a `FIFO` way;
+- `holdDisplFromPrevious`, that decides whether to inherit the displacement (between the reference point and the center of the object) from the previous phase.
 - `ref_pos_0`, the initial position of the reference point;
 - `yaw_0`, the initial yaw angle;
 - `delta_pos`, the relative displacement between the initial and final position of the referene point;
 - `delta_yaw`, the relative change between the initial and final yaw angle;
 - `step_time`, the sampling period of the trajectory associated to the phase;
+- `num_points`, the number of points of the point clouds used in an iteration of a `LocalizationType::Static` phase;
 - `duration`, the total duration of the trajectory associated to the phase;
 > for `LocalizationType::Static` phases the `step_time` and `duration` fields should be used to decide how many iterations of static localization have to be performed. To have `n` iterations it suffices to set `step_time` to `1` and `duration` to `n`.
 - `pc`, pointer to a `FakePointCloud`;
-> For `LocalizationType::Static` phases it must be a `FakePointCloud` loaded with a __Vertex-Face triangular mesh__ of the object because during a static phase measurements are obtained by Disk Poisson sampling the entire surface of the object. For each iteration of the static localization a point cloud with `num_points` points is generated and each filtering step is performed with a measurement vector containing `numContacts` contact points where `numContacts` is specified in the configuration file.
+> For `LocalizationType::Static` phases it must be a `FakePointCloud` loaded with a __Vertex-Face triangular mesh__ of the object because during a static phase measurements are obtained by Disk Poisson sampling the surface of the object. For each iteration of the static localization a point cloud with `num_points` points is generated and each filtering step is performed with a measurement vector containing `numContacts` contact points where `numContacts` is specified in the configuration file.
 
 > For `LocalizationType::Motion` phases it must be a `FakePointCloud` loaded with a __Vertex only__ model of the object containing, e.g., the location of few contact points used in an hypothetic __pushing__ phase.
 
-- `mg`, pointer to a `MotionGenerator`;
+- `mg`, pointer to a `MotionGenerator`.
 > For `LocalizationType::Static` phases it should be a `StaticMotionGenerator`.
 
 > For `LocalizationType::Motion` phases it should be a `PolynomialMotionGenerator`.
-
-- `num_points`, the number of points of the point clouds used in an iteration of a `LocalizationType::Static` phase.
 
 #### Configuration of a localization phase
 __It is not required__ to fill all the fields of the struct `LocalizationPhase` for the phases __other than the first__. In fact the method `LocalizerMotion::updateModule` uses the method `LocalizerMotion::configureLocPhase` that configures each localization phase before performing the first filtering step associated to that motion phase and helps the user in filling some fields of the struct.

@@ -29,6 +29,22 @@ using namespace yarp::math;
 
 bool LocalizerMotion::loadParameters(const yarp::os::ResourceFinder &rf)
 {
+    // load the number of trials to be performed
+    yarp::os::Value n_trials_value = rf.find("numTrials");
+    if (rf.find("numTrials").isNull())
+    {
+        yError() << "number of trials not provided.";
+        return false;
+    }
+    if (!n_trials_value.isInt())
+    {
+        yError() << "invalid number of trials provided.";
+        return false;
+    }
+    n_trials = n_trials_value.asInt();
+    yInfo() << "Localizer: number of trials:"
+	    << n_trials;
+    
     // load the fixed number of contact points per time step
     // for estimation during static phase
     yarp::os::Value n_contacts_value = rf.find("numContacts");

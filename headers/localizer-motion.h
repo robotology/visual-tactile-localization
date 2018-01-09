@@ -135,6 +135,10 @@ class LocalizerMotion : public yarp::os::RFModule
 private:
     // resource finder
     yarp::os::ResourceFinder *rf;
+
+    // number of trials to be performed
+    int n_trials;
+    int current_trial;
     
     // fixed number of contact points per time step
     // for estimation during static phase

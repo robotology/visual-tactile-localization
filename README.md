@@ -1,6 +1,6 @@
 # visual-tactile-localization with motion scenario
 
-The code distributed here provides a reviewed implementation of the **Memory Unscented Particle Filter (MUPF)** algorithm for visual-tactile localization.
+The code distributed here provides a reviewed implementation of the **Unscented Particle Filter (UPF)** algorithm for visual-tactile localization.
 
 (The previous __static only__ implementation can be found [here](https://github.com/robotology-playground/tactile-localization/releases/tag/v3.0)).
 
@@ -68,14 +68,14 @@ The model used in the simulated scenario is that of a mustard bottle (taken from
 - a second pushing movement is simulated (using the auxiliar point cloud `auxCloud2File` - in this phase localization "using" touch is simulated);
 - it stops again (measurements are simulated again by Disk Poisson sampling the model `modelFile`- in this phase localization "using" vision is simulated);
 
-More details on the implementation of the multi-phase trajectory generator can be found in the method `updateModule` of the class `LocalizerMotion` ([sources](src/localizer-motion.cpp)) and in the section [Integration](#integration).
+The plan expressed above can be easily changed in the [main](src/main.cpp) by defining suitable `LocalizationPhase` phases and setting them within the localizer using the method `LocalizerMotion::setLocPhase`. More details on the `LocalizationPhase` can be found in the next section.
 
 ## Notes on implementation
 
 ### Offline localizer
-The [localizer](headers/localizer-motion.h) is implemented as a `yarp::os::RFModule` that uses the MUPF filter via this [interface](headers/unscentedParticleFilter.h), a fake cloud point generator via this [interface](headers/fakePointCloud.h) and a trajectory generator via this [interface](headers/motionGenerator.h). The [main](src/main.cpp) instantiates the RFModule.
+The [localizer](headers/localizer-motion.h) is implemented as a `yarp::os::RFModule` that uses the UPF filter via this [interface](headers/unscentedParticleFilter.h), a fake point cloud generator via this [interface](headers/fakePointCloud.h) and a trajectory generator via this [interface](headers/motionGenerator.h). The [main](src/main.cpp) instantiates the point cloud and trajectory generators and the RFModule.
 
-### MUPF Filter
+### UPF Filter
 The filter can be used through the [interface](headers/unscentedParticleFilter.h).
 
 The main methods offered are
@@ -152,7 +152,7 @@ that transform the model (both mesh or point cloud depending on the type of file
  ```    
  void samplePointCloud(std::vector<Point> &cloud,const yarp::sig::Vector &obs_origin, const int &num_points);
  ```
-that create a point cloud by Disk Poisson sampling the whole surface of the object in the current pose set with `FakePointCloud::setPose` and taking the points visible to the observer whose origin is at `obs_origin`. It requires a model of the object containing a triangular mesh and not a point cloud (i.e. a Vertex only model).
+that create a point cloud by Disk Poisson sampling the whole surface of the object in the current pose set with `FakePointCloud::setPose` and taking the points visible to the observer whose origin is at `obs_origin`. It requires a model of the object containing a triangular mesh and not a point cloud (i.e. a Vertex only model). The method tries to sample exactly `num_points` points.
 
 ```
 void getPointCloud(std::vector<Point> &cloud);
@@ -240,10 +240,10 @@ that overrides the pure virtual method of `MotionGenerator`.
 ### Integration
 All the classes presented above are combined together in `LocalizerMotion`.
 
-In order to specify multi-phase trajectories the method `LocalizerMotion` expects that all the motion phases are specified in the method `LocalizerMotion::updateModule`. To this end the private member `std::vector<LocalizationPhase> LocalizerMotion::phases` have to be filled with `LocalizationPhase` phases.
+In order to specify multi-phase trajectories the method `LocalizerMotion` expects that all the motion phases are specified using the method `LocalizerMotion::setLocPhase`. In this implementation this happens in the method `main` in the file [main](src/main.cpp).
 
-#### Struct `LocalizationPhase`
-Each phase is a `struct` that have to be filled with (almost) all these quantities
+# Struct `LocalizationPhase`
+Each phase is a `struct` that have to be filled with (almost) all following quantities
 - `type`, the type of phase, it can be `LocalizationType::Static` or `LocalizationType::Motion`;
 - `displ`, the displacement from the reference point to the center of the object to be used during this motion phase;
 - `holdDisplFromPrevious`, that decides whether to inherit the displacement from the previous phase. The phases belonging to `phases` are handled in a `FIFO` way;

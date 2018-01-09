@@ -334,22 +334,22 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 
     // get measurements from fake point cloud
     yarp::sig::Vector pose(6, 0.0);
-    std::vector<Point> meas;
+    std::vector<Point> points;
     pose.setSubvector(0, cur_pos);
     pose[3] = cur_yaw;
     lp.pc->setPose(pose);
 
     if (lp.type == LocalizationType::Static)
     {	
-	lp.pc->samplePointCloud(meas,
+	lp.pc->samplePointCloud(points,
 				observer_origin,
 				lp.num_points);
     }	
     else if (lp.type == LocalizationType::Motion)
-	lp.pc->getPointCloud(meas);
+	lp.pc->getPointCloud(points);
 
     // check if there are measurements
-    if (meas.size() == 0)
+    if (points.size() == 0)
     {
 	yError() << "No measurements available from the fake point cloud.";
 	return false;
@@ -365,7 +365,7 @@ bool LocalizerMotion::performLocalization(int &current_phase)
     yarp::sig::Vector est_pose(6, 0.0);    
     if(lp.type == LocalizationType::Static)
     {	
-	for(size_t k=0; k+n_contacts-1< meas.size(); k+=n_contacts)	
+	for(size_t k=0; k+n_contacts <= points.size(); k+=n_contacts)	
 	{
 	    // feed measurements in groups of n_contacts contact points
 	
@@ -375,12 +375,11 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 
 	    // simulate n_contacts contact points per time step
 	    Measure m;
-	    std::vector<Measure> one_meas;	
+	    std::vector<Measure> meas_vector;	
 	    for(size_t j=0; j<n_contacts; j++)
-		m.push_back(meas[k+j]);
-	    one_meas.push_back(m);
+		m.push_back(points[k+j]);
+	    meas_vector.push_back(m);
 	    
-	
 	    // set zero inputs
 	    yarp::sig::Vector zero_in(3, 0.0);
 	    upf->setNewInput(zero_in);
@@ -398,7 +397,7 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	    // save all data
 	    saveLocalizationStep(est_pose, pose, cur_ref_pos,
 				 cur_vel, cur_ref_vel,
-				 cur_yaw_rate, one_meas, diff);
+				 cur_yaw_rate, meas_vector, diff);
 	}
     }	
     else if(lp.type == LocalizationType::Motion)
@@ -409,8 +408,8 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	// feed measurements
 	std::vector<Measure> one_meas;
 	Measure m;
-	for(size_t k=0; k<meas.size(); k++)
-	    m.push_back(meas[k]);
+	for(size_t k=0; k<points.size(); k++)
+	    m.push_back(points[k]);
 	one_meas.push_back(m);
 
 	// set real pose
@@ -423,7 +422,8 @@ bool LocalizerMotion::performLocalization(int &current_phase)
 	else
 	    input = prev_ref_vel * getPeriod();
 	upf->setNewInput(input);
-	// update velocity
+	
+	// update velocity for next step
 	prev_vel = cur_vel;
 	prev_ref_vel = cur_ref_vel;
 

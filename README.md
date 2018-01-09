@@ -68,12 +68,12 @@ The model used in the simulated scenario is that of a mustard bottle (taken from
 - a second pushing movement is simulated (using the auxiliar point cloud `auxCloud2File` - in this phase localization "using" touch is simulated);
 - it stops again (measurements are simulated again by Disk Poisson sampling the model `modelFile`- in this phase localization "using" vision is simulated);
 
-The plan expressed above can be easily changed in the [main](src/main.cpp) by defining suitable `LocalizationPhase` phases and setting them within the localizer using the method `LocalizerMotion::setLocPhase`. More details on the `LocalizationPhase` can be found in the next section.
+The plan expressed above can be easily changed in the file [main.cpp](src/main.cpp) by defining suitable `LocalizationPhase` phases and setting them within the localizer using the method `LocalizerMotion::setLocPhase`. More details on the `LocalizationPhase` can be found in the next section.
 
 ## Notes on implementation
 
 ### Offline localizer
-The [localizer](headers/localizer-motion.h) is implemented as a `yarp::os::RFModule` that uses the UPF filter via this [interface](headers/unscentedParticleFilter.h), a fake point cloud generator via this [interface](headers/fakePointCloud.h) and a trajectory generator via this [interface](headers/motionGenerator.h). The [main](src/main.cpp) instantiates the point cloud and trajectory generators and the RFModule.
+The [localizer](headers/localizer-motion.h) is implemented as a `yarp::os::RFModule` that uses the UPF filter via this [interface](headers/unscentedParticleFilter.h), a fake point cloud generator via this [interface](headers/fakePointCloud.h) and a trajectory generator via this [interface](headers/motionGenerator.h). The method `main` within the file [main.cpp](src/main.cpp) instantiates the point cloud and trajectory generators and the RFModule.
 
 ### UPF Filter
 The filter can be used through the [interface](headers/unscentedParticleFilter.h).
@@ -238,12 +238,12 @@ void getMotion(yarp::sig::Vector &pos, yarp::sig::Vector &ref_pos, yarp::sig::Ve
 that overrides the pure virtual method of `MotionGenerator`.
 
 ### Integration
-All the classes presented above are combined together in `LocalizerMotion`.
+All the classes presented above are combined together in the class `LocalizerMotion`.
 
-In order to specify multi-phase trajectories the class `LocalizerMotion` expects that all the motion phases are specified using the method `LocalizerMotion::setLocPhase`. In this implementation this happens in the method `main` in the file [main](src/main.cpp).
+In order to specify multi-phase trajectories the class `LocalizerMotion` expects that all the motion phases are specified using the method `LocalizerMotion::setLocPhase`. In this implementation this happens in the method `main` in the file [main.cpp](src/main.cpp).
 
 #### Struct `LocalizationPhase`
-Each phase is represented using a `struct` that have to be filled with (almost) all following quantities
+Each phase is represented using a `struct` that contains the following fields:
 - `type`, the type of phase, it can be `LocalizationType::Static` or `LocalizationType::Motion`;
 - `displ`, the displacement from the reference point to the center of the object to be used during this motion phase;
 - `holdDisplFromPrevious`, that decides whether to inherit the displacement (between the reference point and the center of the object) from the previous phase.
@@ -266,10 +266,16 @@ Each phase is represented using a `struct` that have to be filled with (almost) 
 > For `LocalizationType::Motion` phases it should be a `PolynomialMotionGenerator`.
 
 #### Configuration of a localization phase
-__It is not required__ to fill all the fields of the struct `LocalizationPhase` for the phases __other than the first__. In fact the method `LocalizerMotion::updateModule` uses the method `LocalizerMotion::configureLocPhase` that configures each localization phase before performing the first filtering step associated to that motion phase and helps the user in filling some fields of the struct.
+The constructor of the struct `LocalizationPhase`
+```
+LocalizationPhase(const LocalizationType type, const double &duration,const double &step_time, MotionGenerator *mg, FakePointCloud *pc, const bool holdDispl = false)    
+```
+requires the type of the phase, the duration, the step time, the motion generator and the fake point cloud. By default the displacement between the reference point and the center of the object is not inherited from the previous phase.
+
+As regards the other fields described above some of them are filled automatically in the method `LocalizerMotion::updateModule` that configures each localization phase before performing the first filtering step associated to that phase.
 In particular 
-- the initial conditions of a phase are set equal to the final conditions of the previous phase;
-- if a motion phase is `LocalizationType::Static` then the displacements are automatically set to 0;
+- the initial conditions of a phase are set equal to the final conditions of the previous phase (this behavior is not true for the first phase added to the localizer);
+- if a motion phase is `LocalizationType::Static` then the displacements `delta_pos` and `delta_yaw` are automatically set to 0;
 - if a motion phase is configured with the `holdDisplFromPrevious` set to `true` then the displacement is copied from the previous phase;
 - if a motion phase is configured with the `holdDisplFromPrevious` set to `false` a new displacement vector __have__ to be specified for that phase and the initial position of the __new__ reference point, expressed in robot reference frame, is automatically calculated taking into account the final yaw attitude of the previous phase.
 

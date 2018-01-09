@@ -340,18 +340,29 @@ bool LocalizerMotion::performLocalization(int &current_phase)
     lp.pc->setPose(pose);
 
     if (lp.type == LocalizationType::Static)
-    {	
+    {
+	// sample cloud in static phase
+	// to simulate vision
 	lp.pc->samplePointCloud(points,
 				observer_origin,
 				lp.num_points);
     }	
     else if (lp.type == LocalizationType::Motion)
+	// get the contact points rotated and translated
+	// during motion phase to simulate contact
 	lp.pc->getPointCloud(points);
 
     // check if there are measurements
     if (points.size() == 0)
     {
 	yError() << "No measurements available from the fake point cloud.";
+	return false;
+    }
+    // check if there are exactly lp.num_points points in the sampled cloud
+    else if(lp.type == LocalizationType::Static &&
+	    points.size() != lp.num_points)
+    {
+	yError() << "Incorrect number of points from the fake point cloud.";
 	return false;
     }
 

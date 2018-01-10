@@ -500,8 +500,7 @@ void LocalizerMotion::configureLocPhase(const int &current_phase)
 								0, 2);
 
 	    // update cur_phase.ref_pos_0
-	    cur_phase.ref_pos_0 = prev_phase.ref_pos_0 +
-		yaw_rot * (center_to_new_disp - center_to_old_disp);
+	    cur_phase.ref_pos_0 += yaw_rot * (center_to_new_disp - center_to_old_disp);
 	}
     }
     if(cur_phase.type == LocalizationType::Static)

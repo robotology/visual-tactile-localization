@@ -300,24 +300,7 @@ void UnscentedParticleFilter::predictionStep(const int &i,
 
     for(size_t j=0; j<2*params.n+1; j++)
     {
-	// for( size_t l=0; l<params.n; l++)
-	// {		
-	//     random[l]=normal_gen.RandnScalar::get(0.0, 1.0);
-	// }
-	    
-	// cholQ=params.Q;
-
-	//since Q is diagonal, chol(Q) is sqrt of its member on diagonal
-	    
-	// for(size_t k=0; k<6; k++)
-	// {
-	//     for( size_t l=0; l<params.n; l++)
-	//     {
-	// 	cholQ(k,l)=sqrt(cholQ(k,l));
-	//     }
-	// }
-	    
-	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j));//+cholQ*random);
+	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j));
 
 	//use system input in the prediction
 	for(size_t k=0; k<3; k++)

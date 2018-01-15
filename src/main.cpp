@@ -70,52 +70,36 @@ int main(int argc, char **argv)
      */
     double step_time = 0.01;
 
-    // static phase 1
     LocalizationPhase static1(LocalizationType::Static,
-			      6, 1, &static_mg, &pc_whole);
+			      3, 1, &static_mg, &pc_whole);
     // set displacement from ref point to center
-    static1.displ[0] = 0.0283;
-    static1.displ[1] = 0.0083;
-    static1.displ[2] = -0.0029;
+    static1.displ[0] = 0.0287;
+    static1.displ[1] = 0.0029;
+    static1.displ[2] = -0.0008;
     // set initial conditions
     static1.ref_pos_0[0] = 0.1;
     static1.ref_pos_0[1] = 0.1;
     static1.yaw_0 = 0.0;
     // set number of points in point cloud
-    static1.num_points = 150;
+    static1.num_points = 100;
 
-    // motion phase 1
     LocalizationPhase motion1(LocalizationType::Motion,
 			      2.5, step_time, &motion_mg,
-			      &pc_contacts_1,true);
+			      &pc_contacts_1, true);
     // set position and angular displacement
-    motion1.delta_pos[0] = 0.2;
-    motion1.delta_yaw = -M_PI/8.0;
+    motion1.delta_pos[0] = 0.3;
+    motion1.delta_yaw = -M_PI / 3.0;
 
-    // static phase 2
-    LocalizationPhase static2(LocalizationType::Static,
-			      6, 1, &static_mg, &pc_whole,
-			      true);
-    static2.num_points = 150;
-
-    // motion phase 2
     LocalizationPhase motion2(LocalizationType::Motion,
 			      2.5, step_time, &motion_mg,
 			      &pc_contacts_2);
     // change reference point
-    motion2.displ[0] = -0.0283;
-    motion2.displ[1] = 0.0083;
-    motion2.displ[2] = -0.0029;
-    // set position and angular displacement	
-    motion2.delta_pos[1] = 0.2;
-    motion2.delta_yaw = - M_PI/8.0;	
-	
-    // static phase 3
-    LocalizationPhase static3(LocalizationType::Static,
-			      6, 1, &static_mg, &pc_whole,
-			      true);
-    // set number of points in point cloud
-    static3.num_points = 150;
+    motion2.displ[0] = -0.0287;
+    motion2.displ[1] = 0.0029;
+    motion2.displ[2] = -0.0008;
+    // set position and angular displacement
+    motion2.delta_pos[0] = -0.3;
+    motion2.delta_yaw = +M_PI / 3.0;
 
     /*
      *
@@ -124,9 +108,7 @@ int main(int argc, char **argv)
     // add phases to the localization experiment
     localizer.addLocPhase(static1);
     localizer.addLocPhase(motion1);
-    localizer.addLocPhase(static2);
     localizer.addLocPhase(motion2);
-    localizer.addLocPhase(static3);
 
     // set the step time
     localizer.setStepTime(step_time);

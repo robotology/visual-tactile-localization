@@ -543,10 +543,13 @@ void LocalizerMotion::configureLocPhase(const int &current_phase)
     {
 	// settings for the motion scenario
 	// the artificial noise has a greater covariance
-	// in the yaw component
-    	Q.setSubvector(0, yarp::sig::Vector(5, 0.000001));
-    	Q[2] = 1.0e-10;
+	// in the x, y and yaw components
+    	Q[0] = 0.00001;
+    	Q[1] = 0.00001;	
+    	Q[2] = 0.00000001;
     	Q[3] = 0.01;
+    	Q[4] = 0.000001;
+    	Q[5] = 0.000001;	
     }
     upf->setQ(Q);	    
 

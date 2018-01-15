@@ -1,5 +1,7 @@
 # visual-tactile-localization with motion scenario
 
+![Example of localization experiment](misc/localization.gif)
+
 The code distributed here provides a reviewed implementation of the **Unscented Particle Filter (UPF)** algorithm for visual-tactile localization.
 
 (The previous __static only__ implementation can be found [here](https://github.com/robotology-playground/tactile-localization/releases/tag/v3.0)).

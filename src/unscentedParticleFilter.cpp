@@ -96,9 +96,9 @@ void UnscentedParticleFilter::initialRandomize()
         x[i].x_corr_prev[0]=yarp::math::Rand::scalar(params.center0[0]-params.radius0[0],params.center0[0]+params.radius0[0]);
         x[i].x_corr_prev[1]=yarp::math::Rand::scalar(params.center0[1]-params.radius0[1],params.center0[1]+params.radius0[1]);
         x[i].x_corr_prev[2]=yarp::math::Rand::scalar(params.center0[2]-params.radius0[2],params.center0[2]+params.radius0[2]);
-        x[i].x_corr_prev[3]=yarp::math::Rand::scalar(-M_PI,M_PI);
-        x[i].x_corr_prev[4]=yarp::math::Rand::scalar(-M_PI,M_PI);
-        x[i].x_corr_prev[5]=yarp::math::Rand::scalar(-M_PI,M_PI);
+        x[i].x_corr_prev[3]=yarp::math::Rand::scalar(0,2*M_PI);
+        x[i].x_corr_prev[4]=yarp::math::Rand::scalar(0,2*M_PI);
+        x[i].x_corr_prev[5]=yarp::math::Rand::scalar(0,2*M_PI);
     }
 }
 

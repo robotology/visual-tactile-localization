@@ -85,7 +85,6 @@ void UnscentedParticleFilter::initializationUPF()
 	x[i].P_corr=params.P0;
 
 	// zero matrices
-	x[i].P_hat.zero();
 	x[i].P_pred.zero();
     }
 }
@@ -94,14 +93,12 @@ void UnscentedParticleFilter::initialRandomize()
 {
     for (size_t i=0; i<x.size(); i++)
     {
-        ParticleUPF &particle=x[i];
-        
-        particle.x_corr[0]=yarp::math::Rand::scalar(params.center0[0]-params.radius0[0],params.center0[0]+params.radius0[0]);
-        particle.x_corr[1]=yarp::math::Rand::scalar(params.center0[1]-params.radius0[1],params.center0[1]+params.radius0[1]);
-        particle.x_corr[2]=yarp::math::Rand::scalar(params.center0[2]-params.radius0[2],params.center0[2]+params.radius0[2]);
-        particle.x_corr[3]=yarp::math::Rand::scalar(0,2*M_PI);
-        particle.x_corr[4]=yarp::math::Rand::scalar(0,M_PI);
-        particle.x_corr[5]=yarp::math::Rand::scalar(0,2*M_PI);           
+        x[i].x_corr_prev[0]=yarp::math::Rand::scalar(params.center0[0]-params.radius0[0],params.center0[0]+params.radius0[0]);
+        x[i].x_corr_prev[1]=yarp::math::Rand::scalar(params.center0[1]-params.radius0[1],params.center0[1]+params.radius0[1]);
+        x[i].x_corr_prev[2]=yarp::math::Rand::scalar(params.center0[2]-params.radius0[2],params.center0[2]+params.radius0[2]);
+        x[i].x_corr_prev[3]=yarp::math::Rand::scalar(-M_PI,M_PI);
+        x[i].x_corr_prev[4]=yarp::math::Rand::scalar(-M_PI,M_PI);
+        x[i].x_corr_prev[5]=yarp::math::Rand::scalar(-M_PI,M_PI);
     }
 }
 
@@ -303,22 +300,22 @@ void UnscentedParticleFilter::predictionStep(const int &i,
 
     for(size_t j=0; j<2*params.n+1; j++)
     {
-	for( size_t l=0; l<params.n; l++)
-	{		
-	    random[l]=normal_gen.RandnScalar::get(0.0, 1.0);
-	}
+	// for( size_t l=0; l<params.n; l++)
+	// {		
+	//     random[l]=normal_gen.RandnScalar::get(0.0, 1.0);
+	// }
 	    
-	cholQ=params.Q;
+	// cholQ=params.Q;
 
 	//since Q is diagonal, chol(Q) is sqrt of its member on diagonal
 	    
-	for(size_t k=0; k<6; k++)
-	{
-	    for( size_t l=0; l<params.n; l++)
-	    {
-		cholQ(k,l)=sqrt(cholQ(k,l));
-	    }
-	}
+	// for(size_t k=0; k<6; k++)
+	// {
+	//     for( size_t l=0; l<params.n; l++)
+	//     {
+	// 	cholQ(k,l)=sqrt(cholQ(k,l));
+	//     }
+	// }
 	    
 	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j));//+cholQ*random);
 
@@ -344,9 +341,10 @@ void UnscentedParticleFilter::predictionStep(const int &i,
     x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
     x[i].x_pred[3]=fmod(x[i].x_pred[3],2*M_PI);
     x[i].x_pred[4]=fmod(x[i].x_pred[4],2*M_PI);
-    x[i].x_pred[5]=fmod(x[i].x_pred[5],2*M_PI);
+    x[i].x_pred[5]=fmod(x[i].x_pred[5],2*M_PI);    
     
     x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
+    
 }
 
 void UnscentedParticleFilter::computePpred(const int &i)
@@ -369,6 +367,7 @@ void UnscentedParticleFilter::computePpred(const int &i)
             x[i].P_pred(j,k)=fmod(x[i].P_pred(j,k),pow(2*M_PI, 2.0));
         }
     }
+
 }
 
 void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
@@ -413,13 +412,13 @@ void UnscentedParticleFilter::correctionStep(const int &i)
     x[i].x_corr[3]=fmod(x[i].x_corr[3],2*M_PI);
     x[i].x_corr[4]=fmod(x[i].x_corr[4],2*M_PI);
     x[i].x_corr[5]=fmod(x[i].x_corr[5],2*M_PI);
-    x[i].P_hat=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
+    x[i].P_corr=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
     
     for(size_t j=3; j<6; j++)
     {
         for(size_t k=3; k<6; k++)
         {
-            x[i].P_hat(j,k)=fmod(x[i].P_hat(j,k),pow(2*M_PI,2.0));
+            x[i].P_corr(j,k)=fmod(x[i].P_corr(j,k),pow(2*M_PI,2.0));
         }
     }
 }
@@ -479,7 +478,7 @@ double UnscentedParticleFilter::multivariateGaussian(const yarp::sig::Vector &x,
     value = exp(-0.5 * tmp(0, 0)) /
 	sqrt(pow(2 * M_PI, x.size()) *
 	     yarp::math::det(covariance));
-
+    
     return value;
 }
 
@@ -507,8 +506,8 @@ void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
     tran_prob = tranProbability(i, i);
 
     // evaluate weights
-    x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob /
-	multivariateGaussian(x[i].x_corr, x[i].x_corr, x[i].P_hat);
+    x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob/
+	multivariateGaussian(x[i].x_corr, x[i].x_corr, x[i].P_corr);
     
     sum+=x[i].weights;
 }
@@ -558,24 +557,21 @@ void UnscentedParticleFilter::resampling()
 void UnscentedParticleFilter::selectionStep(const double &sum_squared)
 {
     double Neff=1.0/sum_squared;
-    
-    if (params.resample_in_first_iters || t >= 3)
-    {	
-	if(Neff < params.N/20.0);
-	    resampling();
-    }
 
-    if (!params.resample_in_first_iters && t < 3)
+    // enable resampling only after params.n_steps_before_resampling;
+    if (t >= params.n_steps_before_resampling)
     {
-	for(size_t j=0;  j<x.size(); j++)
+    	if(Neff < params.n_eff_thr)
 	{
-	    x[j].weights=1.0/params.N;
+    	    resampling();
 	}
     }
-
-    for(size_t i=0; i<x.size(); i++)
+    else
     {
-        x[i].P_corr=x[i].P_hat;
+    	for(size_t j=0;  j<x.size(); j++)
+    	{
+    	    x[j].weights=1.0/params.N;
+    	}
     }
 }
 
@@ -620,6 +616,19 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
         params.n=rf.check("n",yarp::os::Value(6)).asInt();
     yInfo()<<"Number of DoF:"<<params.n;
 
+    // read the Neff threshold
+    params.n_eff_thr=rf.find("nEffThr").asDouble();
+    if (rf.find("nEffThr").isNull())
+        params.n_eff_thr=rf.check("nEffThr",yarp::os::Value(10)).asDouble();
+    yInfo()<<"Neff threshold:"<<params.n_eff_thr;
+
+    // read the number of steps to wait for
+    // before checking Neff and possibly do resampling
+    params.n_steps_before_resampling=rf.find("nStepsBefRsmpl").asInt();
+    if (rf.find("nStepsBefRsmpl").isNull())
+        params.n_steps_before_resampling=rf.check("nStepsBefRsmpl",yarp::os::Value(10)).asInt();
+    yInfo()<<"Steps before resamping:"<<params.n_steps_before_resampling;
+
     // read the parameter beta for the Unscented Transform
     params.beta=rf.find("beta").asDouble();
     if (rf.find("beta").isNull())
@@ -641,12 +650,6 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     // compute the parameter lambda for the Unscented Transform
     params.lambda=pow(params.alpha,2.0)*(6+params.kappa)-6;
     yInfo()<<"Unscented Transform Lambda:"<<params.lambda;
-
-    // read the flag resampleInFirstIters
-    params.resample_in_first_iters=rf.find("resampleInFirstIters").asBool();
-    if (rf.find("resampleInFirstIters").isNull())
-        params.resample_in_first_iters=rf.check("resampleInFirstIters",yarp::os::Value(true)).asBool();
-    yInfo()<<"UPF resample in first iterations:"<<params.resample_in_first_iters;
     
     // read the ideal measurement equation enabler
     params.use_ideal_meas_eqn=rf.find("useIdealMeasEqn").asBool();
@@ -804,13 +807,17 @@ void UnscentedParticleFilter::step()
     // update system input
     last_input = input;
 
-    // update previous value of x_corr
-    for (size_t i=0; i<x.size(); i++)
-    {
-	x[i].x_corr_prev = x[i].x_corr;
-    }
     // update previous value of Q
     params.Q_prev = params.Q;
+
+    for (size_t i=0; i<x.size(); i++)
+    {
+	// update previous value of x_corr	
+	x[i].x_corr_prev = x[i].x_corr;
+
+	// update the weights for the next step    
+    	x[i].prev_weights = x[i].weights;
+    }
 }
 
 yarp::sig::Vector UnscentedParticleFilter::getEstimate()
@@ -834,12 +841,6 @@ yarp::sig::Vector UnscentedParticleFilter::getEstimate()
 	// store probability
         probability_per_particle.push_back(meas_likelihood * sum_tran_probability);
     }
-
-    // update the weights for the next step
-    for(size_t i=0; i<x.size(); i++)
-    {
-	x[i].prev_weights = x[i].weights;
-    }    
 
     // find arg max
     double max_prob = 0.0;

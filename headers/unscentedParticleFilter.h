@@ -37,8 +37,13 @@ struct ParametersUPF
     // number of DoFs
     int n;
 
-    // whether to resample also in the first iterations or not
-    bool resample_in_first_iters;
+    // threshold for check on Neff
+    double n_eff_thr;
+
+    // number of steps to wait for
+    // before checking for Neff and possibly use
+    // the resampling mechanism
+    int n_steps_before_resampling;
 
     // whether to use the ideal measurement equation or not
     bool use_ideal_meas_eqn;
@@ -97,7 +102,6 @@ struct ParticleUPF
     yarp::sig::Vector x_bar;
     yarp::sig::Matrix A;
     yarp::sig::Matrix P_pred_aux;
-    yarp::sig::Matrix P_hat;
     
     // UKF Kalman gain
     yarp::sig::Matrix K;
@@ -116,7 +120,6 @@ struct ParticleUPF
 	            x_tilde(6,1),
 	            x_bar(6,0.0),
 	            P_corr(6,6),
-	            P_hat(6,6),
 	            P_pred(6,6),
 	            P_pred_aux(6,6),
 	            XsigmaPoints_corr(6,13),

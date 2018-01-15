@@ -399,7 +399,7 @@ void UnscentedParticleFilter::correctionStep(const int &i)
     {
         for(size_t k=3; k<6; k++)
         {
-            x[i].P_corr(j,k)=fmod(x[i].P_corr(j,k),pow(2*M_PI,2.0));
+            yAssert(x[i].P_corr(j,k) <= pow(2*M_PI,2));
         }
     }
 }

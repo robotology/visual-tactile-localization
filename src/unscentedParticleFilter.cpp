@@ -643,7 +643,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     // read the values of the system noise covariance matrix
     yarp::sig::Vector diagQ;
     diagQ.resize(params.n,1);
-    check=readDiagonalMatrix("Q",diagQ,params.n);
+    check=readDiagonalMatrix("Q0",diagQ,params.n);
     if(!check)
     {
         diagQ[0]=rf.check("Q1",yarp::os::Value(0.0001)).asDouble();
@@ -657,7 +657,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     params.Q.resize(params.n,params.n);
     params.Q.diagonal(diagQ);
     params.Q_prev = params.Q;
-    yInfo()<<"UKF Q:"<<params.Q.toString();
+    yInfo()<<"UKF Q0:"<<params.Q.toString();
 
     // read the noise scalar variance R
     params.R=rf.find("R").asDouble();

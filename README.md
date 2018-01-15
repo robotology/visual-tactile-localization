@@ -48,7 +48,8 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `N`, number of particles;
 - `n`, number of DoFs;
 - `R`, scalar measurement noise variance;
-- `P0`, 6-dimensional covariance matrix of the initial state as a list of six doubles;
+- `P0`, 6-dimensional diagonal covariance matrix of the initial state as a list of six doubles;
+- `Q0`, 6-dimensional diagonal covariance matrix of the initial system noise vector;
 - `alpha`, Unscented Transform parameter;
 - `kappa`, Unscented Transform parameter;
 - `beta`, Unscented Transform parameter;

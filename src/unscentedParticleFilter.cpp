@@ -304,7 +304,7 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 	//use system input in the prediction
 	for(size_t k=0; k<3; k++)
 	    x[i].XsigmaPoints_pred(k,j) += last_input[k];
-	    
+ 
 	x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
 	x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
 	x[i].XsigmaPoints_pred(5,j)=fmod(x[i].XsigmaPoints_pred(5,j),2*M_PI);
@@ -340,16 +340,15 @@ void UnscentedParticleFilter::computePpred(const int &i)
         x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
 	
     }
-    x[i].P_pred=x[i].P_pred_aux + params.Q;
-    
+    x[i].P_pred=x[i].P_pred_aux + params.Q_prev;
+
     for(size_t j=3; j<6; j++)
     {
         for(size_t k=3; k<6; k++)
         {
-            x[i].P_pred(j,k)=fmod(x[i].P_pred(j,k),pow(2*M_PI, 2.0));
+	    yAssert(x[i].P_pred(j,k) <= pow(2*M_PI,2));
         }
     }
-
 }
 
 void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)

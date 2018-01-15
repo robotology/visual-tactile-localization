@@ -52,7 +52,8 @@ where `$CONF_FILE_PATH` is the path of a configuration file containing the follo
 - `alpha`, Unscented Transform parameter;
 - `kappa`, Unscented Transform parameter;
 - `beta`, Unscented Transform parameter;
-- `resampleInFirstIters`, whether to resample also in the first two iterations of the algorithm (true/false);
+- `nEffThr`, threshold that is compared to Neff to decide whether to perform resampling or not;
+- `nStepsBefRsmpl`, number of steps to wait for before checking for Neff and possibly perform resampling;
 - `useIdealMeasEqn`, whether to use the ideal measurement equation or not (true/false);
 - `observerOrigin`, a 3D tuple containing the origin of the observer and used to generate a more realistic point cloud;
 - `useCenterVelocity`, whether to use or not the velocity of the center of the object as input to the filter (see the section [Integration](#integration) for more details on this setting);

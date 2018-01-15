@@ -289,8 +289,7 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &k, const int
     return out;
 }
 
-void UnscentedParticleFilter::predictionStep(const int &i,
-					     yarp::math::RandnScalar &normal_gen)
+void UnscentedParticleFilter::predictionStep(const int &i)
 {
     yarp::sig::Vector random;
     random.resize(params.n,0.0);
@@ -760,17 +759,13 @@ void UnscentedParticleFilter::step()
     double sum=0.0;
     double sum_squared=0.0;
 
-    // normal distribution generator
-    yarp::math::RandnScalar normal_gen;
-    normal_gen.init();
-
     // process all the particles
     for(size_t i=0; i<x.size(); i++ )
     {
         resizeParticle(i);
         initializeUKFMatrix(i);
         computeSigmaPoints(i);
-     	predictionStep(i, normal_gen);
+     	predictionStep(i);
         computePpred(i);
         computeCorrectionMatrix(i);
         x[i].K=x[i].Pxy*luinv(x[i].Pyy);

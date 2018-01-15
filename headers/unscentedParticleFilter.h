@@ -258,9 +258,9 @@ private:
 
     /** 
      * Execute the prediction step required within the UPF.
-     * @param normal_gen a previously initialized @see RandnScalar normal distribution generator
+     * @param i index of the current particle
      */
-    void predictionStep(const int &i, yarp::math::RandnScalar &normal_gen);
+    void predictionStep(const int &i);
     
     /**
      * Compute the predicted state covariance matrix.

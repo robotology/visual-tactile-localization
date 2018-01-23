@@ -19,6 +19,7 @@ With respect to the original implementation the reviewed implementation offers:
 ## Requirements
 - [YARP](http://www.yarp.it/)
 - [CGAL](https://www.cgal.org/)
+- [libcgal-qt5-11]
 - [VCG](http://vcg.isti.cnr.it/vcglib/) ([provided](headers/vcglib) within this repository)
 
 ## How to build (Linux)

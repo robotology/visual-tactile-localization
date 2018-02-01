@@ -41,16 +41,12 @@ include(CGAL_CreateSingleSourceCGALProgram)
 set(headers
   headers/geometryCGAL.h
   headers/unscentedParticleFilter.h
-  headers/localizer.h
-  headers/localizer-motion.h
-  headers/motionGenerator.h
-  headers/fakePointCloud.h)
+  headers/localizer-module.h
+  headers/filterData.h)
 set(sources
   src/unscentedParticleFilter.cpp
-  src/localizer.cpp
-  src/localizer-motion.cpp
-  src/motionGenerator.cpp
-  src/fakePointCloud.cpp
+  src/localizer-module.cpp
+  src/filterData.cpp
   src/main.cpp) 
 
 add_executable(${PROJECTNAME} ${headers} ${sources})

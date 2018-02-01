@@ -733,10 +733,20 @@ void UnscentedParticleFilter::setNewInput(const yarp::sig::Vector &in)
     input = in;
 }
 
-void UnscentedParticleFilter::setNewMeasure(const Measure& m)
+void UnscentedParticleFilter::setNewMeasure(const std::vector<yarp::sig::Vector>& m)
 {
     // set the new measure
-    curr_meas = m;
+    curr_meas.clear();
+    for(size_t i=0; i<m.size(); i++)
+    {
+	// each measure is a std::vector of yarp::sig::Vector vectors
+	// each Vector is a point
+	const yarp::sig::Vector &point = m[i];
+
+	// convert to a CGAL point
+	Point p(point[0], point[1], point[2]);
+	curr_meas.push_back(p);
+    }				
 }
 
 void UnscentedParticleFilter::setRealPose(const yarp::sig::Vector &pose)

@@ -365,9 +365,9 @@ public:
     
     /**
      * Provide a new measurement to the algorithm.
-     * @param m a std::vector of Point points
+     * @param m a std::vector of yarp::sig::Vector points
      */
-    void setNewMeasure(const Measure &m);
+    void setNewMeasure(const std::vector<yarp::sig::Vector>& m);
 
     /**
      * Provide the current real position.

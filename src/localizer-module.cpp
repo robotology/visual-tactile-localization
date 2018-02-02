@@ -73,7 +73,8 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     this->rf = &rf;
 
     // open the port
-    port_in.open("/filterdata:i");
+    // TODO: take port name from configuration file
+    port_in.open("/upf-localizer:i");
 
     // initialize system noise covariance matrices
     // TODO: take these from the configuration file

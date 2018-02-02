@@ -77,7 +77,15 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 
     // open the port
     // TODO: take port name from configuration file
-    port_in.open("/upf-localizer:i");
+    bool ok_port = port_in.open("/upf-localizer:i");
+
+    // stop the configuratio if the port open failed
+    if (!ok_port)
+    {
+	yError() << "LocalizerModule::Configure error:"
+	         << "failure in opening input port /upf-localizer:i";
+	return false;
+    }
 
     // prepare properties for the PolyDriver
     yarp::os::Property propTfClient;    

@@ -686,7 +686,8 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
         yError()<<"model file not provided!";
         return false;
     }
-    std::string modelFileName=rf.find("modelFile").asString().c_str();
+    std::string modelFileName=rf.findFile("modelFile");
+
     // read the polyhedron from a .OFF file
     std::ifstream modelFile(modelFileName.c_str());
     if (!modelFile.is_open())

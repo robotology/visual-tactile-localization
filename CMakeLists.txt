@@ -10,34 +10,41 @@
 # author: Nicola Piga <nicolapiga@gmail.com>
 #
 
-cmake_minimum_required(VERSION 3.1)
+# require minimum cmake version
+cmake_minimum_required(VERSION 2.8.9)
 
-set(PROJECTNAME localizer)
-project(${PROJECTNAME})
+# C++11
+set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
-set (CMAKE_CXX_STANDARD 11)
+# produce the cmake var PROJECT_NAME
+project(upf-localizer)
 
-find_package(YARP)
-find_package(ICUB)
-find_package(ICUBcontrib)
-list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
-list(APPEND CMAKE_MODULE_PATH ${ICUB_MODULE_PATH})
-list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
+# find packages
+find_package(YARP REQUIRED)
+find_package(ICUBcontrib REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS)
-find_package(Boost REQUIRED)
 
+# extend the current search path used by cmake to load
+# yarp and icubcontrib helpers
+list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
+
+# include helpers
 include(YarpInstallationHelpers)
 include(ICUBcontribHelpers)
 include(ICUBcontribOptions)
+
+# CGAL
+include(${CGAL_USE_FILE})
+
+# specify to install in $ICUBcontrib_DIR/bin
 icubcontrib_set_default_prefix()
 
-include_directories(${PROJECT_SOURCE_DIR}/headers/vcglib)
-include_directories(${YARP_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR} )
-include(${CGAL_USE_FILE})
-include(CGAL_CreateSingleSourceCGALProgram)
+# include directories
+include_directories(${YARP_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR})
 
+# set headers and sources
 set(headers
   headers/geometryCGAL.h
   headers/unscentedParticleFilter.h
@@ -49,7 +56,18 @@ set(sources
   src/filterData.cpp
   src/main.cpp) 
 
-add_executable(${PROJECTNAME} ${headers} ${sources})
-target_link_libraries(${PROJECTNAME} ${YARP_LIBRARIES})
-install(TARGETS ${PROJECTNAME} DESTINATION bin)
+# executable
+add_executable(${PROJECT_NAME} ${headers} ${sources})
+target_link_libraries(${PROJECT_NAME} ${YARP_LIBRARIES})
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+
+# configuration file for YCB Mustard
+set (confMustard ${PROJECT_SOURCE_DIR}/config/config.ini)
+yarp_install(FILES ${confMustard} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization)
+
+# mesh file for YCB Mustard
+set (meshMustard ${PROJECT_SOURCE_DIR}/models/mustard.off)
+yarp_install(FILES ${meshMustard} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+
+# add uninstall target
 icubcontrib_add_uninstall_target()

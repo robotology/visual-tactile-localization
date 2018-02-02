@@ -14,6 +14,9 @@
 
 // yarp
 #include <yarp/os/BufferedPort.h>
+#include <yarp/dev/ControlBoardInterfaces.h>
+#include <yarp/dev/IFrameTransform.h>
+#include <yarp/dev/PolyDriver.h>
 
 // std
 #include <vector>
@@ -75,6 +78,12 @@ private:
 
     // port where new data is received
     yarp::os::BufferedPort<yarp::sig::FilterData> port_in;
+
+    // PolyDriver required to access a yarp::dev::IFrameTransform
+    yarp::dev::PolyDriver m_drvTransformClient;
+
+    // pointer to yarp::dev::IFrameTransform view of the PolyDriver
+    yarp::dev::IFrameTransform* m_tfClient;
 
     /*
      * Load the required parameters using a

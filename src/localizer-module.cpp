@@ -79,6 +79,28 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // TODO: take port name from configuration file
     port_in.open("/upf-localizer:i");
 
+    // prepare properties for the PolyDriver
+    yarp::os::Property propTfClient;    
+    propTfClient.put("device", "transformClient");
+    propTfClient.put("local", "/upf-localizer/transformClient");
+    propTfClient.put("remote", "/transformServer");
+    propTfClient.put("period", getPeriod() * 1000);
+
+    // open the driver and obtain a a IFrameTransform view
+    m_tfClient = nullptr;    
+    bool ok_drv = m_drvTransformClient.open(propTfClient);
+    ok_drv = ok_drv && m_drvTransformClient.view(m_tfClient) && m_tfClient != nullptr;
+    
+    // stop configuration if the driver open failed
+    // or the view retrieval failed
+    // or the IFrameTransform pointer is not valid
+    if (!ok_drv)
+    {
+	yError() << "LocalizerModule::Configure error:"
+	         << "failure in opening iFrameTransform interface";
+	return false;
+    }
+
     // initialize system noise covariance matrices
     // TODO: take these from the configuration file
     Q_vision.setSubvector(0, yarp::sig::Vector(3, 0.0001));

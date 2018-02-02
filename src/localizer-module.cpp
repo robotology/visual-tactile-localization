@@ -28,6 +28,9 @@ bool LocalizerModule::loadParameters(const yarp::os::ResourceFinder &rf)
 
 void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 {
+    // increment number of steps performed
+    n_steps++;
+    
     // extract tag,
     // i.e. VIS for data from vision or
     // TAC for tactile data

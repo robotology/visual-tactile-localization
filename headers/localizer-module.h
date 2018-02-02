@@ -99,6 +99,12 @@ private:
      */
     void performFiltering(const yarp::sig::FilterData &data);
 
+    /*
+     * Publish the last estimate available
+     * over a FrameTransformServer
+     */
+    void publishEstimate();
+
 public:
     LocalizerModule() : last_estimate(6, 0.0),
             	        Q_vision(6, 0.0),

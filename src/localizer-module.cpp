@@ -13,6 +13,7 @@
 #include <yarp/os/all.h>
 #include <yarp/math/Math.h>
 #include <yarp/os/Vocab.h>
+#include <yarp/math/FrameTransform.h>
 
 //
 #include "headers/localizer-module.h"
@@ -68,6 +69,26 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
     last_estimate = upf.getEstimate();
     // t_f = yarp::os::SystemClock::nowSystem();
     // diff = t_f - t_i;
+}
+
+void LocalizerModule::publishEstimate()
+{    
+    // convert the estimated pose to a homogeneous transformation matrix
+    yarp::math::FrameTransform pose;
+    pose.transFromVec(last_estimate[0],
+		      last_estimate[1],
+		      last_estimate[2]);
+
+    // estimate is saved as x-y-z-Y-P-R
+    pose.rotFromRPY(last_estimate[5],
+		    last_estimate[4],
+		    last_estimate[3]);
+    
+    // Set a new transform
+    // TODO: read source and target from the configuration file
+    m_tfClient->setTransform("/mustard/estimate/frame",
+			     "/robot",
+			     pose.toMatrix());
 }
 
 bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
@@ -150,6 +171,10 @@ bool LocalizerModule::updateModule()
     // if new data available perform a filtering step
     if (data != YARP_NULLPTR)
 	performFiltering(*data);
+
+    // if an estimate is available publish it
+    if (n_steps > 0)
+	publishEstimate();
 
     return true;
 }

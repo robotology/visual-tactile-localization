@@ -86,7 +86,7 @@ void LocalizerModule::publishEstimate()
     
     // Set a new transform
     // TODO: read source and target from the configuration file
-    m_tfClient->setTransform("/mustard/estimate/frame",
+    tfClient->setTransform("/mustard/estimate/frame",
 			     "/robot",
 			     pose.toMatrix());
 }
@@ -116,9 +116,9 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     propTfClient.put("period", getPeriod() * 1000);
 
     // open the driver and obtain a a IFrameTransform view
-    m_tfClient = nullptr;    
-    bool ok_drv = m_drvTransformClient.open(propTfClient);
-    ok_drv = ok_drv && m_drvTransformClient.view(m_tfClient) && m_tfClient != nullptr;
+    tfClient = nullptr;    
+    bool ok_drv = drvTransformClient.open(propTfClient);
+    ok_drv = ok_drv && drvTransformClient.view(tfClient) && tfClient != nullptr;
     
     // stop configuration if the driver open failed
     // or the view retrieval failed

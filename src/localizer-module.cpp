@@ -27,7 +27,7 @@ bool LocalizerModule::loadParameters(const yarp::os::ResourceFinder &rf)
     return true;
 }
 
-void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
+bool LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 {
     // increment number of steps performed
     n_steps++;
@@ -39,9 +39,13 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 
     // extract the measure
     data.points(meas);
+    if (meas.size() == 0)
+	return false;
 
     // extract the input
     data.inputs(input);
+    if (input.size() == 0)
+	return false;
 
     // set the appropriate noise covariance matrix
     switch(tag)
@@ -69,6 +73,8 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
     last_estimate = upf.getEstimate();
     // t_f = yarp::os::SystemClock::nowSystem();
     // diff = t_f - t_i;
+
+    return true;
 }
 
 void LocalizerModule::publishEstimate()
@@ -87,8 +93,8 @@ void LocalizerModule::publishEstimate()
     // Set a new transform
     // TODO: read source and target from the configuration file
     tfClient->setTransform("/mustard/estimate/frame",
-			     "/robot",
-			     pose.toMatrix());
+			   "/iCub/frame",
+			   pose.toMatrix());
 }
 
 bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
@@ -100,13 +106,16 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // TODO: take port name from configuration file
     bool ok_port = port_in.open("/upf-localizer:i");
 
-    // stop the configuratio if the port open failed
+    // stop the configuration if the port open failed
     if (!ok_port)
     {
 	yError() << "LocalizerModule::Configure error:"
 	         << "failure in opening input port /upf-localizer:i";
 	return false;
     }
+
+    // set FIFO policy
+    port_in.setStrict();
 
     // prepare properties for the PolyDriver
     yarp::os::Property propTfClient;    
@@ -155,7 +164,8 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 
 double LocalizerModule::getPeriod()
 {
-    return 0.05;
+    // TODO: take from the config
+    return 0.02;
 }
 
 bool LocalizerModule::updateModule()
@@ -166,13 +176,17 @@ bool LocalizerModule::updateModule()
 
     // try to read data from the port
     bool should_wait = false;
-    yarp::sig::FilterData *data = port_in.read(should_wait);
-
+    data = port_in.read(should_wait);
+        
     // if new data available perform a filtering step
     if (data != YARP_NULLPTR)
-	performFiltering(*data);
+	if (!performFiltering(*data))
+	{
+	    yError() << "LocalizerModule: Error while performing filtering step";
+	    return false;
+	}
 
-    // if an estimate is available publish it
+    // publish the last estimate available
     if (n_steps > 0)
 	publishEstimate();
 

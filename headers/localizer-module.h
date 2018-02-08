@@ -78,12 +78,13 @@ private:
 
     // port where new data is received
     yarp::os::BufferedPort<yarp::sig::FilterData> port_in;
+    yarp::sig::FilterData* data;    
 
     // PolyDriver required to access a yarp::dev::IFrameTransform
-    yarp::dev::PolyDriver m_drvTransformClient;
+    yarp::dev::PolyDriver drvTransformClient;
 
     // pointer to yarp::dev::IFrameTransform view of the PolyDriver
-    yarp::dev::IFrameTransform* m_tfClient;
+    yarp::dev::IFrameTransform* tfClient;
 
     /*
      * Load the required parameters using a
@@ -97,7 +98,7 @@ private:
      * Perform a filtering step using new data
      * @param data yarp::sig::FilterData data
      */
-    void performFiltering(const yarp::sig::FilterData &data);
+    bool performFiltering(const yarp::sig::FilterData &data);
 
     /*
      * Publish the last estimate available

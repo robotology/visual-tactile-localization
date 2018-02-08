@@ -155,9 +155,8 @@ private:
     // current real pose
     yarp::sig::Vector real_pose;
 
-    // new and last system input
+    // system input
     yarp::sig::Vector input;
-    yarp::sig::Vector last_input;
 
     // parameters of the UPF
     ParametersUPF params;

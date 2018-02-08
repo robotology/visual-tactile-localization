@@ -303,7 +303,7 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 
 	//use system input in the prediction
 	for(size_t k=0; k<3; k++)
-	    x[i].XsigmaPoints_pred(k,j) += last_input[k];
+	    x[i].XsigmaPoints_pred(k,j) += input[k];
  
 	x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
 	x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
@@ -468,7 +468,7 @@ double UnscentedParticleFilter::tranProbability(const int &i,
 {
     // evaluate transition probability
     yarp::sig::Vector mean = x[j].x_corr_prev;
-    mean.setSubvector(0, mean.subVector(0,2) + last_input);
+    mean.setSubvector(0, mean.subVector(0,2) + input);
 
     return multivariateGaussian(x[i].x_corr, mean, params.Q_prev);
 }
@@ -717,7 +717,6 @@ void UnscentedParticleFilter::init()
     t=0;
 
     // clear system input
-    last_input.resize(3, 0.0);
     input.resize(3, 0.0);
 
     // initialize particles and sample from initial search region
@@ -791,9 +790,6 @@ void UnscentedParticleFilter::step()
 
     // resampling strategies
     selectionStep(sum_squared);
-
-    // update system input
-    last_input = input;
 
     // update previous value of Q
     params.Q_prev = params.Q;

@@ -197,4 +197,7 @@ bool LocalizerModule::close()
 {
     // close the port
     port_in.close();
+
+    // close the driver
+    drvTransformClient.close();
 }

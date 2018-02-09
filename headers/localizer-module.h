@@ -81,10 +81,10 @@ private:
     yarp::sig::FilterData* data;    
 
     // PolyDriver required to access a yarp::dev::IFrameTransform
-    yarp::dev::PolyDriver drvTransformClient;
+    yarp::dev::PolyDriver drv_transform_client;
 
     // pointer to yarp::dev::IFrameTransform view of the PolyDriver
-    yarp::dev::IFrameTransform* tfClient;
+    yarp::dev::IFrameTransform* tf_client;
 
     /*
      * Load the required parameters using a

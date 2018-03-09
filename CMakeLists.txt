@@ -61,13 +61,17 @@ add_executable(${PROJECT_NAME} ${headers} ${sources})
 target_link_libraries(${PROJECT_NAME} ${YARP_LIBRARIES})
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
-# configuration file for YCB Mustard
+# configuration file
 set (confMustard ${PROJECT_SOURCE_DIR}/config/config.ini)
 yarp_install(FILES ${confMustard} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization)
 
 # mesh file for YCB Mustard
 set (meshMustard ${PROJECT_SOURCE_DIR}/models/mustard.off)
 yarp_install(FILES ${meshMustard} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+
+# mesh file for box
+set (meshBox ${PROJECT_SOURCE_DIR}/models/box.off)
+yarp_install(FILES ${meshBox} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
 
 # output files folder with empty placeholder
 set (outputDraft ${PROJECT_SOURCE_DIR}/output/empty)

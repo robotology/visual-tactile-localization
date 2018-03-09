@@ -22,7 +22,7 @@
 
 using namespace yarp::math;
 
-bool LocalizerModule::loadParameters(const yarp::os::ResourceFinder &rf)
+bool LocalizerModule::loadParameters()
 {
     return true;
 }
@@ -100,6 +100,9 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 {
     // save reference to resource finder
     this->rf = &rf;
+
+    // load parameters from the configuration file
+    loadParameters();
 
     // open the port
     bool ok_port = port_in.open(input_port_name);

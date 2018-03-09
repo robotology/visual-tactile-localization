@@ -90,10 +90,9 @@ private:
     /*
      * Load the required parameters using a
      * previously instantiated @see Resource Finder.
-     * @param rf a previously instantiated @see Resource Finder
      * @return true/false depending on the outcome
      */
-    bool loadParameters(const yarp::os::ResourceFinder &rf);
+    bool loadParameters();
 
     /*
      * Perform a filtering step using new data

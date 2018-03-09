@@ -24,7 +24,7 @@
 #include "headers/filterData.h"
 #include "headers/unscentedParticleFilter.h"
 
-/** 
+/**
  *  Results of the algorithm.
  */
 struct Results
@@ -32,7 +32,7 @@ struct Results
     // real pose
     yarp::sig::Vector real;
 
-    // estimated pose    
+    // estimated pose
     yarp::sig::Vector estimate;
 
     // execution time of filtering step
@@ -45,7 +45,7 @@ struct Results
 	        estimate(6, 0.0) {};
 };
 
-/** 
+/**
  *  This class is the implementation of an Online UPF based localizer algorithm.
  */
 class LocalizerModule : public yarp::os::RFModule
@@ -78,7 +78,8 @@ private:
 
     // port where new data is received
     yarp::os::BufferedPort<yarp::sig::FilterData> port_in;
-    yarp::sig::FilterData* data;    
+    yarp::sig::FilterData* data;
+    std::string input_port_name;
 
     // PolyDriver required to access a yarp::dev::IFrameTransform
     yarp::dev::PolyDriver drv_transform_client;
@@ -120,7 +121,7 @@ public:
      * Return the module period.
      */
     double getPeriod() override;
-    
+
     /*
      * Define the behavior of this module.
      */

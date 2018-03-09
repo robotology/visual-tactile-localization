@@ -91,9 +91,8 @@ void LocalizerModule::publishEstimate()
 		    last_estimate[3]);
     
     // Set a new transform
-    // TODO: read source and target from the configuration file
-    tf_client->setTransform("/mustard/estimate/frame",
-			   "/iCub/frame",
+    tf_client->setTransform(target_frame_name,
+			   source_frame_name,
 			   pose.toMatrix());
 }
 
@@ -103,8 +102,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     this->rf = &rf;
 
     // open the port
-    // TODO: take port name from configuration file
-    bool ok_port = port_in.open("/upf-localizer:i");
+    bool ok_port = port_in.open(input_port_name);
 
     // stop the configuration if the port open failed
     if (!ok_port)

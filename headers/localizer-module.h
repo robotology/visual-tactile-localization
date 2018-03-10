@@ -14,7 +14,8 @@
 
 // yarp
 #include <yarp/os/BufferedPort.h>
-#include <yarp/dev/ControlBoardInterfaces.h>
+#include <yarp/os/RpcServer.h>
+#include <yarp/os/Bottle.h>
 #include <yarp/dev/IFrameTransform.h>
 #include <yarp/dev/PolyDriver.h>
 
@@ -87,6 +88,16 @@ private:
     // pointer to yarp::dev::IFrameTransform view of the PolyDriver
     yarp::dev::IFrameTransform* tf_client;
 
+    // source and target frame names
+    std::string source_frame_name;
+    std::string target_frame_name;
+
+    // rpc server
+    yarp::os::RpcServer rpc_port;
+
+    // rpc server port name
+    std::string rpc_port_name;
+
     /*
      * Load the required parameters using a
      * previously instantiated @see Resource Finder.
@@ -105,6 +116,14 @@ private:
      * over a FrameTransformServer
      */
     void publishEstimate();
+
+    /*
+     * Rpc server callback
+     * @param command the command received
+     * @param reply the reply from the server
+     * @return true/false on success/failure
+     */
+    bool respond(const yarp::os::Bottle &command, yarp::os::Bottle &reply);
 
 public:
     LocalizerModule() : last_estimate(6, 0.0),

@@ -118,6 +118,14 @@ private:
     void publishEstimate();
 
     /*
+     * Retrieve the ground truth coming from the
+     * simulation environment
+     * @param pose the ground truth pose of the object
+     * @return true/false on sucess
+     */
+    bool retrieveGroundTruth(yarp::sig::Vector &pose);
+
+    /*
      * Rpc server callback
      * @param command the command received
      * @param reply the reply from the server

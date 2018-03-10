@@ -116,6 +116,34 @@ void LocalizerModule::publishEstimate()
 			   pose.toMatrix());
 }
 
+bool LocalizerModule::retrieveGroundTruth(yarp::sig::Vector &pose)
+{
+    // Get the pose of the root frame of the robot
+    // TODO: get source and target from configuration file
+    yarp::sig::Matrix inertialToRobot(4,4);
+    std::string source = "/iCub/frame";
+    std::string target = "/box_alt/frame";
+
+    // Get the transform
+    if (!tf_client->getTransform(target, source, inertialToRobot))
+	return false;
+
+    pose.resize(6);
+
+    // Extract position and ZXY euler angles
+    yarp::math::FrameTransform frame;
+    frame.fromMatrix(inertialToRobot);
+
+    yarp::math::FrameTransform::Translation_t &pos = frame.translation;
+    pose[0] = pos.tX;
+    pose[1] = pos.tY;
+    pose[2] = pos.tZ;
+
+    pose.setSubvector(3, frame.getRPYRot());
+
+    return true;
+}
+
 bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle &reply)
 {
     std::string cmd = command.get(0).asString();
@@ -230,6 +258,9 @@ bool LocalizerModule::updateModule()
     // check if the module should stop
     if (isStopping())
 	return false;
+
+    // try to get the ground truth
+
 
     // try to read data from the port
     bool should_wait = false;

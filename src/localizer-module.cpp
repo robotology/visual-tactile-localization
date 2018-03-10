@@ -1,3 +1,4 @@
+
 /******************************************************************************
  *                                                                            *
  * Copyright (C) 2017 Fondazione Istituto Italiano di Tecnologia (IIT)        *
@@ -168,6 +169,10 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
     }
     else if (cmd == "reset")
     {
+	// reset the filter
+	upf.init();
+
+	reply.addString("Filter reset successful.");
     }
     else
 	// the father class already handles the "quit" command

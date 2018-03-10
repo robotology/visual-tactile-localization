@@ -89,11 +89,25 @@ bool LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
     upf.setNewMeasure(meas);
 
     // step and estimate
-    // t_i = yarp::os::SystemClock::nowSystem();
+    // using time of simulated environment
+    // in case env variable YARP_CLOCK is set
+    t_i = yarp::os::Time::now();
     upf.step();
     last_estimate = upf.getEstimate();
-    // t_f = yarp::os::SystemClock::nowSystem();
-    // diff = t_f - t_i;
+    t_f = yarp::os::Time::now();
+    exec_time = t_f - t_i;
+
+    // if requested by the user store
+    // the data associated to this filtering step
+    storage_on_mutex.lock();
+
+    if (storage_on)
+	storeData(last_ground_truth,
+		  last_estimate,
+		  input[0],
+		  exec_time);
+
+    storage_on_mutex.unlock();
 
     return true;
 }
@@ -145,6 +159,29 @@ bool LocalizerModule::retrieveGroundTruth(yarp::sig::Vector &pose)
     return true;
 }
 
+void LocalizerModule::resetStorage()
+{
+    // reset internal storage
+    storage.clear();
+}
+
+void LocalizerModule::storeData(const yarp::sig::Vector &ground_truth,
+				const yarp::sig::Vector &estimate,
+				const yarp::sig::Vector &current_input,
+				const double &exec_time)
+{
+    Data d;
+
+    // populate
+    d.ground_truth = ground_truth;
+    d.estimate = estimate;
+    d.input = current_input;
+    d.exec_time = exec_time;
+
+    // add to storage
+    storage.push_back(d);
+}
+
 bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle &reply)
 {
     std::string cmd = command.get(0).asString();
@@ -160,9 +197,23 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
     }
     else if (cmd == "storage-on")
     {
+	// change flag
+	storage_on_mutex.lock();
+	storage_on = false;
+	storage_on_mutex.unlock();
+
+	resetStorage();
+
+	reply.addString("Storage enabled succesfully.");
     }
     else if (cmd == "storage-off")
     {
+	// change flag
+	storage_on_mutex.lock();
+	storage_on = false;
+	storage_on_mutex.unlock();
+
+	reply.addString("Storage disabled succesfully.");
     }
     else if (cmd == "storage-save")
     {
@@ -244,6 +295,10 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 
     // reset the number of steps performed
     n_steps = 0;
+
+    // reset storage
+    storage_on = false;
+    resetStorage();
 
     // start rpc server
     rpc_port.open(rpc_port_name);

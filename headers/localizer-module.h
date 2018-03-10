@@ -16,6 +16,7 @@
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/RpcServer.h>
 #include <yarp/os/Bottle.h>
+#include <yarp/os/Mutex.h>
 #include <yarp/dev/IFrameTransform.h>
 #include <yarp/dev/PolyDriver.h>
 
@@ -25,16 +26,16 @@
 #include "headers/filterData.h"
 #include "headers/unscentedParticleFilter.h"
 
-/**
- *  Results of the algorithm.
- */
-struct Results
+struct Data
 {
-    // real pose
-    yarp::sig::Vector real;
+    // ground truth pose
+    yarp::sig::Vector ground_truth;
 
     // estimated pose
     yarp::sig::Vector estimate;
+
+    // current input
+    yarp::sig::Vector input;
 
     // execution time of filtering step
     double exec_time;
@@ -42,8 +43,8 @@ struct Results
     // type of step, i.e. vision or tactile
     int step_type;
 
-    Results() : real(6, 0.0),
-	        estimate(6, 0.0) {};
+    Data() : ground_truth(6, 0.0),
+	     estimate(6, 0.0) {};
 };
 
 /**
@@ -77,8 +78,15 @@ private:
     // number of steps performed
     int n_steps;
 
-    // results
-    std::vector<Results> results;
+    // variables required to collect execution time
+    double t_i;
+    double t_f;
+    double exec_time;
+
+    // internal storage
+    std::vector<Data> storage;
+    bool storage_on;
+    yarp::os::Mutex storage_on_mutex;
 
     // port where new data is received
     yarp::os::BufferedPort<yarp::sig::FilterData> port_in;
@@ -128,6 +136,22 @@ private:
      */
     bool retrieveGroundTruth(yarp::sig::Vector &pose);
 
+    /*
+     * Reset internal storage
+     */
+    void resetStorage();
+
+    /*
+     * Store data in the internal storage
+     * @param ground_truth current ground truth
+     * @param ground_truth current estimate
+     * @param ground_truth current input
+     * @param ground_truth execution time of last filtering step
+     */
+    void storeData(const yarp::sig::Vector &ground_truth,
+		   const yarp::sig::Vector &estimate,
+		   const yarp::sig::Vector &current_input,
+		   const double &exec_time);
     /*
      * Rpc server callback
      * @param command the command received

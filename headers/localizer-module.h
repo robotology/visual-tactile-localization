@@ -71,6 +71,9 @@ private:
     // last estimate available
     yarp::sig::Vector last_estimate;
 
+    // last ground truth available
+    yarp::sig::Vector last_ground_truth;
+
     // number of steps performed
     int n_steps;
 

@@ -260,7 +260,7 @@ bool LocalizerModule::updateModule()
 	return false;
 
     // try to get the ground truth
-
+    retrieveGroundTruth(last_ground_truth);
 
     // try to read data from the port
     bool should_wait = false;

@@ -34,6 +34,9 @@ struct Data
     // estimated pose
     yarp::sig::Vector estimate;
 
+    // current measurements
+    std::vector<yarp::sig::Vector> meas;
+
     // current input
     yarp::sig::Vector input;
 
@@ -87,6 +90,9 @@ private:
     std::vector<Data> storage;
     bool storage_on;
     yarp::os::Mutex storage_on_mutex;
+
+    // path where to save output
+    std::string output_path;
 
     // port where new data is received
     yarp::os::BufferedPort<yarp::sig::FilterData> port_in;
@@ -143,15 +149,45 @@ private:
 
     /*
      * Store data in the internal storage
-     * @param ground_truth current ground truth
-     * @param ground_truth current estimate
-     * @param ground_truth current input
+     * @param ground_truth the current ground truth
+     * @param estimate the current estimate
+     * @param meas the current measurements
+     * @param input the current input
      * @param ground_truth execution time of last filtering step
      */
     void storeData(const yarp::sig::Vector &ground_truth,
 		   const yarp::sig::Vector &estimate,
-		   const yarp::sig::Vector &current_input,
+		   const std::vector<yarp::sig::Vector> &meas,
+		   const yarp::sig::Vector &input,
 		   const double &exec_time);
+
+    /*
+     * Save to a .OFF file a mesh representing a ground truth pose
+     * or an estimated pose
+     * @param pose vector containing a pose
+     * @param file_name where to save the mesh file
+     * @return true/false on success
+     */
+    bool saveMesh(const yarp::sig::Vector &pose,
+		  const std::string &file_name);
+
+    /*
+     * Save to .OFF file a vertex-only mesh representing measurements
+     * @param meas vector containing measurements
+     * @param file_name where to save the mesh file
+     * @return true/false on success
+     */
+    bool saveMeas(const std::vector<yarp::sig::Vector> &meas,
+		  const std::string &file_name);
+
+    /*
+     * Save all the data (ground truth, estimate, input,
+     * measurements and meshes) to file.
+     * @param data data to be saved
+     * @return true/false on success
+     */
+    bool saveData(const std::vector<Data> &data);
+
     /*
      * Rpc server callback
      * @param command the command received

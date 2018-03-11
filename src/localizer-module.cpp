@@ -16,10 +16,17 @@
 #include <yarp/os/Vocab.h>
 #include <yarp/math/FrameTransform.h>
 
+// CGAL
+#include <CGAL/IO/Polyhedron_iostream.h>
+
+// std
+#include <fstream>
+
 //
 #include "headers/localizer-module.h"
 #include "headers/filterData.h"
 #include "headers/unscentedParticleFilter.h"
+#include "headers/geometryCGAL.h"
 
 using namespace yarp::math;
 
@@ -44,6 +51,13 @@ bool LocalizerModule::loadParameters()
     if (rf->find("rpcServerPort").isNull())
     	rpc_port_name = "/upf-localize/service";
     yInfo() << "Localizer module: rpc server port name is" << rpc_port_name;
+
+    if (!rf->check("outputPath"))
+    {
+        yError() << "Localizer module: output path not provided!";
+        return false;
+    }
+    std::string output_path = rf->findFile("outputPath");
 
     return true;
 }
@@ -104,6 +118,7 @@ bool LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
     if (storage_on)
 	storeData(last_ground_truth,
 		  last_estimate,
+		  meas,
 		  input[0],
 		  exec_time);
 
@@ -167,7 +182,8 @@ void LocalizerModule::resetStorage()
 
 void LocalizerModule::storeData(const yarp::sig::Vector &ground_truth,
 				const yarp::sig::Vector &estimate,
-				const yarp::sig::Vector &current_input,
+				const std::vector<yarp::sig::Vector> &meas,
+				const yarp::sig::Vector &input,
 				const double &exec_time)
 {
     Data d;
@@ -175,11 +191,166 @@ void LocalizerModule::storeData(const yarp::sig::Vector &ground_truth,
     // populate
     d.ground_truth = ground_truth;
     d.estimate = estimate;
-    d.input = current_input;
+    d.meas = meas;
+    d.input = input;
     d.exec_time = exec_time;
 
     // add to storage
     storage.push_back(d);
+}
+
+bool LocalizerModule::saveMesh(const yarp::sig::Vector &pose,
+			       const std::string &file_name)
+{
+    // obtain the mesh from the filter
+    // (the filter contains the model of the object)
+    Polyhedron p;
+    upf.transformObject(pose, p);
+
+    // compose file name
+    std::string file_path = output_path + file_name;
+
+    // save the model
+    // overwrite in case it already exists
+    std::ofstream fout(file_path.c_str(), std::ios::trunc);
+    if(fout.is_open())
+    	fout << p;
+    else
+    {
+	fout.close();
+
+    	yError() << "LocalizerModule: unable to save mesh file to"
+		 << file_path;
+	return false;
+    }
+
+    fout.close();
+
+    return true;
+}
+
+bool LocalizerModule::saveMeas(const std::vector<yarp::sig::Vector> &meas,
+			       const std::string &file_name)
+{
+    // save the measures
+    // overwrite if it already exists
+    std::ofstream fout(file_name.c_str());
+    if(fout.is_open())
+    {
+	// print the OFF header
+	fout << "OFF" << std::endl;
+	// this is a vertices only .OFF
+	fout << meas.size() << " 0 0" << std::endl;
+
+	// save all the measurements
+	for (const yarp::sig::Vector &m : meas)
+	{
+	    fout << m[0] << " "
+		 << m[1] << " "
+		 << m[2] << " "
+		 << std::endl;
+	}
+    }
+    else
+    {
+	fout.close();
+
+    	yError() << "LocalizerModule: problem opening meas output file"
+		 << file_name;
+	return false;
+    }
+
+    fout.close();
+
+    return true;
+}
+
+bool LocalizerModule::saveData(const std::vector<Data> &data)
+{
+    // compose file name for report file
+    std::string report_path = output_path + "report.csv";
+
+    // save the data
+    // overwrite in case it already exists
+    std::ofstream fout(report_path.c_str(), std::ios::trunc);
+    if(fout.is_open())
+    {
+	// print the CSV header
+	fout << "step;"
+	     << "x_real;" << "y_real;" << "z_real;"
+	     << "phi_real;" << "theta_real;" << "psi_real;"
+	     << "x_sol;"   << "y_sol;"     << "z_sol;"
+	     << "phi_sol;" << "theta_sol;" << "psi_sol;"
+	     << "input_x;"   << "input_y;" << "input_z;"
+	     << "exec_time;"
+	     << std::endl;
+
+	// save data for each step
+	int step_index = 0;
+	for (Data& data : storage)
+	{
+	    // index
+	    fout << step_index << ";";
+	    // ground truth
+	    for(size_t j=0; j<6; j++)
+		fout << data.ground_truth[j] << ";";
+	    // estimate
+	    for(size_t j=0; j<6; j++)
+		fout << data.estimate[j] << ";";
+	    // input
+	    for(size_t j=0; j<3; j++)
+		fout << data.input[j] << ";";
+	    // execution time
+	    fout << data.exec_time << ";";
+
+	    fout << std::endl;
+
+	    // save measurements separately since
+	    // their numbers change from step to step
+	    std::string meas_path = output_path + "meas_step_"
+		+ std::to_string(step_index) + ".off";
+	    if (!saveMeas(data.meas, meas_path))
+	    {
+		// error message is provided by saveMeas()
+		fout.close();
+		return false;
+	    }
+
+	    // save mesh of ground truth pose
+	    std::string gt_mesh_path = output_path + "gt_mesh_step_"
+		+ std::to_string(step_index) + ".off";
+	    if (!saveMesh(data.ground_truth, gt_mesh_path))
+	    {
+		// error message is provided by saveMesh()
+		fout.close();
+		return false;
+	    }
+
+	    // save mesh of estimated pose
+	    std::string est_mesh_path = output_path + "est_mesh_step_"
+		+ std::to_string(step_index) +  ".off";
+	    if (!saveMesh(data.estimate, est_mesh_path))
+	    {
+		// error message is provided by saveMesh()
+		fout.close();
+		return false;
+	    }
+
+	    step_index++;
+	}
+    }
+    else
+    {
+	fout.close();
+
+    	yError() << "LocalizeModule: problem opening output report file"
+		 << report_path;
+	return false;
+    }
+
+    fout.close();
+
+    return true;
 }
 
 bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle &reply)
@@ -217,6 +388,13 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
     }
     else if (cmd == "storage-save")
     {
+	bool ok;
+
+	ok = saveData(storage);
+	if (ok)
+	    reply.addString("Storage saved to file succesfully.");
+	else
+	    reply.addString("Storage save failed.");
     }
     else if (cmd == "reset")
     {
@@ -238,7 +416,12 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     this->rf = &rf;
 
     // load parameters from the configuration file
-    loadParameters();
+    if (!loadParameters())
+    {
+	yError() << "LocalizerModule::Configure error:"
+	         << "failure in loading parameters from configuration file";
+	return false;
+    }
 
     // open the port
     bool ok_port = port_in.open(input_port_name);

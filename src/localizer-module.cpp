@@ -170,7 +170,10 @@ bool LocalizerModule::retrieveGroundTruth(yarp::sig::Vector &pose)
     pose[1] = pos.tY;
     pose[2] = pos.tZ;
 
-    pose.setSubvector(3, frame.getRPYRot());
+    yarp::sig::Vector angles = frame.getRPYRot();
+    pose[3] = angles[2];
+    pose[4] = angles[1];
+    pose[5] = angles[0];
 
     return true;
 }

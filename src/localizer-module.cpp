@@ -371,7 +371,7 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
     {
 	// change flag
 	storage_on_mutex.lock();
-	storage_on = false;
+	storage_on = true;
 	storage_on_mutex.unlock();
 
 	resetStorage();

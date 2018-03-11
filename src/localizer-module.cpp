@@ -208,12 +208,9 @@ bool LocalizerModule::saveMesh(const yarp::sig::Vector &pose,
     Polyhedron p;
     upf.transformObject(pose, p);
 
-    // compose file name
-    std::string file_path = output_path + file_name;
-
     // save the model
     // overwrite in case it already exists
-    std::ofstream fout(file_path.c_str(), std::ios::trunc);
+    std::ofstream fout(file_name.c_str(), std::ios::trunc);
     if(fout.is_open())
     	fout << p;
     else
@@ -221,7 +218,7 @@ bool LocalizerModule::saveMesh(const yarp::sig::Vector &pose,
 	fout.close();
 
     	yError() << "LocalizerModule: unable to save mesh file to"
-		 << file_path;
+		 << file_name;
 	return false;
     }
 

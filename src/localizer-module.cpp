@@ -49,7 +49,7 @@ bool LocalizerModule::loadParameters()
 
     rpc_port_name = rf->find("rpcServerPort").asString();
     if (rf->find("rpcServerPort").isNull())
-    	rpc_port_name = "/upf-localize/service";
+    	rpc_port_name = "/upf-localizer/service";
     yInfo() << "Localizer module: rpc server port name is" << rpc_port_name;
 
     if (!rf->check("outputPath"))

@@ -58,6 +58,7 @@ bool LocalizerModule::loadParameters()
         return false;
     }
     std::string output_path = rf->findFile("outputPath");
+    yInfo() << "Localizer module: output path is" << output_path;
 
     return true;
 }

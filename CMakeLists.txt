@@ -54,7 +54,7 @@ set(sources
   src/unscentedParticleFilter.cpp
   src/localizer-module.cpp
   src/filterData.cpp
-  src/main.cpp) 
+  src/main.cpp)
 
 # executable
 add_executable(${PROJECT_NAME} ${headers} ${sources})
@@ -68,6 +68,10 @@ yarp_install(FILES ${confMustard} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVi
 # mesh file for YCB Mustard
 set (meshMustard ${PROJECT_SOURCE_DIR}/models/mustard.off)
 yarp_install(FILES ${meshMustard} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+
+# output files folder with empty placeholder
+set (outputDraft ${PROJECT_SOURCE_DIR}/output/empty)
+yarp_install(FILES ${outputDraft} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/output)
 
 # add uninstall target
 icubcontrib_add_uninstall_target()

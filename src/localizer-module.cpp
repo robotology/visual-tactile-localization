@@ -288,21 +288,21 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 
 	// save data for each step
 	int step_index = 0;
-	for (Data& data : storage)
+	for (const Data& d : data)
 	{
 	    // index
 	    fout << step_index << ";";
 	    // ground truth
 	    for(size_t j=0; j<6; j++)
-		fout << data.ground_truth[j] << ";";
+		fout << d.ground_truth[j] << ";";
 	    // estimate
 	    for(size_t j=0; j<6; j++)
-		fout << data.estimate[j] << ";";
+		fout << d.estimate[j] << ";";
 	    // input
 	    for(size_t j=0; j<3; j++)
-		fout << data.input[j] << ";";
+		fout << d.input[j] << ";";
 	    // execution time
-	    fout << data.exec_time << ";";
+	    fout << d.exec_time << ";";
 
 	    fout << std::endl;
 
@@ -310,7 +310,7 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 	    // their numbers change from step to step
 	    std::string meas_path = output_path + "meas_step_"
 		+ std::to_string(step_index) + ".off";
-	    if (!saveMeas(data.meas, meas_path))
+	    if (!saveMeas(d.meas, meas_path))
 	    {
 		// error message is provided by saveMeas()
 		fout.close();
@@ -320,7 +320,7 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 	    // save mesh of ground truth pose
 	    std::string gt_mesh_path = output_path + "gt_mesh_step_"
 		+ std::to_string(step_index) + ".off";
-	    if (!saveMesh(data.ground_truth, gt_mesh_path))
+	    if (!saveMesh(d.ground_truth, gt_mesh_path))
 	    {
 		// error message is provided by saveMesh()
 		fout.close();
@@ -330,7 +330,7 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 	    // save mesh of estimated pose
 	    std::string est_mesh_path = output_path + "est_mesh_step_"
 		+ std::to_string(step_index) +  ".off";
-	    if (!saveMesh(data.estimate, est_mesh_path))
+	    if (!saveMesh(d.estimate, est_mesh_path))
 	    {
 		// error message is provided by saveMesh()
 		fout.close();

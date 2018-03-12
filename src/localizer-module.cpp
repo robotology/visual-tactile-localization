@@ -15,6 +15,7 @@
 #include <yarp/math/Math.h>
 #include <yarp/os/Vocab.h>
 #include <yarp/math/FrameTransform.h>
+#include <yarp/os/Bottle.h>
 
 // CGAL
 #include <CGAL/IO/Polyhedron_iostream.h>
@@ -29,6 +30,26 @@
 #include "headers/geometryCGAL.h"
 
 using namespace yarp::math;
+
+bool LocalizerModule::readDiagonalMatrix(const std::string &tag,
+					 const int &size,
+					 yarp::sig::Vector &diag)
+{
+    // read values of the diagonal
+    yarp::os::Bottle *b = rf->find(tag.c_str()).asList();
+
+    if (b == NULL)
+	return false;
+
+    if (b->size() < size)
+	return false;
+
+    diag.resize(size, 0.0);
+    for(size_t i; i < size; i++)
+	diag[i] = b->get(i).asDouble();
+
+    return true;
+}
 
 bool LocalizerModule::loadParameters()
 {
@@ -60,6 +81,35 @@ bool LocalizerModule::loadParameters()
     output_path = rf->findFile("outputPath");
     yInfo() << "Localizer module: output path is" << output_path;
 
+    if (!readDiagonalMatrix("visionQ", 6, Q_vision))
+    {
+	// set default value for covariance matrix
+	Q_vision.setSubvector(0, yarp::sig::Vector(3, 0.0001));
+	Q_vision.setSubvector(3, yarp::sig::Vector(3, 0.01));
+    }
+    yInfo() << "Localizer module: Q matrix for vision is" << Q_vision.toString();
+
+    if (!readDiagonalMatrix("tactileQ", 6, Q_tactile))
+    {
+	Q_tactile[0] = 0.00001;
+	Q_tactile[1] = 0.00001;
+	Q_tactile[2] = 0.00000001;
+	Q_tactile[3] = 0.01;
+	Q_tactile[4] = 0.000001;
+	Q_tactile[5] = 0.000001;
+    }
+    yInfo() << "Localizer module: Q matrix for tactile is" << Q_tactile.toString();
+
+    R_vision = rf->find("visionR").asDouble();
+    if (rf->find("visionR").isNull())
+	R_vision = 0.0001;
+    yInfo() << "Localizer module: R for vision is" << R_vision;
+
+    R_tactile = rf->find("tactileR").asDouble();
+    if (rf->find("tactileR").isNull())
+	R_tactile = 0.0001;
+    yInfo() << "Localizer module: R for tactile is" << R_tactile;    
+
     return true;
 }
 
@@ -84,13 +134,16 @@ bool LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 	return false;
 
     // set the appropriate noise covariance matrix
+    // and measurement noise variance
     switch(tag)
     {
     case VOCAB3('V','I','S'):
 	upf.setQ(Q_vision);
+	upf.setR(R_vision);
 	break;
     case VOCAB3('T','A','C'):
 	upf.setQ(Q_tactile);
+	upf.setR(R_tactile);
 	break;
     }
 
@@ -459,18 +512,6 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 	         << "failure in opening iFrameTransform interface";
 	return false;
     }
-
-    // initialize system noise covariance matrices
-    // TODO: take these from the configuration file
-    Q_vision.setSubvector(0, yarp::sig::Vector(3, 0.0001));
-    Q_vision.setSubvector(3, yarp::sig::Vector(3, 0.01));
-
-    Q_tactile[0] = 0.00001;
-    Q_tactile[1] = 0.00001;
-    Q_tactile[2] = 0.00000001;
-    Q_tactile[3] = 0.01;
-    Q_tactile[4] = 0.000001;
-    Q_tactile[5] = 0.000001;
 
     // configure and init the UPF
     if(!upf.configure(rf))

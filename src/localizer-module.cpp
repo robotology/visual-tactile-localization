@@ -134,13 +134,16 @@ bool LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 	return false;
 
     // set the appropriate noise covariance matrix
+    // and measurement noise variance
     switch(tag)
     {
     case VOCAB3('V','I','S'):
 	upf.setQ(Q_vision);
+	upf.setR(R_vision);
 	break;
     case VOCAB3('T','A','C'):
 	upf.setQ(Q_tactile);
+	upf.setR(R_tactile);
 	break;
     }
 

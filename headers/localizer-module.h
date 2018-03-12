@@ -72,6 +72,10 @@ private:
     yarp::sig::Vector Q_vision;
     yarp::sig::Vector Q_tactile;
 
+    // measurement noise variance
+    double R_vision;
+    double R_tactile;    
+
     // last estimate available
     yarp::sig::Vector last_estimate;
 
@@ -115,6 +119,17 @@ private:
     // rpc server port name
     std::string rpc_port_name;
 
+    /*
+     * Read a diagonal matrix from the configuration file
+     *
+     * @param tag the name of the matrix in the configuration file
+     * @param size size of the diagonal
+     * @param diag the output diagonal as a vector
+     * @return true/false on success/failure
+     */
+    bool readDiagonalMatrix(const std::string &tag,
+			    const int &size,
+			    yarp::sig::Vector &diag);
     /*
      * Load the required parameters using a
      * previously instantiated @see Resource Finder.

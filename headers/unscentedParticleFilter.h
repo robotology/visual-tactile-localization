@@ -380,6 +380,12 @@ public:
      * entries of the matrix Q
      */
     void setQ(const yarp::sig::Vector &covariance);
+
+    /**
+     * Set the scalar measurement noise variance R
+     * @param variance the value of the scalar measurement noise variance
+     */
+    void setR(const double &variance);
     
     /**
      * Single iteration of the algorithm.

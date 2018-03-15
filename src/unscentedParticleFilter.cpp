@@ -342,13 +342,13 @@ void UnscentedParticleFilter::computePpred(const int &i)
     }
     x[i].P_pred=x[i].P_pred_aux + params.Q_prev;
 
-    for(size_t j=3; j<6; j++)
-    {
-        for(size_t k=3; k<6; k++)
-        {
-	    yAssert(x[i].P_pred(j,k) <= pow(2*M_PI,2));
-        }
-    }
+    // for(size_t j=3; j<6; j++)
+    // {
+    //     for(size_t k=3; k<6; k++)
+    //     {
+    // 	    yAssert(x[i].P_pred(j,k) <= pow(2*M_PI,2));
+    //     }
+    // }
 }
 
 void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
@@ -395,13 +395,13 @@ void UnscentedParticleFilter::correctionStep(const int &i)
     x[i].x_corr[5]=fmod(x[i].x_corr[5],2*M_PI);
     x[i].P_corr=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
     
-    for(size_t j=3; j<6; j++)
-    {
-        for(size_t k=3; k<6; k++)
-        {
-            yAssert(x[i].P_corr(j,k) <= pow(2*M_PI,2));
-        }
-    }
+    // for(size_t j=3; j<6; j++)
+    // {
+    //     for(size_t k=3; k<6; k++)
+    //     {
+    //         yAssert(x[i].P_corr(j,k) <= pow(2*M_PI,2));
+    //     }
+    // }
 }
 
 double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
@@ -797,6 +797,9 @@ void UnscentedParticleFilter::step()
     // resampling strategies
     selectionStep(sum_squared);
 
+    // eval estimate
+    evalEstimate();
+
     // update previous value of Q
     params.Q_prev = params.Q;
 
@@ -811,6 +814,11 @@ void UnscentedParticleFilter::step()
 }
 
 yarp::sig::Vector UnscentedParticleFilter::getEstimate()
+{
+    return current_estimate;
+}
+
+void UnscentedParticleFilter::evalEstimate()
 {
     // extract MAP estimate
     std::deque<double> probability_per_particle;
@@ -844,7 +852,7 @@ yarp::sig::Vector UnscentedParticleFilter::getEstimate()
         }
     }
 
-    return x[i_max_prob].x_corr;
+    current_estimate = x[i_max_prob].x_corr;
 }
 
 double UnscentedParticleFilter::evalPerformanceIndex(const yarp::sig::Vector &estimate,

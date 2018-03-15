@@ -164,6 +164,9 @@ private:
     // index of current iteration
     int t;
 
+    // current estimate
+    yarp::sig::Vector current_estimate;
+
     /** 
      * Read the coordinates of the center of the research region 
      * and save them in center0.
@@ -393,9 +396,14 @@ public:
     void step();
 
     /** 
-     * Compute the MAP estimate.
+     * Get the MAP estimate.
      */
     yarp::sig::Vector getEstimate();
+
+    /** 
+     * Compute the MAP estimate.
+     */
+    void evalEstimate();
 
     /** 
      * Compute the performance index

@@ -303,7 +303,7 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 
 	//use system input in the prediction
 	for(size_t k=0; k<3; k++)
-	    x[i].XsigmaPoints_pred(k,j) += input[k];
+	    x[i].XsigmaPoints_pred(k,j) += propagated_input[k];
  
 	x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
 	x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
@@ -468,7 +468,7 @@ double UnscentedParticleFilter::tranProbability(const int &i,
 {
     // evaluate transition probability
     yarp::sig::Vector mean = x[j].x_corr_prev;
-    mean.setSubvector(0, mean.subVector(0,2) + input);
+    mean.setSubvector(0, mean.subVector(0,2) + propagated_input);
 
     return multivariateGaussian(x[i].x_corr, mean, params.Q_prev);
 }
@@ -717,7 +717,9 @@ void UnscentedParticleFilter::init()
     t=0;
 
     // clear system input
-    input.resize(3, 0.0);
+    prev_input.resize(3, 0.0);
+    new_input.resize(3, 0.0);
+    propagated_input.resize(3, 0.0);
 
     // initialize particles and sample from initial search region
     x.assign(params.N,ParticleUPF());
@@ -725,12 +727,13 @@ void UnscentedParticleFilter::init()
 
     // complete UPF initialization
     initializationUPF();
+
 }
 
 void UnscentedParticleFilter::setNewInput(const yarp::sig::Vector &in)
 {
     // set the new system input received
-    input = in;
+    new_input = in;
 }
 
 void UnscentedParticleFilter::setNewMeasure(const std::vector<yarp::sig::Vector>& m)
@@ -767,12 +770,43 @@ void UnscentedParticleFilter::setR(const double &variance)
     params.R = variance;
 }
 
+void UnscentedParticleFilter::resetTime()
+{
+    t_prev = yarp::os::Time::now();
+}
+
+void UnscentedParticleFilter::skipStep()
+{
+    // evaluate current time
+    double t_current = yarp::os::Time::now();
+    // evaluate elapsed time
+    double t_interval = t_current - t_prev;
+
+    // since this filtering step is skipped
+    // the input is propagated
+    propagated_input += prev_input * t_interval;
+
+    // update previous value of input
+    prev_input = new_input;
+
+    // update previous value of filtering time
+    t_prev = t_current;
+}
+
 void UnscentedParticleFilter::step()
 {   
     t++;
 
     double sum=0.0;
     double sum_squared=0.0;
+
+    // evaluate current time
+    double t_current = yarp::os::Time::now();
+    // evaluate elapsed time
+    double t_interval = t_current - t_prev;
+
+    // update propagated input
+    propagated_input += prev_input * t_interval;
 
     // process all the particles
     for(size_t i=0; i<x.size(); i++ )
@@ -802,6 +836,17 @@ void UnscentedParticleFilter::step()
 
     // update previous value of Q
     params.Q_prev = params.Q;
+
+    // since this filtering step was done
+    // reset the propagated input
+    // that was accumulated while skipping steps
+    propagated_input = 0;
+
+    // update previous value of input
+    prev_input = new_input;
+
+    // update previous value of filtering time
+    t_prev = t_current;
 
     for (size_t i=0; i<x.size(); i++)
     {

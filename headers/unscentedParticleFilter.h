@@ -156,13 +156,18 @@ private:
     yarp::sig::Vector real_pose;
 
     // system input
-    yarp::sig::Vector input;
+    yarp::sig::Vector prev_input;
+    yarp::sig::Vector new_input;
+    yarp::sig::Vector propagated_input;
 
     // parameters of the UPF
     ParametersUPF params;
 
     // index of current iteration
     int t;
+
+    // previous filtering time
+    double t_prev;
 
     // current estimate
     yarp::sig::Vector current_estimate;
@@ -389,6 +394,17 @@ public:
      * @param variance the value of the scalar measurement noise variance
      */
     void setR(const double &variance);
+
+    /**
+     * Reset the internal time in order to handle properly
+     * the propagation of the nominal model.
+     */
+    void resetTime();
+
+    /**
+     * Skip the next filtering step.
+     */
+    void skipStep();
     
     /**
      * Single iteration of the algorithm.

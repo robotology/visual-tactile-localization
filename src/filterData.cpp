@@ -13,6 +13,7 @@
 #include <yarp/os/all.h>
 #include <yarp/sig/Vector.h>
 #include <yarp/os/NetInt32.h>
+#include <yarp/os/Vocab.h>
 
 //memset
 #include <memory.h> 
@@ -41,6 +42,7 @@ yarp::sig::FilterData::FilterData(const FilterData &f) :
     n_inputs_alloc = n_inputs = f.n_inputs;
 
     tag_value = f.tag_value;
+    cmd_value = f.cmd_value;
 
     if (f.points_storage != 0)
     {
@@ -63,6 +65,7 @@ yarp::sig::FilterData& yarp::sig::FilterData::operator=(const FilterData& f)
 	return *this;
 
     tag_value = f.tag_value;
+    cmd_value = f.cmd_value;
     
     if (f.points_storage != 0)
     {
@@ -163,6 +166,11 @@ void yarp::sig::FilterData::setTag(int tag)
     this->tag_value = tag;
 }
 
+void yarp::sig::FilterData::setCommand(int cmd)
+{
+    this->cmd_value = cmd;
+}
+
 void yarp::sig::FilterData::points(std::vector<yarp::sig::Vector>& points) const
 {
     points.clear();
@@ -190,10 +198,17 @@ int yarp::sig::FilterData::tag() const
     return tag_value;
 }
 
+int yarp::sig::FilterData::command() const
+{
+    return cmd_value;
+}
+
 void yarp::sig::FilterData::clear()
 {
     n_points = 0;
     n_inputs = 0;
+    tag_value = VOCAB4('E','M','P','T');
+    cmd_value = VOCAB4('E','M','P','T');
 }
 
 bool yarp::sig::FilterData::read(yarp::os::ConnectionReader& connection)
@@ -204,12 +219,12 @@ bool yarp::sig::FilterData::read(yarp::os::ConnectionReader& connection)
     if (!ok)
 	return false;
 
-    if (header.n_points == 0 || header.n_inputs == 0)
-	return false;
-
     // set sizes
     n_points_alloc = n_points = header.n_points;
     n_inputs_alloc = n_inputs = header.n_inputs;
+
+    // get command
+    cmd_value = connection.expectInt();
 
     // get tag
     tag_value = connection.expectInt();
@@ -237,6 +252,9 @@ bool yarp::sig::FilterData::write(yarp::os::ConnectionWriter& connection)
     header.n_inputs = n_inputs;
 
     connection.appendBlock((char*)&header, sizeof(header));
+
+    // append command
+    connection.appendInt(cmd_value);
 
     // append tag
     connection.appendInt(tag_value);

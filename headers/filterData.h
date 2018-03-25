@@ -48,6 +48,12 @@ private:
      */
     int tag_value;
 
+    /*
+     * Command describing something meaningful for the
+     * filtering algorithm, e.g., start/stop commands
+     */
+    int cmd_value;
+
 public:
     FilterData();
     FilterData(const FilterData &);    
@@ -58,10 +64,12 @@ public:
     bool addPoint(const yarp::sig::Vector&);
     bool addInput(const yarp::sig::Vector&);
     void setTag(int);
+    void setCommand(int);
 
     void points(std::vector<yarp::sig::Vector>&) const;
     void inputs(std::vector<yarp::sig::Vector>&) const;
     int tag() const;
+    int command() const;
 
     void clear();
 

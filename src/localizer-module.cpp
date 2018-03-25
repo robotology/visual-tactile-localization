@@ -113,72 +113,145 @@ bool LocalizerModule::loadParameters()
     return true;
 }
 
-bool LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
+void LocalizerModule::processCommand(const yarp::sig::FilterData &filter_cmd)
 {
-    // increment number of steps performed
-    n_steps++;
+    // extract command and filtering type
+    int cmd = filter_cmd.command();
+    int type = filter_cmd.tag();
 
-    // extract tag,
-    // i.e. VIS for data from vision or
-    // TAC for tactile data
-    int tag = data.tag();
+    if (cmd == VOCAB2('O','N'))
+    {
+	filtering_enabled = true;
+	if (type == VOCAB3('V', 'I', 'S'))
+	    filtering_type = FilteringType::visual;
+	else if (type == VOCAB3('T','A','C'))
+	    filtering_type = FilteringType::tactile;
+    }
+    else if (cmd == VOCAB3('O','F','F'))
+    {
+	stopFiltering();
+    }
+}
+
+void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
+{
+    if (!filtering_enabled)
+	return;
 
     // extract the measure
     data.points(meas);
-    if (meas.size() == 0)
-	return false;
+    // if (meas.size() == 0)
+    // 	return;
 
     // extract the input
     data.inputs(input);
     if (input.size() == 0)
-	return false;
+	return;
 
-    // set the appropriate noise covariance matrix
-    // and measurement noise variance
-    switch(tag)
+    if (filtering_type == FilteringType::visual)
     {
-    case VOCAB3('V','I','S'):
+	if (meas.size() == 0)
+	{
+	    stopFiltering();
+	    return;
+	}
+
+	// set noise covariances
 	upf.setQ(Q_vision);
 	upf.setR(R_vision);
-	break;
-    case VOCAB3('T','A','C'):
+
+	// set measure
+	upf.setNewMeasure(meas);
+
+	// set zero input (visual localization is static)
+	upf.setNewInput(input[0]);
+
+	// step and estimate
+	// using time of simulated environment
+	// in case env variable YARP_CLOCK is set
+	t_i = yarp::os::Time::now();
+	upf.step();
+	last_estimate = upf.getEstimate();
+	t_f = yarp::os::Time::now();
+	exec_time = t_f - t_i;
+
+	storage_on_mutex.lock();
+
+	// store data if required
+	if (storage_on)
+	    storeData(last_ground_truth,
+		      last_estimate,
+		      meas,
+		      input[0],
+		      exec_time);
+
+	storage_on_mutex.unlock();
+
+	// after a visual filtering step
+	// the filter disables automatically
+	// TODO: make this optional from configuration
+	//       or from FilterCommand
+	stopFiltering();
+
+	// a new estimate is now available
+	estimate_available = true;
+    }
+    else if (filtering_type == FilteringType::tactile)
+    {
+	// set noise covariances
 	upf.setQ(Q_tactile);
 	upf.setR(R_tactile);
-	break;
+
+	// set measure
+	upf.setNewMeasure(meas);
+
+	// set input
+	upf.setNewInput(input[0]);
+
+	if (is_first_step)
+	{
+	    upf.resetTime();
+	    is_first_step = false;
+	}
+
+	t_i = yarp::os::Time::now();
+
+	if (meas.size() < 2)
+	    // skip step in case of too few measurements
+	    upf.skipStep();
+	else
+	{
+	    // step and estimate
+	    upf.step();
+	    last_estimate = upf.getEstimate();
+	}
+
+	t_f = yarp::os::Time::now();
+	exec_time = t_f - t_i;
+
+	storage_on_mutex.lock();
+
+	// store data if required
+	if (storage_on)
+	    storeData(last_ground_truth,
+		      last_estimate,
+		      meas,
+		      input[0],
+		      exec_time);
+
+	storage_on_mutex.unlock();
+
+	// a new estimate is now available
+	estimate_available = true;
     }
+}
 
-    // set real pose
-    // upf.setRealPose(pose);
+void LocalizerModule::stopFiltering()
+{
+    filtering_enabled = false;
 
-    // set input
-    upf.setNewInput(input[0]);
-
-    // set new measure
-    upf.setNewMeasure(meas);
-
-    // step and estimate
-    // using time of simulated environment
-    // in case env variable YARP_CLOCK is set
-    t_i = yarp::os::Time::now();
-    upf.step();
-    last_estimate = upf.getEstimate();
-    t_f = yarp::os::Time::now();
-    exec_time = t_f - t_i;
-
-    // if requested by the user store
-    // the data associated to this filtering step
-    storage_on_mutex.lock();
-
-    if (storage_on)
-	storeData(last_ground_truth,
-		  last_estimate,
-		  meas,
-		  input[0],
-		  exec_time);
-
-    storage_on_mutex.unlock();
-
-    return true;
+    // reset flag for the next activation
+    is_first_step = true;
 }
 
 void LocalizerModule::publishEstimate()
@@ -518,9 +591,6 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     	return false;
     upf.init();
 
-    // reset the number of steps performed
-    n_steps = 0;
-
     // reset storage
     storage_on = false;
     resetStorage();
@@ -529,13 +599,18 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     rpc_port.open(rpc_port_name);
     attach(rpc_port);
 
+    // reset flags
+    estimate_available = false;
+    filtering_enabled = false;
+    is_first_step = true;
+
     return true;
 }
 
 double LocalizerModule::getPeriod()
 {
     // TODO: take from the config
-    return 0.02;
+    return 0.01;
 }
 
 bool LocalizerModule::updateModule()
@@ -551,16 +626,16 @@ bool LocalizerModule::updateModule()
     bool should_wait = false;
     data = port_in.read(should_wait);
 
-    // if new data available perform a filtering step
+    // process the command
     if (data != YARP_NULLPTR)
-	if (!performFiltering(*data))
-	{
-	    yError() << "LocalizerModule: Error while performing filtering step";
-	    return false;
-	}
+	processCommand(*data);
+
+    //
+    if (data != YARP_NULLPTR)
+	performFiltering(*data);
 
     // publish the last estimate available
-    if (n_steps > 0)
+    if (estimate_available)
 	publishEstimate();
 
     return true;

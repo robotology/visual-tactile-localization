@@ -26,6 +26,8 @@
 #include "headers/filterData.h"
 #include "headers/unscentedParticleFilter.h"
 
+enum class FilteringType { visual, tactile };
+
 struct Data
 {
     // ground truth pose
@@ -119,6 +121,12 @@ private:
     // rpc server port name
     std::string rpc_port_name;
 
+    // flags
+    bool estimate_available;
+    bool filtering_enabled;
+    bool is_first_step;
+    FilteringType filtering_type;
+
     /*
      * Read a diagonal matrix from the configuration file
      *
@@ -138,10 +146,21 @@ private:
     bool loadParameters();
 
     /*
+     * Process a command coming from the input port
+     * @param cmd command to the filtering algorithm
+     */
+    void processCommand(const yarp::sig::FilterData &filter_cmd);
+
+    /*
      * Perform a filtering step using new data
      * @param data yarp::sig::FilterData data
      */
-    bool performFiltering(const yarp::sig::FilterData &data);
+    void performFiltering(const yarp::sig::FilterData &data);
+
+    /*
+     * Stops filtering
+     */
+    void stopFiltering();
 
     /*
      * Publish the last estimate available

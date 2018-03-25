@@ -24,6 +24,13 @@
  */ 
 int main(int argc, char **argv)
 {
+    yarp::os::Network yarp;
+    if (!yarp.checkNetwork())
+    {
+	yError() << "LocalizerModule: cannot find YARP!";
+	return 1;
+    }
+
     // instantiate the resource finder
     yarp::os::ResourceFinder rf;
     rf.setDefaultConfigFile("config.ini");

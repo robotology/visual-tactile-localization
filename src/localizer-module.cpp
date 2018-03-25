@@ -902,6 +902,9 @@ bool LocalizerModule::close()
     port_in.close();
     port_pc.close();
 
-    // close the driver
+    // close drivers
     drv_transform_client.close();
+    drv_right_arm.close();
+    drv_left_arm.close();
+    drv_torso.close();
 }

@@ -21,12 +21,14 @@ project(upf-localizer)
 
 # find packages
 find_package(YARP REQUIRED)
+find_package(ICUB)
 find_package(ICUBcontrib REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS)
 
 # extend the current search path used by cmake to load
-# yarp and icubcontrib helpers
+# yarp, icub and icubcontrib helpers
 list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH ${ICUB_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
 
 # include helpers
@@ -59,7 +61,7 @@ set(sources
 
 # executable
 add_executable(${PROJECT_NAME} ${headers} ${sources})
-target_link_libraries(${PROJECT_NAME} ${YARP_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${YARP_LIBRARIES} ${ICUB_LIBRARIES})
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 # configuration file

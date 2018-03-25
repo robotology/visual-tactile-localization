@@ -722,8 +722,9 @@ bool LocalizerModule::updateModule()
 
 bool LocalizerModule::close()
 {
-    // close the port
+    // close ports
     port_in.close();
+    port_pc.close();
 
     // close the driver
     drv_transform_client.close();

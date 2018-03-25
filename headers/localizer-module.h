@@ -70,9 +70,6 @@ private:
     // pointer to Unscented Particle Filter
     UnscentedParticleFilter upf;
 
-    // storage for the new measure
-    std::vector<yarp::sig::Vector> meas;
-
     // system noise covariance matrices
     yarp::sig::Vector Q_vision;
     yarp::sig::Vector Q_tactile;
@@ -235,7 +232,7 @@ private:
      * Perform a filtering step using new data
      * @param data yarp::sig::FilterData data
      */
-    void performFiltering(const yarp::sig::FilterData &data);
+    void performFiltering();
 
     /*
      * Stops filtering

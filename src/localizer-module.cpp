@@ -297,15 +297,10 @@ void LocalizerModule::processCommand(const yarp::sig::FilterData &filter_cmd)
     }
 }
 
-void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
+void LocalizerModule::performFiltering()
 {
     if (!filtering_enabled)
 	return;
-
-    // extract the measure
-    data.points(meas);
-    // if (meas.size() == 0)
-    // 	return;
 
     if (filtering_type == FilteringType::visual)
     {
@@ -376,16 +371,51 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
     }
     else if (filtering_type == FilteringType::tactile)
     {
+	// check if contacts are available
+	iCub::skinDynLib::skinContactList *new_contacts = port_contacts.read(false);
+	if (new_contacts == NULL)
+	{
+	    // nothing to do here
+	    return;
+	}
+
+	int num_meas;
+	std::string which_hand;
+	std::vector<yarp::sig::Vector>* points;
+	std::vector<yarp::sig::Vector> points_right;
+	std::vector<yarp::sig::Vector> points_left;
+
+	// extract contact points from the finger tips
+	getContactPoints(*new_contacts, points_right, points_left);
+
+	// for now assume that only one hand per time can be touching the object
+	// TODO: maybe FilterData can be used to specify which hand to use
+	if (points_right.size() != 0)
+	{
+	    points = &points_right;
+	    which_hand = "right";
+	    num_meas = points_right.size();
+	}
+	else if (points_left.size() != 0)
+	{
+	    points = &points_left;
+	    which_hand = "left";
+	    num_meas = points_left.size();
+	}
+	else
+	{
+	    // no measurements
+	    // this step will be skipped
+	    num_meas = 0;
+	}
+
 	// set noise covariances
 	upf.setQ(Q_tactile);
 	upf.setR(R_tactile);
 
-	// set measure
-	upf.setNewMeasure(meas);
-
 	// use the velocity of the middle finger as input
 	yarp::sig::Vector input;
-	getFingerVelocity("right", "middle", input);
+	getFingerVelocity(which_hand, "middle", input);
 	upf.setNewInput(input);
 
 	if (is_first_step)
@@ -396,12 +426,13 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 
 	t_i = yarp::os::Time::now();
 
-	if (meas.size() < 2)
+	if (num_meas <= 1)
 	    // skip step in case of too few measurements
 	    upf.skipStep();
 	else
 	{
-	    // step and estimate
+	    // do normal filtering step
+	    upf.setNewMeasure(*points);
 	    upf.step();
 	    last_estimate = upf.getEstimate();
 	}
@@ -415,7 +446,7 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 	if (storage_on)
 	    storeData(last_ground_truth,
 		      last_estimate,
-		      meas,
+		      *points,
 		      input,
 		      exec_time);
 
@@ -924,9 +955,8 @@ bool LocalizerModule::updateModule()
     if (data != YARP_NULLPTR)
 	processCommand(*data);
 
-    //
-    if (data != YARP_NULLPTR)
-	performFiltering(*data);
+    // do filtering step
+    performFiltering();
 
     // publish the last estimate available
     if (estimate_available)

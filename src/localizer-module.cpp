@@ -128,6 +128,38 @@ bool LocalizerModule::loadParameters()
     return true;
 }
 
+void LocalizerModule::transformPointCloud(const PointCloud& pc,
+					  std::vector<yarp::sig::Vector> &pc_out)
+{
+    // copy data to pc_out
+    for (size_t i=0; i<pc.size(); i++)
+    {
+	PointCloudItem item = pc[i];
+	yarp::sig::Vector point(3, 0.0);
+	point[0] = item.x;
+	point[1] = item.y;
+	point[2] = item.z;
+
+	pc_out.push_back(point);
+    }
+
+    // transform the points taking into account
+    // the root link of the robot
+    for (size_t i=0; i<pc_out.size(); i++)
+    {
+	yarp::sig::Vector point(4, 0.0);
+	point.setSubvector(0, pc_out[i]);
+	point[3] = 1;
+
+	// transform the point so that
+	// it is relative to the orign of the robot root frame
+	// and expressed in the robot root frame
+	point = SE3inv(inertial_to_robot) * point;
+
+	pc_out[i] = point.subVector(0,2);
+    }
+}
+
 void LocalizerModule::processCommand(const yarp::sig::FilterData &filter_cmd)
 {
     // extract command and filtering type

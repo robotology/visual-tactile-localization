@@ -160,6 +160,15 @@ private:
     bool loadParameters();
 
     /*
+     * Transform a point cloud expressed in the inertial frame
+     * to a point cloud expressed with respect to the robot root frame
+     * @param pc the input point cloud
+     * @param pc_out the transformed point cloud
+     */
+    void transformPointCloud(const PointCloud& pc,
+			     std::vector<yarp::sig::Vector> &pc_out);
+
+    /*
      * Process a command coming from the input port
      * @param cmd command to the filtering algorithm
      */

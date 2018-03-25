@@ -63,6 +63,16 @@ bool LocalizerModule::loadParameters()
 	est_target_frame_name = "/estimate/frame";
     yInfo() << "Localizer module: estimate target frame name is" << est_target_frame_name;
 
+    robot_source_frame_name = rf->find("robotSourceFrame").asString();
+    if (rf->find("robotSourceFrame").isNull())
+	robot_source_frame_name = "/inertial";
+    yInfo() << "Localizer module: robot source frame name is" << robot_source_frame_name;
+
+    robot_target_frame_name = rf->find("robotTargetFrame").asString();
+    if (rf->find("robotTargetFrame").isNull())
+	robot_target_frame_name = "/iCub/frame";
+    yInfo() << "Localizer module: robot target frame name is" << robot_target_frame_name;
+
     input_port_name = rf->find("inputPort").asString();
     if (rf->find("inputPort").isNull())
 	input_port_name = "/upf-localizer:i";

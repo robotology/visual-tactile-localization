@@ -120,6 +120,10 @@ private:
     std::string est_source_frame_name;
     std::string est_target_frame_name;
 
+    // source and target frame names for robot root frame
+    std::string robot_source_frame_name;
+    std::string robot_target_frame_name;
+
     // rpc server
     yarp::os::RpcServer rpc_port;
 

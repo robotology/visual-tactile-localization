@@ -112,6 +112,9 @@ private:
     yarp::os::BufferedPort<PointCloud> port_pc;
     std::string port_pc_name;
 
+    // contact points
+    std::string port_contacts_name;
+
     // PolyDriver required to access a yarp::dev::IFrameTransform
     yarp::dev::PolyDriver drv_transform_client;
 

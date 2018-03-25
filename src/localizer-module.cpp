@@ -88,6 +88,11 @@ bool LocalizerModule::loadParameters()
 	port_pc_name = "/upf-localizer/pc:i";
     yInfo() << "Localizer module: point cloud input port name is" << port_pc_name;
 
+    port_contacts_name = rf->find("contactsInputPort").asString();
+    if (rf->find("contactsInputPort").isNull())
+	port_contacts_name = "/upf-localizer/contacts:i";
+    yInfo() << "Localizer module: contact points input port name is" << port_contacts_name;
+
     if (!rf->check("outputPath"))
     {
         yError() << "Localizer module: output path not provided!";

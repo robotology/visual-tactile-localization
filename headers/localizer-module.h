@@ -203,7 +203,16 @@ private:
      */
     void transformPointCloud(const PointCloud& pc,
 			     std::vector<yarp::sig::Vector> &pc_out);
-
+    /*
+     * Evaluate the velocity of a finger using geometric jacobians and
+     * angular joints velocities
+     * @param hand_name the name of the desired hand
+     * @param finger_name the name of the desired finger
+     * @param velocity the computed velocity
+     */
+    bool getFingerVelocity(const std::string &hand_name,
+			   const std::string &finger_name,
+			   yarp::sig::Vector &velocity);
     /*
      * Process a command coming from the input port
      * @param cmd command to the filtering algorithm

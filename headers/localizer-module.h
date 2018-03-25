@@ -117,8 +117,8 @@ private:
     yarp::dev::IFrameTransform* tf_client;
 
     // source and target frame names
-    std::string source_frame_name;
-    std::string target_frame_name;
+    std::string est_source_frame_name;
+    std::string est_target_frame_name;
 
     // rpc server
     yarp::os::RpcServer rpc_port;

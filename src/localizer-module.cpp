@@ -53,15 +53,15 @@ bool LocalizerModule::readDiagonalMatrix(const std::string &tag,
 
 bool LocalizerModule::loadParameters()
 {
-    source_frame_name = rf->find("sourceFrame").asString();
-    if (rf->find("sourceFrame").isNull())
-	source_frame_name = "/iCub/frame";
-    yInfo() << "Localizer module: source frame name is" << source_frame_name;
+    est_source_frame_name = rf->find("estimateSourceFrame").asString();
+    if (rf->find("estimateSourceFrame").isNull())
+	est_source_frame_name = "/iCub/frame";
+    yInfo() << "Localizer module: estimate source frame name is" << est_source_frame_name;
 
-    target_frame_name = rf->find("targetFrame").asString();
-    if (rf->find("targetFrame").isNull())
-	target_frame_name = "/estimate/frame";
-    yInfo() << "Localizer module: target frame name is" << target_frame_name;
+    est_target_frame_name = rf->find("estimateTargetFrame").asString();
+    if (rf->find("estimateTargetFrame").isNull())
+	est_target_frame_name = "/estimate/frame";
+    yInfo() << "Localizer module: estimate target frame name is" << est_target_frame_name;
 
     input_port_name = rf->find("inputPort").asString();
     if (rf->find("inputPort").isNull())
@@ -273,8 +273,8 @@ void LocalizerModule::publishEstimate()
 		    last_estimate[3]);
 
     // Set a new transform
-    tf_client->setTransform(target_frame_name,
-			   source_frame_name,
+    tf_client->setTransform(est_target_frame_name,
+			   est_source_frame_name,
 			   pose.toMatrix());
 }
 

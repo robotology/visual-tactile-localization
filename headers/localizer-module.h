@@ -25,6 +25,7 @@
 
 #include "headers/filterData.h"
 #include "headers/unscentedParticleFilter.h"
+#include "headers/PointCloud.h"
 
 enum class FilteringType { visual, tactile };
 
@@ -106,6 +107,7 @@ private:
     std::string input_port_name;
 
     // point cloud
+    yarp::os::BufferedPort<PointCloud> port_pc;
     std::string port_pc_name;
 
     // PolyDriver required to access a yarp::dev::IFrameTransform

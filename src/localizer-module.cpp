@@ -555,7 +555,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 	return false;
     }
 
-    // open the port
+    // open ports
     bool ok_port = port_in.open(input_port_name);
 
     // stop the configuration if the port open failed
@@ -563,6 +563,14 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     {
 	yError() << "LocalizerModule::Configure error:"
 	         << "failure in opening input port /upf-localizer:i";
+	return false;
+    }
+
+    ok_port = port_pc.open(port_pc_name);
+    if (!ok_port)
+    {
+	yError() << "LocalizerModule:Configure error:"
+		 << "unable to open the point cloud port";
 	return false;
     }
 

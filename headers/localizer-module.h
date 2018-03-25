@@ -124,6 +124,11 @@ private:
     std::string robot_source_frame_name;
     std::string robot_target_frame_name;
 
+    // transformation from inertial frame to
+    // the root frame of the robot published by gazebo
+    // required to convert point clouds in the robot reference frame
+    yarp::sig::Matrix inertial_to_robot;
+
     // rpc server
     yarp::os::RpcServer rpc_port;
 

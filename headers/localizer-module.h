@@ -19,6 +19,7 @@
 #include <yarp/os/Mutex.h>
 #include <yarp/dev/IFrameTransform.h>
 #include <yarp/dev/PolyDriver.h>
+#include <yarp/dev/IEncoders.h>
 
 // std
 #include <vector>
@@ -140,6 +141,23 @@ private:
     bool filtering_enabled;
     bool is_first_step;
     FilteringType filtering_type;
+
+    /**
+     *  IEncoders
+     */
+
+    // PolyDriver required to access yarp::dev::IEncoders encoders
+    yarp::dev::PolyDriver drv_right_arm;
+    yarp::dev::PolyDriver drv_left_arm;
+    yarp::dev::PolyDriver drv_torso;
+
+    // pointers to yarp::dev::IEncoders view of the PolyDriver
+    yarp::dev::IEncoders *ienc_right_arm;
+    yarp::dev::IEncoders *ienc_left_arm;
+    yarp::dev::IEncoders *ienc_torso;
+
+    /*
+     */
 
     /*
      * Read a diagonal matrix from the configuration file

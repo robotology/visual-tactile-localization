@@ -684,6 +684,62 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 	return false;
     }
 
+    // prepare properties for the Encoders
+    yarp::os::Property prop_encoders;
+    prop_encoders.put("device", "remote_controlboard");
+    prop_encoders.put("remote", "/icubSim/right_arm");
+    prop_encoders.put("local", "/upf-localizer/encoders/right_arm");
+    ok_drv = drv_right_arm.open(prop_encoders);
+    if (!ok_drv)
+    {
+	yError() << "LocalizerModule::configure error:"
+		 << "unable to open the Remote Control Board driver for the right arm";
+	return false;
+    }
+
+    prop_encoders.put("remote", "/icubSim/left_arm");
+    prop_encoders.put("local", "/upf-localizer/encoders/left_arm");
+    ok_drv = drv_left_arm.open(prop_encoders);
+    if (!ok_drv)
+    {
+	yError() << "LocalizerModule::configure error:"
+		 << "unable to open the Remote Control Board driver for the left arm";
+	return false;
+    }
+
+    prop_encoders.put("remote", "/icubSim/torso");
+    prop_encoders.put("local", "/upf-localizer/encoders/torso");
+    ok_drv = drv_torso.open(prop_encoders);
+    if (!ok_drv)
+    {
+	yError() << "LocalizerModule::configure error:"
+		 << "unable to open the Remote Control Board driver for the torso";
+	return false;
+    }
+
+    // try to retrieve the views
+    bool ok_view = drv_right_arm.view(ienc_right_arm);
+    if (!ok_view || ienc_right_arm == 0)
+    {
+	yError() << "LocalizerModule:configure error:"
+		 << "unable to retrieve the Encoders view for the right arm";
+	return false;
+    }
+    ok_view = drv_left_arm.view(ienc_left_arm);
+    if (!ok_view || ienc_left_arm == 0)
+    {
+	yError() << "LocalizerModule:configure error:"
+		 << "unable to retrieve the Encoders view for the left arm";
+	return false;
+    }
+    ok_view = drv_torso.view(ienc_torso);
+    if (!ok_view || ienc_torso == 0)
+    {
+	yError() << "LocalizerModule:configure error:"
+		 << "unable to retrieve the Encoders view for the torso";
+	return false;
+    }
+
     // configure and init the UPF
     if(!upf.configure(rf))
     	return false;

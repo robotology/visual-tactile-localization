@@ -23,6 +23,7 @@
 
 // icub-main
 #include <iCub/iKin/iKinFwd.h>
+#include <iCub/skinDynLib/skinContactList.h>
 
 // std
 #include <vector>
@@ -200,6 +201,16 @@ private:
      */
     void transformPointCloud(const PointCloud& pc,
 			     std::vector<yarp::sig::Vector> &pc_out);
+
+    /*
+     * Extract finger tips contact points from a skinContactList
+     * @param list the input skin contact list
+     * @param point_right contact points on the right hand finger tips
+     * @param point_right contact points on the left hand finger tips
+     */
+    void getContactPoints(const iCub::skinDynLib::skinContactList &list,
+			  std::vector<yarp::sig::Vector> &points_right,
+			  std::vector<yarp::sig::Vector> &points_left);
     /*
      * Evaluate the velocity of a finger using geometric jacobians and
      * angular joints velocities

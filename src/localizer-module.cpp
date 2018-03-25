@@ -160,6 +160,32 @@ void LocalizerModule::transformPointCloud(const PointCloud& pc,
     }
 }
 
+void LocalizerModule::getContactPoints(const iCub::skinDynLib::skinContactList &list,
+				       std::vector<yarp::sig::Vector> &points_right,
+				       std::vector<yarp::sig::Vector> &points_left)
+{
+    // extract contacts coming from finger tips only
+    for (size_t i=0; i<list.size(); i++)
+    {
+	// extract the skin contact
+	const iCub::skinDynLib::skinContact &skin_contact = list[i];
+
+	// need to verify if this contact was effectively produced
+	// by taxels on the finger tips
+	// in order to simplify things the Gazebo plugin only sends one
+	// taxel id that is used to identify which finger is in contact
+	std::vector<unsigned int> taxels_ids = skin_contact.getTaxelList();
+	// taxels ids for finger tips are between 0 and 59
+	if (taxels_ids[0] >= 0 && taxels_ids[0] < 60)
+	{
+	    if (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND)
+		points_right.push_back(skin_contact.getGeoCenter());
+	    else
+		points_left.push_back(skin_contact.getGeoCenter());
+	}
+    }
+}
+
 bool LocalizerModule::getFingerVelocity(const std::string &hand_name,
 					const std::string &finger_name,
 					yarp::sig::Vector &finger_vel)

@@ -749,6 +749,14 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 	return false;
     }
 
+    ok_port = port_contacts.open(port_contacts_name);
+    if (!ok_port)
+    {
+	yError() << "LocalizerModule:Configure error:"
+		 << "unable to open the contact points port";
+	return false;
+    }
+
     // set FIFO policy
     port_in.setStrict();
 

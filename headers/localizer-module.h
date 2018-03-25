@@ -113,6 +113,7 @@ private:
     std::string port_pc_name;
 
     // contact points
+    yarp::os::BufferedPort<iCub::skinDynLib::skinContactList> port_contacts;
     std::string port_contacts_name;
 
     // PolyDriver required to access a yarp::dev::IFrameTransform

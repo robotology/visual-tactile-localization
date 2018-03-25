@@ -740,6 +740,24 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 	return false;
     }
 
+    // configure forward kinematics
+    right_arm_kin = iCub::iKin::iCubArm("right");
+    left_arm_kin = iCub::iKin::iCubArm("left");
+    right_middle = iCub::iKin::iCubFinger("right_middle");
+    left_middle = iCub::iKin::iCubFinger("left_middle");
+
+    // Limits update is not required to evaluate the forward kinematics
+    // using angles from the encoders
+    right_arm_kin.setAllConstraints(false);
+    left_arm_kin.setAllConstraints(false);
+    // Torso can be moved in general so its links have to be released
+    right_arm_kin.releaseLink(0);
+    right_arm_kin.releaseLink(1);
+    right_arm_kin.releaseLink(2);
+    left_arm_kin.releaseLink(0);
+    left_arm_kin.releaseLink(1);
+    left_arm_kin.releaseLink(2);
+
     // configure and init the UPF
     if(!upf.configure(rf))
     	return false;

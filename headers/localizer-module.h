@@ -21,6 +21,9 @@
 #include <yarp/dev/PolyDriver.h>
 #include <yarp/dev/IEncoders.h>
 
+// icub-main
+#include <iCub/iKin/iKinFwd.h>
+
 // std
 #include <vector>
 
@@ -155,6 +158,21 @@ private:
     yarp::dev::IEncoders *ienc_right_arm;
     yarp::dev::IEncoders *ienc_left_arm;
     yarp::dev::IEncoders *ienc_torso;
+
+    /*
+     */
+
+    /**
+     *  iCub forward kinematics
+     */
+
+    iCub::iKin::iCubArm right_arm_kin;
+    iCub::iKin::iCubArm left_arm_kin;
+
+    // middle finger only for now
+    // TODO: add the other fingers
+    iCub::iKin::iCubFinger right_middle;
+    iCub::iKin::iCubFinger left_middle;
 
     /*
      */

@@ -197,51 +197,70 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 
     if (filtering_type == FilteringType::visual)
     {
-	if (meas.size() == 0)
+	// check if a point cloud is available
+	PointCloud *new_pc = port_pc.read(false);
+	if (new_pc == NULL)
 	{
-	    stopFiltering();
+	    // nothing to do here
 	    return;
 	}
+
+	// transform point cloud
+	std::vector<yarp::sig::Vector> pc;
+	transformPointCloud(*new_pc,
+			    pc);
 
 	// set noise covariances
 	upf.setQ(Q_vision);
 	upf.setR(R_vision);
 
-	// set measure
-	upf.setNewMeasure(meas);
+	// process cloud in chuncks of 10 points
+        // TODO: take n_points from config
+	int n_points = 10;
+	for (size_t i=0; i+n_points <= pc.size(); i += n_points)
+	{
+            // prepare measure
+	    std::vector<yarp::sig::Vector> measure;
+	    for (size_t k=0; k<n_points; k++)
+		measure.push_back(pc[i+k]);
 
-	// set zero input (visual localization is static)
-	upf.setNewInput(input[0]);
+	    // set measure
+	    upf.setNewMeasure(measure);
 
-	// step and estimate
-	// using time of simulated environment
-	// in case env variable YARP_CLOCK is set
-	t_i = yarp::os::Time::now();
-	upf.step();
-	last_estimate = upf.getEstimate();
-	t_f = yarp::os::Time::now();
-	exec_time = t_f - t_i;
+            // set zero input (visual localization is static)
+	    yarp::sig::Vector input(3, 0.0);
+	    upf.setNewInput(input);
 
-	storage_on_mutex.lock();
+	    // step and estimate
+	    // using time of simulated environment
+	    // in case env variable YARP_CLOCK is set
+	    t_i = yarp::os::Time::now();
+	    upf.step();
+	    last_estimate = upf.getEstimate();
+	    t_f = yarp::os::Time::now();
+	    exec_time = t_f - t_i;
 
-	// store data if required
-	if (storage_on)
-	    storeData(last_ground_truth,
-		      last_estimate,
-		      meas,
-		      input[0],
-		      exec_time);
+	    storage_on_mutex.lock();
 
-	storage_on_mutex.unlock();
+	    // store data if required
+	    if (storage_on)
+		storeData(last_ground_truth,
+			  last_estimate,
+			  measure,
+			  input,
+			  exec_time);
 
-	// after a visual filtering step
-	// the filter disables automatically
-	// TODO: make this optional from configuration
-	//       or from FilterCommand
-	stopFiltering();
+	    storage_on_mutex.unlock();
 
-	// a new estimate is now available
-	estimate_available = true;
+	    // after a visual filtering step
+	    // the filter disables automatically
+	    // TODO: make this optional from configuration
+	    //       or from FilterCommand
+	    stopFiltering();
+
+	    // a new estimate is now available
+	    estimate_available = true;
+	}
     }
     else if (filtering_type == FilteringType::tactile)
     {

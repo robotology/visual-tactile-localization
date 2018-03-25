@@ -276,11 +276,6 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
     // if (meas.size() == 0)
     // 	return;
 
-    // extract the input
-    data.inputs(input);
-    // if (input.size() == 0)
-    // 	return;
-
     if (filtering_type == FilteringType::visual)
     {
 	// check if a point cloud is available
@@ -357,8 +352,10 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 	// set measure
 	upf.setNewMeasure(meas);
 
-	// set input
-	upf.setNewInput(input[0]);
+	// use the velocity of the middle finger as input
+	yarp::sig::Vector input;
+	getFingerVelocity("right", "middle", input);
+	upf.setNewInput(input);
 
 	if (is_first_step)
 	{
@@ -388,7 +385,7 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 	    storeData(last_ground_truth,
 		      last_estimate,
 		      meas,
-		      input[0],
+		      input,
 		      exec_time);
 
 	storage_on_mutex.unlock();

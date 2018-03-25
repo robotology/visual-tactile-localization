@@ -105,6 +105,9 @@ private:
     yarp::sig::FilterData* data;
     std::string input_port_name;
 
+    // point cloud
+    std::string port_pc_name;
+
     // PolyDriver required to access a yarp::dev::IFrameTransform
     yarp::dev::PolyDriver drv_transform_client;
 

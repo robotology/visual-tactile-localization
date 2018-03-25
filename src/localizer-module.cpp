@@ -73,6 +73,11 @@ bool LocalizerModule::loadParameters()
     	rpc_port_name = "/upf-localizer/service";
     yInfo() << "Localizer module: rpc server port name is" << rpc_port_name;
 
+    port_pc_name = rf->find("pointCloudInputPort").asString();
+    if (rf->find("pointCloudInputPort").isNull())
+	port_pc_name = "/upf-localizer/pc:i";
+    yInfo() << "Localizer module: point cloud input port name is" << port_pc_name;
+
     if (!rf->check("outputPath"))
     {
         yError() << "Localizer module: output path not provided!";

@@ -192,8 +192,8 @@ void LocalizerModule::performFiltering(const yarp::sig::FilterData &data)
 
     // extract the input
     data.inputs(input);
-    if (input.size() == 0)
-	return;
+    // if (input.size() == 0)
+    // 	return;
 
     if (filtering_type == FilteringType::visual)
     {

@@ -72,9 +72,6 @@ private:
     // storage for the new measure
     std::vector<yarp::sig::Vector> meas;
 
-    // storage for the new input
-    std::vector<yarp::sig::Vector> input;
-
     // system noise covariance matrices
     yarp::sig::Vector Q_vision;
     yarp::sig::Vector Q_tactile;

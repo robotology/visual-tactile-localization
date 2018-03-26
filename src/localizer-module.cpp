@@ -25,7 +25,7 @@
 
 //
 #include "headers/localizer-module.h"
-#include "headers/filterData.h"
+#include "headers/filterCommand.h"
 #include "headers/unscentedParticleFilter.h"
 #include "headers/geometryCGAL.h"
 
@@ -277,7 +277,7 @@ bool LocalizerModule::getFingerVelocity(const std::string &hand_name,
 
 }
 
-void LocalizerModule::processCommand(const yarp::sig::FilterData &filter_cmd)
+void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
 {
     // extract command and filtering type
     int cmd = filter_cmd.command();
@@ -389,7 +389,7 @@ void LocalizerModule::performFiltering()
 	getContactPoints(*new_contacts, points_right, points_left);
 
 	// for now assume that only one hand per time can be touching the object
-	// TODO: maybe FilterData can be used to specify which hand to use
+	// TODO: maybe FilterCommand can be used to specify which hand to use
 	if (points_right.size() != 0)
 	{
 	    points = &points_right;
@@ -947,13 +947,13 @@ bool LocalizerModule::updateModule()
     // try to get the ground truth
     retrieveGroundTruth(last_ground_truth);
 
-    // try to read data from the port
+    // try to read a command from the port
     bool should_wait = false;
-    data = port_in.read(should_wait);
+    cmd = port_in.read(should_wait);
 
     // process the command
-    if (data != YARP_NULLPTR)
-	processCommand(*data);
+    if (cmd != YARP_NULLPTR)
+	processCommand(*cmd);
 
     // do filtering step
     performFiltering();

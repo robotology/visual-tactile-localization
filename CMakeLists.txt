@@ -51,12 +51,12 @@ set(headers
   headers/geometryCGAL.h
   headers/unscentedParticleFilter.h
   headers/localizer-module.h
-  headers/filterData.h
+  headers/filterCommand.h
   headers/PointCloud.h)
 set(sources
   src/unscentedParticleFilter.cpp
   src/localizer-module.cpp
-  src/filterData.cpp
+  src/filterCommand.cpp
   src/main.cpp)
 
 # executable

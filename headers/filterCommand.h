@@ -21,11 +21,11 @@
 
 namespace yarp {
     namespace sig {
-	class FilterData;
+	class FilterCommand;
     }
 }
 
-class YARP_sig_API yarp::sig::FilterData : public yarp::os::Portable
+class YARP_sig_API yarp::sig::FilterCommand : public yarp::os::Portable
 {
 private:
     /*
@@ -43,7 +43,7 @@ private:
     int n_inputs;
     
     /*
-     * Tag describing the type of FilterData, i.e.
+     * Tag describing the type of FilterCommand, i.e.
      * something meaningful for the filtering algorithm
      */
     int tag_value;
@@ -55,11 +55,11 @@ private:
     int cmd_value;
 
 public:
-    FilterData();
-    FilterData(const FilterData &);    
-    ~FilterData();
+    FilterCommand();
+    FilterCommand(const FilterCommand &);    
+    ~FilterCommand();
 
-    FilterData& operator=(const FilterData&);
+    FilterCommand& operator=(const FilterCommand&);
     
     bool addPoint(const yarp::sig::Vector&);
     bool addInput(const yarp::sig::Vector&);
@@ -74,8 +74,8 @@ public:
     void clear();
 
     /*
-     * Read a FilterData from a connection.
-     * Return true iff a FilterData was read correctly.
+     * Read a FilterCommand from a connection.
+     * Return true iff a FilterCommand was read correctly.
      */
     bool read(yarp::os::ConnectionReader& connection) YARP_OVERRIDE;
     

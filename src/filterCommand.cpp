@@ -18,24 +18,24 @@
 //memset
 #include <memory.h> 
 
-#include "headers/filterData.h"
+#include "headers/filterCommand.h"
 
 YARP_BEGIN_PACK
-class FilterDataPortContentHeader
+class FilterCommandPortContentHeader
 {
 public:
     yarp::os::NetInt32 n_points;
     yarp::os::NetInt32 n_inputs;
 
-    FilterDataPortContentHeader() : n_points(0), n_inputs(0) {}
+    FilterCommandPortContentHeader() : n_points(0), n_inputs(0) {}
 };
 YARP_END_PACK
 
-yarp::sig::FilterData::FilterData() :
+yarp::sig::FilterCommand::FilterCommand() :
     n_points_alloc(0), n_points(0), points_storage(0),
     n_inputs_alloc(0), n_inputs(0), inputs_storage(0) {}
     
-yarp::sig::FilterData::FilterData(const FilterData &f) : 
+yarp::sig::FilterCommand::FilterCommand(const FilterCommand &f) : 
     points_storage(0), inputs_storage(0)
 {
     n_points_alloc = n_points = f.n_points;
@@ -57,7 +57,7 @@ yarp::sig::FilterData::FilterData(const FilterData &f) :
     }
 }
 
-yarp::sig::FilterData& yarp::sig::FilterData::operator=(const FilterData& f)
+yarp::sig::FilterCommand& yarp::sig::FilterCommand::operator=(const FilterCommand& f)
 {
     // quick implementation
     // there is room for improvements
@@ -106,7 +106,7 @@ yarp::sig::FilterData& yarp::sig::FilterData::operator=(const FilterData& f)
     }
 }
 
-yarp::sig::FilterData::~FilterData()
+yarp::sig::FilterCommand::~FilterCommand()
 {
     if (points_storage != 0)
     	delete [] points_storage;
@@ -115,7 +115,7 @@ yarp::sig::FilterData::~FilterData()
     	delete [] inputs_storage;
 }
 
-bool yarp::sig::FilterData::addPoint(const yarp::sig::Vector& point)
+bool yarp::sig::FilterCommand::addPoint(const yarp::sig::Vector& point)
 {
     if (point.size() != 3)
 	return false;
@@ -138,7 +138,7 @@ bool yarp::sig::FilterData::addPoint(const yarp::sig::Vector& point)
     return true;
 }
 
-bool yarp::sig::FilterData::addInput(const yarp::sig::Vector& input)
+bool yarp::sig::FilterCommand::addInput(const yarp::sig::Vector& input)
 {
     if (input.size() != 3)
 	return false;
@@ -161,17 +161,17 @@ bool yarp::sig::FilterData::addInput(const yarp::sig::Vector& input)
     return true;
 }
 
-void yarp::sig::FilterData::setTag(int tag)
+void yarp::sig::FilterCommand::setTag(int tag)
 {
     this->tag_value = tag;
 }
 
-void yarp::sig::FilterData::setCommand(int cmd)
+void yarp::sig::FilterCommand::setCommand(int cmd)
 {
     this->cmd_value = cmd;
 }
 
-void yarp::sig::FilterData::points(std::vector<yarp::sig::Vector>& points) const
+void yarp::sig::FilterCommand::points(std::vector<yarp::sig::Vector>& points) const
 {
     points.clear();
 
@@ -182,7 +182,7 @@ void yarp::sig::FilterData::points(std::vector<yarp::sig::Vector>& points) const
     }
 }
 
-void yarp::sig::FilterData::inputs(std::vector<yarp::sig::Vector>& inputs) const
+void yarp::sig::FilterCommand::inputs(std::vector<yarp::sig::Vector>& inputs) const
 {
     inputs.clear();
 
@@ -193,17 +193,17 @@ void yarp::sig::FilterData::inputs(std::vector<yarp::sig::Vector>& inputs) const
     }
 }
 
-int yarp::sig::FilterData::tag() const
+int yarp::sig::FilterCommand::tag() const
 {
     return tag_value;
 }
 
-int yarp::sig::FilterData::command() const
+int yarp::sig::FilterCommand::command() const
 {
     return cmd_value;
 }
 
-void yarp::sig::FilterData::clear()
+void yarp::sig::FilterCommand::clear()
 {
     n_points = 0;
     n_inputs = 0;
@@ -211,9 +211,9 @@ void yarp::sig::FilterData::clear()
     cmd_value = VOCAB4('E','M','P','T');
 }
 
-bool yarp::sig::FilterData::read(yarp::os::ConnectionReader& connection)
+bool yarp::sig::FilterCommand::read(yarp::os::ConnectionReader& connection)
 {
-    FilterDataPortContentHeader header;
+    FilterCommandPortContentHeader header;
 
     bool ok = connection.expectBlock((char*)&header, sizeof(header));
     if (!ok)
@@ -244,9 +244,9 @@ bool yarp::sig::FilterData::read(yarp::os::ConnectionReader& connection)
     return true;
 }
 
-bool yarp::sig::FilterData::write(yarp::os::ConnectionWriter& connection)
+bool yarp::sig::FilterCommand::write(yarp::os::ConnectionWriter& connection)
 {
-    FilterDataPortContentHeader header;
+    FilterCommandPortContentHeader header;
 
     header.n_points = n_points;
     header.n_inputs = n_inputs;

@@ -28,7 +28,7 @@
 // std
 #include <vector>
 
-#include "headers/filterData.h"
+#include "headers/filterCommand.h"
 #include "headers/unscentedParticleFilter.h"
 #include "headers/PointCloud.h"
 
@@ -100,9 +100,9 @@ private:
     // path where to save output
     std::string output_path;
 
-    // port where new data is received
-    yarp::os::BufferedPort<yarp::sig::FilterData> port_in;
-    yarp::sig::FilterData* data;
+    // port where commands are received
+    yarp::os::BufferedPort<yarp::sig::FilterCommand> port_in;
+    yarp::sig::FilterCommand* cmd;
     std::string input_port_name;
 
     // point cloud
@@ -226,11 +226,10 @@ private:
      * Process a command coming from the input port
      * @param cmd command to the filtering algorithm
      */
-    void processCommand(const yarp::sig::FilterData &filter_cmd);
+    void processCommand(const yarp::sig::FilterCommand &filter_cmd);
 
     /*
-     * Perform a filtering step using new data
-     * @param data yarp::sig::FilterData data
+     * Perform a filtering step
      */
     void performFiltering();
 

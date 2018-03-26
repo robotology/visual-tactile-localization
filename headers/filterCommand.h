@@ -13,11 +13,8 @@
 #define FILTER_DATA_H
 
 // yarp
-#include <yarp/sig/Vector.h>
 #include <yarp/os/Portable.h>
-
-// std
-#include <vector>
+#include <yarp/sig/api.h>
 
 namespace yarp {
     namespace sig {
@@ -28,20 +25,6 @@ namespace yarp {
 class YARP_sig_API yarp::sig::FilterCommand : public yarp::os::Portable
 {
 private:
-    /*
-     * Storage for the measurements
-     */
-    double *points_storage;
-    int n_points_alloc;
-    int n_points;
-    
-    /*
-     * Storage for the inputs
-     */
-    double *inputs_storage;
-    int n_inputs_alloc;
-    int n_inputs;
-    
     /*
      * Tag describing the type of FilterCommand, i.e.
      * something meaningful for the filtering algorithm
@@ -55,19 +38,9 @@ private:
     int cmd_value;
 
 public:
-    FilterCommand();
-    FilterCommand(const FilterCommand &);    
-    ~FilterCommand();
-
-    FilterCommand& operator=(const FilterCommand&);
-    
-    bool addPoint(const yarp::sig::Vector&);
-    bool addInput(const yarp::sig::Vector&);
     void setTag(int);
     void setCommand(int);
 
-    void points(std::vector<yarp::sig::Vector>&) const;
-    void inputs(std::vector<yarp::sig::Vector>&) const;
     int tag() const;
     int command() const;
 

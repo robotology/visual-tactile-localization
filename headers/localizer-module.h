@@ -108,6 +108,9 @@ private:
     bool is_first_step;
     FilteringType filtering_type;
 
+    // period
+    double period;
+
     /*
      */
 

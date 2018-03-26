@@ -128,7 +128,12 @@ bool LocalizerModule::loadParameters()
     R_tactile = rf->find("tactileR").asDouble();
     if (rf->find("tactileR").isNull())
 	R_tactile = 0.0001;
-    yInfo() << "Localizer module: R for tactile is" << R_tactile;    
+    yInfo() << "Localizer module: R for tactile is" << R_tactile;
+
+    period = rf->find("period").asDouble();
+    if (rf->find("period").isNull())
+	period = 0.01;
+    yInfo() << "Localizer module: period " << period;
 
     return true;
 }
@@ -935,7 +940,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 double LocalizerModule::getPeriod()
 {
     // TODO: take from the config
-    return 0.01;
+    return period;
 }
 
 bool LocalizerModule::updateModule()

@@ -67,6 +67,10 @@ private:
     // resource finder
     yarp::os::ResourceFinder *rf;
 
+   /**
+    * Filter
+    */
+
     // pointer to Unscented Particle Filter
     UnscentedParticleFilter upf;
 
@@ -76,42 +80,42 @@ private:
 
     // measurement noise variance
     double R_vision;
-    double R_tactile;    
+    double R_tactile;
 
     // last estimate available
     yarp::sig::Vector last_estimate;
-
     // last ground truth available
     yarp::sig::Vector last_ground_truth;
 
-    // number of steps performed
-    int n_steps;
-
-    // variables required to collect execution time
-    double t_i;
-    double t_f;
-    double exec_time;
-
-    // internal storage
+    // storage for collection of
+    // filtering data
     std::vector<Data> storage;
     bool storage_on;
     yarp::os::Mutex storage_on_mutex;
 
+    // variables required to collect
+    // filtering execution time
+    double t_i;
+    double t_f;
+    double exec_time;
+
     // path where to save output
     std::string output_path;
 
-    // port where commands are received
-    yarp::os::BufferedPort<yarp::sig::FilterCommand> port_in;
-    yarp::sig::FilterCommand* cmd;
-    std::string input_port_name;
+    // flags
+    bool estimate_available;
+    bool filtering_enabled;
+    bool is_first_step;
+    FilteringType filtering_type;
 
-    // point cloud
-    yarp::os::BufferedPort<PointCloud> port_pc;
-    std::string port_pc_name;
+    /*
+     */
 
-    // contact points
-    yarp::os::BufferedPort<iCub::skinDynLib::skinContactList> port_contacts;
-    std::string port_contacts_name;
+   /**
+    * FrameTransformClient required to
+    * - publish the estimate of the filter
+    * - retrieve the pose of the robot root frame
+    */
 
     // PolyDriver required to access a yarp::dev::IFrameTransform
     yarp::dev::PolyDriver drv_transform_client;
@@ -119,7 +123,7 @@ private:
     // pointer to yarp::dev::IFrameTransform view of the PolyDriver
     yarp::dev::IFrameTransform* tf_client;
 
-    // source and target frame names
+    // source and target frame names for estimate
     std::string est_source_frame_name;
     std::string est_target_frame_name;
 
@@ -132,17 +136,8 @@ private:
     // required to convert point clouds in the robot reference frame
     yarp::sig::Matrix inertial_to_robot;
 
-    // rpc server
-    yarp::os::RpcServer rpc_port;
-
-    // rpc server port name
-    std::string rpc_port_name;
-
-    // flags
-    bool estimate_available;
-    bool filtering_enabled;
-    bool is_first_step;
-    FilteringType filtering_type;
+    /*
+     */
 
     /**
      *  IEncoders
@@ -175,6 +170,32 @@ private:
 
     /*
      */
+
+   /**
+    * Ports
+    */
+
+    // port where new filtering command is received
+    yarp::os::BufferedPort<yarp::sig::FilterCommand> port_in;
+
+    // point cloud
+    yarp::os::BufferedPort<PointCloud> port_pc;
+
+    // contact points
+    yarp::os::BufferedPort<iCub::skinDynLib::skinContactList> port_contacts;
+
+    // rpc server
+    yarp::os::RpcServer rpc_port;
+
+    // names
+    std::string input_port_name;
+    std::string port_pc_name;
+    std::string port_contacts_name;
+    std::string rpc_port_name;
+    /*
+     */
+
+    yarp::sig::FilterCommand* cmd;
 
     /*
      * Read a diagonal matrix from the configuration file

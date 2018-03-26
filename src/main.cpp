@@ -17,7 +17,6 @@
 
 //
 #include "headers/localizer-module.h"
-#include "headers/filterData.h"
 
 /*
  * main

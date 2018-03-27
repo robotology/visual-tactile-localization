@@ -31,9 +31,11 @@ typedef CGAL::Aff_transformation_3<K> Affine;
 
 using namespace yarp::math;
 
-bool UnscentedParticleFilter::readCenter(const std::string &tag, yarp::sig::Vector &center0)
+bool UnscentedParticleFilter::readCenter(const yarp::os::ResourceFinder &rf,
+					 const std::string &tag,
+					 yarp::sig::Vector &center0)
 {      
-    if (yarp::os::Bottle *b=this->rf->find(tag.c_str()).asList())
+    if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
 	if (b->size()>=3)
 	{   
 	    center0[0]=b->get(0).asDouble();
@@ -45,9 +47,11 @@ bool UnscentedParticleFilter::readCenter(const std::string &tag, yarp::sig::Vect
     return false;
 }
     
-bool UnscentedParticleFilter::readRadius(const std::string &tag, yarp::sig::Vector &radius0)
+bool UnscentedParticleFilter::readRadius(const yarp::os::ResourceFinder &rf,
+					 const std::string &tag,
+					 yarp::sig::Vector &radius0)
 {
-    if (yarp::os::Bottle *b=this->rf->find(tag.c_str()).asList())
+    if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
         if (b->size()>=3)
         {
             radius0[0]=b->get(0).asDouble();           
@@ -60,10 +64,12 @@ bool UnscentedParticleFilter::readRadius(const std::string &tag, yarp::sig::Vect
     return false;
 }
     
-bool UnscentedParticleFilter::readDiagonalMatrix(const std::string &tag, yarp::sig::Vector &diag,\
+bool UnscentedParticleFilter::readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
+						 const std::string &tag,
+						 yarp::sig::Vector &diag, \
 						 const int &dimension)
 {
-    if (yarp::os::Bottle *b=this->rf->find(tag.c_str()).asList())
+    if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
         if (b->size()>=dimension)
         {
             for(size_t i; i<dimension; i++)
@@ -560,9 +566,6 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
 {
     yInfo()<<"UPF configuration";
     
-    // assign the resource finder
-    this->rf=&rf;
-
     // read the number of particles
     params.N=rf.find("N").asInt();
     if (rf.find("N").isNull())
@@ -571,7 +574,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
 
     // read the center of the initial research region
     params.center0.resize(3,0.0);
-    bool check=readCenter("center0",params.center0);
+    bool check=readCenter(rf,"center0",params.center0);
     if(!check)
     {
         params.center0[0]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
@@ -582,7 +585,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
 
     // read the radius of the initial research region
     params.radius0.resize(3,0.0);
-    check=readRadius("radius0",params.radius0);
+    check=readRadius(rf,"radius0",params.radius0);
     if(!check)
     {
         params.radius0[0]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
@@ -641,7 +644,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     // read the values of the system noise covariance matrix
     yarp::sig::Vector diagQ;
     diagQ.resize(params.n,1);
-    check=readDiagonalMatrix("Q0",diagQ,params.n);
+    check=readDiagonalMatrix(rf,"Q0",diagQ,params.n);
     if(!check)
     {
         diagQ[0]=rf.check("Q1",yarp::os::Value(0.0001)).asDouble();
@@ -666,14 +669,14 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     // read the values of the initial state covariance matrix
     yarp::sig::Vector diagP0;
     diagP0.resize(params.n,1);
-    check=readDiagonalMatrix("P0",diagP0,params.n);
+    check=readDiagonalMatrix(rf,"P0",diagP0,params.n);
     if(!check)
     {
         diagP0[0]=rf.check("P01",yarp::os::Value(0.04)).asDouble();
         diagP0[1]=rf.check("P02",yarp::os::Value(0.04)).asDouble();
         diagP0[2]=rf.check("P03",yarp::os::Value(0.04)).asDouble();
         diagP0[3]=rf.check("P04",yarp::os::Value(pow(M_PI,2.0))).asDouble();
-        diagP0[4]=rf.check("P05",yarp::os::Value(pow(M_PI/2.0,2.0))).asDouble();
+         diagP0[4]=rf.check("P05",yarp::os::Value(pow(M_PI/2.0,2.0))).asDouble();
         diagP0[5]=rf.check("P06",yarp::os::Value(pow(M_PI,2.0))).asDouble();
     }
     params.P0.resize(params.n,params.n);

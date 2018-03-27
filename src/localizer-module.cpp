@@ -31,12 +31,13 @@
 
 using namespace yarp::math;
 
-bool LocalizerModule::readDiagonalMatrix(const std::string &tag,
+bool LocalizerModule::readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
+					 const std::string &tag,
 					 const int &size,
 					 yarp::sig::Vector &diag)
 {
     // read values of the diagonal
-    yarp::os::Bottle *b = rf->find(tag.c_str()).asList();
+    yarp::os::Bottle *b = rf.find(tag.c_str()).asList();
 
     if (b == NULL)
 	return false;
@@ -51,57 +52,57 @@ bool LocalizerModule::readDiagonalMatrix(const std::string &tag,
     return true;
 }
 
-bool LocalizerModule::loadParameters()
+bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
 {
-    est_source_frame_name = rf->find("estimateSourceFrame").asString();
-    if (rf->find("estimateSourceFrame").isNull())
+    est_source_frame_name = rf.find("estimateSourceFrame").asString();
+    if (rf.find("estimateSourceFrame").isNull())
 	est_source_frame_name = "/iCub/frame";
     yInfo() << "Localizer module: estimate source frame name is" << est_source_frame_name;
 
-    est_target_frame_name = rf->find("estimateTargetFrame").asString();
-    if (rf->find("estimateTargetFrame").isNull())
+    est_target_frame_name = rf.find("estimateTargetFrame").asString();
+    if (rf.find("estimateTargetFrame").isNull())
 	est_target_frame_name = "/estimate/frame";
     yInfo() << "Localizer module: estimate target frame name is" << est_target_frame_name;
 
-    robot_source_frame_name = rf->find("robotSourceFrame").asString();
-    if (rf->find("robotSourceFrame").isNull())
+    robot_source_frame_name = rf.find("robotSourceFrame").asString();
+    if (rf.find("robotSourceFrame").isNull())
 	robot_source_frame_name = "/inertial";
     yInfo() << "Localizer module: robot source frame name is" << robot_source_frame_name;
 
-    robot_target_frame_name = rf->find("robotTargetFrame").asString();
-    if (rf->find("robotTargetFrame").isNull())
+    robot_target_frame_name = rf.find("robotTargetFrame").asString();
+    if (rf.find("robotTargetFrame").isNull())
 	robot_target_frame_name = "/iCub/frame";
     yInfo() << "Localizer module: robot target frame name is" << robot_target_frame_name;
 
-    input_port_name = rf->find("inputPort").asString();
-    if (rf->find("inputPort").isNull())
+    input_port_name = rf.find("inputPort").asString();
+    if (rf.find("inputPort").isNull())
 	input_port_name = "/upf-localizer:i";
     yInfo() << "Localizer module: input port name is" << input_port_name;
 
-    rpc_port_name = rf->find("rpcServerPort").asString();
-    if (rf->find("rpcServerPort").isNull())
+    rpc_port_name = rf.find("rpcServerPort").asString();
+    if (rf.find("rpcServerPort").isNull())
     	rpc_port_name = "/upf-localizer/service";
     yInfo() << "Localizer module: rpc server port name is" << rpc_port_name;
 
-    port_pc_name = rf->find("pointCloudInputPort").asString();
-    if (rf->find("pointCloudInputPort").isNull())
+    port_pc_name = rf.find("pointCloudInputPort").asString();
+    if (rf.find("pointCloudInputPort").isNull())
 	port_pc_name = "/upf-localizer/pc:i";
     yInfo() << "Localizer module: point cloud input port name is" << port_pc_name;
 
-    port_contacts_name = rf->find("contactsInputPort").asString();
-    if (rf->find("contactsInputPort").isNull())
+    port_contacts_name = rf.find("contactsInputPort").asString();
+    if (rf.find("contactsInputPort").isNull())
 	port_contacts_name = "/upf-localizer/contacts:i";
     yInfo() << "Localizer module: contact points input port name is" << port_contacts_name;
 
-    if (!rf->check("outputPath"))
+    if (!rf.check("outputPath"))
     {
         yError() << "Localizer module: output path not provided!";
         return false;
     }
-    output_path = rf->findFile("outputPath");
+    output_path = rf.findFile("outputPath");
     yInfo() << "Localizer module: output path is" << output_path;
 
-    if (!readDiagonalMatrix("visionQ", 6, Q_vision))
+    if (!readDiagonalMatrix(rf, "visionQ", 6, Q_vision))
     {
 	// set default value for covariance matrix
 	Q_vision.setSubvector(0, yarp::sig::Vector(3, 0.0001));
@@ -109,7 +110,7 @@ bool LocalizerModule::loadParameters()
     }
     yInfo() << "Localizer module: Q matrix for vision is" << Q_vision.toString();
 
-    if (!readDiagonalMatrix("tactileQ", 6, Q_tactile))
+    if (!readDiagonalMatrix(rf, "tactileQ", 6, Q_tactile))
     {
 	Q_tactile[0] = 0.00001;
 	Q_tactile[1] = 0.00001;
@@ -120,18 +121,18 @@ bool LocalizerModule::loadParameters()
     }
     yInfo() << "Localizer module: Q matrix for tactile is" << Q_tactile.toString();
 
-    R_vision = rf->find("visionR").asDouble();
-    if (rf->find("visionR").isNull())
+    R_vision = rf.find("visionR").asDouble();
+    if (rf.find("visionR").isNull())
 	R_vision = 0.0001;
     yInfo() << "Localizer module: R for vision is" << R_vision;
 
-    R_tactile = rf->find("tactileR").asDouble();
-    if (rf->find("tactileR").isNull())
+    R_tactile = rf.find("tactileR").asDouble();
+    if (rf.find("tactileR").isNull())
 	R_tactile = 0.0001;
     yInfo() << "Localizer module: R for tactile is" << R_tactile;
 
-    period = rf->find("period").asDouble();
-    if (rf->find("period").isNull())
+    period = rf.find("period").asDouble();
+    if (rf.find("period").isNull())
 	period = 0.01;
     yInfo() << "Localizer module: period " << period;
 
@@ -755,11 +756,11 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
 
 bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 {
-    // save reference to resource finder
-    this->rf = &rf;
-
     // load parameters from the configuration file
-    if (!loadParameters())
+    // using group 'upf-module'
+    yarp::os::ResourceFinder rf_module;
+    rf_module = rf.findNestedResourceFinder("upf-module");
+    if (!loadParameters(rf_module))
     {
 	yError() << "LocalizerModule::Configure error:"
 	         << "failure in loading parameters from configuration file";
@@ -917,7 +918,10 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     left_arm_kin.releaseLink(2);
 
     // configure and init the UPF
-    if(!upf.configure(rf))
+    // using group 'upf' from the configuration file
+    yarp::os::ResourceFinder rf_upf;
+    rf_upf = rf.findNestedResourceFinder("upf");
+    if(!upf.configure(rf_upf))
     	return false;
     upf.init();
 

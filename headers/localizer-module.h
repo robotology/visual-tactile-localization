@@ -64,9 +64,6 @@ struct Data
 class LocalizerModule : public yarp::os::RFModule
 {
 private:
-    // resource finder
-    yarp::os::ResourceFinder *rf;
-
    /**
     * Filter
     */
@@ -203,20 +200,23 @@ private:
     /*
      * Read a diagonal matrix from the configuration file
      *
+     * @param rf a previously instantiated @see ResourceFinder
      * @param tag the name of the matrix in the configuration file
      * @param size size of the diagonal
      * @param diag the output diagonal as a vector
      * @return true/false on success/failure
      */
-    bool readDiagonalMatrix(const std::string &tag,
+    bool readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
+			    const std::string &tag,
 			    const int &size,
 			    yarp::sig::Vector &diag);
     /*
      * Load the required parameters using a
      * previously instantiated @see Resource Finder.
+     * @param rf a previously instantiated @see ResourceFinder
      * @return true/false depending on the outcome
      */
-    bool loadParameters();
+    bool loadParameters(yarp::os::ResourceFinder &rf);
 
     /*
      * Transform a point cloud expressed in the inertial frame

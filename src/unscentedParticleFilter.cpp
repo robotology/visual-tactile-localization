@@ -570,7 +570,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     params.N=rf.find("N").asInt();
     if (rf.find("N").isNull())
 	params.N=rf.check("N",yarp::os::Value(600)).asInt();
-    yInfo()<<"Number of particles:"<<params.N;
+    yInfo()<<"UPF Number of particles:"<<params.N;
 
     // read the center of the initial research region
     params.center0.resize(3,0.0);
@@ -581,7 +581,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
         params.center0[1]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
         params.center0[2]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
     }
-    yInfo()<<"Center of initial research region:"<<params.center0.toString();
+    yInfo()<<"UPF Center of initial research region:"<<params.center0.toString();
 
     // read the radius of the initial research region
     params.radius0.resize(3,0.0);
@@ -592,48 +592,48 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
         params.radius0[1]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
         params.radius0[2]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
     }
-    yInfo()<<"Radius of initial research region:"<<params.radius0.toString();
+    yInfo()<<"UPF Radius of initial research region:"<<params.radius0.toString();
 
     // read the number of DoFs
     params.n=rf.find("n").asInt();
     if (rf.find("n").isNull())
         params.n=rf.check("n",yarp::os::Value(6)).asInt();
-    yInfo()<<"Number of DoF:"<<params.n;
+    yInfo()<<"UPF Number of DoF:"<<params.n;
 
     // read the Neff threshold
     params.n_eff_thr=rf.find("nEffThr").asDouble();
     if (rf.find("nEffThr").isNull())
         params.n_eff_thr=rf.check("nEffThr",yarp::os::Value(10)).asDouble();
-    yInfo()<<"Neff threshold:"<<params.n_eff_thr;
+    yInfo()<<"UPF Neff threshold:"<<params.n_eff_thr;
 
     // read the number of steps to wait for
     // before checking Neff and possibly do resampling
     params.n_steps_before_resampling=rf.find("nStepsBefRsmpl").asInt();
     if (rf.find("nStepsBefRsmpl").isNull())
         params.n_steps_before_resampling=rf.check("nStepsBefRsmpl",yarp::os::Value(10)).asInt();
-    yInfo()<<"Steps before resamping:"<<params.n_steps_before_resampling;
+    yInfo()<<"UPF Steps before resamping:"<<params.n_steps_before_resampling;
 
     // read the parameter beta for the Unscented Transform
     params.beta=rf.find("beta").asDouble();
     if (rf.find("beta").isNull())
         params.beta=rf.check("beta",yarp::os::Value(35.0)).asDouble();
-    yInfo()<<"Unscented Transform Beta:"<<params.beta;
+    yInfo()<<"UPF Unscented Transform Beta:"<<params.beta;
 
     // read the parameter alpha for the Unscented Transform
     params.alpha=rf.find("alpha").asDouble();
     if (rf.find("alpha").isNull())
         params.alpha=rf.check("alpha",yarp::os::Value(1.0)).asDouble();
-    yInfo()<<"Unscented Transform Alpha:"<<params.alpha;
+    yInfo()<<"UPF Unscented Transform Alpha:"<<params.alpha;
 
     // read the parameter kappa for the Unscented Transform
     params.kappa=rf.find("kappa").asDouble();
     if (rf.find("kappa").isNull())
         params.kappa=rf.check("kappa",yarp::os::Value(2.0)).asDouble();
-    yInfo()<<"Unscented Transform Kappa:"<<params.kappa;
+    yInfo()<<"UPF Unscented Transform Kappa:"<<params.kappa;
 
     // compute the parameter lambda for the Unscented Transform
     params.lambda=pow(params.alpha,2.0)*(6+params.kappa)-6;
-    yInfo()<<"Unscented Transform Lambda:"<<params.lambda;
+    yInfo()<<"UPF Unscented Transform Lambda:"<<params.lambda;
     
     // read the ideal measurement equation enabler
     params.use_ideal_meas_eqn=rf.find("useIdealMeasEqn").asBool();
@@ -658,13 +658,13 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     params.Q.resize(params.n,params.n);
     params.Q.diagonal(diagQ);
     params.Q_prev = params.Q;
-    yInfo()<<"UKF Q0:"<<params.Q.toString();
+    yInfo()<<"UPF Q0:"<<params.Q.toString();
 
     // read the noise scalar variance R
     params.R=rf.find("R").asDouble();
     if (rf.find("R").isNull())
         params.R=rf.check("R",yarp::os::Value(0.0001)).asDouble();
-    yInfo()<<"UKF R (scalar):"<<params.R;
+    yInfo()<<"UPF R (scalar):"<<params.R;
     
     // read the values of the initial state covariance matrix
     yarp::sig::Vector diagP0;
@@ -681,12 +681,13 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     }
     params.P0.resize(params.n,params.n);
     params.P0.diagonal(diagP0);
-    yInfo()<<"UKF P0:"<<params.P0.toString();
+    yInfo()<<"UPF P0:"<<params.P0.toString();
 
     // read triangular mesh model filename
     if (!rf.check("modelFile"))
     {
-        yError()<<"model file not provided!";
+        yError()<<"UnscentedParticleFilter::configure"
+		<<"Error: model file not provided!";
         return false;
     }
     std::string modelFileName=rf.findFile("modelFile");
@@ -695,18 +696,20 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     std::ifstream modelFile(modelFileName.c_str());
     if (!modelFile.is_open())
     {
-        yError()<<"problem opening model file!";
+        yError()<<"UnscentedParticleFilter:: configure"
+		<<"Error: problem opening model file!";
         return false;
     }
     modelFile>>getModel();
     if (modelFile.bad())
     {
-        yError()<<"problem reading model file!";
+        yError()<<"UscentedParticleFilter::configure"
+		<<"Error: problem reading model file!";
         modelFile.close();
         return false;
     }
     modelFile.close();
-    yInfo()<<"Model file loaded successfully";
+    yInfo()<<"UPF Model file loaded successfully";
 
     // init CGAL
     GeometryCGAL::init();

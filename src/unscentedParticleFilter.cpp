@@ -577,9 +577,9 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     bool check=readCenter(rf,"center0",params.center0);
     if(!check)
     {
-        params.center0[0]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
-        params.center0[1]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
-        params.center0[2]=rf.check("center0",yarp::os::Value(0.2)).asDouble();
+        params.center0[0]=0.0;
+        params.center0[1]=0.0;
+        params.center0[2]=0.0;
     }
     yInfo()<<"UPF Center of initial research region:"<<params.center0.toString();
 
@@ -588,9 +588,9 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     check=readRadius(rf,"radius0",params.radius0);
     if(!check)
     {
-        params.radius0[0]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
-        params.radius0[1]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
-        params.radius0[2]=rf.check("radius0",yarp::os::Value(0.2)).asDouble();
+        params.radius0[0]=0.4;
+        params.radius0[1]=0.4;
+        params.radius0[2]=0.4;
     }
     yInfo()<<"UPF Radius of initial research region:"<<params.radius0.toString();
 
@@ -647,12 +647,12 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     check=readDiagonalMatrix(rf,"Q0",diagQ,params.n);
     if(!check)
     {
-        diagQ[0]=rf.check("Q1",yarp::os::Value(0.0001)).asDouble();
-        diagQ[1]=rf.check("Q2",yarp::os::Value(0.0001)).asDouble();
-        diagQ[2]=rf.check("Q3",yarp::os::Value(0.0001)).asDouble();
-        diagQ[3]=rf.check("Q4",yarp::os::Value(0.001)).asDouble();
-        diagQ[4]=rf.check("Q5",yarp::os::Value(0.001)).asDouble();
-        diagQ[5]=rf.check("Q6",yarp::os::Value(0.001)).asDouble();
+        diagQ[0]=0.0001;
+        diagQ[1]=0.0001;
+        diagQ[2]=0.0001;
+        diagQ[3]=0.001;
+        diagQ[4]=0.001;
+        diagQ[5]=0.001;
     }
     yarp::sig::Matrix Q;
     params.Q.resize(params.n,params.n);
@@ -672,12 +672,12 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     check=readDiagonalMatrix(rf,"P0",diagP0,params.n);
     if(!check)
     {
-        diagP0[0]=rf.check("P01",yarp::os::Value(0.04)).asDouble();
-        diagP0[1]=rf.check("P02",yarp::os::Value(0.04)).asDouble();
-        diagP0[2]=rf.check("P03",yarp::os::Value(0.04)).asDouble();
-        diagP0[3]=rf.check("P04",yarp::os::Value(pow(M_PI,2.0))).asDouble();
-         diagP0[4]=rf.check("P05",yarp::os::Value(pow(M_PI/2.0,2.0))).asDouble();
-        diagP0[5]=rf.check("P06",yarp::os::Value(pow(M_PI,2.0))).asDouble();
+        diagP0[0]=0.04;
+        diagP0[1]=0.04;
+        diagP0[2]=0.04;
+        diagP0[3]=3.29;
+	diagP0[4]=3.29;
+        diagP0[5]=3.29;
     }
     params.P0.resize(params.n,params.n);
     params.P0.diagonal(diagP0);

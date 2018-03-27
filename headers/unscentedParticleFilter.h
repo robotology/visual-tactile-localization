@@ -143,9 +143,6 @@ struct ParticleUPF
 class UnscentedParticleFilter : public GeometryCGAL
 {
 private:
-    // resource finder
-    yarp::os::ResourceFinder *rf;
-
     // storage for all the particles
     std::deque<ParticleUPF> x;
     
@@ -175,30 +172,40 @@ private:
     /** 
      * Read the coordinates of the center of the research region 
      * and save them in center0.
+     * @param rf reference to a previously instantiated @see ResourceFinder
      * @param the tag of the center within the internal resource finder rf
      * @param vector in which coordinates are returned
      * @return true/false upon succes/failure
      */
-    bool readCenter(const std::string &tag, yarp::sig::Vector &center0);
+    bool readCenter(const yarp::os::ResourceFinder &rf,
+		    const std::string &tag,
+		    yarp::sig::Vector &center0);
     
     /** 
      * Read the coordinates of the radius of the research region and save them in radius0.
+     * @param rf reference to a previously instantiated @see ResourceFinder
      * @param tag the tag of radius within the internal resource finder rf
      * @param radius0 vector in which coordinates are returned
      * @return true/false upon succes/failure
      */
-    bool readRadius(const std::string &tag, yarp::sig::Vector &radius0);
+    bool readRadius(const yarp::os::ResourceFinder &rf,
+		    const std::string &tag,
+		    yarp::sig::Vector &radius0);
     
     /** 
      * Read the values on the diagonal line of a diagonal matrix 
      * stored as tag within the internal resource finder rf and 
      * store them in the vector diag.
+     * @param rf reference to a previously instantiated @see ResourceFinder
      * @param tag the tag of the matrix in the internal resource finder rf
      * @param diag the vector in which values are returned
      * @param dimension the dimension of the matrix
      * @return true/false upon succes/failure
      */
-    bool readDiagonalMatrix(const std::string &tag, yarp::sig::Vector &diag, const int &dimension);
+    bool readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
+			    const std::string &tag,
+			    yarp::sig::Vector &diag,
+			    const int &dimension);
 
     /** 
      * Initialize some quantities of the UPF

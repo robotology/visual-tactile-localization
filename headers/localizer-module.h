@@ -46,6 +46,12 @@ struct Data
     // current measurements
     std::vector<yarp::sig::Vector> meas;
 
+    // current fingers joints angles
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_joints;
+
+    // current finger velocities
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
+
     // current input
     yarp::sig::Vector input;
 
@@ -396,12 +402,31 @@ private:
      * @param meas the current measurements
      * @param input the current input
      * @param ground_truth execution time of last filtering step
+     * @return a reference to the data set stored
      */
-    void storeData(const yarp::sig::Vector &ground_truth,
-		   const yarp::sig::Vector &estimate,
-		   const std::vector<yarp::sig::Vector> &meas,
-		   const yarp::sig::Vector &input,
-		   const double &exec_time);
+    Data& storeData(const yarp::sig::Vector &ground_truth,
+		    const yarp::sig::Vector &estimate,
+		    const std::vector<yarp::sig::Vector> &meas,
+		    const yarp::sig::Vector &input,
+		    const double &exec_time);
+
+    /*
+     * Store data in the internal storage for the tactile filtering case
+     * @param ground_truth the current ground truth
+     * @param estimate the current estimate
+     * @param meas the current measurements
+     * @param input the current input
+     * @param fingers_joints the current joints configuration of the fingers
+     * @param fingers_vels the current linear velocities of the fingers
+     * @param exec_time_truth execution time of last filtering step
+     */
+    void storeDataTactile(const yarp::sig::Vector &ground_truth,
+			  const yarp::sig::Vector &estimate,
+			  const std::vector<yarp::sig::Vector> &meas,
+			  const yarp::sig::Vector &input,
+			  std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
+			  std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
+			  const double &exec_time);
 
     /*
      * Save to a .OFF file a mesh representing a ground truth pose

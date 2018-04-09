@@ -671,11 +671,13 @@ void LocalizerModule::performFiltering()
 
 	// store data if required
 	if (storage_on)
-	    storeData(last_ground_truth,
-		      last_estimate,
-		      *points,
-		      input,
-		      exec_time);
+	    storeDataTactile(last_ground_truth,
+			     last_estimate,
+			     *points,
+			     input,
+			     fingers_angles,
+			     fingers_vels,
+			     exec_time);
 
 	storage_on_mutex.unlock();
 
@@ -748,11 +750,11 @@ void LocalizerModule::resetStorage()
     storage.clear();
 }
 
-void LocalizerModule::storeData(const yarp::sig::Vector &ground_truth,
-				const yarp::sig::Vector &estimate,
-				const std::vector<yarp::sig::Vector> &meas,
-				const yarp::sig::Vector &input,
-				const double &exec_time)
+Data& LocalizerModule::storeData(const yarp::sig::Vector &ground_truth,
+				 const yarp::sig::Vector &estimate,
+				 const std::vector<yarp::sig::Vector> &meas,
+				 const yarp::sig::Vector &input,
+				 const double &exec_time)
 {
     Data d;
 
@@ -765,6 +767,25 @@ void LocalizerModule::storeData(const yarp::sig::Vector &ground_truth,
 
     // add to storage
     storage.push_back(d);
+
+    // return reference to last element
+    return storage.back();
+}
+
+void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
+				       const yarp::sig::Vector &estimate,
+				       const std::vector<yarp::sig::Vector> &meas,
+				       const yarp::sig::Vector &input,
+				       std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
+				       std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
+				       const double &exec_time)
+{
+    // store common data
+    Data &d = storeData(ground_truth, estimate, meas, input, exec_time);
+
+    // add additional fields
+    d.fingers_joints = fingers_joints;
+    d.fingers_vels = fingers_vels;
 }
 
 bool LocalizerModule::saveMesh(const yarp::sig::Vector &pose,

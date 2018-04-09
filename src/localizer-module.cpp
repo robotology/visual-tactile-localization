@@ -890,6 +890,7 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 	     << "x_sol;"   << "y_sol;"     << "z_sol;"
 	     << "phi_sol;" << "theta_sol;" << "psi_sol;"
 	     << "input_x;"   << "input_y;" << "input_z;"
+	     << "time_stamp"
 	     << "exec_time;"
 	     << std::endl;
 
@@ -908,6 +909,8 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 	    // input
 	    for(size_t j=0; j<3; j++)
 		fout << d.input[j] << ";";
+	    // time stamp
+	    fout << d.time_stamp << ";";
 	    // execution time
 	    fout << d.exec_time << ";";
 

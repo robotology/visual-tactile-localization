@@ -525,6 +525,9 @@ void LocalizerModule::performFiltering()
     // store initial time
     t_i = yarp::os::Time::now();
 
+    // storage for time stamp
+    double time_stamp;
+
     if (filtering_type == FilteringType::visual)
     {
 	// check if a point cloud is available
@@ -571,7 +574,7 @@ void LocalizerModule::performFiltering()
 	    // step and estimate
 	    // using time of simulated environment
 	    // in case env variable YARP_CLOCK is set
-	    upf.step();
+	    upf.step(time_stamp);
 	    last_estimate = upf.getEstimate();
 
 	    // evaluate final time and execution time
@@ -587,6 +590,7 @@ void LocalizerModule::performFiltering()
 			  last_estimate,
 			  measure,
 			  input,
+			  time_stamp,
 			  exec_time);
 
 	    storage_on_mutex.unlock();
@@ -665,12 +669,12 @@ void LocalizerModule::performFiltering()
 
 	if (num_meas <= 1)
 	    // skip step in case of too few measurements
-	    upf.skipStep();
+	    upf.skipStep(time_stamp);
 	else
 	{
 	    // do normal filtering step
 	    upf.setNewMeasure(*points);
-	    upf.step();
+	    upf.step(time_stamp);
 	    last_estimate = upf.getEstimate();
 	}
 
@@ -688,6 +692,7 @@ void LocalizerModule::performFiltering()
 			     input,
 			     fingers_angles,
 			     fingers_vels,
+			     time_stamp,
 			     exec_time);
 
 	storage_on_mutex.unlock();
@@ -766,6 +771,7 @@ Data& LocalizerModule::storeData(const FilteringType &data_type,
 				 const yarp::sig::Vector &estimate,
 				 const std::vector<yarp::sig::Vector> &meas,
 				 const yarp::sig::Vector &input,
+				 const double &time_stamp,
 				 const double &exec_time)
 {
     Data d;
@@ -776,6 +782,7 @@ Data& LocalizerModule::storeData(const FilteringType &data_type,
     d.estimate = estimate;
     d.meas = meas;
     d.input = input;
+    d.time_stamp = time_stamp;
     d.exec_time = exec_time;
 
     // add to storage
@@ -791,11 +798,12 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
 				       const yarp::sig::Vector &input,
 				       std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
 				       std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
+				       const double &time_stamp,
 				       const double &exec_time)
 {
     // store common data
     Data &d = storeData(FilteringType::tactile, ground_truth,
-			estimate, meas, input, exec_time);
+			estimate, meas, input, exec_time, time_stamp);
 
     // add additional fields
     d.fingers_joints = fingers_joints;

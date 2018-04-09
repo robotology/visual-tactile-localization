@@ -55,6 +55,9 @@ struct Data
     // current input
     yarp::sig::Vector input;
 
+    // time stamp relative to the filtering step
+    double time_stamp;
+
     // execution time of filtering step
     double exec_time;
 
@@ -410,6 +413,7 @@ private:
 		    const yarp::sig::Vector &estimate,
 		    const std::vector<yarp::sig::Vector> &meas,
 		    const yarp::sig::Vector &input,
+		    const double &time_stamp,
 		    const double &exec_time);
 
     /*
@@ -428,6 +432,7 @@ private:
 			  const yarp::sig::Vector &input,
 			  std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
 			  std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
+			  const double &time_stamp,
 			  const double &exec_time);
 
     /*

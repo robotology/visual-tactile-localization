@@ -197,12 +197,156 @@ void LocalizerModule::getContactPoints(const iCub::skinDynLib::skinContactList &
     }
 }
 
-bool LocalizerModule::getFingerRelativeVelocity(const std::string &hand_name,
+bool LocalizerModule::getChainJointsState(const std::string &arm_name,
+					  yarp::sig::Vector &arm_angles,
+					  yarp::sig::Vector &torso_angles,
+					  yarp::sig::Vector &arm_ang_rates,
+					  yarp::sig::Vector &torso_ang_rates)
+{
+    // choose between right and left arm
+    yarp::dev::IEncoders *enc;
+    if (arm_name == "right")
+	enc = ienc_right_arm;
+    else
+	enc = ienc_left_arm;
+
+    // get the angular readings
+    arm_angles.resize(16);
+    torso_angles.resize(3);
+    bool ok = enc->getEncoders(arm_angles.data());
+    if(!ok)
+	return false;
+    ok = ienc_torso->getEncoders(torso_angles.data());
+    if(!ok)
+	return false;
+
+    // get the angular rates readings
+    arm_ang_rates.resize(16);
+    torso_ang_rates.resize(3);
+    ok = enc->getEncoderSpeeds(arm_ang_rates.data());
+    if (!ok)
+	return false;
+    ok = ienc_torso->getEncoderSpeeds(torso_ang_rates.data());
+    if (!ok)
+	return false;
+
+    return true;
+}
+
+void LocalizerModule::getHandJointsState(const std::string &hand_name,
+					 const yarp::sig::Vector &arm_angles,
+					 const yarp::sig::Vector &torso_angles,
+					 const yarp::sig::Vector &arm_ang_rates,
+					 const yarp::sig::Vector &torso_ang_rates,
+					 yarp::sig::Vector &hand_angles,
+					 yarp::sig::Vector &hand_ang_rates)
+{
+    // choose between right and left arm
+    iCub::iKin::iCubArm *arm;
+    if (hand_name == "right")
+	arm = &right_arm_kin;
+    else
+	arm = &left_arm_kin;
+
+    // fill in the vector of angles
+    hand_angles.resize(arm->getDOF());
+    hand_angles[0] = torso_angles[2];
+    hand_angles[1] = torso_angles[1];
+    hand_angles[2] = torso_angles[0];
+    hand_angles.setSubvector(3, arm_angles.subVector(0, 6));
+
+    // fill in the vector of angular rates
+    hand_ang_rates.resize(arm->getDOF());
+    hand_ang_rates[0] = torso_ang_rates[2];
+    hand_ang_rates[1] = torso_ang_rates[1];
+    hand_ang_rates[2] = torso_ang_rates[0];
+    hand_ang_rates.setSubvector(3, arm_ang_rates.subVector(0, 6));
+}
+
+void LocalizerModule::getHandTwist(const std::string &hand_name,
+				   const yarp::sig::Vector hand_angles,
+				   const yarp::sig::Vector hand_ang_rates,
+				   yarp::sig::Vector &lin_velocity,
+				   yarp::sig::Vector &ang_velocity)
+{
+    // choose between right and left hand
+    iCub::iKin::iCubArm *arm;
+    if (hand_name == "right")
+	arm = &right_arm_kin;
+    else
+	arm = &left_arm_kin;
+
+    // update the arm chain
+    // (iKin uses radians)
+    arm->setAng((M_PI/180) * hand_angles);
+
+    // get the geometric jacobian
+    yarp::sig::Matrix jac = arm->GeoJacobian();
+
+    // evaluate the twist of the hand
+    yarp::sig::Vector twist(6, 0.0);
+    twist = jac * (M_PI / 180 * hand_ang_rates);
+
+    // store linear velocity
+    lin_velocity = twist.subVector(0, 2);
+
+    // store angular velocity
+    ang_velocity = twist.subVector(3, 5);
+}
+
+void LocalizerModule::updateFingerConfiguration(const std::string &hand_name,
 						const std::string &finger_name,
-						iCub::iKin::iCubFinger &finger,
-						const yarp::sig::Vector &joints_speeds,
+						const yarp::sig::Vector &finger_angles)
+{
+    // get the finger
+    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + finger_name];
+
+    // update the finger chain
+    finger.setAng((M_PI/180) * finger_angles);
+}
+
+void LocalizerModule::getFingerJointsState(const std::string &hand_name,
+					   const std::string &finger_name,
+					   const yarp::sig::Vector &arm_angles,
+					   const yarp::sig::Vector &arm_ang_rates,
+					   yarp::sig::Vector &finger_angles,
+					   yarp::sig::Vector &finger_ang_rates)
+{
+    // get the finger
+    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + finger_name];
+
+    // get the finger angles
+    finger_angles.resize(finger.getDOF());
+    finger.getChainJoints(arm_angles, finger_angles);
+
+    // extract finger angular rates
+    if (finger_name == "thumb")
+	finger_ang_rates = arm_ang_rates.subVector(8, 10);
+    else if (finger_name == "index")
+	finger_ang_rates = arm_ang_rates.subVector(11, 12);
+    else if (finger_name == "middle")
+	finger_ang_rates = arm_ang_rates.subVector(13, 14);
+    else if (finger_name == "ring")
+	finger_ang_rates = arm_ang_rates.subVector(15, 15);
+}
+
+void LocalizerModule::getFingerRelativeVelocity(const std::string &finger_name,
+						const std::string &hand_name,
+						const yarp::sig::Vector &finger_angles,
+						const yarp::sig::Vector &finger_ang_rates,
 						yarp::sig::Vector &velocity)
 {
+    // extract joints_speeds
+    yarp::sig::Vector speeds = finger_ang_rates;
+    if (finger_name == "thumb")
+    {
+	// up to now only thumb opposition is considered
+	speeds = finger_ang_rates.subVector(0, 0);
+    }
+
+    // get the finger
+    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + finger_name];
+
     // jacobian for linear velocity part
     yarp::sig::Matrix j_lin;
 
@@ -221,24 +365,6 @@ bool LocalizerModule::getFingerRelativeVelocity(const std::string &hand_name,
 	j_lin = jacobian.submatrix(0, 2, 0, 0);
     else
 	j_lin = jacobian.submatrix(0, 2, 0, 2);
-
-    // extract joints_speeds
-    yarp::sig::Vector speeds;
-    if (finger_name == "thumb")
-    {
-	// up to now only thumb opposition is considered
-	speeds = joints_speeds.subVector(8, 8);
-    }
-    else if (finger_name == "index")
-    {
-	speeds = joints_speeds.subVector(11, 12);
-    }
-    else if (finger_name == "middle")
-    {
-	speeds = joints_speeds.subVector(13, 14);
-    }
-    else if (finger_name == "ring")
-	speeds = joints_speeds.subVector(15, 15);
 
     // take into account coupling
     yarp::sig::Matrix coupling(3, speeds.size());
@@ -261,120 +387,108 @@ bool LocalizerModule::getFingerRelativeVelocity(const std::string &hand_name,
 	coupling = 1.0;
     }
 
-    // evaluate linear velocity
+    // evaluate relative velocity
     velocity = j_lin * coupling * (M_PI / 180 * speeds);
 }
 
-bool LocalizerModule::getFingersVelocities(const std::string &hand_name,
+void LocalizerModule::getFingerVelocity(const std::string &finger_name,
+					const std::string &hand_name,
+					const yarp::sig::Vector &hand_lin_vel,
+					const yarp::sig::Vector &hand_ang_vel,
+					const yarp::sig::Vector &finger_angles,
+					const yarp::sig::Vector &finger_ang_rates,
+					const yarp::sig::Matrix &hand_2_robot,
+					yarp::sig::Vector &velocity)
+{
+    // get the finger
+    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + finger_name];
+
+    // get the current position of the finger
+    // with respect to the center of the hand
+    yarp::sig::Vector finger_pose = finger.EndEffPosition();
+
+    // express it in the robot root frame
+    finger_pose = hand_2_robot * finger_pose;
+
+    // evaluate the velocity of the finger due to
+    // arm joints
+    yarp::sig::Vector base_velocity(3, 0.0);
+    base_velocity = hand_lin_vel + yarp::math::cross(hand_ang_vel, finger_pose);
+
+    // evaluate the velocity of the finger due to
+    // finger joints
+    yarp::sig::Vector relative_velocity(3, 0.0);
+    getFingerRelativeVelocity(finger_name, hand_name,
+			      finger_angles, finger_ang_rates,
+			      relative_velocity);
+
+    // express it in the robot root frame
+    relative_velocity = hand_2_robot * relative_velocity;
+
+    // compose the total velocity
+    velocity = base_velocity + relative_velocity;
+}
+
+void LocalizerModule::getFingersVelocities(const std::string &hand_name,
 					   std::unordered_map<std::string, yarp::sig::Vector> &velocities)
 {
     // choose between right and left hand
     iCub::iKin::iCubArm *arm;
-    yarp::dev::IEncoders *enc;
     if (hand_name == "right")
-    {
 	arm = &right_arm_kin;
-	enc = ienc_right_arm;
-    }
     else
-    {
 	arm = &left_arm_kin;
-	enc = ienc_left_arm;
-    }
 
-    // get the encoders readings
-    yarp::sig::Vector encs_arm(16);
-    yarp::sig::Vector encs_torso(3);
+    // get arm and torso joints state
+    yarp::sig::Vector arm_angles;
+    yarp::sig::Vector torso_angles;
+    yarp::sig::Vector arm_ang_rates;
+    yarp::sig::Vector torso_ang_rates;
+    getChainJointsState(hand_name, arm_angles, torso_angles,
+			arm_ang_rates, torso_ang_rates);
 
-    bool ok = enc->getEncoders(encs_arm.data());
-    if(!ok)
-	return false;
+    // get hand joints state
+    yarp::sig::Vector hand_angles;
+    yarp::sig::Vector hand_ang_rates;
+    getHandJointsState(hand_name, arm_angles, torso_angles,
+		       arm_ang_rates, torso_ang_rates,
+		       hand_angles, hand_ang_rates);
 
-    ok = ienc_torso->getEncoders(encs_torso.data());
-    if(!ok)
-	return false;
-
-    // fill in the vector of degrees of freedom
-    yarp::sig::Vector arm_angles(arm->getDOF());
-    arm_angles[0] = encs_torso[2];
-    arm_angles[1] = encs_torso[1];
-    arm_angles[2] = encs_torso[0];
-    arm_angles.setSubvector(3, encs_arm.subVector(0, 6));
-
-    // update the chain
-    // (iKin uses radians)
-    arm->setAng((M_PI/180) * arm_angles);
-
-    // get the geometric jacobian
-    yarp::sig::Matrix jac = arm->GeoJacobian();
-
-    // get the joints speeds
-    yarp::sig::Vector speeds_torso(3);
-    yarp::sig::Vector speeds_arm(16);
-
-    ok = enc->getEncoderSpeeds(speeds_arm.data());
-    if (!ok)
-	return false;
-
-    ok = ienc_torso->getEncoderSpeeds(speeds_torso.data());
-    if (!ok)
-	return false;
-
-    // fill in the vector of degrees of freedom
-    yarp::sig::Vector speeds(arm->getDOF());
-    speeds[0] = speeds_torso[2];
-    speeds[1] = speeds_torso[1];
-    speeds[2] = speeds_torso[0];
-    speeds.setSubvector(3, speeds_arm.subVector(0, 6));
-
-    // evaluate the twist of the hand
-    yarp::sig::Vector twist(6, 0.0);
-    twist = jac * (M_PI / 180 * speeds);
+    // get hand twist
+    yarp::sig::Vector hand_lin_vel;
+    yarp::sig::Vector hand_ang_vel;
+    getHandTwist(hand_name, hand_angles, hand_ang_rates,
+		 hand_lin_vel, hand_ang_vel);
 
     // evaluate the rotation matrix between
     // the robot root frame and the hand frame
     yarp::sig::Matrix hand_2_robot = (arm->getH()).submatrix(0, 2, 0, 2);
 
-    // evaluate the linear velocity of the hand
-    yarp::sig::Vector hand_lin_vel = twist.subVector(0, 2);
-
-    // evaluate the angular velocity of the hand
-    yarp::sig::Vector hand_ang_vel = twist.subVector(3, 5);
-
     // process all the fingers
     for (std::string &finger_name : fingers_names)
     {
-	// get the finger
-	iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + finger_name];
+	// get finger joints state
+	yarp::sig::Vector finger_angles;
+	yarp::sig::Vector finger_ang_rates;
+	getFingerJointsState(hand_name, finger_name,
+			     arm_angles, arm_ang_rates,
+			     finger_angles, finger_ang_rates);
 
-	// get the finger angles
-	yarp::sig::Vector finger_angles(finger.getDOF());
-	finger.getChainJoints(encs_arm, finger_angles);
+	// update finger chain
+	updateFingerConfiguration(hand_name,
+				  finger_name,
+				  finger_angles);
 
-	// update the finger chain
-	finger.setAng((M_PI/180) * finger_angles);
+	// get the total finger velocity
+	yarp::sig::Vector velocity;
+	getFingerVelocity(finger_name, hand_name,
+			  hand_lin_vel, hand_ang_vel,
+			  finger_angles,
+			  finger_ang_rates,
+			  hand_2_robot,
+			  velocity);
 
-	// get the current position of the finger
-	// with respect to the center of the hand
-	yarp::sig::Vector finger_pose = finger.EndEffPosition();
-
-	// express it in the robot root frame
-	finger_pose = hand_2_robot * finger_pose;
-
-	// evaluate the velocity of the finger due to
-	// finger joints
-	yarp::sig::Vector relative_velocity(3, 0.0);
-	getFingerRelativeVelocity(hand_name, finger_name,
-				  finger, speeds_arm,
-				  relative_velocity);
-	relative_velocity = hand_2_robot * relative_velocity;
-
-	// evaluate the velocity of finger
-	yarp::sig::Vector velocity(3, 0.0);
-	velocity = hand_lin_vel +
-	    yarp::math::cross(hand_ang_vel, finger_pose) +
-	    relative_velocity;
-
+	// store velocity
 	velocities[finger_name] = velocity;
     }
 }

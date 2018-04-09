@@ -237,28 +237,119 @@ private:
 			  std::vector<yarp::sig::Vector> &points_right,
 			  std::vector<yarp::sig::Vector> &points_left);
     /*
-     * Evaluate the linear velocity of a finger
-     * relative to its root frame
+     * Extract arm and torso angles and angular rates.
+     * @param arm_name the name of the desired arm
+     * @param arm_angles vector of arm angles
+     * @param torso_angles vector of torso angles
+     * @param arm_ang_rates vector of arm angular rates
+     * @param torso_ang_rates vector of torso angular rates
+     */
+    bool getChainJointsState(const std::string &arm_name,
+			     yarp::sig::Vector &arm_angles,
+			     yarp::sig::Vector &torso_angles,
+			     yarp::sig::Vector &arm_ang_rates,
+			     yarp::sig::Vector &torso_ang_rates);
+
+    /*
+     * Extract angles and angular rates for the hand
+     * so that they are compatible with the class iCub::iKin::iCubArm
+     * @param hand_name the name of the desired hand
+     * @param arm_angles vector of arm angles
+     * @param torso_angles vector of torso angles
+     * @param arm_ang_rates vector of arm angular rates
+     * @param torso_ang_rates vector of torso angular rates
+     * @param hand_angles vector of hand angles
+     * @param hand_ang_rates vector of hand angular rates
+     */
+    void getHandJointsState(const std::string &hand_name,
+			    const yarp::sig::Vector &arm_angles,
+			    const yarp::sig::Vector &torso_angles,
+			    const yarp::sig::Vector &arm_ang_rates,
+			    const yarp::sig::Vector &torso_ang_rates,
+			    yarp::sig::Vector &hand_angles,
+			    yarp::sig::Vector &hand_ang_rates);
+
+    /*
+     * Evaluate the the twist of the desired hand.
+     * @param hand_name the name of the desired hand
+     * @param hand_angles vector of hand angles
+     * @param hand_ang_rates vector of hand angular rates
+     * @param lin_velocity linear velocity of the center of the hand
+     * @param ang_velocity angular velocity of the hand
+     */
+    void getHandTwist(const std::string &hand_name,
+		      const yarp::sig::Vector hand_angles,
+		      const yarp::sig::Vector hand_ang_rates,
+		      yarp::sig::Vector &lin_velocity,
+		      yarp::sig::Vector &ang_velocity);
+
+    /*
+     * Update the chain of the specified finger.
      * @param hand_name the name of the desired hand
      * @param finger_name the name of the desired finger
-     * @param finger the istance of the iCub::iKin::iCubFinger
-     *        updated with the current joints configuration
-     * @param joints_speeds vector of joints speeds of the whole arm
-     * @param velocity the compute velocity
+     * @param finger_angles vector of finger joints angles
      */
-    bool getFingerRelativeVelocity(const std::string &hand_name,
+    void updateFingerConfiguration(const std::string &hand_name,
 				   const std::string &finger_name,
-				   iCub::iKin::iCubFinger &finger,
-				   const yarp::sig::Vector &joints_speeds,
-				   yarp::sig::Vector &velocity);
-	/*
-     * Evaluate velocity of all the fingers taking into account
-     * the motion of the hand
+				   const yarp::sig::Vector &finger_angles);
+    /*
+     * Extract angles and angular rates for the finger
+     * so that they are compatible with the class iCub::iKin::iCubFinger
      * @param hand_name the name of the desired hand
-     * @param velocities the computed velocities
+     * @param finger_name the name of the desired finger
+     * @param arm_angles vector of arm angles
+     * @param arm_ang_rates vector of arm angular rates
+     * @param hand_angles vector of hand angles
+     * @param hand_ang_rates vector of hand angular rates
      */
-    bool getFingersVelocities(const std::string &hand_name,
+    void getFingerJointsState(const std::string &hand_name,
+			      const std::string &finger_name,
+			      const yarp::sig::Vector &arm_angles,
+			      const yarp::sig::Vector &arm_ang_rates,
+			      yarp::sig::Vector &finger_angles,
+			      yarp::sig::Vector &finger_ang_rates);
+    /*
+     * Get the velocity of the finger tip relative to the center of the hand
+     * and expressed in the hand root frame.
+     * @param finger_name the name of the desired finger
+     * @param hand_name the name of the desired hand
+     * @param finger_angles vector of finger joints angles
+     * @param finger_ang_rates vector of finger joints angular rates
+     * @param velocity the evaluated velocity
+     */
+    void getFingerRelativeVelocity(const std::string &finger_name,
+				   const std::string &hand_name,
+				   const yarp::sig::Vector &finger_angles,
+				   const yarp::sig::Vector &finger_ang_rates,
+				   yarp::sig::Vector &velocity);
+    /*
+     * Get the total velocity of the finger tip expressed in the robot root frame.
+     * @param finger_name the name of the desired finger
+     * @param hand_name the name of the desired hand
+     * @param hand_lin_vel the linear velocity of center of the hand
+     * @param hand_ang_vel the angular velocity of the hand
+     * @param finger_angles vector of finger joints angles
+     * @param finger_ang_rates vector of finger joints angular rates
+     * @param hand_2_robot rotation matrix between the robot root frame
+     *        and the hand root frame.
+     * @param velocity the evaluated velocity
+     */
+    void getFingerVelocity(const std::string &finger_name,
+			   const std::string &hand_name,
+			   const yarp::sig::Vector &hand_lin_vel,
+			   const yarp::sig::Vector &hand_ang_vel,
+			   const yarp::sig::Vector &finger_angles,
+			   const yarp::sig::Vector &finger_ang_rates,
+			   const yarp::sig::Matrix &hand_2_robot,
+			   yarp::sig::Vector &velocity);
+    /*
+     * Get the velocity of all the fingers.
+     * @param hand_name the name of the desired hand
+     * @param velocities map between the finger names and the velocities
+     */
+    void getFingersVelocities(const std::string &hand_name,
 			      std::unordered_map<std::string, yarp::sig::Vector> &velocities);
+
     /*
      * Process a command coming from the input port
      * @param cmd command to the filtering algorithm

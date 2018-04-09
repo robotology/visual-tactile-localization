@@ -197,26 +197,89 @@ void LocalizerModule::getContactPoints(const iCub::skinDynLib::skinContactList &
     }
 }
 
-bool LocalizerModule::getFingerVelocity(const std::string &hand_name,
-					const std::string &finger_name,
-					yarp::sig::Vector &finger_vel)
+bool LocalizerModule::getFingerRelativeVelocity(const std::string &hand_name,
+						const std::string &finger_name,
+						iCub::iKin::iCubFinger &finger,
+						const yarp::sig::Vector &joints_speeds,
+						yarp::sig::Vector &velocity)
+{
+    // jacobian for linear velocity part
+    yarp::sig::Matrix j_lin;
+
+    // get the jacobian
+    yarp::sig::Matrix jacobian = finger.GeoJacobian();
+
+    // neglect abduction if index or ring
+    if (finger_name == "index" || finger_name == "ring")
+	jacobian.removeCols(0, 1);
+    // retain only opposition if thumb
+    else if (finger_name == "thumb")
+	jacobian.removeCols(1, 3);
+
+    // extract linear velocity part
+    if (finger_name == "thumb")
+	j_lin = jacobian.submatrix(0, 2, 0, 0);
+    else
+	j_lin = jacobian.submatrix(0, 2, 0, 2);
+
+    // extract joints_speeds
+    yarp::sig::Vector speeds;
+    if (finger_name == "thumb")
+    {
+	// up to now only thumb opposition is considered
+	speeds = joints_speeds.subVector(8, 8);
+    }
+    else if (finger_name == "index")
+    {
+	speeds = joints_speeds.subVector(11, 12);
+    }
+    else if (finger_name == "middle")
+    {
+	speeds = joints_speeds.subVector(13, 14);
+    }
+    else if (finger_name == "ring")
+	speeds = joints_speeds.subVector(15, 15);
+
+    // take into account coupling
+    yarp::sig::Matrix coupling(3, speeds.size());
+    coupling = 0;
+    if (finger_name == "index" || finger_name == "middle")
+    {
+	coupling[0][0] = 1;   // proximal joint velocity = velocity of first DoF
+	coupling[1][1] = 0.5; // first distal joint velocity = half velocity of second DoF
+	coupling[2][1] = 0.5; // second distal joint velocity = half velocity of second DoF
+    }
+    else if (finger_name == "ring")
+    {
+	// within ring only one DoF is available
+	coupling = 1.0 / 3.0;
+    }
+    else if (finger_name == "thumb")
+    {
+	// only thumb opposition is considered
+	coupling.resize(1, 1);
+	coupling = 1.0;
+    }
+
+    // evaluate linear velocity
+    velocity = j_lin * coupling * (M_PI / 180 * speeds);
+}
+
+bool LocalizerModule::getFingersVelocities(const std::string &hand_name,
+					   std::unordered_map<std::string, yarp::sig::Vector> &velocities)
 {
     // choose between right and left hand
-    // only middle finger implemented for now
     iCub::iKin::iCubArm *arm;
-    iCub::iKin::iCubFinger *finger;
     yarp::dev::IEncoders *enc;
     if (hand_name == "right")
     {
 	arm = &right_arm_kin;
 	enc = ienc_right_arm;
-	finger = &right_middle;
     }
     else
     {
 	arm = &left_arm_kin;
 	enc = ienc_left_arm;
-	finger = &left_middle;
     }
 
     // get the encoders readings
@@ -233,17 +296,14 @@ bool LocalizerModule::getFingerVelocity(const std::string &hand_name,
 
     // fill in the vector of degrees of freedom
     yarp::sig::Vector arm_angles(arm->getDOF());
-    yarp::sig::Vector finger_angles(finger->getDOF());
     arm_angles[0] = encs_torso[2];
     arm_angles[1] = encs_torso[1];
     arm_angles[2] = encs_torso[0];
     arm_angles.setSubvector(3, encs_arm.subVector(0, 6));
-    finger->getChainJoints(encs_arm, finger_angles);
 
-    // update the chain and the finger
+    // update the chain
     // (iKin uses radians)
     arm->setAng((M_PI/180) * arm_angles);
-    finger->setAng((M_PI/180) * finger_angles);
 
     // get the geometric jacobian
     yarp::sig::Matrix jac = arm->GeoJacobian();
@@ -271,16 +331,52 @@ bool LocalizerModule::getFingerVelocity(const std::string &hand_name,
     yarp::sig::Vector twist(6, 0.0);
     twist = jac * (M_PI / 180 * speeds);
 
-    // get the current position of the finger
-    // with respect to the center of the hand
-    yarp::sig::Vector finger_pose = finger->EndEffPosition();
-    // express it in the robot root frame
-    finger_pose = (arm->getH()).submatrix(0, 2, 0, 2) * finger_pose;
+    // evaluate the rotation matrix between
+    // the robot root frame and the hand frame
+    yarp::sig::Matrix hand_2_robot = (arm->getH()).submatrix(0, 2, 0, 2);
 
-    // evaluate the velocity of finger
-    finger_vel = twist.subVector(0, 2) +
-	yarp::math::cross(twist.subVector(3, 5), finger_pose);
+    // evaluate the linear velocity of the hand
+    yarp::sig::Vector hand_lin_vel = twist.subVector(0, 2);
 
+    // evaluate the angular velocity of the hand
+    yarp::sig::Vector hand_ang_vel = twist.subVector(3, 5);
+
+    // process all the fingers
+    for (std::string &finger_name : fingers_names)
+    {
+	// get the finger
+	iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + finger_name];
+
+	// get the finger angles
+	yarp::sig::Vector finger_angles(finger.getDOF());
+	finger.getChainJoints(encs_arm, finger_angles);
+
+	// update the finger chain
+	finger.setAng((M_PI/180) * finger_angles);
+
+	// get the current position of the finger
+	// with respect to the center of the hand
+	yarp::sig::Vector finger_pose = finger.EndEffPosition();
+
+	// express it in the robot root frame
+	finger_pose = hand_2_robot * finger_pose;
+
+	// evaluate the velocity of the finger due to
+	// finger joints
+	yarp::sig::Vector relative_velocity(3, 0.0);
+	getFingerRelativeVelocity(hand_name, finger_name,
+				  finger, speeds_arm,
+				  relative_velocity);
+	relative_velocity = hand_2_robot * relative_velocity;
+
+	// evaluate the velocity of finger
+	yarp::sig::Vector velocity(3, 0.0);
+	velocity = hand_lin_vel +
+	    yarp::math::cross(hand_ang_vel, finger_pose) +
+	    relative_velocity;
+
+	velocities[finger_name] = velocity;
+    }
 }
 
 void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
@@ -421,7 +517,9 @@ void LocalizerModule::performFiltering()
 
 	// use the velocity of the middle finger as input
 	yarp::sig::Vector input;
-	getFingerVelocity(which_hand, "middle", input);
+	std::unordered_map<std::string, yarp::sig::Vector> velocities;
+	getFingersVelocities(which_hand, velocities);
+	input = velocities["middle"];
 	upf.setNewInput(input);
 
 	if (is_first_step)
@@ -902,8 +1000,24 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // configure forward kinematics
     right_arm_kin = iCub::iKin::iCubArm("right");
     left_arm_kin = iCub::iKin::iCubArm("left");
-    right_middle = iCub::iKin::iCubFinger("right_middle");
-    left_middle = iCub::iKin::iCubFinger("left_middle");
+
+    fingers_names = {"thumb", "index", "middle", "ring"};
+    for (std::string &finger_name : fingers_names)
+    {
+	std::string right_finger = "right_" + finger_name;
+	std::string left_finger = "left_" + finger_name;
+	std::string right_finger_key = right_finger;
+	std::string left_finger_key = left_finger;
+	if (finger_name == "ring")
+	{
+	    // FIX ME :the forward kinematics of the ring finger is not available
+	    // using the forward kinematics of the index finger
+	    right_finger = "right_index";
+	    left_finger = "left_index";
+	}
+	fingers_kin[right_finger_key] = iCub::iKin::iCubFinger(right_finger);
+	fingers_kin[left_finger_key] = iCub::iKin::iCubFinger(left_finger);
+    }
 
     // Limits update is not required to evaluate the forward kinematics
     // using angles from the encoders

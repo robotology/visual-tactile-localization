@@ -27,6 +27,7 @@
 
 // std
 #include <vector>
+#include <unordered_map>
 
 #include "headers/filterCommand.h"
 #include "headers/unscentedParticleFilter.h"
@@ -163,10 +164,9 @@ private:
     iCub::iKin::iCubArm right_arm_kin;
     iCub::iKin::iCubArm left_arm_kin;
 
-    // middle finger only for now
-    // TODO: add the other fingers
-    iCub::iKin::iCubFinger right_middle;
-    iCub::iKin::iCubFinger left_middle;
+    // fingers
+    std::vector<std::string> fingers_names;
+    std::unordered_map<std::string, iCub::iKin::iCubFinger> fingers_kin;
 
     /*
      */
@@ -237,15 +237,28 @@ private:
 			  std::vector<yarp::sig::Vector> &points_right,
 			  std::vector<yarp::sig::Vector> &points_left);
     /*
-     * Evaluate the velocity of a finger using geometric jacobians and
-     * angular joints velocities
+     * Evaluate the linear velocity of a finger
+     * relative to its root frame
      * @param hand_name the name of the desired hand
      * @param finger_name the name of the desired finger
-     * @param velocity the computed velocity
+     * @param finger the istance of the iCub::iKin::iCubFinger
+     *        updated with the current joints configuration
+     * @param joints_speeds vector of joints speeds of the whole arm
+     * @param velocity the compute velocity
      */
-    bool getFingerVelocity(const std::string &hand_name,
-			   const std::string &finger_name,
-			   yarp::sig::Vector &velocity);
+    bool getFingerRelativeVelocity(const std::string &hand_name,
+				   const std::string &finger_name,
+				   iCub::iKin::iCubFinger &finger,
+				   const yarp::sig::Vector &joints_speeds,
+				   yarp::sig::Vector &velocity);
+	/*
+     * Evaluate velocity of all the fingers taking into account
+     * the motion of the hand
+     * @param hand_name the name of the desired hand
+     * @param velocities the computed velocities
+     */
+    bool getFingersVelocities(const std::string &hand_name,
+			      std::unordered_map<std::string, yarp::sig::Vector> &velocities);
     /*
      * Process a command coming from the input port
      * @param cmd command to the filtering algorithm

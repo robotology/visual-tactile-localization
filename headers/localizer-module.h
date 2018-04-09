@@ -455,6 +455,24 @@ private:
 		  const std::string &file_name);
 
     /*
+     * Save to a .CSV file the joints angles of all the fingers.
+     * @param angles a map between the fingers names and the joints angles
+     * @param file_name where to save the file
+     * @return true/false on success
+     */
+    bool saveFingersJoints(const std::unordered_map<std::string, yarp::sig::Vector> &angles,
+			   const std::string &file_name);
+
+    /*
+     * Save to a .CSV file the linear velocities of all the fingers.
+     * @param velocities a map between the fingers names and the velocities of the fingers
+     * @param file_name where to save the file
+     * @return true/false on success
+     */
+    bool saveFingersVelocities(const std::unordered_map<std::string, yarp::sig::Vector> &velocities,
+			       const std::string &file_name);
+
+    /*
      * Save all the data (ground truth, estimate, input,
      * measurements and meshes) to file.
      * @param data data to be saved

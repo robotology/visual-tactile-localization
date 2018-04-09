@@ -873,6 +873,115 @@ bool LocalizerModule::saveMeas(const std::vector<yarp::sig::Vector> &meas,
     return true;
 }
 
+bool LocalizerModule::saveFingersJoints(const std::unordered_map<std::string, yarp::sig::Vector> &angles,
+					const std::string &file_name)
+{
+    // save the angles
+    // overwrite if it already exists
+    std::ofstream fout(file_name.c_str(), std::ios::trunc);
+    if(fout.is_open())
+    {
+
+	// copy data since yarp::sig::Vector::setSubvector does not accept const data
+	std::unordered_map<std::string, yarp::sig::Vector> data = angles;
+
+	// print the CSV header
+	fout << "finger_id;"
+	// no more than three joints are expected
+	     << "q_0;" << "q_1;" << "q_2;"
+	     << std::endl;
+
+	for (std::string &finger_name : fingers_names)
+	{
+	    // finger id
+	    if (finger_name == "thumb")
+		fout << 0;
+	    else if (finger_name == "index")
+		fout << 1;
+	    else if (finger_name == "middle")
+		fout << 2;
+	    else if (finger_name == "ring")
+		fout << 3;
+	    else
+		return false;
+
+	    // if a joint is not present its value is set to 0
+	    yarp::sig::Vector values(3, 0.0);
+
+	    // copy available joints
+	    values.setSubvector(0, data[finger_name]);
+
+	    // write to file
+	    fout << values[0] << ";"
+		 << values[1] << ";"
+		 << values[2] << ";"
+		 << std::endl;
+	}
+    }
+    else
+    {
+	fout.close();
+
+	yError() << "LocalizerModule: problem opening joints angles output file"
+		 << file_name;
+	return false;
+    }
+
+    return true;
+}
+
+bool LocalizerModule::saveFingersVelocities(const std::unordered_map<std::string, yarp::sig::Vector> &velocities,
+					    const std::string &file_name)
+{
+    // save the angles
+    // overwrite if it already exists
+    std::ofstream fout(file_name.c_str(), std::ios::trunc);
+    if(fout.is_open())
+    {
+	// copy data since yarp::sig::Vector::setSubvector does not accept const data
+	std::unordered_map<std::string, yarp::sig::Vector> data = velocities;
+
+	// print the CSV header
+	fout << "finger_id;"
+	     << "vel_x;" << "vel_y;" << "vel_z;"
+	     << std::endl;
+
+	for (std::string &finger_name : fingers_names)
+	{
+	    // finger id
+	    if (finger_name == "thumb")
+		fout << 0;
+	    else if (finger_name == "index")
+		fout << 1;
+	    else if (finger_name == "middle")
+		fout << 2;
+	    else if (finger_name == "ring")
+		fout << 3;
+	    else
+		return false;
+
+	    // get velocity
+	    yarp::sig::Vector &v = data[finger_name];
+
+	    // write to file
+	    fout << v[0] << ";"
+		 << v[1] << ";"
+		 << v[2] << ";"
+		 << std::endl;
+	}
+    }
+    else
+    {
+	fout.close();
+
+	yError() << "LocalizerModule: problem opening joints angles output file"
+		 << file_name;
+	return false;
+    }
+
+    return true;
+}
+
 bool LocalizerModule::saveData(const std::vector<Data> &data)
 {
     // compose file name for report file

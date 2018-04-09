@@ -634,6 +634,10 @@ void LocalizerModule::performFiltering()
 	std::unordered_map<std::string, yarp::sig::Vector> velocities;
 	getFingersVelocities(which_hand, velocities);
 	input = velocities["middle"];
+
+	// filter out z component
+	input[2] = 0;
+
 	upf.setNewInput(input);
 
 	if (is_first_step)

@@ -571,7 +571,8 @@ void LocalizerModule::performFiltering()
 
 	    // store data if required
 	    if (storage_on)
-		storeData(last_ground_truth,
+		storeData(FilteringType::visual,
+			  last_ground_truth,
 			  last_estimate,
 			  measure,
 			  input,
@@ -750,7 +751,8 @@ void LocalizerModule::resetStorage()
     storage.clear();
 }
 
-Data& LocalizerModule::storeData(const yarp::sig::Vector &ground_truth,
+Data& LocalizerModule::storeData(const FilteringType &data_type,
+				 const yarp::sig::Vector &ground_truth,
 				 const yarp::sig::Vector &estimate,
 				 const std::vector<yarp::sig::Vector> &meas,
 				 const yarp::sig::Vector &input,
@@ -759,6 +761,7 @@ Data& LocalizerModule::storeData(const yarp::sig::Vector &ground_truth,
     Data d;
 
     // populate
+    d.data_type = data_type;
     d.ground_truth = ground_truth;
     d.estimate = estimate;
     d.meas = meas;
@@ -781,7 +784,8 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
 				       const double &exec_time)
 {
     // store common data
-    Data &d = storeData(ground_truth, estimate, meas, input, exec_time);
+    Data &d = storeData(FilteringType::tactile, ground_truth,
+			estimate, meas, input, exec_time);
 
     // add additional fields
     d.fingers_joints = fingers_joints;

@@ -33,7 +33,7 @@
 #include "headers/unscentedParticleFilter.h"
 #include "headers/PointCloud.h"
 
-enum class FilteringType { visual, tactile };
+enum class FilteringType { visual = 0, tactile = 1 };
 
 struct Data
 {
@@ -58,8 +58,8 @@ struct Data
     // execution time of filtering step
     double exec_time;
 
-    // type of step, i.e. vision or tactile
-    int step_type;
+    // type of data, i.e. vision or tactile
+    FilteringType data_type;
 
     Data() : ground_truth(6, 0.0),
 	     estimate(6, 0.0) {};
@@ -397,6 +397,7 @@ private:
 
     /*
      * Store data in the internal storage
+     * @param data_type the type of data, i.e. relative to visual or tactile filtering
      * @param ground_truth the current ground truth
      * @param estimate the current estimate
      * @param meas the current measurements
@@ -404,7 +405,8 @@ private:
      * @param ground_truth execution time of last filtering step
      * @return a reference to the data set stored
      */
-    Data& storeData(const yarp::sig::Vector &ground_truth,
+    Data& storeData(const FilteringType &data_type,
+		    const yarp::sig::Vector &ground_truth,
 		    const yarp::sig::Vector &estimate,
 		    const std::vector<yarp::sig::Vector> &meas,
 		    const yarp::sig::Vector &input,

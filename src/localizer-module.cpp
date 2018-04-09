@@ -1056,6 +1056,24 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 		return false;
 	    }
 
+	    // save fingers joints angles
+	    std::string angles_path = output_path + "fingers_joints_"
+		+ std::to_string(step_index) + ".csv";
+	    if (!saveFingersJoints(d.fingers_joints, angles_path))
+	    {
+		fout.close();
+		return false;
+	    }
+
+	    // save fingers velocities
+	    std::string velocities_path = output_path + "fingers_velocities_"
+		+ std::to_string(step_index) + ".csv";
+	    if (!saveFingersVelocities(d.fingers_vels, velocities_path))
+	    {
+		fout.close();
+		return false;
+	    }
+
 	    step_index++;
 	}
     }

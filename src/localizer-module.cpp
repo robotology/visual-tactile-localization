@@ -522,6 +522,9 @@ void LocalizerModule::performFiltering()
     if (!filtering_enabled)
 	return;
 
+    // store initial time
+    t_i = yarp::os::Time::now();
+
     if (filtering_type == FilteringType::visual)
     {
 	// check if a point cloud is available
@@ -546,6 +549,13 @@ void LocalizerModule::performFiltering()
 	int n_points = 10;
 	for (size_t i=0; i+n_points <= pc.size(); i += n_points)
 	{
+	    // since multiple chuncks are processed
+	    // the initial time is reset from the second chunck on
+	    if (i != 0)
+	    {
+		t_i = yarp::os::Time::now();
+	    }
+
             // prepare measure
 	    std::vector<yarp::sig::Vector> measure;
 	    for (size_t k=0; k<n_points; k++)
@@ -561,9 +571,10 @@ void LocalizerModule::performFiltering()
 	    // step and estimate
 	    // using time of simulated environment
 	    // in case env variable YARP_CLOCK is set
-	    t_i = yarp::os::Time::now();
 	    upf.step();
 	    last_estimate = upf.getEstimate();
+
+	    // evaluate final time and execution time
 	    t_f = yarp::os::Time::now();
 	    exec_time = t_f - t_i;
 
@@ -652,8 +663,6 @@ void LocalizerModule::performFiltering()
 	    is_first_step = false;
 	}
 
-	t_i = yarp::os::Time::now();
-
 	if (num_meas <= 1)
 	    // skip step in case of too few measurements
 	    upf.skipStep();
@@ -665,6 +674,7 @@ void LocalizerModule::performFiltering()
 	    last_estimate = upf.getEstimate();
 	}
 
+	// evaluate final time and execution time
 	t_f = yarp::os::Time::now();
 	exec_time = t_f - t_i;
 

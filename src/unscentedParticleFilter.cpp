@@ -781,10 +781,11 @@ void UnscentedParticleFilter::resetTime()
     t_prev = yarp::os::Time::now();
 }
 
-void UnscentedParticleFilter::skipStep()
+void UnscentedParticleFilter::skipStep(double &time_stamp)
 {
     // evaluate current time
     double t_current = yarp::os::Time::now();
+    time_stamp = t_current;
     // evaluate elapsed time
     double t_interval = t_current - t_prev;
 
@@ -799,7 +800,7 @@ void UnscentedParticleFilter::skipStep()
     t_prev = t_current;
 }
 
-void UnscentedParticleFilter::step()
+void UnscentedParticleFilter::step(double &time_stamp)
 {   
     t++;
 
@@ -808,6 +809,7 @@ void UnscentedParticleFilter::step()
 
     // evaluate current time
     double t_current = yarp::os::Time::now();
+    time_stamp = t_current;
     // evaluate elapsed time
     double t_interval = t_current - t_prev;
 

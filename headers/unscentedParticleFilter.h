@@ -410,13 +410,15 @@ public:
 
     /**
      * Skip the next filtering step.
+     * @param time_stamp the time stamp relative to the current step
      */
-    void skipStep();
+    void skipStep(double &time_stamp);
     
     /**
      * Single iteration of the algorithm.
+     * @param time_stamp the time stamp relative to the current step
      */
-    void step();
+    void step(double &time_stamp);
 
     /** 
      * Get the MAP estimate.

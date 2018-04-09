@@ -429,8 +429,9 @@ void LocalizerModule::getFingerVelocity(const std::string &finger_name,
     velocity = base_velocity + relative_velocity;
 }
 
-void LocalizerModule::getFingersVelocities(const std::string &hand_name,
-					   std::unordered_map<std::string, yarp::sig::Vector> &velocities)
+void LocalizerModule::getFingersData(const std::string &hand_name,
+				     std::unordered_map<std::string, yarp::sig::Vector> &angles,
+				     std::unordered_map<std::string, yarp::sig::Vector> &lin_vels)
 {
     // choose between right and left hand
     iCub::iKin::iCubArm *arm;
@@ -474,6 +475,9 @@ void LocalizerModule::getFingersVelocities(const std::string &hand_name,
 			     arm_angles, arm_ang_rates,
 			     finger_angles, finger_ang_rates);
 
+	// store angles
+	angles[finger_name] = finger_angles;
+
 	// update finger chain
 	updateFingerConfiguration(hand_name,
 				  finger_name,
@@ -489,7 +493,7 @@ void LocalizerModule::getFingersVelocities(const std::string &hand_name,
 			  velocity);
 
 	// store velocity
-	velocities[finger_name] = velocity;
+	lin_vels[finger_name] = velocity;
     }
 }
 
@@ -629,11 +633,12 @@ void LocalizerModule::performFiltering()
 	upf.setQ(Q_tactile);
 	upf.setR(R_tactile);
 
-	// use the velocity of the middle finger as input
+	// get data related to fingers
 	yarp::sig::Vector input;
-	std::unordered_map<std::string, yarp::sig::Vector> velocities;
-	getFingersVelocities(which_hand, velocities);
-	input = velocities["middle"];
+	std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
+	std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
+	getFingersData(which_hand, fingers_angles, fingers_vels);
+	input = fingers_vels["middle"];
 
 	// filter out z component
 	input[2] = 0;

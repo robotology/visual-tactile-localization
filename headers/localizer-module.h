@@ -343,12 +343,16 @@ private:
 			   const yarp::sig::Matrix &hand_2_robot,
 			   yarp::sig::Vector &velocity);
     /*
-     * Get the velocity of all the fingers.
+     * Get data related to fingers required for filtering
      * @param hand_name the name of the desired hand
-     * @param velocities map between the finger names and the velocities
+     * @param angles map between the finger names and the
+     *        joints angles of the fingers
+     * @param lin_vels map between the finger names and the
+     *        linear velocities of the fingers
      */
-    void getFingersVelocities(const std::string &hand_name,
-			      std::unordered_map<std::string, yarp::sig::Vector> &velocities);
+    void getFingersData(const std::string &hand_name,
+			std::unordered_map<std::string, yarp::sig::Vector> &angles,
+			std::unordered_map<std::string, yarp::sig::Vector> &lin_vels);
 
     /*
      * Process a command coming from the input port

@@ -481,6 +481,15 @@ private:
 			   const std::string &file_name);
 
     /*
+     * Save to a .CSV file the positions of all the fingers.
+     * @param positions a map between the fingers names and positions of the fingers
+     * @param file_name where to save the file
+     * @return true/false on success
+     */
+    bool saveFingersPositions(const std::unordered_map<std::string, yarp::sig::Vector> &positions,
+			      const std::string &file_name);
+
+    /*
      * Save to a .CSV file the linear velocities of all the fingers.
      * @param velocities a map between the fingers names and the velocities of the fingers
      * @param file_name where to save the file

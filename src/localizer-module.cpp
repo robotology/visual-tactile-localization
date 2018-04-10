@@ -968,6 +968,59 @@ bool LocalizerModule::saveFingersJoints(const std::unordered_map<std::string, ya
     return true;
 }
 
+bool LocalizerModule::saveFingersPositions(const std::unordered_map<std::string, yarp::sig::Vector> &positions,
+					   const std::string &file_name)
+{
+    // save the positions
+    // overwrite if it already exists
+    std::ofstream fout(file_name.c_str(), std::ios::trunc);
+    if(fout.is_open())
+    {
+	// copy data since yarp::sig::Vector::setSubvector does not accept const data
+	std::unordered_map<std::string, yarp::sig::Vector> data = positions;
+
+	// print the CSV header
+	fout << "finger_id;"
+	     << "pos_x;" << "pos_y;" << "pos_z;"
+	     << std::endl;
+
+	for (std::string &finger_name : fingers_names)
+	{
+	    // finger id
+	    if (finger_name == "thumb")
+		fout << 0;
+	    else if (finger_name == "index")
+		fout << 1;
+	    else if (finger_name == "middle")
+		fout << 2;
+	    else if (finger_name == "ring")
+		fout << 3;
+	    else
+		return false;
+	    fout << ";";
+
+	    // get velocity
+	    yarp::sig::Vector &p = data[finger_name];
+
+	    // write to file
+	    fout << p[0] << ";"
+		 << p[1] << ";"
+		 << p[2] << ";"
+		 << std::endl;
+	}
+    }
+    else
+    {
+	fout.close();
+
+	yError() << "LocalizerModule: problem opening joints angles output file"
+		 << file_name;
+	return false;
+    }
+
+    return true;
+}
+
 bool LocalizerModule::saveFingersVelocities(const std::unordered_map<std::string, yarp::sig::Vector> &velocities,
 					    const std::string &file_name)
 {

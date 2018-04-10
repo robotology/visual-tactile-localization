@@ -276,10 +276,6 @@ void LocalizerModule::getHandTwist(const std::string &hand_name,
     else
 	arm = &left_arm_kin;
 
-    // update the arm chain
-    // (iKin uses radians)
-    arm->setAng((M_PI/180) * hand_angles);
-
     // get the geometric jacobian
     yarp::sig::Matrix jac = arm->GeoJacobian();
 
@@ -461,6 +457,10 @@ void LocalizerModule::getFingersData(const std::string &hand_name,
     getHandJointsState(hand_name, arm_angles, torso_angles,
 		       arm_ang_rates, torso_ang_rates,
 		       hand_angles, hand_ang_rates);
+
+    // update the arm chain
+    // (iKin uses radians)
+    arm->setAng((M_PI/180) * hand_angles);
 
     // get hand twist
     yarp::sig::Vector hand_lin_vel;

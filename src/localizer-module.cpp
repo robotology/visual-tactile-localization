@@ -727,6 +727,7 @@ void LocalizerModule::performFiltering()
 			     *points,
 			     input,
 			     fingers_angles,
+			     fingers_pos,
 			     fingers_vels,
 			     time_stamp,
 			     exec_time);
@@ -833,6 +834,7 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
 				       const std::vector<yarp::sig::Vector> &meas,
 				       const yarp::sig::Vector &input,
 				       std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
+				       std::unordered_map<std::string, yarp::sig::Vector> fingers_pos,
 				       std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
 				       const double &time_stamp,
 				       const double &exec_time)
@@ -843,6 +845,7 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
 
     // add additional fields
     d.fingers_joints = fingers_joints;
+    d.fingers_pos = fingers_pos;
     d.fingers_vels = fingers_vels;
 }
 
@@ -1159,6 +1162,14 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 		std::string angles_path = output_path + "fingers_joints_"
 		    + std::to_string(step_index) + ".csv";
 		if (!saveFingersJoints(d.fingers_joints, angles_path))
+		{
+		    fout.close();
+		    return false;
+		}
+
+		std::string positions_path = output_path + "fingers_positions_"
+		    + std::to_string(step_index) + ".csv";
+		if (!saveFingersPositions(d.fingers_pos, positions_path))
 		{
 		    fout.close();
 		    return false;

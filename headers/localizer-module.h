@@ -49,6 +49,9 @@ struct Data
     // current fingers joints angles
     std::unordered_map<std::string, yarp::sig::Vector> fingers_joints;
 
+    // current finger positions
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
+
     // current finger velocities
     std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
 
@@ -440,6 +443,7 @@ private:
      * @param meas the current measurements
      * @param input the current input
      * @param fingers_joints the current joints configuration of the fingers
+     * @param fingers_pos the current positions of the fingers
      * @param fingers_vels the current linear velocities of the fingers
      * @param exec_time_truth execution time of last filtering step
      */
@@ -448,6 +452,7 @@ private:
 			  const std::vector<yarp::sig::Vector> &meas,
 			  const yarp::sig::Vector &input,
 			  std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
+			  std::unordered_map<std::string, yarp::sig::Vector> fingers_pos,
 			  std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
 			  const double &time_stamp,
 			  const double &exec_time);

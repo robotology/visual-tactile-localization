@@ -886,8 +886,8 @@ bool LocalizerModule::saveFingersJoints(const std::unordered_map<std::string, ya
 
 	// print the CSV header
 	fout << "finger_id;"
-	// no more than three joints are expected
-	     << "q_0;" << "q_1;" << "q_2;"
+	// no more than four joints are expected
+	     << "q_0;" << "q_1;" << "q_2;" << "q_3;"
 	     << std::endl;
 
 	for (std::string &finger_name : fingers_names)
@@ -906,7 +906,7 @@ bool LocalizerModule::saveFingersJoints(const std::unordered_map<std::string, ya
 	    fout << ";";
 
 	    // if a joint is not present its value is set to 0
-	    yarp::sig::Vector values(3, 0.0);
+	    yarp::sig::Vector values(4, 0.0);
 
 	    // copy available joints
 	    values.setSubvector(0, data[finger_name]);
@@ -915,6 +915,7 @@ bool LocalizerModule::saveFingersJoints(const std::unordered_map<std::string, ya
 	    fout << values[0] << ";"
 		 << values[1] << ";"
 		 << values[2] << ";"
+		 << values[3] << ";"
 		 << std::endl;
 	}
     }

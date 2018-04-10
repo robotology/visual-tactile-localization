@@ -1001,7 +1001,7 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 	     << "x_sol;"   << "y_sol;"     << "z_sol;"
 	     << "phi_sol;" << "theta_sol;" << "psi_sol;"
 	     << "input_x;"   << "input_y;" << "input_z;"
-	     << "time_stamp"
+	     << "time_stamp;"
 	     << "exec_time;"
 	     << std::endl;
 

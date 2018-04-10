@@ -904,6 +904,7 @@ bool LocalizerModule::saveFingersJoints(const std::unordered_map<std::string, ya
 		fout << 3;
 	    else
 		return false;
+	    fout << ";";
 
 	    // if a joint is not present its value is set to 0
 	    yarp::sig::Vector values(3, 0.0);
@@ -959,6 +960,7 @@ bool LocalizerModule::saveFingersVelocities(const std::unordered_map<std::string
 		fout << 3;
 	    else
 		return false;
+	    fout << ";";
 
 	    // get velocity
 	    yarp::sig::Vector &v = data[finger_name];

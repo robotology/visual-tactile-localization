@@ -316,7 +316,15 @@ void LocalizerModule::getFingerJointsState(const std::string &hand_name,
     iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + "_" + finger_name];
 
     // get the finger angles
-    finger.getChainJoints(arm_angles, finger_angles);
+    if (finger_name == "ring")
+    {
+	finger_angles.resize(4);
+	finger_angles[0] = arm_angles[7] / 3.0;
+	finger_angles[1] = arm_angles[15] / 3.0;
+	finger_angles[3] = finger_angles[2] = finger_angles[1];
+    }
+    else
+	finger.getChainJoints(arm_angles, finger_angles);
 
     // extract finger angular rates
     if (finger_name == "thumb")

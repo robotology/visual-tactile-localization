@@ -995,7 +995,7 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
     if(fout.is_open())
     {
 	// print the CSV header
-	fout << "step;"
+	fout << "step;" << "type;"
 	     << "x_real;" << "y_real;" << "z_real;"
 	     << "phi_real;" << "theta_real;" << "psi_real;"
 	     << "x_sol;"   << "y_sol;"     << "z_sol;"
@@ -1011,6 +1011,11 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 	{
 	    // index
 	    fout << step_index << ";";
+	    // type
+	    if (d.data_type == FilteringType::visual)
+		fout << 0 << ";";
+	    else if (d.data_type == FilteringType::tactile)
+		fout << 1 << ";";
 	    // ground truth
 	    for(size_t j=0; j<6; j++)
 		fout << d.ground_truth[j] << ";";
@@ -1058,22 +1063,25 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
 		return false;
 	    }
 
-	    // save fingers joints angles
-	    std::string angles_path = output_path + "fingers_joints_"
-		+ std::to_string(step_index) + ".csv";
-	    if (!saveFingersJoints(d.fingers_joints, angles_path))
+	    if (d.data_type == FilteringType::tactile)
 	    {
-		fout.close();
-		return false;
-	    }
+		// save fingers joints angles
+		std::string angles_path = output_path + "fingers_joints_"
+		    + std::to_string(step_index) + ".csv";
+		if (!saveFingersJoints(d.fingers_joints, angles_path))
+		{
+		    fout.close();
+		    return false;
+		}
 
-	    // save fingers velocities
-	    std::string velocities_path = output_path + "fingers_velocities_"
-		+ std::to_string(step_index) + ".csv";
-	    if (!saveFingersVelocities(d.fingers_vels, velocities_path))
-	    {
-		fout.close();
-		return false;
+		// save fingers velocities
+		std::string velocities_path = output_path + "fingers_velocities_"
+		    + std::to_string(step_index) + ".csv";
+		if (!saveFingersVelocities(d.fingers_vels, velocities_path))
+		{
+		    fout.close();
+		    return false;
+		}
 	    }
 
 	    step_index++;

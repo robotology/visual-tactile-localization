@@ -803,7 +803,7 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
 {
     // store common data
     Data &d = storeData(FilteringType::tactile, ground_truth,
-			estimate, meas, input, exec_time, time_stamp);
+			estimate, meas, input, time_stamp, exec_time);
 
     // add additional fields
     d.fingers_joints = fingers_joints;

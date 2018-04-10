@@ -332,6 +332,20 @@ private:
 				   const yarp::sig::Vector &finger_ang_rates,
 				   yarp::sig::Vector &velocity);
     /*
+     * Get the position of the finger with respect to the robot root frame
+     * expressed in the robot root frame.
+     * @param finger_name the name of the desired finger
+     * @param hand_name the name of the desired hand
+     * @param hand_pos position of the origin of the hand root frame
+     * @param hand_att attitude of the hand with respect to the robot root frame
+     * @param position the evaluated position
+     */
+    void getFingerPosition(const std::string &finger_name,
+			   const std::string &hand_name,
+			   const yarp::sig::Vector &hand_pos,
+			   const yarp::sig::Matrix &hand_att,
+			   yarp::sig::Vector &position);
+    /*
      * Get the total velocity of the finger tip expressed in the robot root frame.
      * @param finger_name the name of the desired finger
      * @param hand_name the name of the desired hand
@@ -356,11 +370,14 @@ private:
      * @param hand_name the name of the desired hand
      * @param angles map between the finger names and the
      *        joints angles of the fingers
+     * @param angles map between the finger names and the
+     *        positions of the fingers
      * @param lin_vels map between the finger names and the
      *        linear velocities of the fingers
      */
     void getFingersData(const std::string &hand_name,
 			std::unordered_map<std::string, yarp::sig::Vector> &angles,
+			std::unordered_map<std::string, yarp::sig::Vector> &positions,
 			std::unordered_map<std::string, yarp::sig::Vector> &lin_vels);
 
     /*

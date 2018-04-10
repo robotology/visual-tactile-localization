@@ -394,6 +394,27 @@ void LocalizerModule::getFingerRelativeVelocity(const std::string &finger_name,
     velocity = j_lin * coupling * (M_PI / 180 * speeds);
 }
 
+void LocalizerModule::getFingerPosition(const std::string &finger_name,
+					const std::string &hand_name,
+					const yarp::sig::Vector &hand_pos,
+					const yarp::sig::Matrix &hand_att,
+					yarp::sig::Vector &position)
+{
+    // get the finger
+    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + "_" + finger_name];
+
+    // get the current position of the finger
+    // with respect to the center of the hand
+    yarp::sig::Vector finger_pos = finger.EndEffPosition();
+
+    // express it in the robot root frame
+    finger_pos = hand_att * finger_pos;
+
+    // find the position of the finger
+    // with respect to the robot root frame
+    position = hand_pos + finger_pos;
+}
+
 void LocalizerModule::getFingerVelocity(const std::string &finger_name,
 					const std::string &hand_name,
 					const yarp::sig::Vector &hand_lin_vel,
@@ -434,6 +455,7 @@ void LocalizerModule::getFingerVelocity(const std::string &finger_name,
 
 void LocalizerModule::getFingersData(const std::string &hand_name,
 				     std::unordered_map<std::string, yarp::sig::Vector> &angles,
+				     std::unordered_map<std::string, yarp::sig::Vector> &positions,
 				     std::unordered_map<std::string, yarp::sig::Vector> &lin_vels)
 {
     // choose between right and left hand
@@ -462,15 +484,16 @@ void LocalizerModule::getFingersData(const std::string &hand_name,
     // (iKin uses radians)
     arm->setAng((M_PI/180) * hand_angles);
 
+    // get hand pose
+    yarp::sig::Matrix hand_pose = arm->getH();
+    yarp::sig::Vector hand_pos = hand_pose.getCol(3).subVector(0, 2);
+    yarp::sig::Matrix hand_att = hand_pose.submatrix(0, 2, 0, 2);
+
     // get hand twist
     yarp::sig::Vector hand_lin_vel;
     yarp::sig::Vector hand_ang_vel;
     getHandTwist(hand_name, hand_angles, hand_ang_rates,
 		 hand_lin_vel, hand_ang_vel);
-
-    // evaluate the rotation matrix between
-    // the robot root frame and the hand frame
-    yarp::sig::Matrix hand_2_robot = (arm->getH()).submatrix(0, 2, 0, 2);
 
     // process all the fingers
     for (std::string &finger_name : fingers_names)
@@ -490,13 +513,18 @@ void LocalizerModule::getFingersData(const std::string &hand_name,
 				  finger_name,
 				  finger_angles);
 
+	// get position
+	getFingerPosition(finger_name, hand_name,
+			  hand_pos, hand_att,
+			  positions[finger_name]);
+
 	// get the total finger velocity
 	yarp::sig::Vector velocity;
 	getFingerVelocity(finger_name, hand_name,
 			  hand_lin_vel, hand_ang_vel,
 			  finger_angles,
 			  finger_ang_rates,
-			  hand_2_robot,
+			  hand_att,
 			  velocity);
 
 	// store velocity
@@ -659,8 +687,9 @@ void LocalizerModule::performFiltering()
 	// get data related to fingers
 	yarp::sig::Vector input;
 	std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
+	std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
 	std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
-	getFingersData(which_hand, fingers_angles, fingers_vels);
+	getFingersData(which_hand, fingers_angles, fingers_pos, fingers_vels);
 	input = fingers_vels["middle"];
 
 	// filter out z component

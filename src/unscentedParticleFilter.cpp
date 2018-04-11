@@ -81,6 +81,16 @@ bool UnscentedParticleFilter::readDiagonalMatrix(const yarp::os::ResourceFinder 
     return false;
 }
 
+double UnscentedParticleFilter::normalizeAngle(const double& angle)
+{
+    if (angle > M_PI)
+	return M_PI;
+    else if (angle < -M_PI)
+	return -M_PI;
+
+    return angle;
+}
+
 void UnscentedParticleFilter::initializationUPF()
 {
     for(size_t i=0; i<x.size(); i++ )
@@ -102,9 +112,9 @@ void UnscentedParticleFilter::initialRandomize()
         x[i].x_corr_prev[0]=yarp::math::Rand::scalar(params.center0[0]-params.radius0[0],params.center0[0]+params.radius0[0]);
         x[i].x_corr_prev[1]=yarp::math::Rand::scalar(params.center0[1]-params.radius0[1],params.center0[1]+params.radius0[1]);
         x[i].x_corr_prev[2]=yarp::math::Rand::scalar(params.center0[2]-params.radius0[2],params.center0[2]+params.radius0[2]);
-        x[i].x_corr_prev[3]=yarp::math::Rand::scalar(0,2*M_PI);
-        x[i].x_corr_prev[4]=yarp::math::Rand::scalar(0,2*M_PI);
-        x[i].x_corr_prev[5]=yarp::math::Rand::scalar(0,2*M_PI);
+        x[i].x_corr_prev[3]=yarp::math::Rand::scalar(-M_PI / 2.0, M_PI / 2.0);
+        x[i].x_corr_prev[4]=yarp::math::Rand::scalar(-M_PI / 2.0, M_PI / 2.0);
+        x[i].x_corr_prev[5]=yarp::math::Rand::scalar(-M_PI / 2.0, M_PI / 2.0);
     }
 }
 
@@ -155,19 +165,17 @@ void UnscentedParticleFilter::computeSigmaPoints(const int &i)
     for(size_t j=1; j<params.n+1; j++)
     {
         x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev+G.getCol(j-1));
-	
-        x[i].XsigmaPoints_corr(3,j)=fmod(x[i].XsigmaPoints_corr(3,j),2*M_PI);
-        x[i].XsigmaPoints_corr(4,j)=fmod(x[i].XsigmaPoints_corr(4,j),2*M_PI);
-        x[i].XsigmaPoints_corr(5,j)=fmod(x[i].XsigmaPoints_corr(5,j),2*M_PI);
+
+	for (size_t k=3; k<5; k++)
+	    x[i].XsigmaPoints_corr(k,j) = normalizeAngle(x[i].XsigmaPoints_corr(k,j));
     }
     
     for(size_t j=params.n+1; j<2*params.n+1; j++)
     {
         x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev-G.getCol(j-1-params.n));
-	
-        x[i].XsigmaPoints_corr(3,j)=fmod(x[i].XsigmaPoints_corr(3,j),2*M_PI);
-        x[i].XsigmaPoints_corr(4,j)=fmod(x[i].XsigmaPoints_corr(4,j),2*M_PI);
-        x[i].XsigmaPoints_corr(5,j)=fmod(x[i].XsigmaPoints_corr(5,j),2*M_PI);
+
+	for (size_t k=3; k<5; k++)
+	    x[i].XsigmaPoints_corr(k,j) = normalizeAngle(x[i].XsigmaPoints_corr(k,j));
     }
     
     x[i].WsigmaPoints_covariance[0]=params.lambda/(params.n+params.lambda)+1-pow(params.alpha,2.0)+params.beta;
@@ -310,10 +318,9 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 	//use system input in the prediction
 	for(size_t k=0; k<3; k++)
 	    x[i].XsigmaPoints_pred(k,j) += propagated_input[k];
- 
-	x[i].XsigmaPoints_pred(3,j)=fmod(x[i].XsigmaPoints_pred(3,j),2*M_PI);
-	x[i].XsigmaPoints_pred(4,j)=fmod(x[i].XsigmaPoints_pred(4,j),2*M_PI);
-	x[i].XsigmaPoints_pred(5,j)=fmod(x[i].XsigmaPoints_pred(5,j),2*M_PI);
+
+	for (size_t k=3; k<5; k++)
+	    x[i].XsigmaPoints_pred(k,j) = normalizeAngle(x[i].XsigmaPoints_pred(k,j));
 
 	if(params.use_ideal_meas_eqn)
 	{
@@ -327,9 +334,8 @@ void UnscentedParticleFilter::predictionStep(const int &i)
     }
 
     x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
-    x[i].x_pred[3]=fmod(x[i].x_pred[3],2*M_PI);
-    x[i].x_pred[4]=fmod(x[i].x_pred[4],2*M_PI);
-    x[i].x_pred[5]=fmod(x[i].x_pred[5],2*M_PI);    
+    for (size_t k=3; k<5; k++)
+	x[i].x_pred[k] = normalizeAngle(x[i].x_pred[k]);
     
     x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
     
@@ -341,7 +347,7 @@ void UnscentedParticleFilter::computePpred(const int &i)
     {
         x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
 	for(size_t k=3; k<6; k++)
-	    x[i].x_tilde(k,0)=fmod(x[i].x_tilde(k,0),2*M_PI);
+	    x[i].x_tilde(k,0)=normalizeAngle(x[i].x_tilde(k,0));
 	
         x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
 	
@@ -367,7 +373,7 @@ void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
 
         x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
 	for(size_t k=3; k<6; k++)
-	    x[i].x_tilde(k,0)=fmod(x[i].x_tilde(k,0),2*M_PI);
+	    x[i].x_tilde(k,0)=normalizeAngle(x[i].x_tilde(k,0));
 		
         x[i].Pxy=x[i].Pxy+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].A.transposed();
     }
@@ -396,9 +402,10 @@ void UnscentedParticleFilter::correctionStep(const int &i)
     }
 
     x[i].x_corr=x[i].x_pred+x[i].K*(meas-x[i].y_pred);
-    x[i].x_corr[3]=fmod(x[i].x_corr[3],2*M_PI);
-    x[i].x_corr[4]=fmod(x[i].x_corr[4],2*M_PI);
-    x[i].x_corr[5]=fmod(x[i].x_corr[5],2*M_PI);
+
+    for (size_t k=3; k<5; k++)
+	x[i].x_corr[k] = normalizeAngle(x[i].x_corr[k]);
+
     x[i].P_corr=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
     
     // for(size_t j=3; j<6; j++)
@@ -453,7 +460,7 @@ double UnscentedParticleFilter::multivariateGaussian(const yarp::sig::Vector &x,
 
     // wrap angular errors
     for (size_t i=3; i<6; i++)
-	diff[i] = fmod(diff[i], 2 * M_PI);
+	diff[i] = normalizeAngle(diff[i]);
 
     // eval the density
     yarp::sig::Matrix diff_m(x.size(), 1);

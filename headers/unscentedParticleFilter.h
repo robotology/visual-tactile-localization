@@ -207,6 +207,8 @@ private:
 			    yarp::sig::Vector &diag,
 			    const int &dimension);
 
+    double normalizeAngle(const double& angle);
+
     /** 
      * Initialize some quantities of the UPF
      */

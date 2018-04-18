@@ -582,6 +582,9 @@ void LocalizerModule::performFiltering()
 	upf.setQ(Q_vision);
 	upf.setR(R_vision);
 
+	// set alpha parameter
+	upf.setAlpha(1.0);
+
 	// process cloud in chuncks of 10 points
         // TODO: take n_points from config
 	int n_points = 10;
@@ -683,6 +686,9 @@ void LocalizerModule::performFiltering()
 	// set noise covariances
 	upf.setQ(Q_tactile);
 	upf.setR(R_tactile);
+
+	// set alpha parameter
+	upf.setAlpha(0.3);
 
 	// get data related to fingers
 	yarp::sig::Vector input;

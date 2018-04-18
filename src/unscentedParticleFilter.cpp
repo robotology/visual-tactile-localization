@@ -777,6 +777,11 @@ void UnscentedParticleFilter::setQ(const yarp::sig::Vector &covariance)
     params.Q.diagonal(covariance);
 }
 
+void UnscentedParticleFilter::setAlpha(const double &alpha)
+{
+    params.alpha = alpha;
+}
+
 void UnscentedParticleFilter::setR(const double &variance)
 {
     // assign a new variance

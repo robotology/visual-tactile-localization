@@ -405,6 +405,12 @@ public:
     void setR(const double &variance);
 
     /**
+     * Set the UT transform alpha parameter
+     * @param alpha the value of the UT transform alpha parameter
+     */
+    void setAlpha(const double &alpha);
+
+    /**
      * Reset the internal time in order to handle properly
      * the propagation of the nominal model.
      */

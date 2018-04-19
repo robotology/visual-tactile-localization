@@ -83,12 +83,18 @@ bool UnscentedParticleFilter::readDiagonalMatrix(const yarp::os::ResourceFinder 
 
 double UnscentedParticleFilter::normalizeAngle(const double& angle)
 {
-    if (angle > M_PI)
-	return M_PI;
-    else if (angle < -M_PI)
-	return -M_PI;
+    double wrapped = angle;
+    while (wrapped > M_PI)
+    {
+	wrapped -= 2 * M_PI;
+    }
 
-    return angle;
+    while (wrapped < -M_PI)
+    {
+	wrapped += 2* M_PI;
+    }
+
+    return wrapped;
 }
 
 void UnscentedParticleFilter::initializationUPF()
@@ -163,20 +169,10 @@ void UnscentedParticleFilter::computeSigmaPoints(const int &i)
     x[i].XsigmaPoints_corr.setCol(0,x[i].x_corr_prev);
     
     for(size_t j=1; j<params.n+1; j++)
-    {
         x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev+G.getCol(j-1));
-
-	for (size_t k=3; k<5; k++)
-	    x[i].XsigmaPoints_corr(k,j) = normalizeAngle(x[i].XsigmaPoints_corr(k,j));
-    }
     
     for(size_t j=params.n+1; j<2*params.n+1; j++)
-    {
         x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev-G.getCol(j-1-params.n));
-
-	for (size_t k=3; k<5; k++)
-	    x[i].XsigmaPoints_corr(k,j) = normalizeAngle(x[i].XsigmaPoints_corr(k,j));
-    }
     
     x[i].WsigmaPoints_covariance[0]=params.lambda/(params.n+params.lambda)+1-pow(params.alpha,2.0)+params.beta;
     x[i].WsigmaPoints_average[0]=params.lambda/(params.n+params.lambda);
@@ -319,9 +315,6 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 	for(size_t k=0; k<3; k++)
 	    x[i].XsigmaPoints_pred(k,j) += propagated_input[k];
 
-	for (size_t k=3; k<5; k++)
-	    x[i].XsigmaPoints_pred(k,j) = normalizeAngle(x[i].XsigmaPoints_pred(k,j));
-
 	if(params.use_ideal_meas_eqn)
 	{
 	    x[i].YsigmaPoints_pred.setCol(j,computeYIdeal(i,j));
@@ -334,7 +327,7 @@ void UnscentedParticleFilter::predictionStep(const int &i)
     }
 
     x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
-    for (size_t k=3; k<5; k++)
+    for (size_t k=3; k<6; k++)
 	x[i].x_pred[k] = normalizeAngle(x[i].x_pred[k]);
     
     x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
@@ -346,21 +339,11 @@ void UnscentedParticleFilter::computePpred(const int &i)
     for(size_t j=0; j<2*params.n+1; j++)
     {
         x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
-	for(size_t k=3; k<6; k++)
-	    x[i].x_tilde(k,0)=normalizeAngle(x[i].x_tilde(k,0));
 	
         x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
 	
     }
     x[i].P_pred=x[i].P_pred_aux + params.Q_prev;
-
-    // for(size_t j=3; j<6; j++)
-    // {
-    //     for(size_t k=3; k<6; k++)
-    //     {
-    // 	    yAssert(x[i].P_pred(j,k) <= pow(2*M_PI,2));
-    //     }
-    // }
 }
 
 void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
@@ -372,8 +355,6 @@ void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
         x[i].Pyy=x[i].Pyy+x[i].WsigmaPoints_covariance[j]*x[i].A*x[i].A.transposed();
 
         x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
-	for(size_t k=3; k<6; k++)
-	    x[i].x_tilde(k,0)=normalizeAngle(x[i].x_tilde(k,0));
 		
         x[i].Pxy=x[i].Pxy+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].A.transposed();
     }
@@ -401,20 +382,16 @@ void UnscentedParticleFilter::correctionStep(const int &i)
 	meas[j*3+2]=p[2];
     }
 
-    x[i].x_corr=x[i].x_pred+x[i].K*(meas-x[i].y_pred);
+    yarp::sig::Vector innovation = x[i].K*(meas-x[i].y_pred);
+    for (size_t k=3; k<6; k++)
+	innovation[k] = normalizeAngle(innovation[k]);
 
-    for (size_t k=3; k<5; k++)
+    x[i].x_corr=x[i].x_pred + innovation;
+
+    for (size_t k=3; k<6; k++)
 	x[i].x_corr[k] = normalizeAngle(x[i].x_corr[k]);
 
     x[i].P_corr=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
-    
-    // for(size_t j=3; j<6; j++)
-    // {
-    //     for(size_t k=3; k<6; k++)
-    //     {
-    //         yAssert(x[i].P_corr(j,k) <= pow(2*M_PI,2));
-    //     }
-    // }
 }
 
 double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)

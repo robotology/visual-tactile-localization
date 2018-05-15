@@ -326,9 +326,15 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 	    
     }
 
-    x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
-    for (size_t k=3; k<6; k++)
-	x[i].x_pred[k] = normalizeAngle(x[i].x_pred[k]);
+    // x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
+    // for (size_t k=3; k<6; k++)
+    //     x[i].x_pred[k] = normalizeAngle(x[i].x_pred[k]);
+
+    // system model is linear
+    // use plain kalman filter prediction here
+    x[i].x_pred = x[i].x_corr_prev;
+    for(size_t k=0; k<3; k++)
+        x[i].x_pred[k] += propagated_input[k];
     
     x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
     
@@ -336,14 +342,18 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 
 void UnscentedParticleFilter::computePpred(const int &i)
 {
-    for(size_t j=0; j<2*params.n+1; j++)
-    {
-        x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
+    // for(size_t j=0; j<2*params.n+1; j++)
+    // {
+    //     x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
 	
-        x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
+    //     x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
 	
-    }
-    x[i].P_pred=x[i].P_pred_aux + params.Q_prev;
+    // }
+    // x[i].P_pred=x[i].P_pred_aux + params.Q_prev;
+
+    // system model is linear
+    // use plain kalman filter estimate covariance prediction
+    x[i].P_pred=x[i].P_corr + params.Q_prev;
 }
 
 void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)

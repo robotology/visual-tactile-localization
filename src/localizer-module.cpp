@@ -1524,13 +1524,13 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         std::string left_finger = "left_" + finger_name;
         std::string right_finger_key = right_finger;
         std::string left_finger_key = left_finger;
-        if (finger_name == "ring")
-        {
-            // FIX ME :the forward kinematics of the ring finger is not available
-            // using the forward kinematics of the index finger
-            right_finger = "right_index";
-            left_finger = "left_index";
-        }
+        // if (finger_name == "ring")
+        // {
+        //     // FIX ME :the forward kinematics of the ring finger is not available
+        //     // using the forward kinematics of the index finger
+        //     right_finger = "right_index";
+        //     left_finger = "left_index";
+        // }
         fingers_kin[right_finger_key] = iCub::iKin::iCubFinger(right_finger);
         fingers_kin[left_finger_key] = iCub::iKin::iCubFinger(left_finger);
     }

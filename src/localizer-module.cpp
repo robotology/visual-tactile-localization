@@ -54,6 +54,11 @@ bool LocalizerModule::readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
 
 bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
 {
+    robot_name = rf.find("robotName").asString();
+    if (rf.find("robotName").isNull())
+        robot_name = "icub";
+    yInfo() << "Localizer module: robot name" << robot_name;
+
     is_simulation = rf.find("simulationMode").asBool();
     if (rf.find("simulationMode").isNull())
         is_simulation = false;
@@ -1455,7 +1460,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // prepare properties for the Encoders
     yarp::os::Property prop_encoders;
     prop_encoders.put("device", "remote_controlboard");
-    prop_encoders.put("remote", "/icubSim/right_arm");
+    prop_encoders.put("remote", "/" + robot_name + "/right_arm");
     prop_encoders.put("local", "/upf-localizer/encoders/right_arm");
     ok_drv = drv_right_arm.open(prop_encoders);
     if (!ok_drv)
@@ -1465,7 +1470,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         return false;
     }
 
-    prop_encoders.put("remote", "/icubSim/left_arm");
+    prop_encoders.put("remote", "/" + robot_name + "/left_arm");
     prop_encoders.put("local", "/upf-localizer/encoders/left_arm");
     ok_drv = drv_left_arm.open(prop_encoders);
     if (!ok_drv)
@@ -1475,7 +1480,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         return false;
     }
 
-    prop_encoders.put("remote", "/icubSim/torso");
+    prop_encoders.put("remote", "/" + robot_name + "/torso");
     prop_encoders.put("local", "/upf-localizer/encoders/torso");
     ok_drv = drv_torso.open(prop_encoders);
     if (!ok_drv)

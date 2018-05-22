@@ -115,6 +115,9 @@ private:
     // hand to be used during tactile filtering
     std::string tac_filt_hand_name;
 
+    // robot name
+    std::string robot_name;
+
     // flags
     bool estimate_available;
     bool filtering_enabled;

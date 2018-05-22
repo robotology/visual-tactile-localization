@@ -10,7 +10,7 @@
  * @author: Nicola Piga <nicolapiga@gmail.com>
  */
 
-// std 
+// std
 #include <string>
 #include <fstream>
 
@@ -32,42 +32,42 @@ typedef CGAL::Aff_transformation_3<K> Affine;
 using namespace yarp::math;
 
 bool UnscentedParticleFilter::readCenter(const yarp::os::ResourceFinder &rf,
-					 const std::string &tag,
-					 yarp::sig::Vector &center0)
-{      
-    if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
-	if (b->size()>=3)
-	{   
-	    center0[0]=b->get(0).asDouble();
-	    center0[1]=b->get(1).asDouble();
-	    center0[2]=b->get(2).asDouble();
-	    return true;
-	}
-    
-    return false;
-}
-    
-bool UnscentedParticleFilter::readRadius(const yarp::os::ResourceFinder &rf,
-					 const std::string &tag,
-					 yarp::sig::Vector &radius0)
+                                         const std::string &tag,
+                                         yarp::sig::Vector &center0)
 {
     if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
         if (b->size()>=3)
         {
-            radius0[0]=b->get(0).asDouble();           
-            radius0[1]=b->get(1).asDouble();            
-            radius0[2]=b->get(2).asDouble();
-				
+            center0[0]=b->get(0).asDouble();
+            center0[1]=b->get(1).asDouble();
+            center0[2]=b->get(2).asDouble();
             return true;
         }
-    
+
     return false;
 }
-    
+
+bool UnscentedParticleFilter::readRadius(const yarp::os::ResourceFinder &rf,
+                                         const std::string &tag,
+                                         yarp::sig::Vector &radius0)
+{
+    if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
+        if (b->size()>=3)
+        {
+            radius0[0]=b->get(0).asDouble();
+            radius0[1]=b->get(1).asDouble();
+            radius0[2]=b->get(2).asDouble();
+
+            return true;
+        }
+
+    return false;
+}
+
 bool UnscentedParticleFilter::readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
-						 const std::string &tag,
-						 yarp::sig::Vector &diag, \
-						 const int &dimension)
+                                                 const std::string &tag,
+                                                 yarp::sig::Vector &diag, \
+                                                 const int &dimension)
 {
     if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
         if (b->size()>=dimension)
@@ -86,12 +86,12 @@ double UnscentedParticleFilter::normalizeAngle(const double& angle)
     double wrapped = angle;
     while (wrapped > M_PI)
     {
-	wrapped -= 2 * M_PI;
+        wrapped -= 2 * M_PI;
     }
 
     while (wrapped < -M_PI)
     {
-	wrapped += 2* M_PI;
+        wrapped += 2* M_PI;
     }
 
     return wrapped;
@@ -101,13 +101,13 @@ void UnscentedParticleFilter::initializationUPF()
 {
     for(size_t i=0; i<x.size(); i++ )
     {
-	// initialize quantities using parameters
-	// obtained from the configuration file
-	x[i].prev_weights=x[i].weights=1.0/params.N;
-	x[i].P_corr=params.P0;
+        // initialize quantities using parameters
+        // obtained from the configuration file
+        x[i].prev_weights=x[i].weights=1.0/params.N;
+        x[i].P_corr=params.P0;
 
-	// zero matrices
-	x[i].P_pred.zero();
+        // zero matrices
+        x[i].P_pred.zero();
     }
 }
 
@@ -128,7 +128,7 @@ void UnscentedParticleFilter::resizeParticle(const int &i)
 {
     // take the size of the last measurement received
     int p = 3*curr_meas.size();
-    
+
     x[i].y_pred.resize(p,0.0);
     x[i].Pyy.resize(p,p);
     x[i].Pxy.resize(params.n,p);
@@ -148,7 +148,7 @@ void UnscentedParticleFilter::initializeUKFMatrix(const int &i)
 void UnscentedParticleFilter::computeSigmaPoints(const int &i)
 {
     yarp::sig::Vector aux;
-    
+
     yarp::sig::Matrix S,U,V,G;
     yarp::sig::Vector s;
     s.resize(params.n,0.0);
@@ -156,27 +156,27 @@ void UnscentedParticleFilter::computeSigmaPoints(const int &i)
     S.resize(params.n,params.n);
     V.resize(params.n,params.n);
     G.resize(params.n,params.n);
-    
+
     yarp::math::SVD((params.n+params.lambda)*x[i].P_corr,U,s,V);
-    
+
     for(size_t k=0; k<params.n; k++)
     {
         s[k]=sqrt(s[k]);
     }
     S.diagonal(s);
     G=U*S;
-    
+
     x[i].XsigmaPoints_corr.setCol(0,x[i].x_corr_prev);
-    
+
     for(size_t j=1; j<params.n+1; j++)
         x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev+G.getCol(j-1));
-    
+
     for(size_t j=params.n+1; j<2*params.n+1; j++)
         x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev-G.getCol(j-1-params.n));
-    
+
     x[i].WsigmaPoints_covariance[0]=params.lambda/(params.n+params.lambda)+1-pow(params.alpha,2.0)+params.beta;
     x[i].WsigmaPoints_average[0]=params.lambda/(params.n+params.lambda);
-    
+
     for(size_t j=1; j<2*params.n+1; j++)
     {
         x[i].WsigmaPoints_covariance[j]=1/(2*(params.n+params.lambda));
@@ -220,15 +220,15 @@ yarp::sig::Matrix UnscentedParticleFilter::homogeneousTransform(const yarp::sig:
     H(2,0)=-sin(theta);
     H(2,1)=cos(theta)*sin(psi);
     H(2,2)=cos(theta)*cos(psi);
-    
-    return H;    
+
+    return H;
 }
 
 yarp::sig::Vector UnscentedParticleFilter::computeY(const int &k, const int &j)
 {
     Point y_pred;
     yarp::sig::Vector out;
-    
+
     ParticleUPF &particle=x[k];
 
     // evaluate transformation from object fixed frame to robot frame
@@ -243,19 +243,19 @@ yarp::sig::Vector UnscentedParticleFilter::computeY(const int &k, const int &j)
     // evaluate measurement equation
     for (int j=0; j<curr_meas.size(); j++)
     {
-	Point &p=curr_meas[j];
+        Point &p=curr_meas[j];
 
-	double x=Hr2o(0,0)*p[0]+Hr2o(0,1)*p[1]+Hr2o(0,2)*p[2]+Hr2o(0,3);
-	double y=Hr2o(1,0)*p[0]+Hr2o(1,1)*p[1]+Hr2o(1,2)*p[2]+Hr2o(1,3);
-	double z=Hr2o(2,0)*p[0]+Hr2o(2,1)*p[1]+Hr2o(2,2)*p[2]+Hr2o(2,3);
+        double x=Hr2o(0,0)*p[0]+Hr2o(0,1)*p[1]+Hr2o(0,2)*p[2]+Hr2o(0,3);
+        double y=Hr2o(1,0)*p[0]+Hr2o(1,1)*p[1]+Hr2o(1,2)*p[2]+Hr2o(1,3);
+        double z=Hr2o(2,0)*p[0]+Hr2o(2,1)*p[1]+Hr2o(2,2)*p[2]+Hr2o(2,3);
 
-	y_pred=tree.closest_point(Point(x,y,z));
+        y_pred=tree.closest_point(Point(x,y,z));
 
-	out[j*3]=Ho2r(0,0)*y_pred[0]+Ho2r(0,1)*y_pred[1]+Ho2r(0,2)*y_pred[2]+Ho2r(0,3);
-	out[j*3+1]=Ho2r(1,0)*y_pred[0]+Ho2r(1,1)*y_pred[1]+Ho2r(1,2)*y_pred[2]+Ho2r(1,3);
-	out[j*3+2]=Ho2r(2,0)*y_pred[0]+Ho2r(2,1)*y_pred[1]+Ho2r(2,2)*y_pred[2]+Ho2r(2,3);
+        out[j*3]=Ho2r(0,0)*y_pred[0]+Ho2r(0,1)*y_pred[1]+Ho2r(0,2)*y_pred[2]+Ho2r(0,3);
+        out[j*3+1]=Ho2r(1,0)*y_pred[0]+Ho2r(1,1)*y_pred[1]+Ho2r(1,2)*y_pred[2]+Ho2r(1,3);
+        out[j*3+2]=Ho2r(2,0)*y_pred[0]+Ho2r(2,1)*y_pred[1]+Ho2r(2,2)*y_pred[2]+Ho2r(2,3);
     }
-    
+
     return out;
 }
 
@@ -263,12 +263,12 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &k, const int
 {
     Point y_pred;
     yarp::sig::Vector out;
-    
+
     ParticleUPF &particle=x[k];
 
     // evaluate attitude of particle
     yarp::sig::Matrix Hm=homogeneousTransform(particle.XsigmaPoints_pred.getCol(j));
-    
+
     // evaluate real attitude
     yarp::sig::Matrix Hreal=homogeneousTransform(real_pose);
 
@@ -285,17 +285,17 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &k, const int
     // evaluate ideal measurement equation
     for (int j=0; j<curr_meas.size(); j++)
     {
-	// evaluate difference between measurement and real pose
-	Point &p=curr_meas[j];
-	Point diff=Point(p[0]-real_pose[0],
-			 p[1]-real_pose[1],
-			 p[2]-real_pose[2]);
+        // evaluate difference between measurement and real pose
+        Point &p=curr_meas[j];
+        Point diff=Point(p[0]-real_pose[0],
+                         p[1]-real_pose[1],
+                         p[2]-real_pose[2]);
 
-	out[j*3]=H(0,0)*diff[0]+H(0,1)*diff[1]+H(0,2)*diff[2]+H(0,3);
-	out[j*3+1]=H(1,0)*diff[0]+H(1,1)*diff[1]+H(1,2)*diff[2]+H(1,3);
-	out[j*3+2]=H(2,0)*diff[0]+H(2,1)*diff[1]+H(2,2)*diff[2]+H(2,3);
+        out[j*3]=H(0,0)*diff[0]+H(0,1)*diff[1]+H(0,2)*diff[2]+H(0,3);
+        out[j*3+1]=H(1,0)*diff[0]+H(1,1)*diff[1]+H(1,2)*diff[2]+H(1,3);
+        out[j*3+2]=H(2,0)*diff[0]+H(2,1)*diff[1]+H(2,2)*diff[2]+H(2,3);
     }
-    
+
     return out;
 }
 
@@ -303,27 +303,27 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 {
     yarp::sig::Vector random;
     random.resize(params.n,0.0);
-    
+
     yarp::sig::Matrix cholQ;
     cholQ(params.n,params.n);
 
     for(size_t j=0; j<2*params.n+1; j++)
     {
-	x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j));
+        x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j));
 
-	//use system input in the prediction
-	for(size_t k=0; k<3; k++)
-	    x[i].XsigmaPoints_pred(k,j) += propagated_input[k];
+        //use system input in the prediction
+        for(size_t k=0; k<3; k++)
+            x[i].XsigmaPoints_pred(k,j) += propagated_input[k];
 
-	if(params.use_ideal_meas_eqn)
-	{
-	    x[i].YsigmaPoints_pred.setCol(j,computeYIdeal(i,j));
-	}
-	else
-	{
-	    x[i].YsigmaPoints_pred.setCol(j,computeY(i,j));
-	}
-	    
+        if(params.use_ideal_meas_eqn)
+        {
+            x[i].YsigmaPoints_pred.setCol(j,computeYIdeal(i,j));
+        }
+        else
+        {
+            x[i].YsigmaPoints_pred.setCol(j,computeY(i,j));
+        }
+
     }
 
     // x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
@@ -335,9 +335,9 @@ void UnscentedParticleFilter::predictionStep(const int &i)
     x[i].x_pred = x[i].x_corr_prev;
     for(size_t k=0; k<3; k++)
         x[i].x_pred[k] += propagated_input[k];
-    
+
     x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
-    
+
 }
 
 void UnscentedParticleFilter::computePpred(const int &i)
@@ -345,9 +345,9 @@ void UnscentedParticleFilter::computePpred(const int &i)
     // for(size_t j=0; j<2*params.n+1; j++)
     // {
     //     x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
-	
+
     //     x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
-	
+
     // }
     // x[i].P_pred=x[i].P_pred_aux + params.Q_prev;
 
@@ -361,11 +361,11 @@ void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
     for(size_t j=0; j<2*params.n+1; j++)
     {
         x[i].A.setCol(0,x[i].YsigmaPoints_pred.getCol(j)-x[i].y_pred);
-	
+
         x[i].Pyy=x[i].Pyy+x[i].WsigmaPoints_covariance[j]*x[i].A*x[i].A.transposed();
 
         x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
-		
+
         x[i].Pxy=x[i].Pxy+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].A.transposed();
     }
 
@@ -385,21 +385,21 @@ void UnscentedParticleFilter::correctionStep(const int &i)
 
     for (int j=0; j<curr_meas.size(); j++)
     {
-	Point &p=curr_meas[j];
+        Point &p=curr_meas[j];
 
-	meas[j*3]=p[0];
-	meas[j*3+1]=p[1];
-	meas[j*3+2]=p[2];
+        meas[j*3]=p[0];
+        meas[j*3+1]=p[1];
+        meas[j*3+2]=p[2];
     }
 
     yarp::sig::Vector innovation = x[i].K*(meas-x[i].y_pred);
     for (size_t k=3; k<6; k++)
-	innovation[k] = normalizeAngle(innovation[k]);
+        innovation[k] = normalizeAngle(innovation[k]);
 
     x[i].x_corr=x[i].x_pred + innovation;
 
     for (size_t k=3; k<6; k++)
-	x[i].x_corr[k] = normalizeAngle(x[i].x_corr[k]);
+        x[i].x_corr[k] = normalizeAngle(x[i].x_corr[k]);
 
     x[i].P_corr=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
 }
@@ -410,9 +410,9 @@ double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
     double likelihood=1.0;
     map_likelihood=1.0;
     int initial_meas;
-    
+
     ParticleUPF &particle=x[k];
-    
+
     yarp::sig::Matrix H=homogeneousTransform(particle.x_corr);
     H=SE3inv(H);
 
@@ -421,33 +421,33 @@ double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
 
     for (int j=0; j<curr_meas.size(); j++)
     {
-	Point &p=curr_meas[j];
+        Point &p=curr_meas[j];
 
-	double x=H(0,0)*p[0]+H(0,1)*p[1]+H(0,2)*p[2]+H(0,3);
-	double y=H(1,0)*p[0]+H(1,1)*p[1]+H(1,2)*p[2]+H(1,3);
-	double z=H(2,0)*p[0]+H(2,1)*p[1]+H(2,2)*p[2]+H(2,3);
+        double x=H(0,0)*p[0]+H(0,1)*p[1]+H(0,2)*p[2]+H(0,3);
+        double y=H(1,0)*p[0]+H(1,1)*p[1]+H(1,2)*p[2]+H(1,3);
+        double z=H(2,0)*p[0]+H(2,1)*p[1]+H(2,2)*p[2]+H(2,3);
 
-	squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
+        squared_tot_meas_error += tree.squared_distance(Point(x,y,z));
     }
 
     // standard likelihood
     likelihood=likelihood*exp(-0.5*squared_tot_meas_error/(params.R));
-    
+
     return likelihood;
 }
 
 double UnscentedParticleFilter::multivariateGaussian(const yarp::sig::Vector &x,
-						     const yarp::sig::Vector &mean,
-						     const yarp::sig::Matrix &covariance)
+                                                     const yarp::sig::Vector &mean,
+                                                     const yarp::sig::Matrix &covariance)
 {
     double value;
-    
+
     // eval the difference x - mean
     yarp::sig::Vector diff = x - mean;
 
     // wrap angular errors
     for (size_t i=3; i<6; i++)
-	diff[i] = normalizeAngle(diff[i]);
+        diff[i] = normalizeAngle(diff[i]);
 
     // eval the density
     yarp::sig::Matrix diff_m(x.size(), 1);
@@ -457,14 +457,14 @@ double UnscentedParticleFilter::multivariateGaussian(const yarp::sig::Vector &x,
     tmp = diff_m.transposed() * yarp::math::luinv(covariance) * diff_m;
 
     value = exp(-0.5 * tmp(0, 0)) /
-	sqrt(pow(2 * M_PI, x.size()) *
-	     yarp::math::det(covariance));
-    
+        sqrt(pow(2 * M_PI, x.size()) *
+             yarp::math::det(covariance));
+
     return value;
 }
 
 double UnscentedParticleFilter::tranProbability(const int &i,
-						const int &j)
+                                                const int &j)
 {
     // evaluate transition probability
     yarp::sig::Vector mean = x[j].x_corr_prev;
@@ -488,8 +488,8 @@ void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
 
     // evaluate weights
     x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob/
-	multivariateGaussian(x[i].x_corr, x[i].x_corr, x[i].P_corr);
-    
+        multivariateGaussian(x[i].x_corr, x[i].x_corr, x[i].P_corr);
+
     sum+=x[i].weights;
 }
 
@@ -500,38 +500,38 @@ void UnscentedParticleFilter::normalizeWeights(const int &i,const double &sum, d
 }
 
 void UnscentedParticleFilter::resampling()
-{	
+{
     std::deque<ParticleUPF> new_x;
     yarp::sig::Vector c,u, new_index;
-    
+
     //Initialization
     c.resize(params.N, 0.0);
     u.resize(params.N, 0.0);
     new_index.resize(params.N, 0);
     new_x.assign(params.N,ParticleUPF());
     c[0]=x[0].weights;
-    
+
     for(size_t i=1; i<params.N; i++)
     {
         c[i]=c[i-1]+x[i].weights;
     }
-    
+
     int i=0;
     u[0]=yarp::math::Rand::scalar(0,1)/params.N;
-    
+
     for(size_t j=0; j<params.N; j++)
     {
         u[j]=u[0]+1.0/params.N*j;
-	
+
         while(u[j]>c[i])
         {
             i++;
         }
-	
-        new_x[j]=x[i];	
+
+        new_x[j]=x[i];
         new_x[j].weights=1.0/params.N;
     }
-    
+
     x=new_x;
 }
 
@@ -542,28 +542,28 @@ void UnscentedParticleFilter::selectionStep(const double &sum_squared)
     // enable resampling only after params.n_steps_before_resampling;
     if (t >= params.n_steps_before_resampling)
     {
-    	if(Neff < params.n_eff_thr)
-	{
-    	    resampling();
-	}
+        if(Neff < params.n_eff_thr)
+        {
+            resampling();
+        }
     }
     else
     {
-    	for(size_t j=0;  j<x.size(); j++)
-    	{
-    	    x[j].weights=1.0/params.N;
-    	}
+        for(size_t j=0;  j<x.size(); j++)
+        {
+            x[j].weights=1.0/params.N;
+        }
     }
 }
 
 bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
 {
     yInfo()<<"UPF configuration";
-    
+
     // read the number of particles
     params.N=rf.find("N").asInt();
     if (rf.find("N").isNull())
-	params.N=rf.check("N",yarp::os::Value(600)).asInt();
+        params.N=rf.check("N",yarp::os::Value(600)).asInt();
     yInfo()<<"UPF Number of particles:"<<params.N;
 
     // read the center of the initial research region
@@ -628,13 +628,13 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     // compute the parameter lambda for the Unscented Transform
     params.lambda=pow(params.alpha,2.0)*(6+params.kappa)-6;
     yInfo()<<"UPF Unscented Transform Lambda:"<<params.lambda;
-    
+
     // read the ideal measurement equation enabler
     params.use_ideal_meas_eqn=rf.find("useIdealMeasEqn").asBool();
     if (rf.find("useIdealMeasEqn").isNull())
         params.use_ideal_meas_eqn=rf.check("useIdealMeasEqn",yarp::os::Value(false)).asBool();
     yInfo()<<"UPF use ideal measurement equation :"<<params.use_ideal_meas_eqn;
-    
+
     // read the values of the system noise covariance matrix
     yarp::sig::Vector diagQ;
     diagQ.resize(params.n,1);
@@ -659,7 +659,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     if (rf.find("R").isNull())
         params.R=rf.check("R",yarp::os::Value(0.0001)).asDouble();
     yInfo()<<"UPF R (scalar):"<<params.R;
-    
+
     // read the values of the initial state covariance matrix
     yarp::sig::Vector diagP0;
     diagP0.resize(params.n,1);
@@ -670,7 +670,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
         diagP0[1]=0.04;
         diagP0[2]=0.04;
         diagP0[3]=3.29;
-	diagP0[4]=3.29;
+        diagP0[4]=3.29;
         diagP0[5]=3.29;
     }
     params.P0.resize(params.n,params.n);
@@ -681,7 +681,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     if (!rf.check("modelFile"))
     {
         yError()<<"UnscentedParticleFilter::configure"
-		<<"Error: model file not provided!";
+                <<"Error: model file not provided!";
         return false;
     }
     std::string modelFileName=rf.findFile("modelFile");
@@ -691,14 +691,14 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     if (!modelFile.is_open())
     {
         yError()<<"UnscentedParticleFilter:: configure"
-		<<"Error: problem opening model file!";
+                <<"Error: problem opening model file!";
         return false;
     }
     modelFile>>getModel();
     if (modelFile.bad())
     {
         yError()<<"UscentedParticleFilter::configure"
-		<<"Error: problem reading model file!";
+                <<"Error: problem reading model file!";
         modelFile.close();
         return false;
     }
@@ -742,14 +742,14 @@ void UnscentedParticleFilter::setNewMeasure(const std::vector<yarp::sig::Vector>
     curr_meas.clear();
     for(size_t i=0; i<m.size(); i++)
     {
-	// each measure is a std::vector of yarp::sig::Vector vectors
-	// each Vector is a point
-	const yarp::sig::Vector &point = m[i];
+        // each measure is a std::vector of yarp::sig::Vector vectors
+        // each Vector is a point
+        const yarp::sig::Vector &point = m[i];
 
-	// convert to a CGAL point
-	Point p(point[0], point[1], point[2]);
-	curr_meas.push_back(p);
-    }				
+        // convert to a CGAL point
+        Point p(point[0], point[1], point[2]);
+        curr_meas.push_back(p);
+    }
 }
 
 void UnscentedParticleFilter::setRealPose(const yarp::sig::Vector &pose)
@@ -800,7 +800,7 @@ void UnscentedParticleFilter::skipStep(double &time_stamp)
 }
 
 void UnscentedParticleFilter::step(double &time_stamp)
-{   
+{
     t++;
 
     double sum=0.0;
@@ -821,7 +821,7 @@ void UnscentedParticleFilter::step(double &time_stamp)
         resizeParticle(i);
         initializeUKFMatrix(i);
         computeSigmaPoints(i);
-     	predictionStep(i);
+        predictionStep(i);
         computePpred(i);
         computeCorrectionMatrix(i);
         x[i].K=x[i].Pxy*luinv(x[i].Pyy);
@@ -857,11 +857,11 @@ void UnscentedParticleFilter::step(double &time_stamp)
 
     for (size_t i=0; i<x.size(); i++)
     {
-	// update previous value of x_corr	
-	x[i].x_corr_prev = x[i].x_corr;
+        // update previous value of x_corr
+        x[i].x_corr_prev = x[i].x_corr;
 
-	// update the weights for the next step    
-    	x[i].prev_weights = x[i].weights;
+        // update the weights for the next step
+        x[i].prev_weights = x[i].weights;
     }
 }
 
@@ -878,17 +878,17 @@ void UnscentedParticleFilter::evalEstimate()
     double meas_likelihood;
     for(size_t i=0; i<x.size(); i++)
     {
-	// sum of transition probabilites
+        // sum of transition probabilites
         sum_tran_probability = 0;
 
         for(size_t j=0; j<x.size(); j++)
             sum_tran_probability += tranProbability(i, j) * x[j].prev_weights;
 
-	// measurements likelihood
-	double tmp;
-	meas_likelihood = likelihood(i, tmp);
+        // measurements likelihood
+        double tmp;
+        meas_likelihood = likelihood(i, tmp);
 
-	// store probability
+        // store probability
         probability_per_particle.push_back(meas_likelihood * sum_tran_probability);
     }
 
@@ -908,7 +908,7 @@ void UnscentedParticleFilter::evalEstimate()
 }
 
 double UnscentedParticleFilter::evalPerformanceIndex(const yarp::sig::Vector &estimate,
-						     const std::deque<Point> &points)
+                                                     const std::deque<Point> &points)
 {
     yarp::sig::Matrix H=homogeneousTransform(estimate);
     H=SE3inv(H);
@@ -917,21 +917,21 @@ double UnscentedParticleFilter::evalPerformanceIndex(const yarp::sig::Vector &es
     for (size_t i=0; i<points.size(); i++)
     {
         const Point &m=points[i];
-	
+
         double x=H(0,0)*m[0]+H(0,1)*m[1]+H(0,2)*m[2]+H(0,3);
         double y=H(1,0)*m[0]+H(1,1)*m[1]+H(1,2)*m[2]+H(1,3);
         double z=H(2,0)*m[0]+H(2,1)*m[1]+H(2,2)*m[2]+H(2,3);
-	
-	error_index+=sqrt(tree.squared_distance(Point(x,y,z)));
+
+        error_index+=sqrt(tree.squared_distance(Point(x,y,z)));
     }
-    
+
     error_index/=points.size();
 
     return error_index;
 }
 
 void UnscentedParticleFilter::transformObject(const yarp::sig::Vector &estimate,
-					      Polyhedron &transformed)
+                                              Polyhedron &transformed)
 {
     // eval the homogeneous transformation
     yarp::sig::Matrix H=homogeneousTransform(estimate);

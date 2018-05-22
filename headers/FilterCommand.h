@@ -18,7 +18,7 @@
 
 namespace yarp {
     namespace sig {
-	class FilterCommand;
+        class FilterCommand;
     }
 }
 
@@ -51,7 +51,7 @@ public:
      * Return true iff a FilterCommand was read correctly.
      */
     bool read(yarp::os::ConnectionReader& connection) YARP_OVERRIDE;
-    
+
     bool write(yarp::os::ConnectionWriter& connection) YARP_OVERRIDE;
 };
 #endif

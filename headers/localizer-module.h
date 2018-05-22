@@ -68,7 +68,7 @@ struct Data
     FilteringType data_type;
 
     Data() : ground_truth(6, 0.0),
-	     estimate(6, 0.0) {};
+             estimate(6, 0.0) {};
 };
 
 /**
@@ -219,9 +219,9 @@ private:
      * @return true/false on success/failure
      */
     bool readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
-			    const std::string &tag,
-			    const int &size,
-			    yarp::sig::Vector &diag);
+                            const std::string &tag,
+                            const int &size,
+                            yarp::sig::Vector &diag);
     /*
      * Load the required parameters using a
      * previously instantiated @see Resource Finder.
@@ -237,7 +237,7 @@ private:
      * @param pc_out the transformed point cloud
      */
     void transformPointCloud(const PointCloud& pc,
-			     std::vector<yarp::sig::Vector> &pc_out);
+                             std::vector<yarp::sig::Vector> &pc_out);
 
     /*
      * Extract finger tips contact points from a skinContactList
@@ -246,8 +246,8 @@ private:
      * @param point_right contact points on the left hand finger tips
      */
     void getContactPoints(const iCub::skinDynLib::skinContactList &list,
-			  std::vector<yarp::sig::Vector> &points_right,
-			  std::vector<yarp::sig::Vector> &points_left);
+                          std::vector<yarp::sig::Vector> &points_right,
+                          std::vector<yarp::sig::Vector> &points_left);
     /*
      * Extract arm and torso angles and angular rates.
      * @param arm_name the name of the desired arm
@@ -257,10 +257,10 @@ private:
      * @param torso_ang_rates vector of torso angular rates
      */
     bool getChainJointsState(const std::string &arm_name,
-			     yarp::sig::Vector &arm_angles,
-			     yarp::sig::Vector &torso_angles,
-			     yarp::sig::Vector &arm_ang_rates,
-			     yarp::sig::Vector &torso_ang_rates);
+                             yarp::sig::Vector &arm_angles,
+                             yarp::sig::Vector &torso_angles,
+                             yarp::sig::Vector &arm_ang_rates,
+                             yarp::sig::Vector &torso_ang_rates);
 
     /*
      * Extract angles and angular rates for the hand
@@ -274,12 +274,12 @@ private:
      * @param hand_ang_rates vector of hand angular rates
      */
     void getHandJointsState(const std::string &hand_name,
-			    const yarp::sig::Vector &arm_angles,
-			    const yarp::sig::Vector &torso_angles,
-			    const yarp::sig::Vector &arm_ang_rates,
-			    const yarp::sig::Vector &torso_ang_rates,
-			    yarp::sig::Vector &hand_angles,
-			    yarp::sig::Vector &hand_ang_rates);
+                            const yarp::sig::Vector &arm_angles,
+                            const yarp::sig::Vector &torso_angles,
+                            const yarp::sig::Vector &arm_ang_rates,
+                            const yarp::sig::Vector &torso_ang_rates,
+                            yarp::sig::Vector &hand_angles,
+                            yarp::sig::Vector &hand_ang_rates);
 
     /*
      * Evaluate the the twist of the desired hand.
@@ -290,10 +290,10 @@ private:
      * @param ang_velocity angular velocity of the hand
      */
     void getHandTwist(const std::string &hand_name,
-		      const yarp::sig::Vector hand_angles,
-		      const yarp::sig::Vector hand_ang_rates,
-		      yarp::sig::Vector &lin_velocity,
-		      yarp::sig::Vector &ang_velocity);
+                      const yarp::sig::Vector hand_angles,
+                      const yarp::sig::Vector hand_ang_rates,
+                      yarp::sig::Vector &lin_velocity,
+                      yarp::sig::Vector &ang_velocity);
 
     /*
      * Update the chain of the specified finger.
@@ -302,8 +302,8 @@ private:
      * @param finger_angles vector of finger joints angles
      */
     void updateFingerConfiguration(const std::string &hand_name,
-				   const std::string &finger_name,
-				   const yarp::sig::Vector &finger_angles);
+                                   const std::string &finger_name,
+                                   const yarp::sig::Vector &finger_angles);
     /*
      * Extract angles and angular rates for the finger
      * so that they are compatible with the class iCub::iKin::iCubFinger
@@ -315,11 +315,11 @@ private:
      * @param hand_ang_rates vector of hand angular rates
      */
     void getFingerJointsState(const std::string &hand_name,
-			      const std::string &finger_name,
-			      const yarp::sig::Vector &arm_angles,
-			      const yarp::sig::Vector &arm_ang_rates,
-			      yarp::sig::Vector &finger_angles,
-			      yarp::sig::Vector &finger_ang_rates);
+                              const std::string &finger_name,
+                              const yarp::sig::Vector &arm_angles,
+                              const yarp::sig::Vector &arm_ang_rates,
+                              yarp::sig::Vector &finger_angles,
+                              yarp::sig::Vector &finger_ang_rates);
     /*
      * Get the velocity of the finger tip relative to the center of the hand
      * and expressed in the hand root frame.
@@ -330,10 +330,10 @@ private:
      * @param velocity the evaluated velocity
      */
     void getFingerRelativeVelocity(const std::string &finger_name,
-				   const std::string &hand_name,
-				   const yarp::sig::Vector &finger_angles,
-				   const yarp::sig::Vector &finger_ang_rates,
-				   yarp::sig::Vector &velocity);
+                                   const std::string &hand_name,
+                                   const yarp::sig::Vector &finger_angles,
+                                   const yarp::sig::Vector &finger_ang_rates,
+                                   yarp::sig::Vector &velocity);
     /*
      * Get the position of the finger with respect to the robot root frame
      * expressed in the robot root frame.
@@ -344,10 +344,10 @@ private:
      * @param position the evaluated position
      */
     void getFingerPosition(const std::string &finger_name,
-			   const std::string &hand_name,
-			   const yarp::sig::Vector &hand_pos,
-			   const yarp::sig::Matrix &hand_att,
-			   yarp::sig::Vector &position);
+                           const std::string &hand_name,
+                           const yarp::sig::Vector &hand_pos,
+                           const yarp::sig::Matrix &hand_att,
+                           yarp::sig::Vector &position);
     /*
      * Get the total velocity of the finger tip expressed in the robot root frame.
      * @param finger_name the name of the desired finger
@@ -361,13 +361,13 @@ private:
      * @param velocity the evaluated velocity
      */
     void getFingerVelocity(const std::string &finger_name,
-			   const std::string &hand_name,
-			   const yarp::sig::Vector &hand_lin_vel,
-			   const yarp::sig::Vector &hand_ang_vel,
-			   const yarp::sig::Vector &finger_angles,
-			   const yarp::sig::Vector &finger_ang_rates,
-			   const yarp::sig::Matrix &hand_2_robot,
-			   yarp::sig::Vector &velocity);
+                           const std::string &hand_name,
+                           const yarp::sig::Vector &hand_lin_vel,
+                           const yarp::sig::Vector &hand_ang_vel,
+                           const yarp::sig::Vector &finger_angles,
+                           const yarp::sig::Vector &finger_ang_rates,
+                           const yarp::sig::Matrix &hand_2_robot,
+                           yarp::sig::Vector &velocity);
     /*
      * Get data related to fingers required for filtering
      * @param hand_name the name of the desired hand
@@ -379,9 +379,9 @@ private:
      *        linear velocities of the fingers
      */
     void getFingersData(const std::string &hand_name,
-			std::unordered_map<std::string, yarp::sig::Vector> &angles,
-			std::unordered_map<std::string, yarp::sig::Vector> &positions,
-			std::unordered_map<std::string, yarp::sig::Vector> &lin_vels);
+                        std::unordered_map<std::string, yarp::sig::Vector> &angles,
+                        std::unordered_map<std::string, yarp::sig::Vector> &positions,
+                        std::unordered_map<std::string, yarp::sig::Vector> &lin_vels);
 
     /*
      * Process a command coming from the input port
@@ -429,12 +429,12 @@ private:
      * @return a reference to the data set stored
      */
     Data& storeData(const FilteringType &data_type,
-		    const yarp::sig::Vector &ground_truth,
-		    const yarp::sig::Vector &estimate,
-		    const std::vector<yarp::sig::Vector> &meas,
-		    const yarp::sig::Vector &input,
-		    const double &time_stamp,
-		    const double &exec_time);
+                    const yarp::sig::Vector &ground_truth,
+                    const yarp::sig::Vector &estimate,
+                    const std::vector<yarp::sig::Vector> &meas,
+                    const yarp::sig::Vector &input,
+                    const double &time_stamp,
+                    const double &exec_time);
 
     /*
      * Store data in the internal storage for the tactile filtering case
@@ -448,14 +448,14 @@ private:
      * @param exec_time_truth execution time of last filtering step
      */
     void storeDataTactile(const yarp::sig::Vector &ground_truth,
-			  const yarp::sig::Vector &estimate,
-			  const std::vector<yarp::sig::Vector> &meas,
-			  const yarp::sig::Vector &input,
-			  std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
-			  std::unordered_map<std::string, yarp::sig::Vector> fingers_pos,
-			  std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
-			  const double &time_stamp,
-			  const double &exec_time);
+                          const yarp::sig::Vector &estimate,
+                          const std::vector<yarp::sig::Vector> &meas,
+                          const yarp::sig::Vector &input,
+                          std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
+                          std::unordered_map<std::string, yarp::sig::Vector> fingers_pos,
+                          std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
+                          const double &time_stamp,
+                          const double &exec_time);
 
     /*
      * Save to a .OFF file a mesh representing a ground truth pose
@@ -465,7 +465,7 @@ private:
      * @return true/false on success
      */
     bool saveMesh(const yarp::sig::Vector &pose,
-		  const std::string &file_name);
+                  const std::string &file_name);
 
     /*
      * Save to .OFF file a vertex-only mesh representing measurements
@@ -474,7 +474,7 @@ private:
      * @return true/false on success
      */
     bool saveMeas(const std::vector<yarp::sig::Vector> &meas,
-		  const std::string &file_name);
+                  const std::string &file_name);
 
     /*
      * Save to a .CSV file the joints angles of all the fingers.
@@ -483,7 +483,7 @@ private:
      * @return true/false on success
      */
     bool saveFingersJoints(const std::unordered_map<std::string, yarp::sig::Vector> &angles,
-			   const std::string &file_name);
+                           const std::string &file_name);
 
     /*
      * Save to a .CSV file the positions of all the fingers.
@@ -492,7 +492,7 @@ private:
      * @return true/false on success
      */
     bool saveFingersPositions(const std::unordered_map<std::string, yarp::sig::Vector> &positions,
-			      const std::string &file_name);
+                              const std::string &file_name);
 
     /*
      * Save to a .CSV file the linear velocities of all the fingers.
@@ -501,7 +501,7 @@ private:
      * @return true/false on success
      */
     bool saveFingersVelocities(const std::unordered_map<std::string, yarp::sig::Vector> &velocities,
-			       const std::string &file_name);
+                               const std::string &file_name);
 
     /*
      * Save all the data (ground truth, estimate, input,
@@ -521,8 +521,8 @@ private:
 
 public:
     LocalizerModule() : last_estimate(6, 0.0),
-            	        Q_vision(6, 0.0),
-	                Q_tactile(6, 0.0) { };
+                        Q_vision(6, 0.0),
+                        Q_tactile(6, 0.0) { };
     /*
      * Configure the module.
      * @param rf a previously instantiated @see ResourceFinder

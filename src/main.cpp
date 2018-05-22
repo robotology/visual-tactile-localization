@@ -20,14 +20,14 @@
 
 /*
  * main
- */ 
+ */
 int main(int argc, char **argv)
 {
     yarp::os::Network yarp;
     if (!yarp.checkNetwork())
     {
-	yError() << "LocalizerModule: cannot find YARP!";
-	return 1;
+        yError() << "LocalizerModule: cannot find YARP!";
+        return 1;
     }
 
     // instantiate the resource finder
@@ -42,4 +42,4 @@ int main(int argc, char **argv)
     localizer.runModule(rf);
 
 }
-    
+

@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
     // instantiate the resource finder
     yarp::os::ResourceFinder rf;
-    rf.setDefaultConfigFile("config.ini");
+    rf.setDefaultConfigFile("localizer_config.ini");
     rf.configure(argc,argv);
 
     // instantiate the localizer

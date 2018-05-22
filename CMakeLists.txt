@@ -65,7 +65,7 @@ target_link_libraries(${PROJECT_NAME} ${YARP_LIBRARIES} ${ICUB_LIBRARIES})
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 # configuration file
-set (confMustard ${PROJECT_SOURCE_DIR}/config/config.ini)
+set (confMustard ${PROJECT_SOURCE_DIR}/config/localizer_config.ini)
 yarp_install(FILES ${confMustard} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization)
 
 # mesh file for YCB Mustard

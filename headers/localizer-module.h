@@ -116,6 +116,7 @@ private:
     bool estimate_available;
     bool filtering_enabled;
     bool is_first_step;
+    bool is_simulation;
     FilteringType filtering_type;
 
     // period
@@ -194,7 +195,10 @@ private:
     yarp::os::BufferedPort<PointCloud> port_pc;
 
     // contact points
-    yarp::os::BufferedPort<iCub::skinDynLib::skinContactList> port_contacts;
+    // used in simulation (GazeboYarpSkin)
+    yarp::os::BufferedPort<iCub::skinDynLib::skinContactList> port_contacts_sim;
+    // used with real robot
+    yarp::os::BufferedPort<yarp::sig::Vector> port_contacts;
 
     // rpc server
     yarp::os::RpcServer rpc_port;
@@ -241,13 +245,37 @@ private:
 
     /*
      * Extract finger tips contact points from a skinContactList
-     * @param list the input skin contact list
-     * @param point_right contact points on the right hand finger tips
-     * @param point_right contact points on the left hand finger tips
+     *
+     * To be used in simulation.
+     *
+     * @param hand_name name of the hand to be used
+     * @param points contact points on finger tips of the specified hand
      */
-    void getContactPoints(const iCub::skinDynLib::skinContactList &list,
-                          std::vector<yarp::sig::Vector> &points_right,
-                          std::vector<yarp::sig::Vector> &points_left);
+    bool getContactPointsSim(const std::string &hand_name,
+                             std::vector<yarp::sig::Vector> &points);
+
+    /*
+     * Extract finger tips contact points from a map containing position
+     * of finger tips and a map containing finger tips contact states
+     *
+     * @param fingers_contacts map between fingers names and finger tips contact states
+     * @param fingers_pos map between fingers names and figner tips position
+     * @param points contact points on finger tips
+     */
+    void getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,
+                          const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
+                          std::vector<yarp::sig::Vector> points);
+
+    /*
+     * Extract finger tips contacts state from a yarp::sig::Vector
+     * coming from SkinManager on the real robot
+     *
+     * @param hand_name name of the hand to be used
+     * @param points contact states on finger tips of the specified hand
+     */
+    bool getContacts(const std::string &hand_name,
+                     std::unordered_map<std::string, bool> &contacts);
+
     /*
      * Extract arm and torso angles and angular rates.
      * @param arm_name the name of the desired arm

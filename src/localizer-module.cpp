@@ -54,6 +54,11 @@ bool LocalizerModule::readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
 
 bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
 {
+    is_simulation = rf.find("simulationMode").asBool();
+    if (rf.find("simulationMode").isNull())
+        is_simulation = false;
+    yInfo() << "Localizer module: simulation mode" << is_simulation;
+
     est_source_frame_name = rf.find("estimateSourceFrame").asString();
     if (rf.find("estimateSourceFrame").isNull())
         est_source_frame_name = "/iCub/frame";
@@ -171,15 +176,23 @@ void LocalizerModule::transformPointCloud(const PointCloud& pc,
     }
 }
 
-void LocalizerModule::getContactPoints(const iCub::skinDynLib::skinContactList &list,
-                                       std::vector<yarp::sig::Vector> &points_right,
-                                       std::vector<yarp::sig::Vector> &points_left)
+bool LocalizerModule::getContactPointsSim(const std::string &hand_name,
+                                          std::vector<yarp::sig::Vector> &points)
 {
+    // check if new data is available
+    iCub::skinDynLib::skinContactList *list;
+    list = port_contacts_sim.read(false);
+    if (list == NULL)
+        return false;
+
+    // clear vector
+    points.clear();
+
     // extract contacts coming from finger tips only
-    for (size_t i=0; i<list.size(); i++)
+    for (size_t i=0; i<list->size(); i++)
     {
         // extract the skin contact
-        const iCub::skinDynLib::skinContact &skin_contact = list[i];
+        const iCub::skinDynLib::skinContact &skin_contact = (*list)[i];
 
         // need to verify if this contact was effectively produced
         // by taxels on the finger tips
@@ -189,12 +202,81 @@ void LocalizerModule::getContactPoints(const iCub::skinDynLib::skinContactList &
         // taxels ids for finger tips are between 0 and 59
         if (taxels_ids[0] >= 0 && taxels_ids[0] < 60)
         {
-            if (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND)
-                points_right.push_back(skin_contact.getGeoCenter());
-            else
-                points_left.push_back(skin_contact.getGeoCenter());
+            if ((hand_name == "right") &&
+                (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND))
+                points.push_back(skin_contact.getGeoCenter());
+            else if ((hand_name == "left") &&
+                     (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_LEFT_HAND))
+                points.push_back(skin_contact.getGeoCenter());
         }
     }
+
+    return true;
+}
+
+void LocalizerModule::getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,
+				       const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
+				       std::vector<yarp::sig::Vector> points)
+{
+    // clear vector
+    points.clear();
+
+    for (auto it = fingers_contacts.begin(); it != fingers_contacts.end(); it++)
+    {
+	const std::string &finger_name = it->first;
+	const bool &is_contact = it->second;
+
+	// if this finger is in contact
+	// add the contact point to the list
+	if (is_contact)
+	    points.push_back(fingers_pos.at(finger_name));
+    }
+}
+
+bool LocalizerModule::getContacts(const std::string &hand_name,
+                                  std::unordered_map<std::string, bool> &contacts)
+{
+    contacts.clear();
+
+    // reset finger_contacts
+    contacts["thumb"] = false;
+    contacts["index"] = false;
+    contacts["middle"] = false;
+    contacts["ring"] = false;
+    contacts["little"] = false;
+
+    // try to read skin data from the port
+    yarp::sig::Vector *skin_data = port_contacts.read(false);
+    if (skin_data == NULL)
+	return false;
+
+    // size should be 192 for hand data
+    if (skin_data->size() != 192)
+	return false;
+
+    // finger tips taxels are in the range 0-59
+    double thr = 0;
+    std::string finger_name;
+    for (size_t i=0; i<60; i++)
+    {
+	if ((*skin_data)[i] > thr)
+	{
+	    if (i >=0 && i < 12)
+		finger_name = "index";
+	    else if (i >= 12 && i < 24)
+		finger_name = "middle";
+	    else if (i >= 24 && i < 36)
+		finger_name = "ring";
+	    else if (i >= 36 && i < 48)
+		finger_name = "little";
+	    else if (i >= 48)
+		finger_name = "thumb";
+
+	    contacts[finger_name] |= true;
+	}
+    }
+
+    return true;
 }
 
 bool LocalizerModule::getChainJointsState(const std::string &arm_name,
@@ -654,41 +736,19 @@ void LocalizerModule::performFiltering()
     else if (filtering_type == FilteringType::tactile)
     {
         // check if contacts are available
-        iCub::skinDynLib::skinContactList *new_contacts = port_contacts.read(false);
-        if (new_contacts == NULL)
+        std::vector<yarp::sig::Vector> points;
+        std::unordered_map<std::string, bool> fingers_contacts;
+        if (is_simulation)
         {
-            // nothing to do here
-            return;
-        }
-
-        int num_meas;
-        std::string which_hand;
-        std::vector<yarp::sig::Vector>* points;
-        std::vector<yarp::sig::Vector> points_right;
-        std::vector<yarp::sig::Vector> points_left;
-
-        // extract contact points from the finger tips
-        getContactPoints(*new_contacts, points_right, points_left);
-
-        // for now assume that only one hand per time can be touching the object
-        // TODO: maybe FilterCommand can be used to specify which hand to use
-        if (points_right.size() != 0)
-        {
-            points = &points_right;
-            which_hand = "right";
-            num_meas = points_right.size();
-        }
-        else if (points_left.size() != 0)
-        {
-            points = &points_left;
-            which_hand = "left";
-            num_meas = points_left.size();
+            // Gazebo provides contact points
+            if (!getContactPointsSim("right", points))
+                return;
         }
         else
         {
-            // no measurements
-            // this step will be skipped
-            num_meas = 0;
+            // real robot provides binarized information on contacts
+            if (!getContacts("right", fingers_contacts))
+                return;
         }
 
         // set noise covariances
@@ -703,12 +763,17 @@ void LocalizerModule::performFiltering()
         std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
         std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
         std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
-        getFingersData(which_hand, fingers_angles, fingers_pos, fingers_vels);
+        getFingersData("right", fingers_angles, fingers_pos, fingers_vels);
+
+        if (!is_simulation)
+        {
+            // extract contact points from forward kinematics
+            getContactPoints(fingers_contacts, fingers_pos, points);
+        }
+
+        // set input
         input = fingers_vels["middle"];
-
-        // filter out z component
         input[2] = 0;
-
         upf.setNewInput(input);
 
         if (is_first_step)
@@ -717,13 +782,13 @@ void LocalizerModule::performFiltering()
             is_first_step = false;
         }
 
-        if (num_meas <= 1)
+        if (points.size() <= 1)
             // skip step in case of too few measurements
             upf.skipStep(time_stamp);
         else
         {
             // do normal filtering step
-            upf.setNewMeasure(*points);
+            upf.setNewMeasure(points);
             upf.step(time_stamp);
             last_estimate = upf.getEstimate();
         }
@@ -738,7 +803,7 @@ void LocalizerModule::performFiltering()
         if (storage_on)
             storeDataTactile(last_ground_truth,
                              last_estimate,
-                             *points,
+                             points,
                              input,
                              fingers_angles,
                              fingers_pos,
@@ -1305,12 +1370,25 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         return false;
     }
 
-    ok_port = port_contacts.open(port_contacts_name);
-    if (!ok_port)
+    if (is_simulation)
     {
-        yError() << "LocalizerModule:Configure error:"
-                 << "unable to open the contact points port";
-        return false;
+        ok_port = port_contacts_sim.open(port_contacts_name);
+        if (!ok_port)
+        {
+            yError() << "LocalizerModule:Configure error:"
+                     << "unable to open the simulated contact points port";
+            return false;
+        }
+    }
+    else
+    {
+        ok_port = port_contacts.open(port_contacts_name);
+        if (!ok_port)
+        {
+            yError() << "LocalizerModule:Configure error:"
+                     << "unable to open the contact points port";
+            return false;
+        }
     }
 
     // set FIFO policy

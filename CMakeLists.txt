@@ -66,19 +66,19 @@ install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 # configuration file
 set (confMustard ${PROJECT_SOURCE_DIR}/config/config.ini)
-yarp_install(FILES ${confMustard} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization)
+yarp_install(FILES ${confMustard} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization)
 
 # mesh file for YCB Mustard
 set (meshMustard ${PROJECT_SOURCE_DIR}/models/mustard.off)
-yarp_install(FILES ${meshMustard} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+yarp_install(FILES ${meshMustard} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
 
 # mesh file for box
 set (meshBox ${PROJECT_SOURCE_DIR}/models/box.off)
-yarp_install(FILES ${meshBox} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+yarp_install(FILES ${meshBox} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
 
 # output files folder with empty placeholder
 set (outputDraft ${PROJECT_SOURCE_DIR}/output/empty)
-yarp_install(FILES ${outputDraft} DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/output)
+yarp_install(FILES ${outputDraft} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/output)
 
 # add uninstall target
 icubcontrib_add_uninstall_target()

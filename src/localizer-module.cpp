@@ -1848,4 +1848,6 @@ bool LocalizerModule::close()
     drv_right_arm.close();
     drv_left_arm.close();
     drv_torso.close();
+    drv_left_analog.close();
+    drv_right_analog.close();
 }

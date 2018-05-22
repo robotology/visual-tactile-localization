@@ -1517,7 +1517,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     right_arm_kin = iCub::iKin::iCubArm("right");
     left_arm_kin = iCub::iKin::iCubArm("left");
 
-    fingers_names = {"thumb", "index", "middle", "ring"};
+    fingers_names = {"thumb", "index", "middle", "ring", "little"};
     for (std::string &finger_name : fingers_names)
     {
         std::string right_finger = "right_" + finger_name;

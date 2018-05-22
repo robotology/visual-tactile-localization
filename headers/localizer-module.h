@@ -124,6 +124,7 @@ private:
     bool filtering_enabled;
     bool is_first_step;
     bool is_simulation;
+    bool use_analogs;
     FilteringType filtering_type;
 
     // period

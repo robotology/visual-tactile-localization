@@ -64,6 +64,11 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         is_simulation = false;
     yInfo() << "Localizer module: simulation mode" << is_simulation;
 
+    use_analogs = rf.find("useAnalogs").asBool();
+    if (rf.find("useAnalogs").isNull())
+        use_analogs = false;
+    yInfo() << "Localizer moudle: use analogs" << use_analogs;
+
     est_source_frame_name = rf.find("estimateSourceFrame").asString();
     if (rf.find("estimateSourceFrame").isNull())
         est_source_frame_name = "/iCub/frame";
@@ -1490,26 +1495,29 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         return false;
     }
 
-    prop_encoders.put("device", "analogsensorclient");
-    prop_encoders.put("remote", "/" + robot_name + "/right_hand/analog:o");
-    prop_encoders.put("local", "/upf-localizer/analogs/right_hand");
-    ok_drv = drv_right_analog.open(prop_encoders);
-    if (!ok_drv)
+    if (use_analogs)
     {
-        yError() << "LocalizerModule::configure error:"
-                 << "unable to open the Analog Sensor Client driver for the right hand";
-        return false;
-    }
+        prop_encoders.put("device", "analogsensorclient");
+        prop_encoders.put("remote", "/" + robot_name + "/right_hand/analog:o");
+        prop_encoders.put("local", "/upf-localizer/analogs/right_hand");
+        ok_drv = drv_right_analog.open(prop_encoders);
+        if (!ok_drv)
+        {
+            yError() << "LocalizerModule::configure error:"
+                     << "unable to open the Analog Sensor Client driver for the right hand";
+            return false;
+        }
 
-    prop_encoders.put("device", "analogsensorclient");
-    prop_encoders.put("remote", "/" + robot_name + "/left_hand/analog:o");
-    prop_encoders.put("local", "/upf-localizer/analogs/left_hand");
-    ok_drv = drv_left_analog.open(prop_encoders);
-    if (!ok_drv)
-    {
-        yError() << "LocalizerModule::configure error:"
-                 << "unable to open the Analog Sensor Client driver for the left hand";
-        return false;
+        prop_encoders.put("device", "analogsensorclient");
+        prop_encoders.put("remote", "/" + robot_name + "/left_hand/analog:o");
+        prop_encoders.put("local", "/upf-localizer/analogs/left_hand");
+        ok_drv = drv_left_analog.open(prop_encoders);
+        if (!ok_drv)
+        {
+            yError() << "LocalizerModule::configure error:"
+                     << "unable to open the Analog Sensor Client driver for the left hand";
+            return false;
+        }
     }
 
     // try to retrieve the views
@@ -1534,19 +1542,22 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
                  << "unable to retrieve the Encoders view for the torso";
         return false;
     }
-    ok_view = drv_right_analog.view(ianalog_right);
-    if (!ok_view || ianalog_right == 0)
+    if (use_analogs)
     {
-        yError() << "LocalizerModule:configure error:"
-                 << "unable to retrieve the Analogs view for the right hand";
-        return false;
-    }
-    ok_view = drv_left_analog.view(ianalog_left);
-    if (!ok_view || ianalog_left == 0)
-    {
-        yError() << "LocalizerModule:configure error:"
-                 << "unable to retrieve the Analogs view for the left hand";
-        return false;
+        ok_view = drv_right_analog.view(ianalog_right);
+        if (!ok_view || ianalog_right == 0)
+        {
+            yError() << "LocalizerModule:configure error:"
+                     << "unable to retrieve the Analogs view for the right hand";
+            return false;
+        }
+        ok_view = drv_left_analog.view(ianalog_left);
+        if (!ok_view || ianalog_left == 0)
+        {
+            yError() << "LocalizerModule:configure error:"
+                     << "unable to retrieve the Analogs view for the left hand";
+            return false;
+        }
     }
 
     // configure forward kinematics

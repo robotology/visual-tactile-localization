@@ -20,6 +20,7 @@
 #include <yarp/dev/IFrameTransform.h>
 #include <yarp/dev/PolyDriver.h>
 #include <yarp/dev/IEncoders.h>
+#include <yarp/dev/IAnalogSensor.h>
 
 // icub-main
 #include <iCub/iKin/iKinFwd.h>
@@ -160,18 +161,22 @@ private:
      */
 
     /**
-     *  IEncoders
+     *  IEncoders and IAnalogs
      */
 
     // PolyDriver required to access yarp::dev::IEncoders encoders
     yarp::dev::PolyDriver drv_right_arm;
     yarp::dev::PolyDriver drv_left_arm;
     yarp::dev::PolyDriver drv_torso;
+    yarp::dev::PolyDriver drv_right_analog;
+    yarp::dev::PolyDriver drv_left_analog;
 
     // pointers to yarp::dev::IEncoders view of the PolyDriver
     yarp::dev::IEncoders *ienc_right_arm;
     yarp::dev::IEncoders *ienc_left_arm;
     yarp::dev::IEncoders *ienc_torso;
+    yarp::dev::IAnalogSensor *ianalog_right;
+    yarp::dev::IAnalogSensor *ianalog_left;
 
     /*
      */

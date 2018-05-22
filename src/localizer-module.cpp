@@ -293,14 +293,22 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
                                           yarp::sig::Vector &arm_angles,
                                           yarp::sig::Vector &torso_angles,
                                           yarp::sig::Vector &arm_ang_rates,
-                                          yarp::sig::Vector &torso_ang_rates)
+                                          yarp::sig::Vector &torso_ang_rates,
+                                          yarp::sig::Vector &fingers_analogs)
 {
     // choose between right and left arm
     yarp::dev::IEncoders *enc;
+    yarp::dev::IAnalogSensor *analog;
     if (arm_name == "right")
+    {
         enc = ienc_right_arm;
+        analog = ianalog_right;
+    }
     else
+    {
         enc = ienc_left_arm;
+        analog = ianalog_left;
+    }
 
     // get the angular readings
     arm_angles.resize(16);
@@ -321,6 +329,14 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     ok = ienc_torso->getEncoderSpeeds(torso_ang_rates.data());
     if (!ok)
         return false;
+
+    if (use_analogs)
+    {
+        // get additional encoders for proximal and distal joints of fingers
+	ok = analog->read(fingers_analogs);
+	if(ok != yarp::dev::IAnalogSensor::AS_OK)
+	    return false;
+    }
 
     return true;
 }
@@ -397,6 +413,7 @@ void LocalizerModule::getFingerJointsState(const std::string &hand_name,
                                            const std::string &finger_name,
                                            const yarp::sig::Vector &arm_angles,
                                            const yarp::sig::Vector &arm_ang_rates,
+                                           const yarp::sig::Vector &finger_analogs,
                                            yarp::sig::Vector &finger_angles,
                                            yarp::sig::Vector &finger_ang_rates)
 {
@@ -412,7 +429,12 @@ void LocalizerModule::getFingerJointsState(const std::string &hand_name,
         finger_angles[3] = finger_angles[2] = finger_angles[1];
     }
     else
-        finger.getChainJoints(arm_angles, finger_angles);
+    {
+        if (use_analogs)
+            finger.getChainJoints(arm_angles, finger_analogs, finger_angles);
+        else
+            finger.getChainJoints(arm_angles, finger_angles);
+    }
 
     // extract finger angular rates
     if (finger_name == "thumb")
@@ -562,8 +584,10 @@ void LocalizerModule::getFingersData(const std::string &hand_name,
     yarp::sig::Vector torso_angles;
     yarp::sig::Vector arm_ang_rates;
     yarp::sig::Vector torso_ang_rates;
+    yarp::sig::Vector fingers_analogs;
     getChainJointsState(hand_name, arm_angles, torso_angles,
-                        arm_ang_rates, torso_ang_rates);
+                        arm_ang_rates, torso_ang_rates,
+                        fingers_analogs);
 
     // get hand joints state
     yarp::sig::Vector hand_angles;
@@ -595,6 +619,7 @@ void LocalizerModule::getFingersData(const std::string &hand_name,
         yarp::sig::Vector finger_ang_rates;
         getFingerJointsState(hand_name, finger_name,
                              arm_angles, arm_ang_rates,
+                             fingers_analogs,
                              finger_angles, finger_ang_rates);
 
         // store angles

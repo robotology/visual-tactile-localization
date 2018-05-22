@@ -295,12 +295,14 @@ private:
      * @param torso_angles vector of torso angles
      * @param arm_ang_rates vector of arm angular rates
      * @param torso_ang_rates vector of torso angular rates
+     * @param fingers_analogs vector of fingers proximal/distal joints angles
      */
     bool getChainJointsState(const std::string &arm_name,
                              yarp::sig::Vector &arm_angles,
                              yarp::sig::Vector &torso_angles,
                              yarp::sig::Vector &arm_ang_rates,
-                             yarp::sig::Vector &torso_ang_rates);
+                             yarp::sig::Vector &torso_ang_rates,
+                             yarp::sig::Vector &fingers_analogs);
 
     /*
      * Extract angles and angular rates for the hand
@@ -351,6 +353,7 @@ private:
      * @param finger_name the name of the desired finger
      * @param arm_angles vector of arm angles
      * @param arm_ang_rates vector of arm angular rates
+     * @param finger_analogs vector of fingers proximal/distal joints angles
      * @param hand_angles vector of hand angles
      * @param hand_ang_rates vector of hand angular rates
      */
@@ -358,6 +361,7 @@ private:
                               const std::string &finger_name,
                               const yarp::sig::Vector &arm_angles,
                               const yarp::sig::Vector &arm_ang_rates,
+                              const yarp::sig::Vector &fingers_analogs,
                               yarp::sig::Vector &finger_angles,
                               yarp::sig::Vector &finger_ang_rates);
     /*

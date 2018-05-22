@@ -16,6 +16,7 @@
 #include <yarp/os/Vocab.h>
 #include <yarp/math/FrameTransform.h>
 #include <yarp/os/Bottle.h>
+#include <yarp/math/Rand.h>
 
 // CGAL
 #include <CGAL/IO/Polyhedron_iostream.h>
@@ -104,6 +105,11 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         port_pc_name = "/upf-localizer/pc:i";
     yInfo() << "Localizer module: point cloud input port name is" << port_pc_name;
 
+    port_filtered_pc_name = rf.find("filteredPointCloudInputPort").asString();
+    if (rf.find("filteredPointCloudInputPort").isNull())
+	port_filtered_pc_name = "/upf-localizer/filtered_pc:i";
+    yInfo() << "Localizer module: filtered point cloud input port name is" << port_filtered_pc_name;
+
     port_contacts_name = rf.find("contactsInputPort").asString();
     if (rf.find("contactsInputPort").isNull())
         port_contacts_name = "/upf-localizer/contacts:i";
@@ -154,27 +160,30 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     return true;
 }
 
-void LocalizerModule::transformPointCloud(const PointCloud& pc,
-                                          std::vector<yarp::sig::Vector> &pc_out)
+bool LocalizerModule::getPointCloudSim(std::vector<yarp::sig::Vector> &pc)
 {
-    // copy data to pc_out
-    for (size_t i=0; i<pc.size(); i++)
+    PointCloud *new_pc = port_pc_sim.read(false);
+    if (new_pc == NULL)
+        return false;
+
+    // copy data to pc
+    for (size_t i=0; i<new_pc->size(); i++)
     {
-        PointCloudItem item = pc[i];
+        PointCloudItem item = (*new_pc)[i];
         yarp::sig::Vector point(3, 0.0);
         point[0] = item.x;
         point[1] = item.y;
         point[2] = item.z;
 
-        pc_out.push_back(point);
+        pc.push_back(point);
     }
 
     // transform the points taking into account
     // the root link of the robot
-    for (size_t i=0; i<pc_out.size(); i++)
+    for (size_t i=0; i<pc.size(); i++)
     {
         yarp::sig::Vector point(4, 0.0);
-        point.setSubvector(0, pc_out[i]);
+        point.setSubvector(0, pc[i]);
         point[3] = 1;
 
         // transform the point so that
@@ -182,8 +191,63 @@ void LocalizerModule::transformPointCloud(const PointCloud& pc,
         // and expressed in the robot root frame
         point = SE3inv(inertial_to_robot) * point;
 
-        pc_out[i] = point.subVector(0,2);
+        pc[i] = point.subVector(0,2);
     }
+
+    return true;
+}
+
+bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> filtered_pc,
+                                    std::vector<yarp::sig::Vector> pc)
+{
+    if ((port_pc.getPendingReads() <=0) ||
+        (port_filtered_pc.getPendingReads() <= 0))
+        return false;
+
+    // original point cloud
+    PointCloudXYZ *new_pc = port_pc.read(false);
+
+    // this is a filtered version of the point cloud
+    // effectively used by the filter
+    PointCloudXYZ *new_filtered_pc = port_filtered_pc.read(false);
+
+    // transform point clouds to vectors of yarp::sig::Vector
+    for (size_t i=0; i<new_pc->size(); i++)
+    {
+        yarp::sig::DataXYZ &p_data = (*new_pc)(i);
+        yarp::sig::Vector p_vector(3);
+        p_vector[0] = p_data.x;
+        p_vector[1] = p_data.y;
+        p_vector[2] = p_data.z;
+        pc.push_back(p_vector);
+    }
+
+    for (size_t i=0; i<new_filtered_pc->size(); i++)
+    {
+        yarp::sig::DataXYZ &p_data = (*new_filtered_pc)(i);
+        yarp::sig::Vector p_vector(3);
+        p_vector[0] = p_data.x;
+        p_vector[1] = p_data.y;
+        p_vector[2] = p_data.z;
+        filtered_pc.push_back(p_vector);
+    }
+
+    // shuffle data
+    std::vector<yarp::sig::Vector> shuffled_pc;
+    std::set<unsigned int> idx;
+    int filtered_pc_size = filtered_pc.size();
+    while (idx.size() < (size_t)(0.9 * filtered_pc_size))
+    {
+        unsigned int i = (unsigned int)(Rand::scalar(0.0,1.0) * filtered_pc_size);
+        if (idx.find(i) == idx.end())
+        {
+            shuffled_pc.push_back(filtered_pc[i]);
+            idx.insert(i);
+        }
+    }
+    filtered_pc = shuffled_pc;
+
+    return true;
 }
 
 bool LocalizerModule::getContactPointsSim(const std::string &hand_name,
@@ -699,18 +763,31 @@ void LocalizerModule::performFiltering()
 
     if (filtering_type == FilteringType::visual)
     {
-        // check if a point cloud is available
-        PointCloud *new_pc = port_pc.read(false);
-        if (new_pc == NULL)
-        {
-            // nothing to do here
-            return;
-        }
+        std::vector<yarp::sig::Vector> point_cloud;
+        std::vector<yarp::sig::Vector> filtered_point_cloud;
 
-        // transform point cloud
-        std::vector<yarp::sig::Vector> pc;
-        transformPointCloud(*new_pc,
-                            pc);
+        // check if a point cloud is available
+        if (is_simulation)
+        {
+            if(!getPointCloudSim(filtered_point_cloud))
+            {
+                // nothing to do here
+                return;
+            }
+        }
+        else
+        {
+            // point_cloud contains the original point cloud
+            // that is saved for logging purposes
+            //
+            // filtered_point_clouds contains a subsampled and shuffled
+            // point cloud that is effectively used by the filter
+            if(!getPointCloud(point_cloud, filtered_point_cloud))
+            {
+                // nothing to do here
+                return;
+            }
+        }
 
         // set noise covariances
         upf.setQ(Q_vision);
@@ -722,7 +799,7 @@ void LocalizerModule::performFiltering()
         // process cloud in chuncks of 10 points
         // TODO: take n_points from config
         int n_points = 10;
-        for (size_t i=0; i+n_points <= pc.size(); i += n_points)
+        for (size_t i=0; i+n_points <= filtered_point_cloud.size(); i += n_points)
         {
             // since multiple chuncks are processed
             // the initial time is reset from the second chunck on
@@ -734,7 +811,7 @@ void LocalizerModule::performFiltering()
             // prepare measure
             std::vector<yarp::sig::Vector> measure;
             for (size_t k=0; k<n_points; k++)
-                measure.push_back(pc[i+k]);
+                measure.push_back(filtered_point_cloud[i+k]);
 
             // set measure
             upf.setNewMeasure(measure);
@@ -1463,12 +1540,34 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         return false;
     }
 
-    ok_port = port_pc.open(port_pc_name);
-    if (!ok_port)
+    if (is_simulation)
     {
-        yError() << "LocalizerModule:Configure error:"
-                 << "unable to open the point cloud port";
-        return false;
+        ok_port = port_pc_sim.open(port_pc_name);
+        if (!ok_port)
+        {
+            yError() << "LocalizerModule:Configure error:"
+                     << "unable to open the simulated point cloud port";
+            return false;
+        }
+    }
+    else
+    {
+        ok_port = port_pc.open(port_pc_name);
+        if (!ok_port)
+        {
+            yError() << "LocalizerModule:Configure error:"
+                     << "unable to open the point cloud port";
+            return false;
+        }
+
+        ok_port = port_filtered_pc.open(port_filtered_pc_name);
+        if (!ok_port)
+
+        {
+            yError() << "LocalizerModule:Configure error:"
+                     << "unable to open the filtered point cloud port";
+            return false;
+        }
     }
 
     if (is_simulation)
@@ -1736,7 +1835,13 @@ bool LocalizerModule::close()
 {
     // close ports
     port_in.close();
-    port_pc.close();
+    if (is_simulation)
+        port_pc_sim.close();
+    else
+    {
+        port_pc.close();
+        port_filtered_pc.close();
+    }
 
     // close drivers
     drv_transform_client.close();

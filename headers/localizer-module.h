@@ -21,6 +21,7 @@
 #include <yarp/dev/PolyDriver.h>
 #include <yarp/dev/IEncoders.h>
 #include <yarp/dev/IAnalogSensor.h>
+#include <yarp/sig/PointCloud.h>
 
 // icub-main
 #include <iCub/iKin/iKinFwd.h>
@@ -33,6 +34,8 @@
 #include "headers/FilterCommand.h"
 #include "headers/unscentedParticleFilter.h"
 #include "headers/PointCloud.h"
+
+typedef yarp::sig::PointCloud<yarp::sig::DataXYZ> PointCloudXYZ;
 
 enum class FilteringType { visual = 0, tactile = 1 };
 
@@ -204,7 +207,11 @@ private:
     yarp::os::BufferedPort<yarp::sig::FilterCommand> port_in;
 
     // point cloud
-    yarp::os::BufferedPort<PointCloud> port_pc;
+    // used in simulation with Gazebo
+    yarp::os::BufferedPort<PointCloud> port_pc_sim;
+    // used with real robot
+    yarp::os::BufferedPort<PointCloudXYZ> port_pc;
+    yarp::os::BufferedPort<PointCloudXYZ> port_filtered_pc;
 
     // contact points
     // used in simulation (GazeboYarpSkin)
@@ -219,6 +226,7 @@ private:
     // names
     std::string input_port_name;
     std::string port_pc_name;
+    std::string port_filtered_pc_name;
     std::string port_contacts_name;
     std::string rpc_port_name;
     /*
@@ -248,13 +256,25 @@ private:
     bool loadParameters(yarp::os::ResourceFinder &rf);
 
     /*
-     * Transform a point cloud expressed in the inertial frame
-     * to a point cloud expressed with respect to the robot root frame
-     * @param pc the input point cloud
+     * Get a point cloud from the simulation environment
+     *
      * @param pc_out the transformed point cloud
+     * @return true/false on success/failure
      */
-    void transformPointCloud(const PointCloud& pc,
-                             std::vector<yarp::sig::Vector> &pc_out);
+    bool getPointCloudSim(std::vector<yarp::sig::Vector> &pc);
+
+    /*
+     * Get a point cloud from the stereo vision setup.
+     *
+     * The function returns the original point cloud in the variable 'pc'
+     * and a subsampled and shuffled version in the variable 'filtered_pc'.
+     *
+     * @param pc the original point cloud
+     * @param filtered_pc the filtered point cloud
+     * @return true/false on success/failure
+     */
+    bool getPointCloud(std::vector<yarp::sig::Vector> filtered_pc,
+                       std::vector<yarp::sig::Vector> pc);
 
     /*
      * Extract finger tips contact points from a skinContactList

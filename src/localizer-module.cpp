@@ -797,8 +797,21 @@ void LocalizerModule::performFiltering()
         upf.setAlpha(1.0);
 
         // process cloud in chuncks of 10 points
-        // TODO: take n_points from config
         int n_points = 10;
+
+	// the variable 'all_meas' contains the measurements
+	// due to all the chunks
+	// this is saved for logging purposes
+	std::vector<yarp::sig::Vector> all_meas;
+	for (size_t i=0; i+n_points <= filtered_point_cloud.size(); i += n_points)
+	{
+	    for (size_t k=0; k<n_points; k++)
+	    {
+		all_meas.push_back(filtered_point_cloud[i+k]);
+	    }
+	}
+
+	// perform filtering
         for (size_t i=0; i+n_points <= filtered_point_cloud.size(); i += n_points)
         {
             // since multiple chuncks are processed
@@ -836,13 +849,19 @@ void LocalizerModule::performFiltering()
             if (!is_simulation)
                 last_ground_truth = last_estimate;
             if (storage_on)
-                storeData(FilteringType::visual,
-                          last_ground_truth,
-                          last_estimate,
-                          measure,
-                          input,
-                          time_stamp,
-                          exec_time);
+	    {
+		bool is_first_chunk = (i == 0);
+		storeDataVisual(FilteringType::visual,
+				is_first_chunk,
+				last_ground_truth,
+				last_estimate,
+				measure,
+				input,
+				all_meas,
+				point_cloud,
+				time_stamp,
+				exec_time);
+	    }
 
             storage_on_mutex.unlock();
 
@@ -1031,6 +1050,27 @@ Data& LocalizerModule::storeData(const FilteringType &data_type,
 
     // return reference to last element
     return storage.back();
+}
+
+void LocalizerModule::storeDataVisual(const FilteringType &data_type,
+				      const bool &is_first_chunk,
+				      const yarp::sig::Vector &ground_truth,
+				      const yarp::sig::Vector &estimate,
+				      const std::vector<yarp::sig::Vector> &meas,
+				      const yarp::sig::Vector &input,
+				      const std::vector<yarp::sig::Vector> &filtered_pc,
+				      const std::vector<yarp::sig::Vector> &true_pc,
+				      const double &time_stamp,
+				      const double &exec_time)
+{
+    // store common data
+    Data &d = storeData(FilteringType::visual, ground_truth,
+			estimate, meas, input, time_stamp, exec_time);
+
+    // add additional fields
+    d.is_first_chunk = is_first_chunk;
+    d.filtered_pc = filtered_pc;
+    d.true_pc = true_pc;
 }
 
 void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,

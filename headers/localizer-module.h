@@ -71,6 +71,17 @@ struct Data
     // type of data, i.e. vision or tactile
     FilteringType data_type;
 
+    // whether this is the first chunk of a point cloud
+    // to be ignored for tactile measurements
+    bool is_first_chunk;
+
+    // filtered pc used as input to the filter
+    std::vector<yarp::sig::Vector> filtered_pc;
+
+    // true point cloud
+    // coming from the stereo vision
+    std::vector<yarp::sig::Vector> true_pc;
+
     Data() : ground_truth(6, 0.0),
              estimate(6, 0.0) {};
 };
@@ -500,6 +511,29 @@ private:
                     const yarp::sig::Vector &input,
                     const double &time_stamp,
                     const double &exec_time);
+    /*
+     * Store data in the internal storage for the visual filtering case
+     * @param data_type the type of data, i.e. relative to visual or tactile filtering
+     * @param is_first_chunk whether this is the first chunk of a point cloud
+     * @param ground_truth the current ground truth
+     * @param estimate the current estimate
+     * @param meas the current measurements
+     * @param input the current input
+     * @param filtered_pc the effective pc used by the filter
+     * @param true_pc the true pc from the stereo vision
+     * @param ground_truth execution time of last filtering step
+     * @return a reference to the data set stored
+     */
+    void storeDataVisual(const FilteringType &data_type,
+			 const bool &is_first_chunk,
+			 const yarp::sig::Vector &ground_truth,
+			 const yarp::sig::Vector &estimate,
+			 const std::vector<yarp::sig::Vector> &meas,
+			 const yarp::sig::Vector &input,
+			 const std::vector<yarp::sig::Vector> &filtered_pc,
+			 const std::vector<yarp::sig::Vector> &true_pc,
+			 const double &time_stamp,
+			 const double &exec_time);
 
     /*
      * Store data in the internal storage for the tactile filtering case

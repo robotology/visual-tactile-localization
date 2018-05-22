@@ -550,6 +550,14 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
     {
 	stopFiltering();
     }
+    else if (cmd == VOCAB3('R','E','S'))
+    {
+        // first stop filtering
+        stopFiltering();
+
+        // then reset filter
+        upf.init();
+    }
 }
 
 void LocalizerModule::performFiltering()

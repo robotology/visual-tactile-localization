@@ -107,7 +107,7 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
 
     port_filtered_pc_name = rf.find("filteredPointCloudInputPort").asString();
     if (rf.find("filteredPointCloudInputPort").isNull())
-	port_filtered_pc_name = "/upf-localizer/filtered_pc:i";
+        port_filtered_pc_name = "/upf-localizer/filtered_pc:i";
     yInfo() << "Localizer module: filtered point cloud input port name is" << port_filtered_pc_name;
 
     port_contacts_name = rf.find("contactsInputPort").asString();
@@ -289,21 +289,21 @@ bool LocalizerModule::getContactPointsSim(const std::string &hand_name,
 }
 
 void LocalizerModule::getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,
-				       const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
-				       std::vector<yarp::sig::Vector> points)
+                                       const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
+                                       std::vector<yarp::sig::Vector> points)
 {
     // clear vector
     points.clear();
 
     for (auto it = fingers_contacts.begin(); it != fingers_contacts.end(); it++)
     {
-	const std::string &finger_name = it->first;
-	const bool &is_contact = it->second;
+        const std::string &finger_name = it->first;
+        const bool &is_contact = it->second;
 
-	// if this finger is in contact
-	// add the contact point to the list
-	if (is_contact)
-	    points.push_back(fingers_pos.at(finger_name));
+        // if this finger is in contact
+        // add the contact point to the list
+        if (is_contact)
+            points.push_back(fingers_pos.at(finger_name));
     }
 }
 
@@ -322,32 +322,32 @@ bool LocalizerModule::getContacts(const std::string &hand_name,
     // try to read skin data from the port
     yarp::sig::Vector *skin_data = port_contacts.read(false);
     if (skin_data == NULL)
-	return false;
+        return false;
 
     // size should be 192 for hand data
     if (skin_data->size() != 192)
-	return false;
+        return false;
 
     // finger tips taxels are in the range 0-59
     double thr = 0;
     std::string finger_name;
     for (size_t i=0; i<60; i++)
     {
-	if ((*skin_data)[i] > thr)
-	{
-	    if (i >=0 && i < 12)
-		finger_name = "index";
-	    else if (i >= 12 && i < 24)
-		finger_name = "middle";
-	    else if (i >= 24 && i < 36)
-		finger_name = "ring";
-	    else if (i >= 36 && i < 48)
-		finger_name = "little";
-	    else if (i >= 48)
-		finger_name = "thumb";
+        if ((*skin_data)[i] > thr)
+        {
+            if (i >=0 && i < 12)
+                finger_name = "index";
+            else if (i >= 12 && i < 24)
+                finger_name = "middle";
+            else if (i >= 24 && i < 36)
+                finger_name = "ring";
+            else if (i >= 36 && i < 48)
+                finger_name = "little";
+            else if (i >= 48)
+                finger_name = "thumb";
 
-	    contacts[finger_name] |= true;
-	}
+            contacts[finger_name] |= true;
+        }
     }
 
     return true;
@@ -397,9 +397,9 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     if (use_analogs)
     {
         // get additional encoders for proximal and distal joints of fingers
-	ok = analog->read(fingers_analogs);
-	if(ok != yarp::dev::IAnalogSensor::AS_OK)
-	    return false;
+        ok = analog->read(fingers_analogs);
+        if(ok != yarp::dev::IAnalogSensor::AS_OK)
+            return false;
     }
 
     return true;
@@ -799,19 +799,19 @@ void LocalizerModule::performFiltering()
         // process cloud in chuncks of 10 points
         int n_points = 10;
 
-	// the variable 'all_meas' contains the measurements
-	// due to all the chunks
-	// this is saved for logging purposes
-	std::vector<yarp::sig::Vector> all_meas;
-	for (size_t i=0; i+n_points <= filtered_point_cloud.size(); i += n_points)
-	{
-	    for (size_t k=0; k<n_points; k++)
-	    {
-		all_meas.push_back(filtered_point_cloud[i+k]);
-	    }
-	}
+        // the variable 'all_meas' contains the measurements
+        // due to all the chunks
+        // this is saved for logging purposes
+        std::vector<yarp::sig::Vector> all_meas;
+        for (size_t i=0; i+n_points <= filtered_point_cloud.size(); i += n_points)
+        {
+            for (size_t k=0; k<n_points; k++)
+            {
+                all_meas.push_back(filtered_point_cloud[i+k]);
+            }
+        }
 
-	// perform filtering
+        // perform filtering
         for (size_t i=0; i+n_points <= filtered_point_cloud.size(); i += n_points)
         {
             // since multiple chuncks are processed
@@ -833,13 +833,16 @@ void LocalizerModule::performFiltering()
             yarp::sig::Vector input(3, 0.0);
             upf.setNewInput(input);
 
-            // step and estimate
-            // using time of simulated environment
-            // in case env variable YARP_CLOCK is set
+            // step
             upf.step(time_stamp);
+
+            // extract estimate
             last_estimate = upf.getEstimate();
 
             // evaluate final time and execution time
+            //
+            // yarp:os::Time use time of simulated environment
+            // in case env variable YARP_CLOCK is set
             t_f = yarp::os::Time::now();
             exec_time = t_f - t_i;
 
@@ -849,19 +852,19 @@ void LocalizerModule::performFiltering()
             if (!is_simulation)
                 last_ground_truth = last_estimate;
             if (storage_on)
-	    {
-		bool is_first_chunk = (i == 0);
-		storeDataVisual(FilteringType::visual,
-				is_first_chunk,
-				last_ground_truth,
-				last_estimate,
-				measure,
-				input,
-				all_meas,
-				point_cloud,
-				time_stamp,
-				exec_time);
-	    }
+            {
+                bool is_first_chunk = (i == 0);
+                storeDataVisual(FilteringType::visual,
+                                is_first_chunk,
+                                last_ground_truth,
+                                last_estimate,
+                                measure,
+                                input,
+                                all_meas,
+                                point_cloud,
+                                time_stamp,
+                                exec_time);
+            }
 
             storage_on_mutex.unlock();
 
@@ -1053,19 +1056,19 @@ Data& LocalizerModule::storeData(const FilteringType &data_type,
 }
 
 void LocalizerModule::storeDataVisual(const FilteringType &data_type,
-				      const bool &is_first_chunk,
-				      const yarp::sig::Vector &ground_truth,
-				      const yarp::sig::Vector &estimate,
-				      const std::vector<yarp::sig::Vector> &meas,
-				      const yarp::sig::Vector &input,
-				      const std::vector<yarp::sig::Vector> &filtered_pc,
-				      const std::vector<yarp::sig::Vector> &true_pc,
-				      const double &time_stamp,
-				      const double &exec_time)
+                                      const bool &is_first_chunk,
+                                      const yarp::sig::Vector &ground_truth,
+                                      const yarp::sig::Vector &estimate,
+                                      const std::vector<yarp::sig::Vector> &meas,
+                                      const yarp::sig::Vector &input,
+                                      const std::vector<yarp::sig::Vector> &filtered_pc,
+                                      const std::vector<yarp::sig::Vector> &true_pc,
+                                      const double &time_stamp,
+                                      const double &exec_time)
 {
     // store common data
     Data &d = storeData(FilteringType::visual, ground_truth,
-			estimate, meas, input, time_stamp, exec_time);
+                        estimate, meas, input, time_stamp, exec_time);
 
     // add additional fields
     d.is_first_chunk = is_first_chunk;

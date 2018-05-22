@@ -120,7 +120,7 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         yError() << "Localizer module: output path not provided!";
         return false;
     }
-    output_path = rf.findFile("outputPath");
+    output_path = rf.find("outputPath").asString();
     yInfo() << "Localizer module: output path is" << output_path;
 
     if (!readDiagonalMatrix(rf, "visionQ", 6, Q_vision))

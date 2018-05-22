@@ -144,6 +144,9 @@ private:
     // period
     double period;
 
+    // size of chunk used in visual filtering
+    int visual_chunk_size;
+
     /*
      */
 

@@ -157,6 +157,10 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         period = 0.01;
     yInfo() << "Localizer module: period " << period;
 
+    visual_chunk_size = rf.find("visualChunkSize").asInt();
+    if (rf.find("visualChunkSize").isNull())
+        visual_chunk_size = 10;
+
     return true;
 }
 
@@ -796,23 +800,24 @@ void LocalizerModule::performFiltering()
         // set alpha parameter
         upf.setAlpha(1.0);
 
-        // process cloud in chuncks of 10 points
-        int n_points = 10;
-
         // the variable 'all_meas' contains the measurements
         // due to all the chunks
         // this is saved for logging purposes
         std::vector<yarp::sig::Vector> all_meas;
-        for (size_t i=0; i+n_points <= filtered_point_cloud.size(); i += n_points)
+        for (size_t i=0;
+             i+visual_chunk_size <= filtered_point_cloud.size();
+             i += visual_chunk_size)
         {
-            for (size_t k=0; k<n_points; k++)
+            for (size_t k=0; k<visual_chunk_size; k++)
             {
                 all_meas.push_back(filtered_point_cloud[i+k]);
             }
         }
 
         // perform filtering
-        for (size_t i=0; i+n_points <= filtered_point_cloud.size(); i += n_points)
+        for (size_t i=0;
+             i+visual_chunk_size <= filtered_point_cloud.size();
+             i += visual_chunk_size)
         {
             // since multiple chuncks are processed
             // the initial time is reset from the second chunck on
@@ -823,7 +828,7 @@ void LocalizerModule::performFiltering()
 
             // prepare measure
             std::vector<yarp::sig::Vector> measure;
-            for (size_t k=0; k<n_points; k++)
+            for (size_t k=0; k<visual_chunk_size; k++)
                 measure.push_back(filtered_point_cloud[i+k]);
 
             // set measure

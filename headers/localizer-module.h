@@ -29,7 +29,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "headers/filterCommand.h"
+#include "headers/FilterCommand.h"
 #include "headers/unscentedParticleFilter.h"
 #include "headers/PointCloud.h"
 

@@ -25,7 +25,7 @@
 
 //
 #include "headers/localizer-module.h"
-#include "headers/filterCommand.h"
+#include "headers/FilterCommand.h"
 #include "headers/unscentedParticleFilter.h"
 #include "headers/geometryCGAL.h"
 

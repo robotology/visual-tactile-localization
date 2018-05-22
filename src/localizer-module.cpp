@@ -720,6 +720,8 @@ void LocalizerModule::performFiltering()
             storage_on_mutex.lock();
 
             // store data if required
+            if (!is_simulation)
+                last_ground_truth = last_estimate;
             if (storage_on)
                 storeData(FilteringType::visual,
                           last_ground_truth,
@@ -808,6 +810,8 @@ void LocalizerModule::performFiltering()
         storage_on_mutex.lock();
 
         // store data if required
+        if (!is_simulation)
+            last_ground_truth = last_estimate;
         if (storage_on)
             storeDataTactile(last_ground_truth,
                              last_estimate,
@@ -1575,7 +1579,9 @@ bool LocalizerModule::updateModule()
         return false;
 
     // try to get the ground truth
-    retrieveGroundTruth(last_ground_truth);
+    // if in simulation
+    if (is_simulation)
+        retrieveGroundTruth(last_ground_truth);
 
     // try to read a command from the port
     bool should_wait = false;

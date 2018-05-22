@@ -214,6 +214,7 @@ private:
 
     // rpc server
     yarp::os::RpcServer rpc_port;
+    yarp::os::Mutex mutex;
 
     // names
     std::string input_port_name;

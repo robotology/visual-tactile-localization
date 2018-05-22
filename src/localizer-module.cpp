@@ -648,6 +648,8 @@ void LocalizerModule::getFingersData(const std::string &hand_name,
 
 void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
 {
+    mutex.lock();
+
     // extract command and filtering type
     int cmd = filter_cmd.command();
     int type = filter_cmd.tag();
@@ -680,6 +682,8 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
         // then reset filter
         upf.init();
     }
+
+    mutex.unlock();
 }
 
 void LocalizerModule::performFiltering()
@@ -1332,11 +1336,64 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
     {
         reply.addVocab(yarp::os::Vocab::encode("many"));
         reply.addString("Available commands:");
+        reply.addString("- visual-on");
+        reply.addString("- tactile-on <hand_name>");
+        reply.addString("- filter-off");
         reply.addString("- storage-on");
         reply.addString("- storage-off");
         reply.addString("- storage-save");
         reply.addString("- reset");
         reply.addString("- quit");
+    }
+    else if (cmd == "visual-on")
+    {
+        mutex.lock();
+
+        filtering_enabled = true;
+        filtering_type = FilteringType::visual;
+
+        mutex.unlock();
+
+        reply.addString("Visual filtering enabled succesfully.");
+    }
+    else if (cmd == "tactile-on")
+    {
+        yarp::os::Value hand_name_value;
+        hand_name_value = command.get(1);
+
+        if (hand_name_value.isNull())
+            reply.addString("Hand name is required.");
+        else if (!hand_name_value.isString())
+            reply.addString("A valid hand name is required.");
+        else
+        {
+            std::string hand_name = hand_name_value.asString();
+
+            if ((hand_name != "right") && (hand_name != "left"))
+                reply.addString("A valid hand name is required.");
+            else
+            {
+                mutex.lock();
+
+                tac_filt_hand_name = hand_name;
+                filtering_enabled = true;
+                filtering_type = FilteringType::tactile;
+
+                mutex.unlock();
+
+                reply.addString("Tactile filtering enabled succesfully.");
+            }
+        }
+    }
+    else if (cmd == "filter-off")
+    {
+        mutex.lock();
+
+        filtering_enabled = false;
+
+        mutex.unlock();
+
+        reply.addString("Filtering disabled succesfully.");
     }
     else if (cmd == "storage-on")
     {

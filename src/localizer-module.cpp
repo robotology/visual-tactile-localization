@@ -625,8 +625,16 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
         filtering_enabled = true;
         if (type == VOCAB3('V', 'I', 'S'))
             filtering_type = FilteringType::visual;
-        else if (type == VOCAB3('T','A','C'))
+        else if (type == VOCAB4('T','A','C','R'))
+        {
             filtering_type = FilteringType::tactile;
+            tac_filt_hand_name = "right";
+        }
+        else if (type == VOCAB4('T','A','C','L'))
+        {
+            filtering_type = FilteringType::tactile;
+            tac_filt_hand_name = "left";
+        }
     }
     else if (cmd == VOCAB3('O','F','F'))
     {
@@ -741,13 +749,13 @@ void LocalizerModule::performFiltering()
         if (is_simulation)
         {
             // Gazebo provides contact points
-            if (!getContactPointsSim("right", points))
+            if (!getContactPointsSim(tac_filt_hand_name, points))
                 return;
         }
         else
         {
             // real robot provides binarized information on contacts
-            if (!getContacts("right", fingers_contacts))
+            if (!getContacts(tac_filt_hand_name, fingers_contacts))
                 return;
         }
 
@@ -763,7 +771,7 @@ void LocalizerModule::performFiltering()
         std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
         std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
         std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
-        getFingersData("right", fingers_angles, fingers_pos, fingers_vels);
+        getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
 
         if (!is_simulation)
         {

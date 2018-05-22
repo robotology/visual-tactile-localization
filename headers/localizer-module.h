@@ -112,6 +112,9 @@ private:
     // path where to save output
     std::string output_path;
 
+    // hand to be used during tactile filtering
+    std::string tac_filt_hand_name;
+
     // flags
     bool estimate_available;
     bool filtering_enabled;

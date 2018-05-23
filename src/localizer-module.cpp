@@ -854,10 +854,13 @@ void LocalizerModule::performFiltering()
             storage_on_mutex.lock();
 
             // store data if required
-            if (!is_simulation)
-                last_ground_truth = last_estimate;
             if (storage_on)
             {
+                if (is_simulation)
+                    point_cloud = filtered_point_cloud;
+                if (!is_simulation)
+                    last_ground_truth = last_estimate;
+
                 bool is_first_chunk = (i == 0);
                 storeDataVisual(FilteringType::visual,
                                 is_first_chunk,

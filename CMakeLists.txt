@@ -83,6 +83,11 @@ set (meshBox ${PROJECT_SOURCE_DIR}/models/box.off)
 yarp_install(FILES ${meshBox} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
 yarp_install(FILES ${meshBox} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/visualTactileLocalization/models)
 
+# mesh file for book
+set (meshBook ${PROJECT_SOURCE_DIR}/models/book.off)
+yarp_install(FILES ${meshBook} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+yarp_install(FILES ${meshBook} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/visualTactileLocalization/models)
+
 # output files folder with empty placeholder
 # set (outputDraft ${PROJECT_SOURCE_DIR}/output/empty)
 # yarp_install(FILES ${outputDraft} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/output)

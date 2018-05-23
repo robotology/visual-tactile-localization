@@ -786,7 +786,7 @@ void LocalizerModule::performFiltering()
             //
             // filtered_point_clouds contains a subsampled and shuffled
             // point cloud that is effectively used by the filter
-            if(!getPointCloud(point_cloud, filtered_point_cloud))
+            if(!getPointCloud(filtered_point_cloud, point_cloud))
             {
                 // nothing to do here
                 return;

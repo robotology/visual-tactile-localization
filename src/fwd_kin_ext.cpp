@@ -33,6 +33,11 @@ void iCub::iKin::iCubFingerExt::allocate (const std::string &  _type)
     // the finger variable contains the name of the finger
     if (finger=="ring" || finger=="little")
     {
+        // in case the super class already implements ring and little fingers
+        // it is required to clean the chain
+        this->clear();
+        //
+
 	if (finger=="ring")
 	{
 	    H0(0,0)=0.9998; H0(0,1)=0.0192;  H0(0,2)=0.0;     H0(0,3)=0.001569230;

@@ -288,8 +288,8 @@ private:
      * @param filtered_pc the filtered point cloud
      * @return true/false on success/failure
      */
-    bool getPointCloud(std::vector<yarp::sig::Vector> filtered_pc,
-                       std::vector<yarp::sig::Vector> pc);
+    bool getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
+                       std::vector<yarp::sig::Vector> &pc);
 
     /*
      * Extract finger tips contact points from a skinContactList

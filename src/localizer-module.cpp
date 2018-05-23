@@ -1442,6 +1442,29 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
                     return false;
                 }
             }
+	    else if (d.data_type == FilteringType::visual)
+	    {
+		// save filtered point cloud
+		// effectively used by the filter
+		std::string filtered_pc_path = output_path + "filtered_pc_step_"
+		    + std::to_string(step_index) +  ".off";
+		if (!saveMeas(d.filtered_pc, filtered_pc_path))
+		{
+		    // error message is provided by saveMeas()
+		    fout.close();
+		    return false;
+		}
+
+		// save true point cloud from stereo vision
+		std::string pc_path = output_path + "pc_step_"
+		    + std::to_string(step_index) +  ".off";
+		if (!saveMeas(d.true_pc, pc_path))
+		{
+		    // error message is provided by saveMeas()
+		    fout.close();
+		    return false;
+		}
+	    }
 
             step_index++;
         }

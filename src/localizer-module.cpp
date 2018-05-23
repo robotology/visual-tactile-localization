@@ -1696,28 +1696,31 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         return false;
     }
 
+    if (is_simulation)
+    {
     // get the pose of the root frame of the robot
-    // required to convert point clouds
-    inertial_to_robot.resize(4,4);
-    bool ok = false;
-    double t0 = yarp::os::SystemClock::nowSystem();
-    while (yarp::os::SystemClock::nowSystem() - t0 < 10.0)
-    {
-        // this might fail if the gazebo pluging
-        // publishing the pose is not started yet
-        if (tf_client->getTransform(robot_target_frame_name,
-                                    robot_source_frame_name,
-                                    inertial_to_robot))
+    // required to convert point clouds in simulation
+        inertial_to_robot.resize(4,4);
+        bool ok = false;
+        double t0 = yarp::os::SystemClock::nowSystem();
+        while (yarp::os::SystemClock::nowSystem() - t0 < 10.0)
         {
-            ok = true;
-            break;
+            // this might fail if the gazebo pluging
+            // publishing the pose is not started yet
+            if (tf_client->getTransform(robot_target_frame_name,
+                                        robot_source_frame_name,
+                                        inertial_to_robot))
+            {
+                ok = true;
+                break;
+            }
+            yarp::os::SystemClock::delaySystem(1.0);
         }
-        yarp::os::SystemClock::delaySystem(1.0);
-    }
-    if (!ok)
-    {
-        yError() << "LocalizerModule: unable to get the pose of the root frame of the robot";
-        return false;
+        if (!ok)
+        {
+            yError() << "LocalizerModule: unable to get the pose of the root frame of the robot";
+            return false;
+        }
     }
 
     // prepare properties for the Encoders

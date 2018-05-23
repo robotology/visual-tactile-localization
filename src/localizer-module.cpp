@@ -201,8 +201,8 @@ bool LocalizerModule::getPointCloudSim(std::vector<yarp::sig::Vector> &pc)
     return true;
 }
 
-bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> filtered_pc,
-                                    std::vector<yarp::sig::Vector> pc)
+bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
+                                    std::vector<yarp::sig::Vector> &pc)
 {
     if ((port_pc.getPendingReads() <=0) ||
         (port_filtered_pc.getPendingReads() <= 0))

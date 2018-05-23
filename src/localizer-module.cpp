@@ -1193,6 +1193,8 @@ bool LocalizerModule::saveFingersJoints(const std::unordered_map<std::string, ya
                 fout << 2;
             else if (finger_name == "ring")
                 fout << 3;
+            else if (finger_name == "little")
+                fout << 4;
             else
                 return false;
             fout << ";";
@@ -1250,6 +1252,8 @@ bool LocalizerModule::saveFingersPositions(const std::unordered_map<std::string,
                 fout << 2;
             else if (finger_name == "ring")
                 fout << 3;
+            else if (finger_name == "little")
+                fout << 4;
             else
                 return false;
             fout << ";";
@@ -1303,6 +1307,8 @@ bool LocalizerModule::saveFingersVelocities(const std::unordered_map<std::string
                 fout << 2;
             else if (finger_name == "ring")
                 fout << 3;
+            else if (finger_name == "little")
+                fout << 4;
             else
                 return false;
             fout << ";";

@@ -471,7 +471,7 @@ void LocalizerModule::updateFingerConfiguration(const std::string &hand_name,
                                                 const yarp::sig::Vector &finger_angles)
 {
     // get the finger
-    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + "_" + finger_name];
+    iCub::iKin::iCubFingerExt &finger = fingers_kin[hand_name + "_" + finger_name];
 
     // update the finger chain
     finger.setAng((M_PI/180) * finger_angles);
@@ -486,7 +486,7 @@ void LocalizerModule::getFingerJointsState(const std::string &hand_name,
                                            yarp::sig::Vector &finger_ang_rates)
 {
     // get the finger
-    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + "_" + finger_name];
+    iCub::iKin::iCubFingerExt &finger = fingers_kin[hand_name + "_" + finger_name];
 
     // get the finger angles
     // if (finger_name == "ring")
@@ -527,7 +527,7 @@ void LocalizerModule::getFingerRelativeVelocity(const std::string &finger_name,
     }
 
     // get the finger
-    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + "_" + finger_name];
+    iCub::iKin::iCubFingerExt &finger = fingers_kin[hand_name + "_" + finger_name];
 
     // jacobian for linear velocity part
     yarp::sig::Matrix j_lin;
@@ -580,7 +580,7 @@ void LocalizerModule::getFingerPosition(const std::string &finger_name,
                                         yarp::sig::Vector &position)
 {
     // get the finger
-    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + "_" + finger_name];
+    iCub::iKin::iCubFingerExt &finger = fingers_kin[hand_name + "_" + finger_name];
 
     // get the current position of the finger
     // with respect to the center of the hand
@@ -604,7 +604,7 @@ void LocalizerModule::getFingerVelocity(const std::string &finger_name,
                                         yarp::sig::Vector &velocity)
 {
     // get the finger
-    iCub::iKin::iCubFinger &finger = fingers_kin[hand_name + "_" + finger_name];
+    iCub::iKin::iCubFingerExt &finger = fingers_kin[hand_name + "_" + finger_name];
 
     // get the current position of the finger
     // with respect to the center of the hand
@@ -1804,8 +1804,8 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         //     right_finger = "right_index";
         //     left_finger = "left_index";
         // }
-        fingers_kin[right_finger_key] = iCub::iKin::iCubFinger(right_finger);
-        fingers_kin[left_finger_key] = iCub::iKin::iCubFinger(left_finger);
+        fingers_kin[right_finger_key] = iCub::iKin::iCubFingerExt(right_finger);
+        fingers_kin[left_finger_key] = iCub::iKin::iCubFingerExt(left_finger);
     }
 
     // Limits update is not required to evaluate the forward kinematics

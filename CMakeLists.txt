@@ -52,12 +52,14 @@ set(headers
   headers/unscentedParticleFilter.h
   headers/localizer-module.h
   headers/FilterCommand.h
-  headers/PointCloud.h)
+  headers/PointCloud.h
+  headers/fwd_kin_ext.h)
 set(sources
   src/unscentedParticleFilter.cpp
   src/localizer-module.cpp
   src/FilterCommand.cpp
-  src/main.cpp)
+  src/main.cpp
+  src/fwd_kin_ext.cpp)
 
 # executable
 add_executable(${PROJECT_NAME} ${headers} ${sources})

@@ -24,7 +24,7 @@
 #include <yarp/sig/PointCloud.h>
 
 // icub-main
-#include <iCub/iKin/iKinFwd.h>
+/* #include <iCub/iKin/iKinFwd.h> */
 #include <iCub/skinDynLib/skinContactList.h>
 
 // std
@@ -34,6 +34,7 @@
 #include "headers/FilterCommand.h"
 #include "headers/unscentedParticleFilter.h"
 #include "headers/PointCloud.h"
+#include "headers/fwd_kin_ext.h"
 
 typedef yarp::sig::PointCloud<yarp::sig::DataXYZ> PointCloudXYZ;
 
@@ -208,7 +209,7 @@ private:
 
     // fingers
     std::vector<std::string> fingers_names;
-    std::unordered_map<std::string, iCub::iKin::iCubFinger> fingers_kin;
+    std::unordered_map<std::string, iCub::iKin::iCubFingerExt> fingers_kin;
 
     /*
      */

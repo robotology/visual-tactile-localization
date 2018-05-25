@@ -294,7 +294,7 @@ bool LocalizerModule::getContactPointsSim(const std::string &hand_name,
 
 void LocalizerModule::getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,
                                        const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
-                                       std::vector<yarp::sig::Vector> points)
+                                       std::vector<yarp::sig::Vector> &points)
 {
     // clear vector
     points.clear();

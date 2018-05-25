@@ -314,7 +314,7 @@ private:
      */
     void getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,
                           const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
-                          std::vector<yarp::sig::Vector> points);
+                          std::vector<yarp::sig::Vector> &points);
 
     /*
      * Extract finger tips contacts state from a yarp::sig::Vector

@@ -301,8 +301,8 @@ private:
      * @param hand_name name of the hand to be used
      * @param points contact points on finger tips of the specified hand
      */
-    bool getContactPointsSim(const std::string &hand_name,
-                             std::vector<yarp::sig::Vector> &points);
+    /* bool getContactPointsSim(const std::string &hand_name, */
+    /*                          std::vector<yarp::sig::Vector> &points); */
 
     /*
      * Extract finger tips contact points from a map containing position
@@ -314,7 +314,7 @@ private:
      */
     void getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,
                           const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
-                          std::vector<yarp::sig::Vector> &points);
+                          std::unordered_map<std::string, yarp::sig::Vector> &contact_points);
 
     /*
      * Extract finger tips contacts state from a yarp::sig::Vector
@@ -327,7 +327,7 @@ private:
                      std::unordered_map<std::string, bool> &contacts);
 
     /*
-     * Extract finger tips contacts state from skinContactList
+     * Extract finger tips contacts state and contact points from skinContactList
      *
      * To be used in simulation.
      *
@@ -335,7 +335,8 @@ private:
      * @param points contact states on finger tips of the specified hand
      */
     bool getContactsSim(const std::string &hand_name,
-                        std::unordered_map<std::string, bool> &contacts);
+                        std::unordered_map<std::string, bool> &contacts,
+                        std::unordered_map<std::string, yarp::sig::Vector> &contact_points);
 
     /*
      * Extract arm and torso angles and angular rates.

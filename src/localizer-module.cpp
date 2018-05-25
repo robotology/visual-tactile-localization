@@ -254,65 +254,64 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
     return true;
 }
 
-bool LocalizerModule::getContactPointsSim(const std::string &hand_name,
-                                          std::vector<yarp::sig::Vector> &points)
-{
-    // check if new data is available
-    iCub::skinDynLib::skinContactList *list;
-    list = port_contacts_sim.read(false);
-    if (list == NULL)
-        return false;
+// bool LocalizerModule::getContactPointsSim(const std::string &hand_name,
+//                                           std::vector<yarp::sig::Vector> &points)
+// {
+//     // check if new data is available
+//     iCub::skinDynLib::skinContactList *list;
+//     list = port_contacts_sim.read(false);
+//     if (list == NULL)
+//         return false;
 
-    // clear vector
-    points.clear();
+//     // clear vector
+//     points.clear();
 
-    // extract contacts coming from finger tips only
-    for (size_t i=0; i<list->size(); i++)
-    {
-        // extract the skin contact
-        const iCub::skinDynLib::skinContact &skin_contact = (*list)[i];
+//     // extract contacts coming from finger tips only
+//     for (size_t i=0; i<list->size(); i++)
+//     {
+//         // extract the skin contact
+//         const iCub::skinDynLib::skinContact &skin_contact = (*list)[i];
 
-        // need to verify if this contact was effectively produced
-        // by taxels on the finger tips
-        // in order to simplify things the Gazebo plugin only sends one
-        // taxel id that is used to identify which finger is in contact
-        std::vector<unsigned int> taxels_ids = skin_contact.getTaxelList();
-        // taxels ids for finger tips are between 0 and 59
-        if (taxels_ids[0] >= 0 && taxels_ids[0] < 60)
-        {
-            if ((hand_name == "right") &&
-                (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND))
-                points.push_back(skin_contact.getGeoCenter());
-            else if ((hand_name == "left") &&
-                     (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_LEFT_HAND))
-                points.push_back(skin_contact.getGeoCenter());
-        }
-    }
+//         // need to verify if this contact was effectively produced
+//         // by taxels on the finger tips
+//         // in order to simplify things the Gazebo plugin only sends one
+//         // taxel id that is used to identify which finger is in contact
+//         std::vector<unsigned int> taxels_ids = skin_contact.getTaxelList();
+//         // taxels ids for finger tips are between 0 and 59
+//         if (taxels_ids[0] >= 0 && taxels_ids[0] < 60)
+//         {
+//             if ((hand_name == "right") &&
+//                 (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND))
+//                 points.push_back(skin_contact.getGeoCenter());
+//             else if ((hand_name == "left") &&
+//                      (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_LEFT_HAND))
+//                 points.push_back(skin_contact.getGeoCenter());
+//         }
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
 void LocalizerModule::getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,
                                        const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
-                                       std::vector<yarp::sig::Vector> &points)
+                                       std::unordered_map<std::string, yarp::sig::Vector> &contact_points)
 {
     // clear vector
-    points.clear();
+    contact_points.clear();
 
     for (auto it = fingers_contacts.begin(); it != fingers_contacts.end(); it++)
     {
         const std::string &finger_name = it->first;
         const bool &is_contact = it->second;
 
-        // if this finger is in contact
-        // add the contact point to the list
         if (is_contact)
-            points.push_back(fingers_pos.at(finger_name));
+            contact_points[finger_name] = fingers_pos.at(finger_name);
     }
 }
 
 bool LocalizerModule::getContactsSim(const std::string &hand_name,
-                                     std::unordered_map<std::string, bool> &contacts)
+                                     std::unordered_map<std::string, bool> &contacts,
+                                     std::unordered_map<std::string, yarp::sig::Vector> &contact_points)
 {
     // check if new data is available
     iCub::skinDynLib::skinContactList *list;
@@ -355,12 +354,14 @@ bool LocalizerModule::getContactsSim(const std::string &hand_name,
             else if (taxel_id >= 48)
                 finger_name = "thumb";
 
-            if ((hand_name == "right") &&
-                (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND))
+            if (((hand_name == "right") &&
+                (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND)) ||
+                ((hand_name == "left") &&
+                (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_LEFT_HAND)))
+            {
                 contacts[finger_name] |= true;
-            else if ((hand_name == "left") &&
-                     (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_LEFT_HAND))
-                contacts[finger_name] |= true;
+                contact_points[finger_name] = skin_contact.getGeoCenter();
+            }
         }
     }
 
@@ -957,12 +958,12 @@ void LocalizerModule::performFiltering()
     else if (filtering_type == FilteringType::tactile)
     {
         // check if contacts are available
-        std::vector<yarp::sig::Vector> points;
+        std::unordered_map<std::string, yarp::sig::Vector> fingers_points;
         std::unordered_map<std::string, bool> fingers_contacts;
         if (is_simulation)
         {
-            // Gazebo provides contact points
-            if (!getContactPointsSim(tac_filt_hand_name, points))
+            // Gazebo provides contacts state and contact points
+            if(!getContactsSim(tac_filt_hand_name, fingers_contacts, fingers_points))
                 return;
         }
         else
@@ -986,11 +987,27 @@ void LocalizerModule::performFiltering()
         std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
         getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
 
-        if (!is_simulation)
-        {
+        yInfo() << "Step";
+
+        yInfo() << "Real contact points with noise";
+        for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
+            yInfo() << it->first << ":" << (it->second).toString();
+        // if (!is_simulation)
+        // {
             // extract contact points from forward kinematics
-            getContactPoints(fingers_contacts, fingers_pos, points);
-        }
+            getContactPoints(fingers_contacts, fingers_pos, fingers_points);
+        // }
+
+        yInfo() << "Forward kinematics";
+        for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
+            yInfo() << it->first << ":" << (it->second).toString();
+
+        yInfo() << "";
+
+        // copy to a vector of yarp::sig::Vector(s)
+        std::vector<yarp::sig::Vector> points;
+        for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
+            points.push_back(it->second);
 
         // set input
         input = fingers_vels["middle"];
@@ -1046,12 +1063,12 @@ void LocalizerModule::performContactsProbe()
     if (!contacts_probe_enabled)
         return;
 
-    std::vector<yarp::sig::Vector> points;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_points;
     std::unordered_map<std::string, bool> fingers_contacts;
     if (is_simulation)
     {
-        // Gazebo provides contact points
-        if (!getContactsSim(tac_filt_hand_name, fingers_contacts))
+        // Gazebo provides contacts state and contact points
+        if (!getContactsSim(tac_filt_hand_name, fingers_contacts, fingers_points))
             return;
     }
     else
@@ -1069,7 +1086,7 @@ void LocalizerModule::performContactsProbe()
     getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
 
     // extract contact points from forward kinematics
-    getContactPoints(fingers_contacts, fingers_pos, points);
+    getContactPoints(fingers_contacts, fingers_pos, fingers_points);
 
     // print information
     for (auto it = fingers_contacts.begin();
@@ -1077,8 +1094,12 @@ void LocalizerModule::performContactsProbe()
          it++)
     {
         if (it->second)
+        {
             yInfo() << "[" << tac_filt_hand_name << "hand]"
                     << it->first;
+            yInfo() << "@"
+                    << fingers_points.at(it->first).toString();
+        }
     }
 
     return;

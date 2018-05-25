@@ -987,22 +987,23 @@ void LocalizerModule::performFiltering()
         std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
         getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
 
-        yInfo() << "Step";
+        // yInfo() << "Step";
 
-        yInfo() << "Real contact points with noise";
-        for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
-            yInfo() << it->first << ":" << (it->second).toString();
+        // yInfo() << "Real contact points with noise";
+        // for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
+        //     yInfo() << it->first << ":" << (it->second).toString();
+
         // if (!is_simulation)
         // {
             // extract contact points from forward kinematics
             getContactPoints(fingers_contacts, fingers_pos, fingers_points);
         // }
 
-        yInfo() << "Forward kinematics";
-        for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
-            yInfo() << it->first << ":" << (it->second).toString();
+        // yInfo() << "Forward kinematics";
+        // for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
+        //     yInfo() << it->first << ":" << (it->second).toString();
 
-        yInfo() << "";
+        // yInfo() << "";
 
         // copy to a vector of yarp::sig::Vector(s)
         std::vector<yarp::sig::Vector> points;

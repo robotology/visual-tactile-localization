@@ -129,6 +129,7 @@ private:
     std::string output_path;
 
     // hand to be used during tactile filtering
+    // and contacts probing
     std::string tac_filt_hand_name;
 
     // robot name
@@ -137,6 +138,7 @@ private:
     // flags
     bool estimate_available;
     bool filtering_enabled;
+    bool contacts_probe_enabled;
     bool is_first_step;
     bool is_simulation;
     bool use_analogs;
@@ -325,6 +327,17 @@ private:
                      std::unordered_map<std::string, bool> &contacts);
 
     /*
+     * Extract finger tips contacts state from skinContactList
+     *
+     * To be used in simulation.
+     *
+     * @param hand_name name of the hand to be used
+     * @param points contact states on finger tips of the specified hand
+     */
+    bool getContactsSim(const std::string &hand_name,
+                        std::unordered_map<std::string, bool> &contacts);
+
+    /*
      * Extract arm and torso angles and angular rates.
      * @param arm_name the name of the desired arm
      * @param arm_angles vector of arm angles
@@ -473,6 +486,11 @@ private:
      * Perform a filtering step
      */
     void performFiltering();
+
+    /*
+     * Perform probe of contacts on finger tips
+     */
+    void performContactsProbe();
 
     /*
      * Stops filtering

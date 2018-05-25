@@ -311,6 +311,62 @@ void LocalizerModule::getContactPoints(const std::unordered_map<std::string, boo
     }
 }
 
+bool LocalizerModule::getContactsSim(const std::string &hand_name,
+                                     std::unordered_map<std::string, bool> &contacts)
+{
+    // check if new data is available
+    iCub::skinDynLib::skinContactList *list;
+    list = port_contacts_sim.read(false);
+    if (list == NULL)
+        return false;
+
+    // reset finger_contacts
+    contacts["thumb"] = false;
+    contacts["index"] = false;
+    contacts["middle"] = false;
+    contacts["ring"] = false;
+    contacts["little"] = false;
+
+    // extract contacts coming from finger tips only
+    for (size_t i=0; i<list->size(); i++)
+    {
+        // extract the skin contact
+        const iCub::skinDynLib::skinContact &skin_contact = (*list)[i];
+
+        // need to verify if this contact was effectively produced
+        // by taxels on the finger tips
+        // in order to simplify things the Gazebo plugin only sends one
+        // taxel id that is used to identify which finger is in contact
+        std::vector<unsigned int> taxels_ids = skin_contact.getTaxelList();
+        int taxel_id = taxels_ids[0];
+        // taxels ids for finger tips are between 0 and 59
+        if (taxel_id >= 0 && taxel_id < 60)
+        {
+            // extract finger name
+            std::string finger_name;
+            if ((taxel_id >=0) && (taxel_id < 12))
+                finger_name = "index";
+            else if ((taxel_id >= 12) && (taxel_id < 24))
+                finger_name = "middle";
+            else if ((taxel_id) >= 24 && (taxel_id < 36))
+                finger_name = "ring";
+            else if ((taxel_id >= 36) && (taxel_id < 48))
+                finger_name = "little";
+            else if (taxel_id >= 48)
+                finger_name = "thumb";
+
+            if ((hand_name == "right") &&
+                (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND))
+                contacts[finger_name] |= true;
+            else if ((hand_name == "left") &&
+                     (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_LEFT_HAND))
+                contacts[finger_name] |= true;
+        }
+    }
+
+    return true;
+}
+
 bool LocalizerModule::getContacts(const std::string &hand_name,
                                   std::unordered_map<std::string, bool> &contacts)
 {
@@ -750,6 +806,18 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
         // then reset filter
         upf.init();
     }
+    else if (cmd == VOCAB4('P','R','O','N'))
+    {
+        contacts_probe_enabled = true;
+        if (type == VOCAB4('R', 'I', 'G', 'H'))
+            tac_filt_hand_name = "right";
+        else if (type == VOCAB4('L', 'E', 'F', 'T'))
+            tac_filt_hand_name = "left";
+    }
+    else if (cmd == VOCAB4('P','R','O','F'))
+    {
+        contacts_probe_enabled = false;
+    }
 
     mutex.unlock();
 }
@@ -971,6 +1039,49 @@ void LocalizerModule::performFiltering()
         // a new estimate is now available
         estimate_available = true;
     }
+}
+
+void LocalizerModule::performContactsProbe()
+{
+    if (!contacts_probe_enabled)
+        return;
+
+    std::vector<yarp::sig::Vector> points;
+    std::unordered_map<std::string, bool> fingers_contacts;
+    if (is_simulation)
+    {
+        // Gazebo provides contact points
+        if (!getContactsSim(tac_filt_hand_name, fingers_contacts))
+            return;
+    }
+    else
+    {
+        // real robot provides binarized information on contacts
+        if (!getContacts(tac_filt_hand_name, fingers_contacts))
+            return;
+    }
+
+    // get data related to fingers
+    yarp::sig::Vector input;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
+    getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
+
+    // extract contact points from forward kinematics
+    getContactPoints(fingers_contacts, fingers_pos, points);
+
+    // print information
+    for (auto it = fingers_contacts.begin();
+         it != fingers_contacts.end();
+         it++)
+    {
+        if (it->second)
+            yInfo() << "[" << tac_filt_hand_name << "hand]"
+                    << it->first;
+    }
+
+    return;
 }
 
 void LocalizerModule::stopFiltering()
@@ -1874,6 +1985,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // reset flags
     estimate_available = false;
     filtering_enabled = false;
+    contacts_probe_enabled = false;
     is_first_step = true;
 
     return true;
@@ -1906,6 +2018,9 @@ bool LocalizerModule::updateModule()
 
     // do filtering step
     performFiltering();
+
+    // do contacts probe
+    performContactsProbe();
 
     // publish the last estimate available
     if (estimate_available)

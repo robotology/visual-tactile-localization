@@ -292,6 +292,45 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
 //     return true;
 // }
 
+void LocalizerModule::setupAnalogBounds()
+{
+    // taken from real robot
+    // by avering 50 trials
+    // left hand only
+
+    analog_bounds.resize(15, 2);
+    analog_bounds(0, 0) = 250.0; // not acquired
+    analog_bounds(1, 0) = 250.0; // not acquire
+    analog_bounds(2, 0) = 250.0; // not acquired
+    analog_bounds(3, 0) = 243.22;
+    analog_bounds(4, 0) = 216.44;
+    analog_bounds(5, 0) = 230.44;
+    analog_bounds(6, 0) = 244.46;
+    analog_bounds(7, 0) = 214.38;
+    analog_bounds(8, 0) = 247.98;
+    analog_bounds(9, 0) = 229.56;
+    analog_bounds(10, 0) = 208.84;
+    analog_bounds(11, 0) = 231.54;
+    analog_bounds(12, 0) = 249.20;
+    analog_bounds(13, 0) = 212.52;
+    analog_bounds(14, 0) = 227.62;
+    analog_bounds(0, 1) = 0.0; // not acquired
+    analog_bounds(1, 1) = 0.0; // not acquired
+    analog_bounds(2, 1) = 0.0; // not acquired
+    analog_bounds(3, 1) = 9.42;
+    analog_bounds(4, 1) = 39.66;
+    analog_bounds(5, 1) = 0.0;
+    analog_bounds(6, 1) = 0.0;
+    analog_bounds(7, 1) = 53.54;
+    analog_bounds(8, 1) = 20.0;
+    analog_bounds(9, 1) = 23.64;
+    analog_bounds(10, 1) = 25.0;
+    analog_bounds(11, 1) = 29.68;
+    analog_bounds(12, 1) = 20.76;
+    analog_bounds(13, 1) = 62.68;
+    analog_bounds(14, 1) = 62.22;
+}
+
 void LocalizerModule::getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,
                                        const std::unordered_map<std::string, yarp::sig::Vector> &fingers_pos,
                                        std::unordered_map<std::string, yarp::sig::Vector> &contact_points)
@@ -993,11 +1032,11 @@ void LocalizerModule::performFiltering()
         // for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
         //     yInfo() << it->first << ":" << (it->second).toString();
 
-        // if (!is_simulation)
-        // {
+        if (!is_simulation)
+        {
             // extract contact points from forward kinematics
             getContactPoints(fingers_contacts, fingers_pos, fingers_points);
-        // }
+        }
 
         // yInfo() << "Forward kinematics";
         // for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
@@ -1952,11 +1991,47 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
                      << "unable to retrieve the Analogs view for the left hand";
             return false;
         }
+        ok_view = drv_right_arm.view(ilim_right);
+        if (!ok_view || ilim_right == 0)
+        {
+            yError() << "LocalizerModule:configure error:"
+                     << "unable to retrieve the IControlLimits view for the right hand";
+            return false;
+        }
+        ok_view = drv_left_arm.view(ilim_left);
+        if (!ok_view || ilim_left == 0)
+        {
+            yError() << "LocalizerModule:configure error:"
+                     << "unable to retrieve the IControlLimits view for the left hand";
+            return false;
+        }
     }
 
-    // configure forward kinematics
+    // configure arms forward kinematics
     right_arm_kin = iCub::iKin::iCubArm("right");
     left_arm_kin = iCub::iKin::iCubArm("left");
+
+    // Limits update is not required to evaluate the forward kinematics
+    // using angles from the encoders
+    right_arm_kin.setAllConstraints(false);
+    left_arm_kin.setAllConstraints(false);
+    // Torso can be moved in general so its links have to be released
+    right_arm_kin.releaseLink(0);
+    right_arm_kin.releaseLink(1);
+    right_arm_kin.releaseLink(2);
+    left_arm_kin.releaseLink(0);
+    left_arm_kin.releaseLink(1);
+    left_arm_kin.releaseLink(2);
+
+    // configure finger forward kinematics
+    bool ok;
+    std::deque<yarp::dev::IControlLimits*> lims_right;
+    std::deque<yarp::dev::IControlLimits*> lims_left;
+    if (use_analogs)
+    {
+        lims_right.push_back(ilim_right);
+        lims_left.push_back(ilim_left);
+    }
 
     fingers_names = {"thumb", "index", "middle", "ring", "little"};
     for (std::string &finger_name : fingers_names)
@@ -1974,19 +2049,27 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         // }
         fingers_kin[right_finger_key] = iCub::iKin::iCubFingerExt(right_finger);
         fingers_kin[left_finger_key] = iCub::iKin::iCubFingerExt(left_finger);
-    }
 
-    // Limits update is not required to evaluate the forward kinematics
-    // using angles from the encoders
-    right_arm_kin.setAllConstraints(false);
-    left_arm_kin.setAllConstraints(false);
-    // Torso can be moved in general so its links have to be released
-    right_arm_kin.releaseLink(0);
-    right_arm_kin.releaseLink(1);
-    right_arm_kin.releaseLink(2);
-    left_arm_kin.releaseLink(0);
-    left_arm_kin.releaseLink(1);
-    left_arm_kin.releaseLink(2);
+        if (use_analogs)
+        {
+            ok = fingers_kin[right_finger_key].alignJointsBounds(lims_right);
+            if (!ok)
+            {
+                yError() << "Localizer module: cannot set joints bounds for finger"
+                         << right_finger;
+                return false;
+            }
+            ok = fingers_kin[left_finger_key].alignJointsBounds(lims_left);
+            if (!ok)
+            {
+                yError() << "Localizer module: cannot set joints bounds for finger"
+                         << left_finger;
+            }
+        }
+    }
+    // setup matrix containings
+    // analog bounds for encoders of fingers proximal/distal joints
+    setupAnalogBounds();
 
     // configure and init the UPF
     // using group 'upf' from the configuration file

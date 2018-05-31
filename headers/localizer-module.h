@@ -21,6 +21,7 @@
 #include <yarp/dev/PolyDriver.h>
 #include <yarp/dev/IEncoders.h>
 #include <yarp/dev/IAnalogSensor.h>
+#include <yarp/dev/IControlLimits2.h>
 #include <yarp/sig/PointCloud.h>
 
 // icub-main
@@ -182,7 +183,7 @@ private:
      */
 
     /**
-     *  IEncoders and IAnalogs
+     *  IEncoders, IAnalogs and IControlLimits
      */
 
     // PolyDriver required to access yarp::dev::IEncoders encoders
@@ -198,6 +199,14 @@ private:
     yarp::dev::IEncoders *ienc_torso;
     yarp::dev::IAnalogSensor *ianalog_right;
     yarp::dev::IAnalogSensor *ianalog_left;
+
+    // control limits
+    yarp::dev::IControlLimits2 *ilim_right;
+    yarp::dev::IControlLimits2 *ilim_left;
+
+    // matrix of analog bounds
+    // for encoders of proximal/distal joints
+    yarp::sig::Matrix analog_bounds;
 
     /*
      */
@@ -292,6 +301,12 @@ private:
      */
     bool getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
                        std::vector<yarp::sig::Vector> &pc);
+    /*
+     * Setup the analog bounds for
+     * encoders of proximal/distal joints
+     *
+     */
+    void setupAnalogBounds();
 
     /*
      * Extract finger tips contact points from a skinContactList

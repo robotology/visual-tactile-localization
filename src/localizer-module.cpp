@@ -1047,7 +1047,10 @@ void LocalizerModule::performFiltering()
         // copy to a vector of yarp::sig::Vector(s)
         std::vector<yarp::sig::Vector> points;
         for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
+        {
             points.push_back(it->second);
+            yInfo() << (it->second).toString();
+        }
 
         // set input
         input = fingers_vels["middle"];
@@ -1059,6 +1062,8 @@ void LocalizerModule::performFiltering()
             upf.resetTime();
             is_first_step = false;
         }
+
+        yInfo() << points.size();
 
         if (points.size() <= 1)
             // skip step in case of too few measurements

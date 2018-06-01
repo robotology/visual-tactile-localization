@@ -212,7 +212,6 @@ bool iCub::iKin::iCubFingerExt::alignJointsBounds(const std::deque<yarp::dev::IC
         (*this)[3].setMin(CTRL_DEG2RAD*min);
         (*this)[3].setMax(CTRL_DEG2RAD*max/3.0);
     }
-	return false;
 
     return true;
 }

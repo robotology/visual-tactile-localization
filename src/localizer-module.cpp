@@ -1559,7 +1559,9 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
             for(size_t j=0; j<3; j++)
                 fout << d.input[j] << ";";
             // time stamp
+            fout << std::fixed;
             fout << d.time_stamp << ";";
+            fout << std::defaultfloat;
             // execution time
             fout << d.exec_time << ";";
 

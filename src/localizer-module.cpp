@@ -1083,6 +1083,7 @@ void LocalizerModule::performFiltering()
         storage_on_mutex.lock();
 
         // store data if required
+        yInfo() << time_stamp;
         if (!is_simulation)
             last_ground_truth = last_estimate;
         if (storage_on)

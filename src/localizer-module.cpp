@@ -1056,6 +1056,7 @@ void LocalizerModule::performFiltering()
         input = fingers_vels["middle"];
         input[2] = 0;
         upf.setNewInput(input);
+        yInfo() << input.toString();
 
         if (is_first_step)
         {

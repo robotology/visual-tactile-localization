@@ -1049,22 +1049,21 @@ void LocalizerModule::performFiltering()
         for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
         {
             points.push_back(it->second);
-            yInfo() << (it->second).toString();
+            // yInfo() << (it->second).toString();
         }
+        yInfo() << "# contacts: " << points.size();
 
         // set input
         input = fingers_vels["middle"];
         input[2] = 0;
         upf.setNewInput(input);
-        yInfo() << input.toString();
+        yInfo() << "input:" << input.toString();
 
         if (is_first_step)
         {
             upf.resetTime();
             is_first_step = false;
         }
-
-        yInfo() << points.size();
 
         if (points.size() <= 1)
             // skip step in case of too few measurements
@@ -1084,7 +1083,8 @@ void LocalizerModule::performFiltering()
         storage_on_mutex.lock();
 
         // store data if required
-        yInfo() << time_stamp;
+        std::cout << std::fixed << "time stamp:" << time_stamp;
+        std::cout << std::defaultfloat;
         if (!is_simulation)
             last_ground_truth = last_estimate;
         if (storage_on)

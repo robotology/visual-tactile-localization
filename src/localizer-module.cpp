@@ -90,6 +90,16 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         robot_target_frame_name = "/iCub/frame";
     yInfo() << "Localizer module: robot target frame name is" << robot_target_frame_name;
 
+    gtruth_source_frame_name = rf.find("groundTruthSourceFrame").asString();
+    if (rf.find("estimateSourceFrame").isNull())
+        gtruth_source_frame_name = "/iCub/frame";
+    yInfo() << "Localizer module: ground truth source frame name is" << gtruth_source_frame_name;
+
+    gtruth_target_frame_name = rf.find("groundTruthTargetFrame").asString();
+    if (rf.find("estimateTargetFrame").isNull())
+        gtruth_target_frame_name = "/ground_truth/frame";
+    yInfo() << "Localizer module: ground truth target frame name is" << gtruth_target_frame_name;
+
     input_port_name = rf.find("inputPort").asString();
     if (rf.find("inputPort").isNull())
         input_port_name = "/upf-localizer:i";
@@ -966,8 +976,8 @@ void LocalizerModule::performFiltering()
             {
                 if (is_simulation)
                     point_cloud = filtered_point_cloud;
-                if (!is_simulation)
-                    last_ground_truth = last_estimate;
+                // if (!is_simulation)
+                //     last_ground_truth = last_estimate;
 
                 bool is_first_chunk = (i == 0);
                 storeDataVisual(FilteringType::visual,
@@ -1085,8 +1095,8 @@ void LocalizerModule::performFiltering()
         // store data if required
         std::cout << std::fixed << "time stamp:" << time_stamp;
         std::cout << std::defaultfloat;
-        if (!is_simulation)
-            last_ground_truth = last_estimate;
+        // if (!is_simulation)
+        //     last_ground_truth = last_estimate;
         if (storage_on)
             storeDataTactile(last_ground_truth,
                              last_estimate,
@@ -1182,10 +1192,9 @@ void LocalizerModule::publishEstimate()
 bool LocalizerModule::retrieveGroundTruth(yarp::sig::Vector &pose)
 {
     // Get the pose of the root frame of the robot
-    // TODO: get source and target from configuration file
     yarp::sig::Matrix inertialToRobot(4,4);
-    std::string source = "/iCub/frame";
-    std::string target = "/box_alt/frame";
+    std::string source = gtruth_source_frame_name;
+    std::string target = gtruth_target_frame_name;
 
     // Get the transform
     if (!tf_client->getTransform(target, source, inertialToRobot))
@@ -2118,9 +2127,7 @@ bool LocalizerModule::updateModule()
         return false;
 
     // try to get the ground truth
-    // if in simulation
-    if (is_simulation)
-        retrieveGroundTruth(last_ground_truth);
+    retrieveGroundTruth(last_ground_truth);
 
     // try to read a command from the port
     bool should_wait = false;

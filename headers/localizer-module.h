@@ -157,7 +157,8 @@ private:
    /**
     * FrameTransformClient required to
     * - publish the estimate of the filter
-    * - retrieve the pose of the robot root frame
+    * - retrieve the ground truth
+    * - retrieve the pose of the robot root frame (simulation only)
     */
 
     // PolyDriver required to access a yarp::dev::IFrameTransform
@@ -170,9 +171,13 @@ private:
     std::string est_source_frame_name;
     std::string est_target_frame_name;
 
-    // source and target frame names for robot root frame
+    // source and target frame names for robot root frame (simulation only)
     std::string robot_source_frame_name;
     std::string robot_target_frame_name;
+
+    // source and target frame names for ground truth
+    std::string gtruth_source_frame_name;
+    std::string gtruth_target_frame_name;
 
     // transformation from inertial frame to
     // the root frame of the robot published by gazebo

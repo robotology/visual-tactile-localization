@@ -151,6 +151,12 @@ private:
     // size of chunk used in visual filtering
     int visual_chunk_size;
 
+    // uniform sample parameter used to subsample the point cloud
+    unsigned int uniform_sample;
+
+    // random sample parameter used to shuffle the point cloud
+    double random_sample;
+
     /*
      */
 

@@ -167,9 +167,17 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         period = 0.01;
     yInfo() << "Localizer module: period " << period;
 
-    visual_chunk_size = rf.find("visualChunkSize").asInt();
-    if (rf.find("visualChunkSize").isNull())
+    visual_chunk_size = rf.find("pointCloudVisualChunkSize").asInt();
+    if (rf.find("pointCloudVisualChunkSize").isNull())
         visual_chunk_size = 10;
+
+    uniform_sample = rf.find("pointCloudUniformSample").asInt();
+    if (rf.find("pointCloudUniformSample").isNull())
+        uniform_sample = 30;
+
+    random_sample = rf.find("pointCloudRandomSample").asDouble();
+    if (rf.find("pointCloudRandomSample").isNull())
+        random_sample = 0.9;
 
     return true;
 }
@@ -232,7 +240,6 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
 
     // subsample point cloud
     std::vector<yarp::sig::Vector> subsampled_pc;
-    unsigned int uniform_sample = 30;
     for (size_t i=0; i<pc.size(); i++)
     {
         if ((i % uniform_sample) == 0)
@@ -242,7 +249,6 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
     // shuffle point cloud
     std::vector<yarp::sig::Vector> shuffled_pc;
     std::set<unsigned int> idx;
-    double random_sample = 0.9;
     int subsampled_pc_size = subsampled_pc.size();
     while (idx.size() < (size_t)(random_sample * subsampled_pc_size))
     {

@@ -255,7 +255,7 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
         unsigned int i = (unsigned int)(Rand::scalar(0.0,1.0) * subsampled_pc_size);
         if (idx.find(i) == idx.end())
         {
-            shuffled_pc.push_back(filtered_pc[i]);
+            shuffled_pc.push_back(subsampled_pc[i]);
             idx.insert(i);
         }
     }

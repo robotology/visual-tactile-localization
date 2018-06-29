@@ -242,7 +242,7 @@ private:
     yarp::os::BufferedPort<PointCloud> port_pc_sim;
     // used with real robot
     yarp::os::BufferedPort<PointCloudXYZ> port_pc;
-    yarp::os::BufferedPort<PointCloudXYZ> port_filtered_pc;
+    /* yarp::os::BufferedPort<PointCloudXYZ> port_filtered_pc; */
 
     // contact points
     // used in simulation (GazeboYarpSkin)

@@ -115,10 +115,10 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         port_pc_name = "/upf-localizer/pc:i";
     yInfo() << "Localizer module: point cloud input port name is" << port_pc_name;
 
-    port_filtered_pc_name = rf.find("filteredPointCloudInputPort").asString();
-    if (rf.find("filteredPointCloudInputPort").isNull())
-        port_filtered_pc_name = "/upf-localizer/filtered_pc:i";
-    yInfo() << "Localizer module: filtered point cloud input port name is" << port_filtered_pc_name;
+    // port_filtered_pc_name = rf.find("filteredPointCloudInputPort").asString();
+    // if (rf.find("filteredPointCloudInputPort").isNull())
+    //     port_filtered_pc_name = "/upf-localizer/filtered_pc:i";
+    // yInfo() << "Localizer module: filtered point cloud input port name is" << port_filtered_pc_name;
 
     port_contacts_name = rf.find("contactsInputPort").asString();
     if (rf.find("contactsInputPort").isNull())
@@ -214,16 +214,10 @@ bool LocalizerModule::getPointCloudSim(std::vector<yarp::sig::Vector> &pc)
 bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
                                     std::vector<yarp::sig::Vector> &pc)
 {
-    if ((port_pc.getPendingReads() <=0) ||
-        (port_filtered_pc.getPendingReads() <= 0))
-        return false;
-
     // original point cloud
     PointCloudXYZ *new_pc = port_pc.read(false);
-
-    // this is a filtered version of the point cloud
-    // effectively used by the filter
-    PointCloudXYZ *new_filtered_pc = port_filtered_pc.read(false);
+    if (new_pc == NULL)
+        return false;
 
     // transform point clouds to vectors of yarp::sig::Vector
     for (size_t i=0; i<new_pc->size(); i++)
@@ -236,23 +230,23 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
         pc.push_back(p_vector);
     }
 
-    for (size_t i=0; i<new_filtered_pc->size(); i++)
+    // subsample point cloud
+    std::vector<yarp::sig::Vector> subsampled_pc;
+    unsigned int uniform_sample = 30;
+    for (size_t i=0; i<pc.size(); i++)
     {
-        yarp::sig::DataXYZ &p_data = (*new_filtered_pc)(i);
-        yarp::sig::Vector p_vector(3);
-        p_vector[0] = p_data.x;
-        p_vector[1] = p_data.y;
-        p_vector[2] = p_data.z;
-        filtered_pc.push_back(p_vector);
+        if ((i % uniform_sample) == 0)
+            subsampled_pc.push_back(pc[i]);
     }
 
-    // shuffle data
+    // shuffle point cloud
     std::vector<yarp::sig::Vector> shuffled_pc;
     std::set<unsigned int> idx;
-    int filtered_pc_size = filtered_pc.size();
-    while (idx.size() < (size_t)(0.9 * filtered_pc_size))
+    double random_sample = 0.9;
+    int subsampled_pc_size = subsampled_pc.size();
+    while (idx.size() < (size_t)(random_sample * subsampled_pc_size))
     {
-        unsigned int i = (unsigned int)(Rand::scalar(0.0,1.0) * filtered_pc_size);
+        unsigned int i = (unsigned int)(Rand::scalar(0.0,1.0) * subsampled_pc_size);
         if (idx.find(i) == idx.end())
         {
             shuffled_pc.push_back(filtered_pc[i]);
@@ -1830,14 +1824,14 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
             return false;
         }
 
-        ok_port = port_filtered_pc.open(port_filtered_pc_name);
-        if (!ok_port)
+        // ok_port = port_filtered_pc.open(port_filtered_pc_name);
+        // if (!ok_port)
 
-        {
-            yError() << "LocalizerModule:Configure error:"
-                     << "unable to open the filtered point cloud port";
-            return false;
-        }
+        // {
+        //     yError() << "LocalizerModule:Configure error:"
+        //              << "unable to open the filtered point cloud port";
+        //     return false;
+        // }
     }
 
     if (is_simulation)
@@ -2159,7 +2153,7 @@ bool LocalizerModule::close()
     else
     {
         port_pc.close();
-        port_filtered_pc.close();
+        // port_filtered_pc.close();
     }
 
     // close drivers

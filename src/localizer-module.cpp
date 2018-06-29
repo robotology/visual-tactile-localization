@@ -998,7 +998,7 @@ void LocalizerModule::performFiltering()
             // the filter disables automatically
             // TODO: make this optional from configuration
             //       or from FilterCommand
-            stopFiltering();
+            // stopFiltering();
 
             // a new estimate is now available
             estimate_available = true;

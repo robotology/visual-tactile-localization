@@ -942,9 +942,13 @@ void LocalizerModule::performFiltering()
                 return;
             }
 
+            // remove outliers
+            std::vector<yarp::sig::Vector> inliers_pc;
+            removeOutliersFromPointCloud(point_cloud, inliers_pc,
+                                         outlier_rem_radius, outlier_rem_neigh);
             // subsample point cloud
             std::vector<yarp::sig::Vector> subsampled_pc;
-            subsamplePointCloud(point_cloud, subsampled_pc, uniform_sample);
+            subsamplePointCloud(inliers_pc, subsampled_pc, uniform_sample);
 
             // shuffle point cloud
             shufflePointCloud(subsampled_pc, filtered_point_cloud, random_sample);

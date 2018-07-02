@@ -301,17 +301,40 @@ private:
     bool getPointCloudSim(std::vector<yarp::sig::Vector> &pc);
 
     /*
-     * Get a point cloud from the stereo vision setup.
+     * Subsample a point cloud by skipping n points.
      *
-     * The function returns the original point cloud in the variable 'pc'
-     * and a subsampled and shuffled version in the variable 'filtered_pc'.
-     *
-     * @param pc the original point cloud
-     * @param filtered_pc the filtered point cloud
+     * @param pc_in the input point cloud
+     * @param pc_out the subsampled point cloud
+     * @param skip_points the value of the variable n
      * @return true/false on success/failure
      */
-    bool getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
-                       std::vector<yarp::sig::Vector> &pc);
+    void subsamplePointCloud(const std::vector<yarp::sig::Vector> &pc_in,
+                             std::vector<yarp::sig::Vector> &pc_out,
+                             const unsigned int &skip_points);
+
+    /*
+     * Shuffle a point cloud by extracting indexes
+     * according to a uniform distribution.
+     *
+     * The operation is completed when resize_factor * size
+     * points have been sampled, where size is the total size
+     * of the point cloud.
+     *
+     * @param pc_in the input point cloud
+     * @param pc_out the subsampled point cloud
+     * @param resize_factor the value of the resize factor
+     */
+    void shufflePointCloud(const std::vector<yarp::sig::Vector> &pc_in,
+                           std::vector<yarp::sig::Vector> &pc_out,
+                           const double &resize_factor);
+    /*
+     * Get a point cloud from the stereo vision setup.
+     *
+     * @param pc the point cloud
+     * @return true/false on success/failure
+     */
+    bool getPointCloud(std::vector<yarp::sig::Vector> &pc);
+
     /*
      * Setup the analog bounds for
      * encoders of proximal/distal joints

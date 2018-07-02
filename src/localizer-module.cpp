@@ -21,6 +21,9 @@
 // CGAL
 #include <CGAL/IO/Polyhedron_iostream.h>
 
+// VTK
+#include <vtkRadiusOutlierRemoval.h>
+
 // std
 #include <fstream>
 
@@ -219,8 +222,35 @@ bool LocalizerModule::getPointCloudSim(std::vector<yarp::sig::Vector> &pc)
     return true;
 }
 
-bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
-                                    std::vector<yarp::sig::Vector> &pc)
+void LocalizerModule::subsamplePointCloud(const std::vector<yarp::sig::Vector> &pc_in,
+                                          std::vector<yarp::sig::Vector> &pc_out,
+                                          const unsigned int &skip_points)
+{
+    for (size_t i=0; i<pc_in.size(); i++)
+    {
+        if ((i % skip_points) == 0)
+            pc_out.push_back(pc_in[i]);
+    }
+}
+
+void LocalizerModule::shufflePointCloud(const std::vector<yarp::sig::Vector> &pc_in,
+                                        std::vector<yarp::sig::Vector> &pc_out,
+                                        const double &resize_factor)
+{
+    std::set<unsigned int> idx;
+    int subsampled_pc_size = pc_in.size();
+    while (idx.size() < (size_t)(resize_factor * subsampled_pc_size))
+    {
+        unsigned int i = (unsigned int)(Rand::scalar(0.0,1.0) * subsampled_pc_size);
+        if (idx.find(i) == idx.end())
+        {
+            pc_out.push_back(pc_in[i]);
+            idx.insert(i);
+        }
+    }
+}
+
+bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &pc)
 {
     // original point cloud
     PointCloudXYZ *new_pc = port_pc.read(false);
@@ -237,29 +267,6 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &filtered_pc,
         p_vector[2] = p_data.z;
         pc.push_back(p_vector);
     }
-
-    // subsample point cloud
-    std::vector<yarp::sig::Vector> subsampled_pc;
-    for (size_t i=0; i<pc.size(); i++)
-    {
-        if ((i % uniform_sample) == 0)
-            subsampled_pc.push_back(pc[i]);
-    }
-
-    // shuffle point cloud
-    std::vector<yarp::sig::Vector> shuffled_pc;
-    std::set<unsigned int> idx;
-    int subsampled_pc_size = subsampled_pc.size();
-    while (idx.size() < (size_t)(random_sample * subsampled_pc_size))
-    {
-        unsigned int i = (unsigned int)(Rand::scalar(0.0,1.0) * subsampled_pc_size);
-        if (idx.find(i) == idx.end())
-        {
-            shuffled_pc.push_back(subsampled_pc[i]);
-            idx.insert(i);
-        }
-    }
-    filtered_pc = shuffled_pc;
 
     return true;
 }
@@ -899,16 +906,18 @@ void LocalizerModule::performFiltering()
         }
         else
         {
-            // point_cloud contains the original point cloud
-            // that is saved for logging purposes
-            //
-            // filtered_point_clouds contains a subsampled and shuffled
-            // point cloud that is effectively used by the filter
-            if(!getPointCloud(filtered_point_cloud, point_cloud))
+            if(!getPointCloud(point_cloud))
             {
                 // nothing to do here
                 return;
             }
+
+            // subsample point cloud
+            std::vector<yarp::sig::Vector> subsampled_pc;
+            subsamplePointCloud(point_cloud, subsampled_pc, uniform_sample);
+
+            // shuffle point cloud
+            shufflePointCloud(subsampled_pc, filtered_point_cloud, random_sample);
         }
 
         // set noise covariances

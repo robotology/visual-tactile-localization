@@ -23,6 +23,9 @@
 
 // VTK
 #include <vtkRadiusOutlierRemoval.h>
+#include <vtkSmartPointer.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPointData.h>
 
 // std
 #include <fstream>
@@ -247,6 +250,33 @@ void LocalizerModule::shufflePointCloud(const std::vector<yarp::sig::Vector> &pc
             pc_out.push_back(pc_in[i]);
             idx.insert(i);
         }
+    }
+}
+
+void LocalizerModule::removeOutliersFromPointCloud(const std::vector<yarp::sig::Vector> &pc_in,
+                                                   std::vector<yarp::sig::Vector> &pc_out,
+                                                   const double &radius, const int num_points)
+{
+    vtkSmartPointer<vtkPoints> vtk_points=vtkSmartPointer<vtkPoints>::New();
+    for (size_t i=0; i<pc_in.size(); i++)
+    {
+        const yarp::sig::Vector &point = pc_in[i];
+        vtk_points->InsertNextPoint(point[0], point[1], point[2]);
+    }
+
+    vtkSmartPointer<vtkPolyData> vtk_polydata=vtkSmartPointer<vtkPolyData>::New();
+    vtk_polydata->SetPoints(vtk_points);
+
+    vtkSmartPointer<vtkRadiusOutlierRemoval> removal=vtkSmartPointer<vtkRadiusOutlierRemoval>::New();
+    removal->SetInputData(vtk_polydata);
+    removal->SetRadius(radius);
+    removal->SetNumberOfNeighbors(num_points);
+    removal->Update();
+
+    for (size_t i=0; i<pc_in.size(); i++)
+    {
+        if (removal->GetPointMap()[i]>=0)
+            pc_out.push_back(pc_in[i]);
     }
 }
 

@@ -327,6 +327,18 @@ private:
     void shufflePointCloud(const std::vector<yarp::sig::Vector> &pc_in,
                            std::vector<yarp::sig::Vector> &pc_out,
                            const double &resize_factor);
+
+    /*
+     * Perform radius outlier removal on the input point cloud.
+     *
+     * @param pc_in the input point cloud
+     * @param pc_out the subsampled point cloud
+     * @param radius the radius used in the radius outlier removal
+     * @param num_points the number of neighborhoods used in the radius outlier removal
+     */
+    void removeOutliersFromPointCloud(const std::vector<yarp::sig::Vector> &pc_in,
+                                      std::vector<yarp::sig::Vector> &pc_out,
+                                      const double &radius, const int num_points);
     /*
      * Get a point cloud from the stereo vision setup.
      *

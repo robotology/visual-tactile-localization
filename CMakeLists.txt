@@ -68,29 +68,29 @@ install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 # configuration file
 set (configSim ${PROJECT_SOURCE_DIR}/config/simulation/localizer_config.ini)
-#yarp_install(FILES ${configSim} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization)
+yarp_install(FILES ${configSim} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization)
 
 set (configSetup ${PROJECT_SOURCE_DIR}/config/setup/localizer_config.ini)
 yarp_install(FILES ${configSetup} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/visualTactileLocalization)
 
 # mesh file for YCB Mustard
 set (meshMustard ${PROJECT_SOURCE_DIR}/models/mustard.off)
-#yarp_install(FILES ${meshMustard} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+yarp_install(FILES ${meshMustard} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
 yarp_install(FILES ${meshMustard} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/visualTactileLocalization/models)
 
 # mesh file for box
 set (meshBox ${PROJECT_SOURCE_DIR}/models/box.off)
-#yarp_install(FILES ${meshBox} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+yarp_install(FILES ${meshBox} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
 yarp_install(FILES ${meshBox} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/visualTactileLocalization/models)
 
 # mesh file for book
 set (meshBook ${PROJECT_SOURCE_DIR}/models/book.off)
-#yarp_install(FILES ${meshBook} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+yarp_install(FILES ${meshBook} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
 yarp_install(FILES ${meshBook} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/visualTactileLocalization/models)
 
 # mesh file for rice
 set (meshRice ${PROJECT_SOURCE_DIR}/models/rice.off)
-#yarp_install(FILES ${meshBook} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
+yarp_install(FILES ${meshBook} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/simVisualTactileLocalization/models)
 yarp_install(FILES ${meshRice} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/visualTactileLocalization/models)
 
 # output files folder with empty placeholder

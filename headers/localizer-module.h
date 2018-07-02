@@ -152,10 +152,10 @@ private:
     int visual_chunk_size;
 
     // uniform sample parameter used to subsample the point cloud
-    unsigned int uniform_sample;
+    unsigned int subsample_n_points;
 
     // random sample parameter used to shuffle the point cloud
-    double random_sample;
+    double shuffle_resize_factor;
 
     // parameters form radius outlier removal
     double outlier_rem_radius;

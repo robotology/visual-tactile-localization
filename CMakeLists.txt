@@ -24,6 +24,7 @@ find_package(YARP REQUIRED)
 find_package(ICUB)
 find_package(ICUBcontrib REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS)
+find_package(VTK REQUIRED)
 
 # extend the current search path used by cmake to load
 # yarp, icub and icubcontrib helpers
@@ -38,6 +39,9 @@ include(ICUBcontribOptions)
 
 # CGAL
 include(${CGAL_USE_FILE})
+
+# VTK
+include(${VTK_USE_FILE})
 
 # specify to install in $ICUBcontrib_DIR/bin
 icubcontrib_set_default_prefix()
@@ -64,6 +68,11 @@ set(sources
 # executable
 add_executable(${PROJECT_NAME} ${headers} ${sources})
 target_link_libraries(${PROJECT_NAME} ${YARP_LIBRARIES} ${ICUB_LIBRARIES})
+if(VTK_LIBRARIES)
+  target_link_libraries(${PROJECT_NAME} ${VTK_LIBRARIES})
+else()
+  target_link_libraries(${PROJECT_NAME} vtkHybrid vtkWidgets)
+endif()
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
 # configuration file

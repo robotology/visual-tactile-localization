@@ -185,6 +185,14 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     if (rf.find("pointCloudRandomSample").isNull())
         random_sample = 0.9;
 
+    outlier_rem_radius = rf.find("pointCloudOutlierRadius").asDouble();
+    if (rf.find("pointCloudOutlierRadius").isNull())
+        outlier_rem_radius = 0.01;
+
+    outlier_rem_neigh = rf.find("pointCloudOutlierNeigh").asInt();
+    if (rf.find("pointCloudOutlierNeigh").isNull())
+        outlier_rem_neigh = 10;
+
     return true;
 }
 

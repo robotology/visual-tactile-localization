@@ -177,13 +177,13 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     if (rf.find("pointCloudVisualChunkSize").isNull())
         visual_chunk_size = 10;
 
-    uniform_sample = rf.find("pointCloudUniformSample").asInt();
-    if (rf.find("pointCloudUniformSample").isNull())
-        uniform_sample = 30;
+    subsample_n_points = rf.find("pointCloudSubsampleNumPoints").asInt();
+    if (rf.find("pointCloudSubsampleNumPoints").isNull())
+        subsample_n_points = 30;
 
-    random_sample = rf.find("pointCloudRandomSample").asDouble();
-    if (rf.find("pointCloudRandomSample").isNull())
-        random_sample = 0.9;
+    shuffle_resize_factor = rf.find("pointCloudShuffleResFactor").asDouble();
+    if (rf.find("pointCloudShuffleResFactor").isNull())
+        shuffle_resize_factor = 0.9;
 
     outlier_rem_radius = rf.find("pointCloudOutlierRadius").asDouble();
     if (rf.find("pointCloudOutlierRadius").isNull())
@@ -956,10 +956,10 @@ void LocalizerModule::performFiltering()
                                          outlier_rem_radius, outlier_rem_neigh);
             // subsample point cloud
             std::vector<yarp::sig::Vector> subsampled_pc;
-            subsamplePointCloud(inliers_pc, subsampled_pc, uniform_sample);
+            subsamplePointCloud(inliers_pc, subsampled_pc, subsample_n_points);
 
             // shuffle point cloud
-            shufflePointCloud(subsampled_pc, filtered_point_cloud, random_sample);
+            shufflePointCloud(subsampled_pc, filtered_point_cloud, shuffle_resize_factor);
         }
 
         // set noise covariances

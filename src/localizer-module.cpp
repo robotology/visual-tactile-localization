@@ -964,14 +964,24 @@ void LocalizerModule::performFiltering()
 
             // remove outliers
             std::vector<yarp::sig::Vector> inliers_pc;
-            removeOutliersFromPointCloud(point_cloud, inliers_pc,
-                                         outlier_rem_radius, outlier_rem_neigh);
+            if (use_pc_outlier_rem)
+                removeOutliersFromPointCloud(point_cloud, inliers_pc,
+                                             outlier_rem_radius, outlier_rem_neigh);
+            else
+                inliers_pc = point_cloud;
+
             // subsample point cloud
             std::vector<yarp::sig::Vector> subsampled_pc;
-            subsamplePointCloud(inliers_pc, subsampled_pc, subsample_n_points);
+            if (use_pc_subsampling)
+                subsamplePointCloud(inliers_pc, subsampled_pc, subsample_n_points);
+            else
+                subsampled_pc = inliers_pc;
 
             // shuffle point cloud
-            shufflePointCloud(subsampled_pc, filtered_point_cloud, shuffle_resize_factor);
+            if (use_pc_shuffle)
+                shufflePointCloud(subsampled_pc, filtered_point_cloud, shuffle_resize_factor);
+            else
+                filtered_point_cloud = subsampled_pc;
         }
 
         // set noise covariances

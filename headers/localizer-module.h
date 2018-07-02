@@ -157,7 +157,7 @@ private:
     // random sample parameter used to shuffle the point cloud
     double shuffle_resize_factor;
 
-    // parameters form radius outlier removal
+    // parameters for radius outlier removal
     double outlier_rem_radius;
     int outlier_rem_neigh;
 

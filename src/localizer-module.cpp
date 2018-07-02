@@ -962,24 +962,56 @@ void LocalizerModule::performFiltering()
                 return;
             }
 
+            bool outlier_rem;
+            bool subsampling;
+            bool shuffling;
+            mutex.lock();
+            outlier_rem = use_pc_outlier_rem;
+            subsampling = use_pc_subsampling;
+            shuffling = use_pc_shuffle;
+            mutex.unlock();
+
             // remove outliers
             std::vector<yarp::sig::Vector> inliers_pc;
-            if (use_pc_outlier_rem)
+            if (outlier_rem)
+            {
+                double radius;
+                int neigh;
+                mutex.lock();
+                radius = outlier_rem_radius;
+                neigh = outlier_rem_neigh;
+                mutex.unlock();
+
                 removeOutliersFromPointCloud(point_cloud, inliers_pc,
-                                             outlier_rem_radius, outlier_rem_neigh);
+                                             radius, neigh);
+            }
             else
                 inliers_pc = point_cloud;
 
             // subsample point cloud
             std::vector<yarp::sig::Vector> subsampled_pc;
-            if (use_pc_subsampling)
-                subsamplePointCloud(inliers_pc, subsampled_pc, subsample_n_points);
+            if (subsampling)
+            {
+                int n_points;
+                mutex.lock();
+                n_points = subsample_n_points;
+                mutex.unlock();
+
+                subsamplePointCloud(inliers_pc, subsampled_pc, n_points);
+            }
             else
                 subsampled_pc = inliers_pc;
 
             // shuffle point cloud
-            if (use_pc_shuffle)
-                shufflePointCloud(subsampled_pc, filtered_point_cloud, shuffle_resize_factor);
+            if (shuffling)
+            {
+                double resize_factor;
+                mutex.lock();
+                resize_factor = shuffle_resize_factor;
+                mutex.unlock();
+
+                shufflePointCloud(subsampled_pc, filtered_point_cloud, resize_factor);
+            }
             else
                 filtered_point_cloud = subsampled_pc;
         }
@@ -1759,6 +1791,9 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
         reply.addString("- visual-on");
         reply.addString("- tactile-on <hand_name>");
         reply.addString("- filter-off");
+        reply.addString("- pc-subsample <on/off> <n_points>");
+        reply.addString("- pc-shuffle <on/off> <resize_factor>");
+        reply.addString("- pc-out-removal <on/off> <radius> <neigh>");
         reply.addString("- storage-on");
         reply.addString("- storage-off");
         reply.addString("- storage-save");
@@ -1814,6 +1849,107 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
         mutex.unlock();
 
         reply.addString("Filtering disabled succesfully.");
+    }
+    else if (cmd == "pc-subsample")
+    {
+        mutex.lock();
+
+        bool valid = true;
+
+        if (command.size() != 3)
+            valid = false;
+
+        yarp::os::Value enable = command.get(1);
+        if ((enable.isNull()) || (!enable.isString()) ||
+            ((enable.asString() != "on") && (enable.asString() != "off")))
+            valid = false;
+
+        yarp::os::Value num_points = command.get(2);
+        if ((num_points.isNull()) || (!num_points.isInt()))
+            valid = false;
+
+        if (!valid)
+            reply.addString("Invalid request.");
+        else
+        {
+            std::string enable_string = enable.asString();
+            use_pc_subsampling = (enable_string == "on");
+
+            subsample_n_points = num_points.asInt();
+
+            reply.addString("Settings for point cloud subsampling accepted.");
+        }
+
+        mutex.unlock();
+    }
+    else if (cmd == "pc-shuffle")
+    {
+        mutex.lock();
+
+        bool valid = true;
+
+        if (command.size() != 3)
+            valid = false;
+
+        yarp::os::Value enable = command.get(1);
+        if ((enable.isNull()) || (!enable.isString()) ||
+            ((enable.asString() != "on") && (enable.asString() != "off")))
+            valid = false;
+
+        yarp::os::Value resize_factor = command.get(2);
+        if ((resize_factor.isNull()) || (!resize_factor.isDouble()))
+            valid = false;
+
+        if (!valid)
+            reply.addString("Invalid request.");
+        else
+        {
+            std::string enable_string = enable.asString();
+            use_pc_shuffle = (enable_string == "on");
+
+            shuffle_resize_factor = resize_factor.asDouble();
+
+            reply.addString("Settings for point cloud shuffling accepted.");
+        }
+
+        mutex.unlock();
+    }
+    else if (cmd == "pc-out-removal")
+    {
+        mutex.lock();
+
+        bool valid = true;
+
+        if (command.size() != 4)
+            valid = false;
+
+        yarp::os::Value enable = command.get(1);
+        if ((enable.isNull()) || (!enable.isString()) ||
+            ((enable.asString() != "on") && (enable.asString() != "off")))
+            valid = false;
+
+        yarp::os::Value radius = command.get(2);
+        if ((radius.isNull()) || (!radius.isDouble()))
+            valid = false;
+
+        yarp::os::Value neigh = command.get(3);
+        if ((neigh.isNull()) || (!neigh.isInt()))
+            valid = false;
+
+        if (!valid)
+            reply.addString("Invalid request.");
+        else
+        {
+            std::string enable_string = enable.asString();
+            use_pc_outlier_rem = (enable_string == "on");
+
+            outlier_rem_radius = radius.asDouble();
+            outlier_rem_neigh = neigh.asInt();
+
+            reply.addString("Settings for point cloud outlier removal accepted.");
+        }
+
+        mutex.unlock();
     }
     else if (cmd == "storage-on")
     {

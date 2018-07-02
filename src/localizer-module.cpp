@@ -177,13 +177,25 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     if (rf.find("pointCloudVisualChunkSize").isNull())
         visual_chunk_size = 10;
 
+    use_pc_subsampling = rf.find("pointCloudSubsample").asBool();
+    if (rf.find("pointCloudSubsample").isNull())
+        use_pc_subsampling = true;
+
     subsample_n_points = rf.find("pointCloudSubsampleNumPoints").asInt();
     if (rf.find("pointCloudSubsampleNumPoints").isNull())
         subsample_n_points = 30;
 
+    use_pc_shuffle = rf.find("pointCloudShuffle").asBool();
+    if (rf.find("pointCloudShuffle").isNull())
+        use_pc_shuffle = true;
+
     shuffle_resize_factor = rf.find("pointCloudShuffleResFactor").asDouble();
     if (rf.find("pointCloudShuffleResFactor").isNull())
         shuffle_resize_factor = 0.9;
+
+    use_pc_outlier_rem = rf.find("pointCloudOutlierRemoval").asBool();
+    if (rf.find("pointCloudOutlierRemoval").isNull())
+        use_pc_outlier_rem = false;
 
     outlier_rem_radius = rf.find("pointCloudOutlierRadius").asDouble();
     if (rf.find("pointCloudOutlierRadius").isNull())

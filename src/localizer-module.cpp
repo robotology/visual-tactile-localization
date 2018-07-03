@@ -525,12 +525,20 @@ bool LocalizerModule::getContactsSim(const std::string &hand_name,
 bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
                                          std::unordered_map<std::string, bool> &contacts)
 {
+    // get the correct hand
     yarp::os::Value springy_output;
+    yarp::sig::Vector springy_thres;
     yarp::os::Bottle *list;
     if (hand_name == "right")
+    {
         right_springy_fingers.getOutput(springy_output);
+        springy_thres = springy_thres_right;
+    }
     else if (hand_name == "left")
+    {
         left_springy_fingers.getOutput(springy_output);
+        springy_thres = springy_thres_left;
+    }
     else
         return false;
     list = springy_output.asList();
@@ -542,10 +550,9 @@ bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
     contacts["ring"] = false;
     contacts["little"] = false;
 
-    yarp::sig::Vector thresh;
     for (size_t i=0; i<5; i++)
     {
-        if (list->get(i).asDouble() > thresh[i])
+        if (list->get(i).asDouble() > springy_thres[i])
             contacts[fingers_names.at(i)] = true;
     }
 

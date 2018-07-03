@@ -1326,13 +1326,21 @@ void LocalizerModule::performContactsProbe()
     if (!contacts_probe_enabled)
         return;
 
-    // extract contact points from forward kinematics
-    getContactPoints(fingers_contacts, fingers_pos, fingers_points);
+    // get data from forward kinematics
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_points;
+    getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
 
     // contacts detected using springy fingers
     std::unordered_map<std::string, bool> springy_contacts;
     getContactsSpringy(tac_filt_hand_name, springy_contacts);
 
+    // extract contact points
+    getContactPoints(springy_contacts, fingers_pos, fingers_points);
+
+    // print information
     for (auto it = springy_contacts.begin();
          it != springy_contacts.end();
          it++)
@@ -1347,7 +1355,6 @@ void LocalizerModule::performContactsProbe()
     }
 
     // contacts from tactile sensors of fingertips
-    std::unordered_map<std::string, yarp::sig::Vector> fingers_points;
     std::unordered_map<std::string, bool> fingers_contacts;
     if (is_simulation)
     {
@@ -1362,12 +1369,8 @@ void LocalizerModule::performContactsProbe()
             return;
     }
 
-    // get data related to fingers
-    yarp::sig::Vector input;
-    std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
-    std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
-    std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
-    getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
+    // extract contact points
+    getContactPoints(fingers_contacts, fingers_pos, fingers_points);
 
     // print information
     for (auto it = fingers_contacts.begin();

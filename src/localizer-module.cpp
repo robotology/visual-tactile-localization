@@ -1322,6 +1322,27 @@ void LocalizerModule::performContactsProbe()
     if (!contacts_probe_enabled)
         return;
 
+    // extract contact points from forward kinematics
+    getContactPoints(fingers_contacts, fingers_pos, fingers_points);
+
+    // contacts detected using springy fingers
+    std::unordered_map<std::string, bool> springy_contacts;
+    getContactsSpringy(tac_filt_hand_name, springy_contacts);
+
+    for (auto it = springy_contacts.begin();
+         it != springy_contacts.end();
+         it++)
+    {
+        if (it->second)
+        {
+            yInfo() << "[SPRINGY][" << tac_filt_hand_name << "hand]"
+                    << it->first;
+            yInfo() << "@"
+                    << fingers_points.at(it->first).toString();
+        }
+    }
+
+    // contacts from tactile sensors of fingertips
     std::unordered_map<std::string, yarp::sig::Vector> fingers_points;
     std::unordered_map<std::string, bool> fingers_contacts;
     if (is_simulation)
@@ -1344,9 +1365,6 @@ void LocalizerModule::performContactsProbe()
     std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
     getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
 
-    // extract contact points from forward kinematics
-    getContactPoints(fingers_contacts, fingers_pos, fingers_points);
-
     // print information
     for (auto it = fingers_contacts.begin();
          it != fingers_contacts.end();
@@ -1354,7 +1372,7 @@ void LocalizerModule::performContactsProbe()
     {
         if (it->second)
         {
-            yInfo() << "[" << tac_filt_hand_name << "hand]"
+            yInfo() << "[TACTILE][" << tac_filt_hand_name << "hand]"
                     << it->first;
             yInfo() << "@"
                     << fingers_points.at(it->first).toString();

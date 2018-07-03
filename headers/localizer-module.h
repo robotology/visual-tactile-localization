@@ -27,6 +27,7 @@
 // icub-main
 /* #include <iCub/iKin/iKinFwd.h> */
 #include <iCub/skinDynLib/skinContactList.h>
+#include <iCub/perception/springyFingers.h>
 
 // std
 #include <vector>
@@ -240,6 +241,10 @@ private:
     std::vector<std::string> fingers_names;
     std::unordered_map<std::string, iCub::iKin::iCubFingerExt> fingers_kin;
 
+    // springy fingers for contact detection
+    iCub::perception::SpringyFingersModel right_springy_fingers;
+    iCub::perception::SpringyFingersModel left_springy_fingers;
+
     /*
      */
 
@@ -405,6 +410,9 @@ private:
     bool getContactsSim(const std::string &hand_name,
                         std::unordered_map<std::string, bool> &contacts,
                         std::unordered_map<std::string, yarp::sig::Vector> &contact_points);
+
+    bool getContactsSpringy(const std::string &hand_name,
+                            std::unordered_map<std::string, bool> &contacts);
 
     /*
      * Extract arm and torso angles and angular rates.

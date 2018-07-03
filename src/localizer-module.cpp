@@ -474,6 +474,36 @@ bool LocalizerModule::getContactsSim(const std::string &hand_name,
     return true;
 }
 
+bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
+                                         std::unordered_map<std::string, bool> &contacts)
+{
+    yarp::os::Value springy_output;
+    yarp::os::Bottle *list;
+    if (hand_name == "right")
+        right_springy_fingers.getOutput(springy_output);
+    else if (hand_name == "left")
+        left_springy_fingers.getOutput(springy_output);
+    else
+        return false;
+    list = springy_output.asList();
+
+    // reset finger_contacts
+    contacts["thumb"] = false;
+    contacts["index"] = false;
+    contacts["middle"] = false;
+    contacts["ring"] = false;
+    contacts["little"] = false;
+
+    yarp::sig::Vector thresh;
+    for (size_t i=0; i<5; i++)
+    {
+        if (list->get(i).asDouble() > thresh[i])
+            contacts[fingers_names.at(i)] = true;
+    }
+
+    return true;
+}
+
 bool LocalizerModule::getContacts(const std::string &hand_name,
                                   std::unordered_map<std::string, bool> &contacts)
 {
@@ -2297,6 +2327,44 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // setup matrix containings
     // analog bounds for encoders of fingers proximal/distal joints
     setupAnalogBounds();
+
+    // configure springy fingers
+    std::string left_springy_calib_path;
+    std::string right_springy_calib_path;
+    if (!rf_module.check("springyFingersCalibLeft"))
+    {
+        yError() << "Localizer module: cannot load path containing"
+                 << "the calibration file for left springy fingers";
+        return false;
+    }
+    left_springy_calib_path = rf_module.findFile("springyFingersCalibLeft");
+    if (!rf_module.check("springyFingersCalibRight"))
+    {
+        yError() << "Localizer module: cannot load path containing"
+                 << "the calibration file for right springy fingers";
+        return false;
+    }
+    right_springy_calib_path = rf_module.findFile("springyFingersCalibRight");
+    yarp::os::Property left_springy_prop;
+    yarp::os::Property right_springy_prop;
+    left_springy_prop.fromConfigFile(left_springy_calib_path.c_str());
+    right_springy_prop.fromConfigFile(right_springy_calib_path.c_str());
+    left_springy_prop.put("robot", robot_name.c_str());
+    right_springy_prop.put("robot", robot_name.c_str());
+    left_springy_fingers.fromProperty(left_springy_prop);
+    right_springy_fingers.fromProperty(right_springy_prop);
+    if (!left_springy_fingers.isCalibrated())
+    {
+        yError() << "Localizer module: cannot configure"
+                 << "left springy fingers";
+        return false;
+    }
+    if (!right_springy_fingers.isCalibrated())
+    {
+        yError() << "Localizer module: cannot configure"
+                 << "right springy fingers";
+        return false;
+    }
 
     // configure and init the UPF
     // using group 'upf' from the configuration file

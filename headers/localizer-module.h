@@ -244,6 +244,8 @@ private:
     // springy fingers for contact detection
     iCub::perception::SpringyFingersModel right_springy_fingers;
     iCub::perception::SpringyFingersModel left_springy_fingers;
+    yarp::sig::Vector springy_thres_right;
+    yarp::sig::Vector springy_thres_left;
 
     /*
      */
@@ -296,6 +298,12 @@ private:
                             const std::string &tag,
                             const int &size,
                             yarp::sig::Vector &diag);
+
+    bool loadListDouble(yarp::os::ResourceFinder &rf,
+                        const std::string &key,
+                        const int &size,
+                        yarp::sig::Vector &list);
+
     /*
      * Load the required parameters using a
      * previously instantiated @see Resource Finder.

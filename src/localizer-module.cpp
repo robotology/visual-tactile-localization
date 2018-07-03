@@ -59,6 +59,39 @@ bool LocalizerModule::readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
     return true;
 }
 
+bool LocalizerModule::loadListDouble(yarp::os::ResourceFinder &rf,
+                                     const std::string &key,
+                                     const int &size,
+                                     yarp::sig::Vector &list)
+{
+    if (rf.find(key).isNull())
+        return false;
+
+    yarp::os::Bottle* b = rf.find(key).asList();
+    if (b == nullptr)
+        return false;
+
+    if (b->size() != size)
+        return false;
+
+    list.resize(size);
+    for (size_t i=0; i<b->size(); i++)
+    {
+        yarp::os::Value item_v = b->get(i);
+        if (item_v.isNull())
+            return false;
+
+        if (!item_v.isDouble())
+        {
+            list.clear();
+            return false;
+        }
+
+        list[i] = item_v.asDouble();
+    }
+    return true;
+}
+
 bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
 {
     robot_name = rf.find("robotName").asString();
@@ -204,6 +237,21 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     outlier_rem_neigh = rf.find("pointCloudOutlierNeigh").asInt();
     if (rf.find("pointCloudOutlierNeigh").isNull())
         outlier_rem_neigh = 10;
+
+    if (!loadListDouble(rf, "springyFingersThresLeft",
+                        5, springy_thres_left))
+    {
+        yError() << "LocalizerModule: unable to load threshold for contact detetion"
+                 << "with left springy fingers";
+        return false;
+    }
+    if (!loadListDouble(rf, "springyFingersThresRight",
+                        5, springy_thres_right))
+    {
+        yError() << "LocalizerModule: unable to load threshold for contact detetion"
+                 << "with right springy fingers";
+        return false;
+    }
 
     return true;
 }

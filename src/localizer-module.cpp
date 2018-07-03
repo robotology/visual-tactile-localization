@@ -1212,8 +1212,16 @@ void LocalizerModule::performFiltering()
         else
         {
             // real robot provides binarized information on contacts
-            if (!getContacts(tac_filt_hand_name, fingers_contacts))
-                return;
+            if (use_springy)
+            {
+                if (!getContactsSpringy(tac_filt_hand_name, fingers_contacts))
+                    return;
+            }
+            else
+            {
+                if (!getContacts(tac_filt_hand_name, fingers_contacts))
+                    return;
+            }
         }
 
         // set noise covariances

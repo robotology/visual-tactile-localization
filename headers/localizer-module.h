@@ -144,6 +144,7 @@ private:
     bool is_first_step;
     bool is_simulation;
     bool use_analogs;
+    bool use_springy;
     FilteringType filtering_type;
 
     // period

@@ -253,6 +253,10 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         return false;
     }
 
+    use_springy = rf.find("useSpringyFingersDetection").asBool();
+    if (rf.find("useSpringyFingersDetection").isNull())
+        use_springy = false;
+
     return true;
 }
 

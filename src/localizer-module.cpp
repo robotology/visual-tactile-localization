@@ -554,10 +554,14 @@ bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
     contacts["ring"] = false;
     contacts["little"] = false;
 
+    yInfo() << "Springy Contacts";
     for (size_t i=0; i<5; i++)
     {
+        yInfo() << fingers_names.at(i)
+                << ": " << list->get(i).asDouble();
         if (list->get(i).asDouble() > springy_thres[i])
             contacts[fingers_names.at(i)] = true;
+        yInfo() << "";
     }
 
     return true;

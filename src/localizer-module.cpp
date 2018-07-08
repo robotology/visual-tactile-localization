@@ -257,6 +257,10 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     if (rf.find("useSpringyFingersDetection").isNull())
         use_springy = false;
 
+    use_ext_vel_observer = rf.find("useExternalVelocityObserver").asBool();
+    if (rf.find("useExternalVelocityObserver").isNull())
+        use_ext_vel_observer = false;
+
     return true;
 }
 

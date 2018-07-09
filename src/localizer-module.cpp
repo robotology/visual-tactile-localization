@@ -1981,6 +1981,7 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
         reply.addString("- pc-subsample <on/off> <n_points>");
         reply.addString("- pc-shuffle <on/off> <resize_factor>");
         reply.addString("- pc-out-removal <on/off> <radius> <neigh>");
+        reply.addString("- pc-dense-out-removal <on/off> <thr>");
         reply.addString("- storage-on");
         reply.addString("- storage-off");
         reply.addString("- storage-save");
@@ -2134,6 +2135,38 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
             outlier_rem_neigh = neigh.asInt();
 
             reply.addString("Settings for point cloud outlier removal accepted.");
+        }
+
+        mutex.unlock();
+    }
+    else if (cmd == "pc-dense-out-removal")
+    {
+        mutex.lock();
+
+        bool valid = true;
+
+        if (command.size() != 3)
+            valid = false;
+
+        yarp::os::Value enable = command.get(1);
+        if ((enable.isNull()) || (!enable.isString()) ||
+            ((enable.asString() != "on") && (enable.asString() != "off")))
+            valid = false;
+
+        yarp::os::Value threshold = command.get(2);
+        if ((threshold.isNull()) || (!threshold.isDouble()))
+            valid = false;
+
+        if (!valid)
+            reply.addString("Invalid request.");
+        else
+        {
+            std::string enable_string = enable.asString();
+            use_pc_dense_outlier_rem = (enable_string == "on");
+
+            dense_outlier_rem_thr = threshold.asDouble();
+
+            reply.addString("Settings for point cloud dense outlier removal accepted.");
         }
 
         mutex.unlock();

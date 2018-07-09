@@ -2225,6 +2225,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         }
 
         ok_port = ext_vel_obs_left_arm.open("/upf-localizer/leftArmObserver/vel:i");
+        if (!ok_port)
         {
             yError() << "LocalizerModule:Configure error:"
                      << "unable to open the external velocity observer port for left arm";
@@ -2232,6 +2233,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         }
 
         ok_port = ext_vel_obs_right_arm.open("/upf-localizer/rightArmObserver/vel:i");
+        if (!ok_port)
         {
             yError() << "LocalizerModule:Configure error:"
                      << "unable to open the external velocity observer port for the right arm";

@@ -627,15 +627,18 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     // choose between right and left arm
     yarp::dev::IEncoders *enc;
     yarp::dev::IAnalogSensor *analog;
+    yarp::os::BufferedPort<yarp::sig::Vector> *ext_vel_obs_arm;
     if (arm_name == "right")
     {
         enc = ienc_right_arm;
         analog = ianalog_right;
+        ext_vel_obs_arm = &ext_vel_obs_right_arm;
     }
     else
     {
         enc = ienc_left_arm;
         analog = ianalog_left;
+        ext_vel_obs_arm = &ext_vel_obs_left_arm;
     }
 
     // get the angular readings
@@ -651,12 +654,27 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     // get the angular rates readings
     arm_ang_rates.resize(16);
     torso_ang_rates.resize(3);
-    ok = enc->getEncoderSpeeds(arm_ang_rates.data());
-    if (!ok)
-        return false;
-    ok = ienc_torso->getEncoderSpeeds(torso_ang_rates.data());
-    if (!ok)
-        return false;
+    if (use_ext_vel_observer)
+    {
+        yInfo() << "ext";
+        yarp::sig::Vector* ext_torso_vels = ext_vel_obs_torso.read(false);
+        yarp::sig::Vector* ext_arm_vels = ext_vel_obs_arm->read(false);
+        if ((ext_torso_vels == NULL) || (ext_arm_vels == NULL))
+            return false;
+        torso_ang_rates = *ext_torso_vels;
+        arm_ang_rates = *ext_arm_vels;
+        yInfo() << torso_ang_rates.toString();
+        yInfo() << arm_ang_rates.toString();
+    }
+    else
+    {
+        ok = enc->getEncoderSpeeds(arm_ang_rates.data());
+        if (!ok)
+            return false;
+        ok = ienc_torso->getEncoderSpeeds(torso_ang_rates.data());
+        if (!ok)
+            return false;
+    }
 
     if (use_analogs)
     {

@@ -552,20 +552,20 @@ bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
     list = springy_output.asList();
 
     // reset finger_contacts
-    contacts["thumb"] = false;
-    contacts["index"] = false;
-    contacts["middle"] = false;
-    contacts["ring"] = false;
-    contacts["little"] = false;
+    // contacts["thumb"] = false;
+    // contacts["index"] = false;
+    // contacts["middle"] = false;
+    // contacts["ring"] = false;
+    // contacts["little"] = false;
 
     yInfo() << "Springy Contacts";
     for (size_t i=0; i<5; i++)
     {
-        yInfo() << fingers_names.at(i)
-                << ": " << list->get(i).asDouble();
+        // yInfo() << fingers_names.at(i)
+        //         << ": " << list->get(i).asDouble();
         if (list->get(i).asDouble() > springy_thres[i])
             contacts[fingers_names.at(i)] = true;
-        yInfo() << "";
+        // yInfo() << "";
     }
 
     return true;
@@ -1238,14 +1238,12 @@ void LocalizerModule::performFiltering()
         else
         {
             // real robot provides binarized information on contacts
+            if (!getContacts(tac_filt_hand_name, fingers_contacts))
+                return;
             if (use_springy)
             {
+                // use also springy fingers model to detect contacts
                 if (!getContactsSpringy(tac_filt_hand_name, fingers_contacts))
-                    return;
-            }
-            else
-            {
-                if (!getContacts(tac_filt_hand_name, fingers_contacts))
                     return;
             }
         }

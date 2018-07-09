@@ -24,10 +24,12 @@
 #include <yarp/dev/IControlLimits2.h>
 #include <yarp/sig/PointCloud.h>
 
+
 // icub-main
 /* #include <iCub/iKin/iKinFwd.h> */
 #include <iCub/skinDynLib/skinContactList.h>
 #include <iCub/perception/springyFingers.h>
+#include <iCub/ctrl/adaptWinPolyEstimator.h>
 
 // std
 #include <vector>
@@ -251,6 +253,10 @@ private:
     yarp::sig::Vector springy_thres_right;
     yarp::sig::Vector springy_thres_left;
 
+    // linear estimator for estimation of joints velocities
+    // in case joints speeds are not available from the robot
+    std::unique_ptr<iCub::ctrl::AWLinEstimator> joints_vel_estimator;
+
     /*
      */
 
@@ -275,9 +281,9 @@ private:
     yarp::os::BufferedPort<yarp::sig::Vector> port_contacts;
 
     // velocityObserver ports
-    yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_torso;
-    yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_left_arm;
-    yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_right_arm;
+    /* yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_torso; */
+    /* yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_left_arm; */
+    /* yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_right_arm; */
 
     // rpc server
     yarp::os::RpcServer rpc_port;

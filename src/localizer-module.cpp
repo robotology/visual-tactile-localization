@@ -656,18 +656,18 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     // choose between right and left arm
     yarp::dev::IEncoders *enc;
     yarp::dev::IAnalogSensor *analog;
-    yarp::os::BufferedPort<yarp::sig::Vector> *ext_vel_obs_arm;
+    // yarp::os::BufferedPort<yarp::sig::Vector> *ext_vel_obs_arm;
     if (arm_name == "right")
     {
         enc = ienc_right_arm;
         analog = ianalog_right;
-        ext_vel_obs_arm = &ext_vel_obs_right_arm;
+        // ext_vel_obs_arm = &ext_vel_obs_right_arm;
     }
     else
     {
         enc = ienc_left_arm;
         analog = ianalog_left;
-        ext_vel_obs_arm = &ext_vel_obs_left_arm;
+        // ext_vel_obs_arm = &ext_vel_obs_left_arm;
     }
 
     // get the angular readings
@@ -685,15 +685,22 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     torso_ang_rates.resize(3);
     if (use_ext_vel_observer)
     {
-        yInfo() << "ext";
-        yarp::sig::Vector* ext_torso_vels = ext_vel_obs_torso.read(false);
-        yarp::sig::Vector* ext_arm_vels = ext_vel_obs_arm->read(false);
-        if ((ext_torso_vels == NULL) || (ext_arm_vels == NULL))
-            return false;
-        torso_ang_rates = *ext_torso_vels;
-        arm_ang_rates = *ext_arm_vels;
-        yInfo() << torso_ang_rates.toString();
-        yInfo() << arm_ang_rates.toString();
+        yarp::sig::Vector angles(19);
+        yarp::sig::Vector rates(19);
+        angles.setSubvector(0, torso_angles);
+        angles.setSubvector(3, arm_angles);
+
+        iCub::ctrl::AWPolyElement el(angles, yarp::os::Time::now());
+
+        rates = joints_vel_estimator->estimate(el);
+        torso_ang_rates = rates.subVector(0, 2);
+        arm_ang_rates = rates.subVector(3, 18);
+        // yarp::sig::Vector* ext_torso_vels = ext_vel_obs_torso.read(false);
+        // yarp::sig::Vector* ext_arm_vels = ext_vel_obs_arm->read(false);
+        // if ((ext_torso_vels == NULL) || (ext_arm_vels == NULL))
+        //     return false;
+        // torso_ang_rates = *ext_torso_vels;
+        // arm_ang_rates = *ext_arm_vels;
     }
     else
     {
@@ -2290,32 +2297,32 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         }
     }
 
-    if (use_ext_vel_observer)
-    {
-        ok_port = ext_vel_obs_torso.open("/upf-localizer/torsoObserver/vel:i");
-        if (!ok_port)
-        {
-            yError() << "LocalizerModule:Configure error:"
-                     << "unable to open the external velocity observer port for torso";
-            return false;
-        }
+    // if (use_ext_vel_observer)
+    // {
+    //     ok_port = ext_vel_obs_torso.open("/upf-localizer/torsoObserver/vel:i");
+    //     if (!ok_port)
+    //     {
+    //         yError() << "LocalizerModule:Configure error:"
+    //                  << "unable to open the external velocity observer port for torso";
+    //         return false;
+    //     }
 
-        ok_port = ext_vel_obs_left_arm.open("/upf-localizer/leftArmObserver/vel:i");
-        if (!ok_port)
-        {
-            yError() << "LocalizerModule:Configure error:"
-                     << "unable to open the external velocity observer port for left arm";
-            return false;
-        }
+    //     ok_port = ext_vel_obs_left_arm.open("/upf-localizer/leftArmObserver/vel:i");
+    //     if (!ok_port)
+    //     {
+    //         yError() << "LocalizerModule:Configure error:"
+    //                  << "unable to open the external velocity observer port for left arm";
+    //         return false;
+    //     }
 
-        ok_port = ext_vel_obs_right_arm.open("/upf-localizer/rightArmObserver/vel:i");
-        if (!ok_port)
-        {
-            yError() << "LocalizerModule:Configure error:"
-                     << "unable to open the external velocity observer port for the right arm";
-            return false;
-        }
-    }
+    //     ok_port = ext_vel_obs_right_arm.open("/upf-localizer/rightArmObserver/vel:i");
+    //     if (!ok_port)
+    //     {
+    //         yError() << "LocalizerModule:Configure error:"
+    //                  << "unable to open the external velocity observer port for the right arm";
+    //         return false;
+    //     }
+    // }
 
     // set FIFO policy
     port_in.setStrict();
@@ -2544,6 +2551,13 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // setup matrix containings
     // analog bounds for encoders of fingers proximal/distal joints
     setupAnalogBounds();
+
+    // configure joints velocity estimator
+    if (use_ext_vel_observer)
+    {
+        joints_vel_estimator = std::unique_ptr<iCub::ctrl::AWLinEstimator>(
+            new iCub::ctrl::AWLinEstimator(20, 2.0));
+    }
 
     // configure springy fingers
     std::string left_springy_calib_path;

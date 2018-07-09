@@ -2196,6 +2196,31 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         }
     }
 
+    if (use_ext_vel_observer)
+    {
+        ok_port = ext_vel_obs_torso.open("/upf-localizer/torsoObserver/vel:i");
+        if (!ok_port)
+        {
+            yError() << "LocalizerModule:Configure error:"
+                     << "unable to open the external velocity observer port for torso";
+            return false;
+        }
+
+        ok_port = ext_vel_obs_left_arm.open("/upf-localizer/leftArmObserver/vel:i");
+        {
+            yError() << "LocalizerModule:Configure error:"
+                     << "unable to open the external velocity observer port for left arm";
+            return false;
+        }
+
+        ok_port = ext_vel_obs_right_arm.open("/upf-localizer/rightArmObserver/vel:i");
+        {
+            yError() << "LocalizerModule:Configure error:"
+                     << "unable to open the external velocity observer port for the right arm";
+            return false;
+        }
+    }
+
     // set FIFO policy
     port_in.setStrict();
 

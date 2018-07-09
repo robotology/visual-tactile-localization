@@ -272,6 +272,11 @@ private:
     // used with real robot
     yarp::os::BufferedPort<yarp::sig::Vector> port_contacts;
 
+    // velocityObserver ports
+    yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_torso;
+    yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_left_arm;
+    yarp::os::BufferedPort<yarp::sig::Vector> ext_vel_obs_right_arm;
+
     // rpc server
     yarp::os::RpcServer rpc_port;
     yarp::os::Mutex mutex;

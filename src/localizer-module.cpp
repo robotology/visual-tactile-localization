@@ -238,6 +238,14 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     if (rf.find("pointCloudOutlierNeigh").isNull())
         outlier_rem_neigh = 10;
 
+    use_pc_dense_outlier_rem = rf.find("pointCloudDensOutlierRemoval").asBool();
+    if (rf.find("pointCloudDensOutlierRemoval").isNull())
+        use_pc_dense_outlier_rem = false;
+
+    dense_outlier_rem_thr = rf.find("pointCloudDensOutlierThr").asDouble();
+    if (rf.find("pointCloudDensOutlierThr").isNull())
+        dense_outlier_rem_thr = 10.0;
+
     if (!loadListDouble(rf, "springyFingersThresLeft",
                         5, springy_thres_left))
     {
@@ -355,6 +363,27 @@ void LocalizerModule::removeOutliersFromPointCloud(const std::vector<yarp::sig::
             pc_out.push_back(pc_in[i]);
     }
 }
+
+void LocalizerModule::removeDenseOutliersFromPointCloud(const double &threshold,
+                                                        const std::vector<yarp::sig::Vector> &pc_in,
+                                                        std::vector<yarp::sig::Vector> &pc_out)
+{
+    yarp::sig::Vector mean(3, 0.0);
+    for (size_t i=0; i<pc_in.size(); i++)
+        mean += pc_in[i];
+    mean /= pc_in.size();
+
+    for (size_t i=0; i<pc_in.size(); i++)
+    {
+        if (yarp::math::norm(pc_in[i] - mean) < threshold)
+            pc_out.push_back(pc_in[i]);
+    }
+
+    yInfo() << "Dense outliers removal";
+    yInfo() << pc_in.size();
+    yInfo() << pc_out.size();
+}
+
 
 bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &pc)
 {
@@ -1078,10 +1107,12 @@ void LocalizerModule::performFiltering()
             }
 
             bool outlier_rem;
+            bool dense_outlier_rem;
             bool subsampling;
             bool shuffling;
             mutex.lock();
             outlier_rem = use_pc_outlier_rem;
+            dense_outlier_rem = use_pc_dense_outlier_rem;
             subsampling = use_pc_subsampling;
             shuffling = use_pc_shuffle;
             mutex.unlock();
@@ -1103,6 +1134,20 @@ void LocalizerModule::performFiltering()
             else
                 inliers_pc = point_cloud;
 
+            // remove dense outliers
+            std::vector<yarp::sig::Vector> inliers_pc_alt;
+            if (dense_outlier_rem)
+            {
+                double threshold;
+                mutex.lock();
+                threshold = dense_outlier_rem_thr;
+                mutex.unlock();
+
+                removeDenseOutliersFromPointCloud(threshold, inliers_pc, inliers_pc_alt);
+            }
+            else
+                inliers_pc_alt = inliers_pc;
+
             // subsample point cloud
             std::vector<yarp::sig::Vector> subsampled_pc;
             if (subsampling)
@@ -1112,7 +1157,7 @@ void LocalizerModule::performFiltering()
                 n_points = subsample_n_points;
                 mutex.unlock();
 
-                subsamplePointCloud(inliers_pc, subsampled_pc, n_points);
+                subsamplePointCloud(inliers_pc_alt, subsampled_pc, n_points);
             }
             else
                 subsampled_pc = inliers_pc;

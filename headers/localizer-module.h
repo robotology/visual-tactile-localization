@@ -164,8 +164,10 @@ private:
 
     // parameters for radius outlier removal
     bool use_pc_outlier_rem;
+    bool use_pc_dense_outlier_rem;
     double outlier_rem_radius;
     int outlier_rem_neigh;
+    double dense_outlier_rem_thr;
 
     /*
      */
@@ -366,6 +368,10 @@ private:
     void removeOutliersFromPointCloud(const std::vector<yarp::sig::Vector> &pc_in,
                                       std::vector<yarp::sig::Vector> &pc_out,
                                       const double &radius, const int num_points);
+
+    void removeDenseOutliersFromPointCloud(const double &threshold,
+                                           const std::vector<yarp::sig::Vector> &pc_in,
+                                           std::vector<yarp::sig::Vector> &pc_out);
     /*
      * Get a point cloud from the stereo vision setup.
      *

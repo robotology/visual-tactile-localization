@@ -1234,6 +1234,10 @@ void LocalizerModule::performFiltering()
             // extract estimate
             last_estimate = upf.getEstimate();
 
+            // extract all the particles for logging purposes
+            std::vector<yarp::sig::Vector> particles;
+            upf.getParticles(particles);
+
             // evaluate final time and execution time
             //
             // yarp:os::Time use time of simulated environment
@@ -1248,14 +1252,13 @@ void LocalizerModule::performFiltering()
             {
                 if (is_simulation)
                     point_cloud = filtered_point_cloud;
-                // if (!is_simulation)
-                //     last_ground_truth = last_estimate;
 
                 bool is_first_chunk = (i == 0);
                 storeDataVisual(FilteringType::visual,
                                 is_first_chunk,
                                 last_ground_truth,
                                 last_estimate,
+                                particles,
                                 measure,
                                 input,
                                 all_meas,
@@ -1364,6 +1367,10 @@ void LocalizerModule::performFiltering()
             last_estimate = upf.getEstimate();
         }
 
+        // extract all the particles for logging purposes
+        std::vector<yarp::sig::Vector> particles;
+        upf.getParticles(particles);
+
         // evaluate final time and execution time
         t_f = yarp::os::Time::now();
         exec_time = t_f - t_i;
@@ -1378,6 +1385,7 @@ void LocalizerModule::performFiltering()
         if (storage_on)
             storeDataTactile(last_ground_truth,
                              last_estimate,
+                             particles,
                              points,
                              input,
                              fingers_angles,
@@ -1527,6 +1535,7 @@ void LocalizerModule::resetStorage()
 Data& LocalizerModule::storeData(const FilteringType &data_type,
                                  const yarp::sig::Vector &ground_truth,
                                  const yarp::sig::Vector &estimate,
+                                 const std::vector<yarp::sig::Vector> &particles,
                                  const std::vector<yarp::sig::Vector> &meas,
                                  const yarp::sig::Vector &input,
                                  const double &time_stamp,
@@ -1538,6 +1547,7 @@ Data& LocalizerModule::storeData(const FilteringType &data_type,
     d.data_type = data_type;
     d.ground_truth = ground_truth;
     d.estimate = estimate;
+    d.particles = particles;
     d.meas = meas;
     d.input = input;
     d.time_stamp = time_stamp;
@@ -1554,6 +1564,7 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
                                       const bool &is_first_chunk,
                                       const yarp::sig::Vector &ground_truth,
                                       const yarp::sig::Vector &estimate,
+                                      const std::vector<yarp::sig::Vector> &particles,
                                       const std::vector<yarp::sig::Vector> &meas,
                                       const yarp::sig::Vector &input,
                                       const std::vector<yarp::sig::Vector> &filtered_pc,
@@ -1563,7 +1574,7 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
 {
     // store common data
     Data &d = storeData(FilteringType::visual, ground_truth,
-                        estimate, meas, input, time_stamp, exec_time);
+                        estimate, particles, meas, input, time_stamp, exec_time);
 
     // add additional fields
     d.is_first_chunk = is_first_chunk;
@@ -1573,6 +1584,7 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
 
 void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
                                        const yarp::sig::Vector &estimate,
+                                       const std::vector<yarp::sig::Vector> &particles,
                                        const std::vector<yarp::sig::Vector> &meas,
                                        const yarp::sig::Vector &input,
                                        std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
@@ -1583,7 +1595,7 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
 {
     // store common data
     Data &d = storeData(FilteringType::tactile, ground_truth,
-                        estimate, meas, input, time_stamp, exec_time);
+                        estimate, particles, meas, input, time_stamp, exec_time);
 
     // add additional fields
     d.fingers_joints = fingers_joints;
@@ -1825,6 +1837,43 @@ bool LocalizerModule::saveFingersVelocities(const std::unordered_map<std::string
     return true;
 }
 
+bool LocalizerModule::saveParticles(const std::vector<yarp::sig::Vector> &particles,
+                                    const std::string &file_name)
+{
+    // save the particles
+    // overwrite if it already exists
+    std::ofstream fout(file_name.c_str(), std::ios::trunc);
+    if(fout.is_open())
+    {
+        // print the CSV header
+        fout << "x;" << "y;" << "z;"
+             << "phi;" << "theta;" << "psi;"
+             << std::endl;
+
+        for (const yarp::sig::Vector &particle : particles)
+        {
+            // write to file
+            fout << particle[0] << ";"
+                 << particle[1] << ";"
+                 << particle[2] << ";"
+                 << particle[3] << ";"
+                 << particle[4] << ";"
+                 << particle[5] << ";"
+                 << std::endl;
+        }
+    }
+    else
+    {
+        fout.close();
+
+        yError() << "LocalizerModule: problem opening particles output file"
+                 << file_name;
+        return false;
+    }
+
+    return true;
+}
+
 bool LocalizerModule::saveData(const std::vector<Data> &data)
 {
     // compose file name for report file
@@ -1874,6 +1923,16 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
             fout << d.exec_time << ";";
 
             fout << std::endl;
+
+            // save all the particles for each step
+            std::string particles_path = output_path + "particles_step_" +
+                std::to_string(step_index) + ".csv";
+            if (!saveParticles(d.particles, particles_path))
+            {
+                // error message is provided by saveParticles()
+                fout.close();
+                return false;
+            }
 
             // save measurements separately since
             // their numbers change from step to step

@@ -52,6 +52,9 @@ struct Data
     // estimated pose
     yarp::sig::Vector estimate;
 
+    // particles
+    std::vector<yarp::sig::Vector> particles;
+
     // current measurements
     std::vector<yarp::sig::Vector> meas;
 
@@ -625,6 +628,7 @@ private:
      * @param data_type the type of data, i.e. relative to visual or tactile filtering
      * @param ground_truth the current ground truth
      * @param estimate the current estimate
+     * @param particles the particles in the current state
      * @param meas the current measurements
      * @param input the current input
      * @param ground_truth execution time of last filtering step
@@ -633,6 +637,7 @@ private:
     Data& storeData(const FilteringType &data_type,
                     const yarp::sig::Vector &ground_truth,
                     const yarp::sig::Vector &estimate,
+                    const std::vector<yarp::sig::Vector> &particles,
                     const std::vector<yarp::sig::Vector> &meas,
                     const yarp::sig::Vector &input,
                     const double &time_stamp,
@@ -643,6 +648,7 @@ private:
      * @param is_first_chunk whether this is the first chunk of a point cloud
      * @param ground_truth the current ground truth
      * @param estimate the current estimate
+     * @param particles the particles in the current state
      * @param meas the current measurements
      * @param input the current input
      * @param filtered_pc the effective pc used by the filter
@@ -654,6 +660,7 @@ private:
 			 const bool &is_first_chunk,
 			 const yarp::sig::Vector &ground_truth,
 			 const yarp::sig::Vector &estimate,
+                         const std::vector<yarp::sig::Vector> &particles,
 			 const std::vector<yarp::sig::Vector> &meas,
 			 const yarp::sig::Vector &input,
 			 const std::vector<yarp::sig::Vector> &filtered_pc,
@@ -665,6 +672,7 @@ private:
      * Store data in the internal storage for the tactile filtering case
      * @param ground_truth the current ground truth
      * @param estimate the current estimate
+     * @param particles the particles in the current state
      * @param meas the current measurements
      * @param input the current input
      * @param fingers_joints the current joints configuration of the fingers
@@ -674,6 +682,7 @@ private:
      */
     void storeDataTactile(const yarp::sig::Vector &ground_truth,
                           const yarp::sig::Vector &estimate,
+                          const std::vector<yarp::sig::Vector> &particles,
                           const std::vector<yarp::sig::Vector> &meas,
                           const yarp::sig::Vector &input,
                           std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
@@ -727,6 +736,15 @@ private:
      */
     bool saveFingersVelocities(const std::unordered_map<std::string, yarp::sig::Vector> &velocities,
                                const std::string &file_name);
+
+    /*
+     * Save to a .CSV file all the particles.
+     * @param particles the particles to be saved
+     * @file_name where to save the file
+     * @return true/false on success
+     */
+    bool saveParticles(const std::vector<yarp::sig::Vector> &particles,
+                       const std::string &file_name);
 
     /*
      * Save all the data (ground truth, estimate, input,

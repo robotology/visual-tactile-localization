@@ -13,6 +13,7 @@
 // std
 #include <string>
 #include <fstream>
+#include <iostream>
 
 // yarp
 #include <yarp/os/all.h>
@@ -23,6 +24,10 @@
 
 // CGAL
 #include <CGAL/IO/Polyhedron_iostream.h>
+
+// Eigen
+#include <Eigen/Core>
+#include <Eigen/Cholesky>
 
 //
 #include "headers/unscentedParticleFilter.h"
@@ -487,6 +492,10 @@ void UnscentedParticleFilter::resampling()
     std::deque<ParticleUPF> new_x;
     yarp::sig::Vector c,u, new_index;
 
+    // TODO:
+    // take this from configuration file
+    bool regularize = true;
+
     //Initialization
     c.resize(params.N, 0.0);
     u.resize(params.N, 0.0);
@@ -513,6 +522,55 @@ void UnscentedParticleFilter::resampling()
 
         new_x[j]=x[i];
         new_x[j].weights=1.0/params.N;
+    }
+
+    if (regularize)
+    {
+        yarp::sig::Vector sample_mean(6, 0.0);
+        yarp::sig::Matrix sample_covariance(6, 6);
+
+        // evaluate sample mean before doing effective resampling
+        for (size_t i=0; i<x.size(); i++)
+            sample_mean += x[i].weights * x[i].x_corr;
+        sample_mean[3] = normalizeAngle(sample_mean[3]);
+        sample_mean[4] = normalizeAngle(sample_mean[4]);
+        sample_mean[5] = normalizeAngle(sample_mean[5]);
+        // sample_mean /= x.size();
+
+        // evaluate sample covariance matrix
+        sample_covariance.zero();
+        yarp::sig::Matrix sample_mean_mat(6, 1);
+        sample_mean_mat.setCol(0, sample_mean);
+        for (size_t i=0; i<x.size(); i++)
+        {
+            yarp::sig::Matrix particle_mat(6, 1);
+            particle_mat.setCol(0, x[i].x_corr);
+            sample_covariance += x[i].weights * (particle_mat - sample_mean_mat) *
+                (particle_mat - sample_mean_mat).transposed();
+            // sample_covariance /= x.size();
+        }
+
+        // perform cholesky decomposition
+        Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor> > sample_cov_eig(sample_covariance.data());
+        Eigen::LLT<Eigen::Matrix<double, 6, 6> > chol(sample_cov_eig);
+        Eigen::Matrix<double, 6, 6> L = chol.matrixL();
+
+        // sample params.N samples from the gaussian distribution
+        Eigen::MatrixXd samples(6, params.N);
+        samples = gaussian_sampler->samples(params.N);
+
+        for (size_t i=0; i<params.N; i++)
+        {
+            // generate state increment
+            Eigen::Matrix<double, 6, 1> delta = (h_optimal / 2.0) * L * samples.block<6, 1>(0, i);
+            yarp::sig::Vector delta_yarp(6, 0.0);
+            for (size_t i=0; i<params.n; i++)
+                delta_yarp[i] = delta(i, 0);
+            new_x[i].x_corr += delta_yarp;
+            new_x[i].x_corr[3] = normalizeAngle(new_x[i].x_corr[3]);
+            new_x[i].x_corr[4] = normalizeAngle(new_x[i].x_corr[4]);
+            new_x[i].x_corr[5] = normalizeAngle(new_x[i].x_corr[5]);
+        }
     }
 
     x=new_x;
@@ -687,6 +745,16 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     }
     modelFile.close();
     yInfo()<<"UPF Model file loaded successfully";
+
+    // optimal scaling factor for regularized particle filter
+    h_optimal = pow(4.0 / (params.n + 2), 1.0 / (params.n + 4)) /
+        pow(params.N, 1.0 / (params.n + 4));
+
+    // init gaussian sampler required for particle regularization
+    Eigen::Matrix<double, 6, 1> mean = Eigen::Matrix<double, 6, 1>::Zero();
+    Eigen::Matrix<double, 6, 6> cov = Eigen::Matrix<double, 6, 6>::Identity();
+    gaussian_sampler = std::unique_ptr<Eigen::EigenMultivariateNormal<double> >(
+        new Eigen::EigenMultivariateNormal<double> (mean, cov));
 
     // init CGAL
     GeometryCGAL::init();

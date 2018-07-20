@@ -24,6 +24,8 @@
 // CGAL
 #include "geometryCGAL.h"
 
+#include "headers/eigenmvn.h"
+
 typedef std::vector<Point> Measure;
 
 /**
@@ -175,6 +177,12 @@ private:
                         yarp::sig::Vector &list);
 
     double normalizeAngle(const double& angle);
+
+    // optimal scaling factor for particle filter regularization
+    double h_optimal;
+
+    // gaussian sampler
+    std::unique_ptr<Eigen::EigenMultivariateNormal<double>> gaussian_sampler;
 
     /**
      * Initialize some quantities of the UPF

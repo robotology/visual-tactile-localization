@@ -169,43 +169,10 @@ private:
     // current estimate
     yarp::sig::Vector current_estimate;
 
-    /**
-     * Read the coordinates of the center of the research region
-     * and save them in center0.
-     * @param rf reference to a previously instantiated @see ResourceFinder
-     * @param the tag of the center within the internal resource finder rf
-     * @param vector in which coordinates are returned
-     * @return true/false upon succes/failure
-     */
-    bool readCenter(const yarp::os::ResourceFinder &rf,
-                    const std::string &tag,
-                    yarp::sig::Vector &center0);
-
-    /**
-     * Read the coordinates of the radius of the research region and save them in radius0.
-     * @param rf reference to a previously instantiated @see ResourceFinder
-     * @param tag the tag of radius within the internal resource finder rf
-     * @param radius0 vector in which coordinates are returned
-     * @return true/false upon succes/failure
-     */
-    bool readRadius(const yarp::os::ResourceFinder &rf,
-                    const std::string &tag,
-                    yarp::sig::Vector &radius0);
-
-    /**
-     * Read the values on the diagonal line of a diagonal matrix
-     * stored as tag within the internal resource finder rf and
-     * store them in the vector diag.
-     * @param rf reference to a previously instantiated @see ResourceFinder
-     * @param tag the tag of the matrix in the internal resource finder rf
-     * @param diag the vector in which values are returned
-     * @param dimension the dimension of the matrix
-     * @return true/false upon succes/failure
-     */
-    bool readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
-                            const std::string &tag,
-                            yarp::sig::Vector &diag,
-                            const int &dimension);
+    bool loadListDouble(yarp::os::ResourceFinder &rf,
+                        const std::string &key,
+                        const int &size,
+                        yarp::sig::Vector &list);
 
     double normalizeAngle(const double& angle);
 
@@ -432,6 +399,11 @@ public:
      * Get the MAP estimate.
      */
     yarp::sig::Vector getEstimate();
+
+    /**
+     * Get the all the particles in their current state.
+     */
+    void getParticles(std::vector<yarp::sig::Vector> &particles);
 
     /**
      * Compute the MAP estimate.

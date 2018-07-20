@@ -31,54 +31,37 @@ typedef CGAL::Aff_transformation_3<K> Affine;
 
 using namespace yarp::math;
 
-bool UnscentedParticleFilter::readCenter(const yarp::os::ResourceFinder &rf,
-                                         const std::string &tag,
-                                         yarp::sig::Vector &center0)
+bool UnscentedParticleFilter::loadListDouble(yarp::os::ResourceFinder &rf,
+                                             const std::string &key,
+                                             const int &size,
+                                             yarp::sig::Vector &list)
 {
-    if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
-        if (b->size()>=3)
+    if (rf.find(key).isNull())
+        return false;
+
+    yarp::os::Bottle* b = rf.find(key).asList();
+    if (b == nullptr)
+        return false;
+
+    if (b->size() != size)
+        return false;
+
+    list.resize(size);
+    for (size_t i=0; i<b->size(); i++)
+    {
+        yarp::os::Value item_v = b->get(i);
+        if (item_v.isNull())
+            return false;
+
+        if (!item_v.isDouble())
         {
-            center0[0]=b->get(0).asDouble();
-            center0[1]=b->get(1).asDouble();
-            center0[2]=b->get(2).asDouble();
-            return true;
+            list.clear();
+            return false;
         }
 
-    return false;
-}
-
-bool UnscentedParticleFilter::readRadius(const yarp::os::ResourceFinder &rf,
-                                         const std::string &tag,
-                                         yarp::sig::Vector &radius0)
-{
-    if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
-        if (b->size()>=3)
-        {
-            radius0[0]=b->get(0).asDouble();
-            radius0[1]=b->get(1).asDouble();
-            radius0[2]=b->get(2).asDouble();
-
-            return true;
-        }
-
-    return false;
-}
-
-bool UnscentedParticleFilter::readDiagonalMatrix(const yarp::os::ResourceFinder &rf,
-                                                 const std::string &tag,
-                                                 yarp::sig::Vector &diag, \
-                                                 const int &dimension)
-{
-    if (yarp::os::Bottle *b=rf.find(tag.c_str()).asList())
-        if (b->size()>=dimension)
-        {
-            for(size_t i; i<dimension; i++)
-                diag[i]=b->get(i).asDouble();
-
-            return true;
-        }
-
-    return false;
+        list[i] = item_v.asDouble();
+    }
+    return true;
 }
 
 double UnscentedParticleFilter::normalizeAngle(const double& angle)
@@ -568,7 +551,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
 
     // read the center of the initial research region
     params.center0.resize(3,0.0);
-    bool check=readCenter(rf,"center0",params.center0);
+    bool check = loadListDouble(rf, "center0", 3, params.center0);
     if(!check)
     {
         params.center0[0]=0.0;
@@ -579,7 +562,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
 
     // read the radius of the initial research region
     params.radius0.resize(3,0.0);
-    check=readRadius(rf,"radius0",params.radius0);
+    check = loadListDouble(rf, "radius0", 3, params.radius0);
     if(!check)
     {
         params.radius0[0]=0.4;
@@ -638,7 +621,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     // read the values of the system noise covariance matrix
     yarp::sig::Vector diagQ;
     diagQ.resize(params.n,1);
-    check=readDiagonalMatrix(rf,"Q0",diagQ,params.n);
+    check=loadListDouble(rf, "Q0", 6, diagQ);
     if(!check)
     {
         diagQ[0]=0.0001;
@@ -663,7 +646,7 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     // read the values of the initial state covariance matrix
     yarp::sig::Vector diagP0;
     diagP0.resize(params.n,1);
-    check=readDiagonalMatrix(rf,"P0",diagP0,params.n);
+    check = loadListDouble(rf, "P0", 6, diagP0);
     if(!check)
     {
         diagP0[0]=0.04;
@@ -868,6 +851,12 @@ void UnscentedParticleFilter::step(double &time_stamp)
 yarp::sig::Vector UnscentedParticleFilter::getEstimate()
 {
     return current_estimate;
+}
+
+void UnscentedParticleFilter::getParticles(std::vector<yarp::sig::Vector> &particles)
+{
+    for (size_t i=0; i<x.size(); i++)
+        particles.push_back(x[i].x_corr);
 }
 
 void UnscentedParticleFilter::evalEstimate()

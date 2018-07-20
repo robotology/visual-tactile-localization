@@ -391,6 +391,8 @@ public:
      */
     void resetTime();
 
+    void clearInputs();
+
     /**
      * Skip the next filtering step.
      * @param time_stamp the time stamp relative to the current step

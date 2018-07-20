@@ -341,7 +341,7 @@ void UnscentedParticleFilter::computePpred(const int &i)
 
     // system model is linear
     // use plain kalman filter estimate covariance prediction
-    x[i].P_pred=x[i].P_corr + params.Q_prev;
+    x[i].P_pred=x[i].P_corr + params.Q;
 }
 
 void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
@@ -458,7 +458,7 @@ double UnscentedParticleFilter::tranProbability(const int &i,
     yarp::sig::Vector mean = x[j].x_corr_prev;
     mean.setSubvector(0, mean.subVector(0,2) + propagated_input);
 
-    return multivariateGaussian(x[i].x_corr, mean, params.Q_prev);
+    return multivariateGaussian(x[i].x_corr, mean, params.Q);
 }
 
 void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
@@ -579,6 +579,7 @@ void UnscentedParticleFilter::resampling()
 void UnscentedParticleFilter::selectionStep(const double &sum_squared)
 {
     double Neff=1.0/sum_squared;
+    yInfo() << Neff;
 
     // enable resampling only after params.n_steps_before_resampling;
     if (t >= params.n_steps_before_resampling)
@@ -829,6 +830,12 @@ void UnscentedParticleFilter::setR(const double &variance)
 void UnscentedParticleFilter::resetTime()
 {
     t_prev = yarp::os::Time::now();
+}
+
+void UnscentedParticleFilter::clearInputs()
+{
+    propagated_input = 0.0;
+    prev_input = 0.0;
 }
 
 void UnscentedParticleFilter::skipStep(double &time_stamp)

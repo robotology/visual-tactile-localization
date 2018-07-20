@@ -1096,6 +1096,9 @@ void LocalizerModule::performFiltering()
         std::vector<yarp::sig::Vector> point_cloud;
         std::vector<yarp::sig::Vector> filtered_point_cloud;
 
+        // clear inputs used during tactile localization
+        upf.clearInputs();
+
         // check if a point cloud is available
         if (is_simulation)
         {

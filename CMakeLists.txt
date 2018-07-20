@@ -25,6 +25,7 @@ find_package(ICUB)
 find_package(ICUBcontrib REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS)
 find_package(VTK REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # extend the current search path used by cmake to load
 # yarp, icub and icubcontrib helpers
@@ -47,7 +48,7 @@ include(${VTK_USE_FILE})
 icubcontrib_set_default_prefix()
 
 # include directories
-include_directories(${YARP_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS})
+include_directories(${YARP_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
 
 # set headers and sources
@@ -57,7 +58,8 @@ set(headers
   headers/localizer-module.h
   headers/FilterCommand.h
   headers/PointCloud.h
-  headers/fwd_kin_ext.h)
+  headers/fwd_kin_ext.h
+  headers/eigenmvn.h)
 set(sources
   src/unscentedParticleFilter.cpp
   src/localizer-module.cpp

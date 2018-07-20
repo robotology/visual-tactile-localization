@@ -50,6 +50,9 @@ struct ParametersUPF
     // whether to use the ideal measurement equation or not
     bool use_ideal_meas_eqn;
 
+    // whether to use regularization or not
+    bool use_regularization;
+
     // Unscented Transform parameters
     double beta;
     double kappa;

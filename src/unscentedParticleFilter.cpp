@@ -492,10 +492,6 @@ void UnscentedParticleFilter::resampling()
     std::deque<ParticleUPF> new_x;
     yarp::sig::Vector c,u, new_index;
 
-    // TODO:
-    // take this from configuration file
-    bool regularize = true;
-
     //Initialization
     c.resize(params.N, 0.0);
     u.resize(params.N, 0.0);
@@ -524,7 +520,7 @@ void UnscentedParticleFilter::resampling()
         new_x[j].weights=1.0/params.N;
     }
 
-    if (regularize)
+    if (params.use_regularization)
     {
         yarp::sig::Vector sample_mean(6, 0.0);
         yarp::sig::Matrix sample_covariance(6, 6);
@@ -676,6 +672,11 @@ bool UnscentedParticleFilter::configure(yarp::os::ResourceFinder &rf)
     if (rf.find("useIdealMeasEqn").isNull())
         params.use_ideal_meas_eqn=rf.check("useIdealMeasEqn",yarp::os::Value(false)).asBool();
     yInfo()<<"UPF use ideal measurement equation :"<<params.use_ideal_meas_eqn;
+
+    params.use_regularization=rf.find("useRegularization").asBool();
+    if (rf.find("useRegularization").isNull())
+        params.use_regularization=rf.check("useRegularization",yarp::os::Value(false)).asBool();
+    yInfo()<<"UPF use regularization :"<<params.use_regularization;
 
     // read the values of the system noise covariance matrix
     yarp::sig::Vector diagQ;

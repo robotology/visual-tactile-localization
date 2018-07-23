@@ -21,7 +21,7 @@
 #include <yarp/dev/PolyDriver.h>
 #include <yarp/dev/IEncoders.h>
 #include <yarp/dev/IAnalogSensor.h>
-#include <yarp/dev/IControlLimits2.h>
+#include <yarp/dev/IControlLimits.h>
 #include <yarp/sig/PointCloud.h>
 
 
@@ -229,8 +229,8 @@ private:
     yarp::dev::IAnalogSensor *ianalog_left;
 
     // control limits
-    yarp::dev::IControlLimits2 *ilim_right;
-    yarp::dev::IControlLimits2 *ilim_left;
+    yarp::dev::IControlLimits *ilim_right;
+    yarp::dev::IControlLimits *ilim_left;
 
     // matrix of analog bounds
     // for encoders of proximal/distal joints

@@ -587,7 +587,7 @@ bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
     // contacts["ring"] = false;
     // contacts["little"] = false;
 
-    yInfo() << "Springy Contacts";
+    //yInfo() << "Springy Contacts";
     for (size_t i=0; i<5; i++)
     {
         // yInfo() << fingers_names.at(i)

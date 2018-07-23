@@ -29,7 +29,7 @@ find_package(Eigen3 REQUIRED)
 
 # extend the current search path used by cmake to load
 # yarp, icub and icubcontrib helpers
-list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
+# list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${ICUB_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH ${ICUBCONTRIB_MODULE_PATH})
 

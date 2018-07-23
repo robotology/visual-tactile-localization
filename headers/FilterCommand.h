@@ -50,8 +50,8 @@ public:
      * Read a FilterCommand from a connection.
      * Return true iff a FilterCommand was read correctly.
      */
-    bool read(yarp::os::ConnectionReader& connection) YARP_OVERRIDE;
+    bool read(yarp::os::ConnectionReader& connection) override;
 
-    bool write(yarp::os::ConnectionWriter& connection) YARP_OVERRIDE;
+    bool write(yarp::os::ConnectionWriter& connection) const override;
 };
 #endif

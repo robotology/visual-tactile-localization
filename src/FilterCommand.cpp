@@ -38,8 +38,8 @@ int yarp::sig::FilterCommand::command() const
 
 void yarp::sig::FilterCommand::clear()
 {
-    tag_value = VOCAB4('E','M','P','T');
-    cmd_value = VOCAB4('E','M','P','T');
+    tag_value = yarp::os::createVocab('E','M','P','T');
+    cmd_value = yarp::os::createVocab('E','M','P','T');
 }
 
 bool yarp::sig::FilterCommand::read(yarp::os::ConnectionReader& connection)

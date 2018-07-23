@@ -11,6 +11,8 @@
 
 // yarp
 #include <yarp/os/Vocab.h>
+#include <yarp/os/ConnectionReader.h>
+#include <yarp/os/ConnectionWriter.h>
 
 #include "headers/FilterCommand.h"
 

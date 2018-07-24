@@ -67,6 +67,12 @@ struct Data
     // current finger velocities
     std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
 
+    // contacts due to tactile perception
+    std::unordered_map<std::string, bool> contacts_tactile;
+
+    // contacts detected using springy fingers modeling
+    std::unordered_map<std::string, bool> contacts_springy;
+
     // current input
     yarp::sig::Vector input;
 
@@ -678,6 +684,8 @@ private:
      * @param fingers_joints the current joints configuration of the fingers
      * @param fingers_pos the current positions of the fingers
      * @param fingers_vels the current linear velocities of the fingers
+     * @param contacts_tactile contacts due to tactile perception
+     * @param contacts_springy contacts detected using springy fingers modeling
      * @param exec_time_truth execution time of last filtering step
      */
     void storeDataTactile(const yarp::sig::Vector &ground_truth,
@@ -688,6 +696,8 @@ private:
                           std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
                           std::unordered_map<std::string, yarp::sig::Vector> fingers_pos,
                           std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
+                          std::unordered_map<std::string, bool> contacts_tactile,
+                          std::unordered_map<std::string, bool> contacts_springy,
                           const double &time_stamp,
                           const double &exec_time);
 

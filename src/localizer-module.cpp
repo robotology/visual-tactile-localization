@@ -581,11 +581,11 @@ bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
     list = springy_output.asList();
 
     // reset finger_contacts
-    // contacts["thumb"] = false;
-    // contacts["index"] = false;
-    // contacts["middle"] = false;
-    // contacts["ring"] = false;
-    // contacts["little"] = false;
+    contacts["thumb"] = false;
+    contacts["index"] = false;
+    contacts["middle"] = false;
+    contacts["ring"] = false;
+    contacts["little"] = false;
 
     //yInfo() << "Springy Contacts";
     for (size_t i=0; i<5; i++)
@@ -1286,22 +1286,24 @@ void LocalizerModule::performFiltering()
     {
         // check if contacts are available
         std::unordered_map<std::string, yarp::sig::Vector> fingers_points;
+        std::unordered_map<std::string, bool> contacts_tactile;
+        std::unordered_map<std::string, bool> contacts_springy;
         std::unordered_map<std::string, bool> fingers_contacts;
         if (is_simulation)
         {
             // Gazebo provides contacts state and contact points
-            if(!getContactsSim(tac_filt_hand_name, fingers_contacts, fingers_points))
+            if(!getContactsSim(tac_filt_hand_name, contacts_tactile, fingers_points))
                 return;
         }
         else
         {
             // real robot provides binarized information on contacts
-            if (!getContacts(tac_filt_hand_name, fingers_contacts))
+            if (!getContacts(tac_filt_hand_name, contacts_tactile))
                 return;
             if (use_springy)
             {
                 // use also springy fingers model to detect contacts
-                if (!getContactsSpringy(tac_filt_hand_name, fingers_contacts))
+                if (!getContactsSpringy(tac_filt_hand_name, contacts_springy))
                     return;
             }
         }
@@ -1325,6 +1327,17 @@ void LocalizerModule::performFiltering()
         // yInfo() << "Real contact points with noise";
         // for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
         //     yInfo() << it->first << ":" << (it->second).toString();
+
+        // fuse tactile contacts with springy contacts
+
+        if (use_springy)
+            for (auto it=contacts_tactile.begin(); it!=contacts_tactile.end(); it++)
+            {
+                fingers_contacts[it->first] = contacts_tactile[it->first] ||
+                    contacts_springy[it->first];
+            }
+        else
+            fingers_contacts = contacts_tactile;
 
         if (!is_simulation)
         {
@@ -1394,6 +1407,8 @@ void LocalizerModule::performFiltering()
                              fingers_angles,
                              fingers_pos,
                              fingers_vels,
+                             contacts_tactile,
+                             contacts_springy,
                              time_stamp,
                              exec_time);
 
@@ -1593,6 +1608,8 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
                                        std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
                                        std::unordered_map<std::string, yarp::sig::Vector> fingers_pos,
                                        std::unordered_map<std::string, yarp::sig::Vector> fingers_vels,
+                                       std::unordered_map<std::string, bool> contacts_tactile,
+                                       std::unordered_map<std::string, bool> contacts_springy,
                                        const double &time_stamp,
                                        const double &exec_time)
 {
@@ -1604,6 +1621,8 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
     d.fingers_joints = fingers_joints;
     d.fingers_pos = fingers_pos;
     d.fingers_vels = fingers_vels;
+    d.contacts_tactile = contacts_tactile;
+    d.contacts_springy = contacts_springy;
 }
 
 bool LocalizerModule::saveMesh(const yarp::sig::Vector &pose,

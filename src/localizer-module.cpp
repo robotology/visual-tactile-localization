@@ -1036,27 +1036,27 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
     int cmd = filter_cmd.command();
     int type = filter_cmd.tag();
 
-    if (cmd == VOCAB2('O','N'))
+    if (cmd == yarp::os::createVocab('O','N'))
     {
         filtering_enabled = true;
-        if (type == VOCAB3('V', 'I', 'S'))
+        if (type == yarp::os::createVocab('V', 'I', 'S'))
             filtering_type = FilteringType::visual;
-        else if (type == VOCAB4('T','A','C','R'))
+        else if (type == yarp::os::createVocab('T','A','C','R'))
         {
             filtering_type = FilteringType::tactile;
             tac_filt_hand_name = "right";
         }
-        else if (type == VOCAB4('T','A','C','L'))
+        else if (type == yarp::os::createVocab('T','A','C','L'))
         {
             filtering_type = FilteringType::tactile;
             tac_filt_hand_name = "left";
         }
     }
-    else if (cmd == VOCAB3('O','F','F'))
+    else if (cmd == yarp::os::createVocab('O','F','F'))
     {
         stopFiltering();
     }
-    else if (cmd == VOCAB3('R','E','S'))
+    else if (cmd == yarp::os::createVocab('R','E','S'))
     {
         // first stop filtering
         stopFiltering();
@@ -1064,15 +1064,15 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
         // then reset filter
         upf.init();
     }
-    else if (cmd == VOCAB4('P','R','O','N'))
+    else if (cmd == yarp::os::createVocab('P','R','O','N'))
     {
         contacts_probe_enabled = true;
-        if (type == VOCAB4('R', 'I', 'G', 'H'))
+        if (type == yarp::os::createVocab('R', 'I', 'G', 'H'))
             tac_filt_hand_name = "right";
-        else if (type == VOCAB4('L', 'E', 'F', 'T'))
+        else if (type == yarp::os::createVocab('L', 'E', 'F', 'T'))
             tac_filt_hand_name = "left";
     }
-    else if (cmd == VOCAB4('P','R','O','F'))
+    else if (cmd == yarp::os::createVocab('P','R','O','F'))
     {
         contacts_probe_enabled = false;
     }

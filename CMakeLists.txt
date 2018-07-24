@@ -11,7 +11,7 @@
 #
 
 # require minimum cmake version
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.0)
 
 # C++11
 set(CMAKE_CXX_STANDARD 11)

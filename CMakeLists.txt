@@ -48,7 +48,7 @@ include(${VTK_USE_FILE})
 icubcontrib_set_default_prefix()
 
 # include directories
-include_directories(${YARP_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
+include_directories(${ICUB_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
 
 # set headers and sources

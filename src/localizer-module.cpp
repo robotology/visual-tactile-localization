@@ -2064,6 +2064,15 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
                     fout.close();
                     return false;
                 }
+
+                // save fingers velocities
+                std::string contacts_path = output_path + "fingers_contacts_"
+                    + std::to_string(step_index) + ".csv";
+                if (!saveContacts(d.contacts_tactile, d.contacts_springy, contacts_path))
+                {
+                    fout.close();
+                    return false;
+                }
             }
 	    else if (d.data_type == FilteringType::visual)
 	    {

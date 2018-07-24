@@ -2391,7 +2391,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
 
     // prepare properties for the PolyDriver
     yarp::os::Property propTfClient;
-    propTfClient.put("device", "FrameTransformClient");
+    propTfClient.put("device", "transformClient");
     propTfClient.put("local", "/upf-localizer/transformClient");
     propTfClient.put("remote", "/transformServer");
     propTfClient.put("period", getPeriod() * 1000);

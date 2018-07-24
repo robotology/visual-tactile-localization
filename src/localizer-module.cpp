@@ -1859,6 +1859,56 @@ bool LocalizerModule::saveFingersVelocities(const std::unordered_map<std::string
     return true;
 }
 
+bool LocalizerModule::saveContacts(const std::unordered_map<std::string, bool> &contacts_tactile,
+                                   const std::unordered_map<std::string, bool> &contacts_springy,
+                                   const std::string &file_name)
+{
+    // save the contacts
+    // overwrite if it already exists
+    std::ofstream fout(file_name.c_str(), std::ios::trunc);
+    if(fout.is_open())
+    {
+        // print the CSV header
+        fout << "finger_id;"
+             << "is_tactile;" << "is_springy;"
+             << std::endl;
+
+        for (std::string &finger_name : fingers_names)
+        {
+            // finger id
+            if (finger_name == "thumb")
+                fout << 0;
+            else if (finger_name == "index")
+                fout << 1;
+            else if (finger_name == "middle")
+                fout << 2;
+            else if (finger_name == "ring")
+                fout << 3;
+            else if (finger_name == "little")
+                fout << 4;
+            else
+                return false;
+            fout << ";";
+
+            // write to file
+            fout << contacts_tactile.at(finger_name) << ";"
+                 << contacts_springy.at(finger_name) << ";"
+                 << std::endl;
+        }
+    }
+    else
+    {
+        fout.close();
+
+        yError() << "LocalizerModule: problem opening joints angles output file"
+                 << file_name;
+        return false;
+    }
+
+    return true;
+}
+
+
 bool LocalizerModule::saveParticles(const std::vector<yarp::sig::Vector> &particles,
                                     const std::string &file_name)
 {

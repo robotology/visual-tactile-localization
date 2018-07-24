@@ -748,6 +748,18 @@ private:
                                const std::string &file_name);
 
     /*
+     * Save to a .CSV file the contacts detected.
+     * @param contacts_tactile contacts due to tactile perception
+     * @param contacts_springy contacts detected using springy fingers modeling
+     * @param file_name where to save the file
+     * @return true/false on success
+     */
+    bool saveContacts(const std::unordered_map<std::string, bool> &contacts_tactile,
+                      const std::unordered_map<std::string, bool> &contacts_springy,
+                      const std::string &file_name);
+
+
+    /*
      * Save to a .CSV file all the particles.
      * @param particles the particles to be saved
      * @file_name where to save the file

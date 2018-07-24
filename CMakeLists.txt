@@ -20,7 +20,7 @@ set(CMAKE_CXX_STANDARD 11)
 project(upf-localizer)
 
 # find packages
-find_package(YARP REQUIRED)
+find_package(YARP REQUIRED COMPONENTS gsl)
 find_package(ICUB)
 find_package(ICUBcontrib REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS)

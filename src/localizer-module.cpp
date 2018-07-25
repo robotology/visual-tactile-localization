@@ -109,6 +109,11 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         use_analogs = false;
     yInfo() << "Localizer moudle: use analogs" << use_analogs;
 
+    use_analogs_bounds = rf.find("useAnalogsBounds").asBool();
+    if (rf.find("useAnalogsBounds").isNull())
+        use_analogs_bounds = false;
+    yInfo() << "Localizer moudle: use analogs bounds" << use_analogs_bounds;
+
     est_source_frame_name = rf.find("estimateSourceFrame").asString();
     if (rf.find("estimateSourceFrame").isNull())
         est_source_frame_name = "/iCub/frame";
@@ -811,7 +816,12 @@ void LocalizerModule::getFingerJointsState(const std::string &hand_name,
     //     finger_angles[3] = finger_angles[2] = finger_angles[1];
     // }
     if (use_analogs)
-        finger.getChainJoints(arm_angles, finger_analogs, finger_angles);
+    {
+        if (use_analogs_bounds)
+            finger.getChainJoints(arm_angles, finger_analogs, finger_angles, analog_bounds);
+        else
+            finger.getChainJoints(arm_angles, finger_analogs, finger_angles);
+    }
     else
         finger.getChainJoints(arm_angles, finger_angles);
 
@@ -1337,7 +1347,17 @@ void LocalizerModule::performFiltering()
                     contacts_springy[it->first];
             }
         else
+        {
+            // all the contacts are those due to tactile perception
             fingers_contacts = contacts_tactile;
+
+            // clear contacts according to springy fingers
+            for (std::string &finger_name : fingers_names)
+            {
+                contacts_springy[finger_name] = false;
+            }
+
+        }
 
         if (!is_simulation)
         {

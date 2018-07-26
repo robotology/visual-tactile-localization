@@ -102,6 +102,11 @@ bool LocalizerModule::loadListStrings(const yarp::os::ResourceFinder &rf,
         yarp::os::Bottle* strings_list = rf.find(tag_name).asList();
         if (strings_list != nullptr)
         {
+            if (strings_list->size() == 0)
+            {
+                list.clear();
+                return true;
+            }
             for (size_t i=0; i<strings_list->size(); i++)
             {
                 yarp::os::Value string_v = strings_list->get(i);
@@ -598,7 +603,7 @@ bool LocalizerModule::getContactsSim(const std::string &hand_name,
         for (std::string &name : excluded_fingers)
         {
             contacts.at(name) = false;
-            contact_points.at(name).clear();
+            contact_points.erase(name);
         }
 
     return true;

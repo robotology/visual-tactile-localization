@@ -452,40 +452,39 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &pc)
 void LocalizerModule::setupAnalogBounds()
 {
     // taken from real robot
-    // by avering 50 trials
-    // left hand only
-
-    analog_bounds.resize(15, 2);
-    analog_bounds(0, 0) = 250.0; // not acquired
-    analog_bounds(1, 0) = 250.0; // not acquire
-    analog_bounds(2, 0) = 250.0; // not acquired
-    analog_bounds(3, 0) = 243.22;
-    analog_bounds(4, 0) = 216.44;
-    analog_bounds(5, 0) = 230.44;
-    analog_bounds(6, 0) = 244.46;
-    analog_bounds(7, 0) = 214.38;
-    analog_bounds(8, 0) = 247.98;
-    analog_bounds(9, 0) = 229.56;
-    analog_bounds(10, 0) = 208.84;
-    analog_bounds(11, 0) = 231.54;
-    analog_bounds(12, 0) = 249.20;
-    analog_bounds(13, 0) = 212.52;
-    analog_bounds(14, 0) = 227.62;
-    analog_bounds(0, 1) = 0.0; // not acquired
-    analog_bounds(1, 1) = 0.0; // not acquired
-    analog_bounds(2, 1) = 0.0; // not acquired
-    analog_bounds(3, 1) = 9.42;
-    analog_bounds(4, 1) = 39.66;
+    analog_bounds.resize(16, 2);
+    analog_bounds(0, 0) = 235.0;
+    analog_bounds(1, 0) = 209.0;
+    analog_bounds(2, 0) = 237.0;
+    analog_bounds(3, 0) = 245.0;
+    analog_bounds(4, 0) = 219.0;
+    analog_bounds(5, 0) = 233.0;
+    analog_bounds(6, 0) = 245.0;
+    analog_bounds(7, 0) = 217.0;
+    analog_bounds(8, 0) = 249.0;
+    analog_bounds(9, 0) = 235.0;
+    analog_bounds(10, 0) = 208.0;
+    analog_bounds(11, 0) = 234.0;
+    analog_bounds(12, 0) = 250.0;
+    analog_bounds(13, 0) = 216.0;
+    analog_bounds(14, 0) = 230.0;
+    analog_bounds(15, 0) = 0.0;
+    analog_bounds(0, 1) = 44.0;
+    analog_bounds(1, 1) = 14.0;
+    analog_bounds(2, 1) = 10.0;
+    analog_bounds(3, 1) = 14.0;
+    analog_bounds(4, 1) = 36.0;
     analog_bounds(5, 1) = 0.0;
     analog_bounds(6, 1) = 0.0;
-    analog_bounds(7, 1) = 53.54;
-    analog_bounds(8, 1) = 20.0;
-    analog_bounds(9, 1) = 23.64;
+    analog_bounds(7, 1) = 6.0;
+    analog_bounds(8, 1) = 21.0;
+    analog_bounds(9, 1) = 3.0;
     analog_bounds(10, 1) = 25.0;
-    analog_bounds(11, 1) = 29.68;
-    analog_bounds(12, 1) = 20.76;
-    analog_bounds(13, 1) = 62.68;
-    analog_bounds(14, 1) = 62.22;
+    analog_bounds(11, 1) = 0.0;
+    analog_bounds(12, 1) = 0.0;
+    analog_bounds(13, 1) = 39.0;
+    analog_bounds(14, 1) = 19.0;
+    analog_bounds(15, 0) = 0.0;
 }
 
 void LocalizerModule::getContactPoints(const std::unordered_map<std::string, bool> &fingers_contacts,

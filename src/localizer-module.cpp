@@ -593,6 +593,14 @@ bool LocalizerModule::getContactsSim(const std::string &hand_name,
         }
     }
 
+    // exclude fingers if requested
+    if (excluded_fingers.size() != 0)
+        for (std::string &name : excluded_fingers)
+        {
+            contacts.at(name) = false;
+            contact_points.at(name).clear();
+        }
+
     return true;
 }
 
@@ -633,6 +641,11 @@ bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
             contacts[fingers_names.at(i)] = true;
         // yInfo() << "";
     }
+
+    // exclude fingers if requested
+    if (excluded_fingers.size() != 0)
+        for (std::string &name : excluded_fingers)
+            contacts.at(name) = false;
 
     return true;
 }
@@ -679,6 +692,11 @@ bool LocalizerModule::getContacts(const std::string &hand_name,
             contacts[finger_name] |= true;
         }
     }
+
+    // exclude fingers if requested
+    if (excluded_fingers.size() != 0)
+        for (std::string &name : excluded_fingers)
+            contacts.at(name) = false;
 
     return true;
 }

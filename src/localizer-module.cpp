@@ -2450,7 +2450,7 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
     }
     else if (cmd == "calibrate-hand")
     {
-        bool ok;
+        bool ok = true;
 
         yarp::os::Value hand_name_v = command.get(1);
         if ((hand_name_v.isNull()) || (!hand_name_v.isString()) ||

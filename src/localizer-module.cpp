@@ -92,6 +92,35 @@ bool LocalizerModule::loadListDouble(yarp::os::ResourceFinder &rf,
     return true;
 }
 
+bool LocalizerModule::loadListStrings(const yarp::os::ResourceFinder &rf,
+                                      const std::string &tag_name,
+                                      std::vector<std::string> &list)
+{
+    bool strings_found = false;
+    if (!rf.find(tag_name).isNull())
+    {
+        yarp::os::Bottle* strings_list = rf.find(tag_name).asList();
+        if (strings_list != nullptr)
+        {
+            for (size_t i=0; i<strings_list->size(); i++)
+            {
+                yarp::os::Value string_v = strings_list->get(i);
+                if (string_v.isString())
+                    list.push_back(string_v.asString());
+                else
+                    break;
+
+                if (i == strings_list->size()-1)
+                    strings_found = true;
+            }
+        }
+    }
+    if (!strings_found)
+        list.clear();
+
+    return strings_found;
+}
+
 bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
 {
     robot_name = rf.find("robotName").asString();
@@ -273,6 +302,10 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     use_ext_vel_observer = rf.find("useExternalVelocityObserver").asBool();
     if (rf.find("useExternalVelocityObserver").isNull())
         use_ext_vel_observer = false;
+
+    // fingers list for approaching phase
+    if(!loadListStrings(rf, "excludedFingers", excluded_fingers))
+        excluded_fingers = {"thumb"};
 
     return true;
 }

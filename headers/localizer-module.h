@@ -181,6 +181,9 @@ private:
     int outlier_rem_neigh;
     double dense_outlier_rem_thr;
 
+    // fingers to be excluded from contact detection
+    std::vector<std::string> excluded_fingers;
+
     /*
      */
 
@@ -329,6 +332,9 @@ private:
                         const int &size,
                         yarp::sig::Vector &list);
 
+    bool loadListStrings(const yarp::os::ResourceFinder &rf,
+                         const std::string &tag_name,
+                         std::vector<std::string> &list);
     /*
      * Load the required parameters using a
      * previously instantiated @see Resource Finder.

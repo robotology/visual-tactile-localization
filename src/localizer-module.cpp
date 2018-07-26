@@ -1088,6 +1088,30 @@ void LocalizerModule::getFingersData(const std::string &hand_name,
     }
 }
 
+bool LocalizerModule::calibrateHand(const std::string &hand_name)
+{
+    yarp::dev::IAnalogSensor *analog;
+    if (hand_name == "right")
+        analog = ianalog_right;
+    else if (hand_name == "left")
+        analog = ianalog_left;
+    else
+        return false;
+
+    // read analogs
+    // at this point it is supposed that the hand
+    // is completely opened
+    yarp::sig::Vector fingers_analogs;
+    bool ok = analog->read(fingers_analogs);
+    if(ok != yarp::dev::IAnalogSensor::AS_OK)
+        return false;
+
+    // set the new upper bounds
+    analog_bounds.setCol(0, fingers_analogs);
+
+    return true;
+}
+
 void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
 {
     mutex.lock();
@@ -2202,6 +2226,7 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
         reply.addString("- storage-on");
         reply.addString("- storage-off");
         reply.addString("- storage-save");
+        reply.addString("- calibrate-hand");
         reply.addString("- reset");
         reply.addString("- quit");
     }
@@ -2417,6 +2442,32 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
             reply.addString("Storage saved to file succesfully.");
         else
             reply.addString("Storage save failed.");
+    }
+    else if (cmd == "calibrate-hand")
+    {
+        bool ok;
+
+        yarp::os::Value hand_name_v = command.get(1);
+        if ((hand_name_v.isNull()) || (!hand_name_v.isString()) ||
+            ((hand_name_v.asString() != "right") && (hand_name_v.asString() != "left")))
+        {
+            reply.addString("You should specify a valid hand name.");
+            ok = false;
+        }
+
+        if (ok)
+        {
+            if (use_analogs && use_analogs_bounds)
+            {
+                ok = calibrateHand(hand_name_v.asString());
+                if (ok)
+                    reply.addString("Calibration done succesfully.");
+                else
+                    reply.addString("Calibration failed.");
+            }
+            else
+                reply.addString("Warning: Use of analogs bounds is disabled from the configuration file.");
+        }
     }
     else if (cmd == "reset")
     {

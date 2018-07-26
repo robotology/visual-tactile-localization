@@ -596,6 +596,8 @@ private:
                         std::unordered_map<std::string, yarp::sig::Vector> &positions,
                         std::unordered_map<std::string, yarp::sig::Vector> &lin_vels);
 
+    bool calibrateHand(const std::string &hand_name);
+
     /*
      * Process a command coming from the input port
      * @param cmd command to the filtering algorithm

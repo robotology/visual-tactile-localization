@@ -124,6 +124,7 @@ private:
 
     // last estimate available
     yarp::sig::Vector last_estimate;
+    yarp::sig::Vector last_vis_estimate;
     // last ground truth available
     yarp::sig::Vector last_ground_truth;
 

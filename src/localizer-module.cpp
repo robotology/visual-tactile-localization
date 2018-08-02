@@ -1479,6 +1479,10 @@ void LocalizerModule::performFiltering()
         {
             upf0.resetTime();
             upf1.resetTime();
+
+            // record the estimate obtained using visual data
+            last_vis_estimate = last_estimate;
+
             is_first_step = false;
         }
 
@@ -1490,11 +1494,27 @@ void LocalizerModule::performFiltering()
         }
         else
         {
-            // do normal filtering step
-            upf0.setNewMeasure(points);
+            // update the auxiliary filter
             upf1.setNewMeasure(points);
-            upf0.step(time_stamp);
             upf1.step(time_stamp);
+            yarp::sig::Vector tmp_estimate = upf1.getEstimate();
+
+            // update the visuo tactile mismatch
+            // until the object is not moving
+            if (yarp::math::norm(input) < 0.01)
+                evaluateVisualTactileMismatch(last_vis_estimate,
+                                              tmp_estimate,
+                                              vis_tac_mismatch);
+
+            // correct measurements using the mismatch
+            std::vector<yarp::sig::Vector> corrected_points;
+            // TODO
+            corrected_points = points;
+
+            // do normal filtering step
+            upf0.setNewMeasure(corrected_points);
+            upf0.step(time_stamp);
+
             last_estimate = upf0.getEstimate();
         }
 

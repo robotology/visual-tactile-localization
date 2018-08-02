@@ -2812,6 +2812,13 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
                 yError() << "Localizer module: cannot set joints bounds for finger"
                          << left_finger;
             }
+
+            // fix limits for thumb opposition
+            iCub::iKin::iKinChain &left_thumb = fingers_kin["left_thumb"];
+            left_thumb[0].setMin((-15.0) * iCub::ctrl::CTRL_DEG2RAD);
+            // fix limits for thumb opposition
+            iCub::iKin::iKinChain &right_thumb = fingers_kin["right_thumb"];
+            right_thumb[0].setMin((-15.0) * iCub::ctrl::CTRL_DEG2RAD);
         }
     }
     // setup matrix containings

@@ -1690,9 +1690,9 @@ bool LocalizerModule::retrieveGroundTruth(yarp::sig::Vector &pose)
     return true;
 }
 
-void evaluateVisualTactileMismatch(const yarp::sig::Vector &visual_estimate,
-                                   const yarp::sig::Vector &tactile_estimate,
-                                   yarp::sig::Matrix &mismatch)
+void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &visual_estimate,
+                                                    const yarp::sig::Vector &tactile_estimate,
+                                                    yarp::sig::Matrix &mismatch)
 {
     yarp::sig::Matrix rot;
 

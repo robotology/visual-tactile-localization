@@ -1011,3 +1011,15 @@ void UnscentedParticleFilter::transformObject(const yarp::sig::Vector &estimate,
     std::transform(model.points_begin(),model.points_end(),
                    transformed.points_begin(),affine);
 }
+
+void UnscentedParticleFilter::getInitialState(std::vector<yarp::sig::Vector> &particles)
+{
+    for(size_t i=0; i<x.size(); i++)
+        particles.push_back(x[i].x_corr_prev);
+}
+
+void UnscentedParticleFilter::setInitialState(const std::vector<yarp::sig::Vector> &particles)
+{
+    for(size_t i=0; i<x.size(); i++)
+        x[i].x_corr_prev = particles[i];
+}

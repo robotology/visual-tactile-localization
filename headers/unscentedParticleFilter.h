@@ -447,6 +447,9 @@ public:
      */
     void transformObject(const yarp::sig::Vector &estimate,
                          Polyhedron &transformed);
+
+    void getInitialState(std::vector<yarp::sig::Vector> &particles);
+    void setInitialState(const std::vector<yarp::sig::Vector> &particles);
 };
 
 #endif

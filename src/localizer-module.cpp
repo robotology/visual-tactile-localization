@@ -1150,8 +1150,8 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
         // first stop filtering
         stopFiltering();
 
-        // then reset filter
-        upf0.init();
+        // then reset filters
+        initFilters();
     }
     else if (cmd == yarp::os::createVocab('P','R','O','N'))
     {
@@ -1592,6 +1592,17 @@ void LocalizerModule::stopFiltering()
 
     // reset flag for the next activation
     is_first_step = true;
+}
+
+void LocalizerModule::initFilters()
+{
+    upf0.init();
+    upf1.init();
+
+    // copy initial state
+    std::vector<yarp::sig::Vector> particles_0;
+    upf0.getInitialState(particles_0);
+    upf1.setInitialState(particles_0);
 }
 
 void LocalizerModule::publishEstimate()
@@ -2504,7 +2515,7 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
     else if (cmd == "reset")
     {
         // reset the filter
-        upf0.init();
+        initFilters();
 
         reply.addString("Filter reset successful.");
     }
@@ -2903,13 +2914,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     rf_upf = rf.findNestedResourceFinder("upf");
     if((!upf0.configure(rf_upf)) || (!upf1.configure(rf_upf)))
         return false;
-    upf0.init();
-    upf1.init();
-
-    // copy initial state
-    std::vector<yarp::sig::Vector> particles_0;
-    upf0.getInitialState(particles_0);
-    upf1.setInitialState(particles_0);
+    initFilters();
 
     // reset storage
     storage_on = false;

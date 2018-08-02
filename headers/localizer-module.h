@@ -624,6 +624,11 @@ private:
     void stopFiltering();
 
     /*
+     * Initializer filters
+     */
+    void initFilters();
+
+    /*
      * Publish the last estimate available
      * over a FrameTransformServer
      */

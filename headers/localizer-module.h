@@ -185,6 +185,9 @@ private:
     // fingers to be excluded from contact detection
     std::vector<std::string> excluded_fingers;
 
+    // visual tactile mismatch
+    yarp::sig::Matrix vis_tac_mismatch;
+
     /*
      */
 
@@ -634,6 +637,9 @@ private:
      */
     bool retrieveGroundTruth(yarp::sig::Vector &pose);
 
+    void evaluateVisualTactileMismatch(const yarp::sig::Vector &visual_estimate,
+                                       const yarp::sig::Vector &tactile_estimate,
+                                       yarp::sig::Matrix &mismatch);
     /*
      * Reset internal storage
      */

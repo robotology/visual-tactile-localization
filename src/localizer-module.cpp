@@ -1643,6 +1643,33 @@ bool LocalizerModule::retrieveGroundTruth(yarp::sig::Vector &pose)
     return true;
 }
 
+void evaluateVisualTactileMismatch(const yarp::sig::Vector &visual_estimate,
+                                   const yarp::sig::Vector &tactile_estimate,
+                                   yarp::sig::Matrix &mismatch)
+{
+    yarp::sig::Matrix rot;
+
+    // transformation due to visual data
+    yarp::sig::Matrix T_vis(4,4);
+    T_vis.zero();
+
+    T_vis.setCol(3, visual_estimate.subVector(0, 2));
+    rot = yarp::math::euler2dcm(visual_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    T_vis.setSubmatrix(rot, 0, 0);
+
+    T_vis(3, 3) = 1.0;
+
+    // transformation due to tactile data
+    yarp::sig::Matrix T_tac(4,4);
+    T_tac.zero();
+
+    T_tac.setCol(3, tactile_estimate.subVector(0, 2));
+    rot = yarp::math::euler2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    T_tac.setSubmatrix(rot, 0, 0);
+
+    mismatch = SE3inv(T_tac) * T_vis;
+}
+
 void LocalizerModule::resetStorage()
 {
     // reset internal storage

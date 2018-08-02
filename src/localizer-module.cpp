@@ -1714,13 +1714,15 @@ void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &vis
     rot = yarp::math::euler2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
     T_tac.setSubmatrix(rot, 0, 0);
 
+    T_tac(3, 3) = 1.0;
+
     mismatch = SE3inv(T_tac) * T_vis;
 }
 
-void correctMeasurements(const yarp::sig::Vector &tactile_estimate,
-                         const yarp::sig::Matrix &vis_tac_mismatch,
-                         const std::vector<yarp::sig::Vector> &measurements,
-                         std::vector<yarp::sig::Vector> &corrected_measurements)
+void LocalizerModule::correctMeasurements(const yarp::sig::Vector &tactile_estimate,
+                                          const yarp::sig::Matrix &vis_tac_mismatch,
+                                          const std::vector<yarp::sig::Vector> &measurements,
+                                          std::vector<yarp::sig::Vector> &corrected_measurements)
 {
     // create correction matrix
 

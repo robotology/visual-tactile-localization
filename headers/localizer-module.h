@@ -646,6 +646,11 @@ private:
     void evaluateVisualTactileMismatch(const yarp::sig::Vector &visual_estimate,
                                        const yarp::sig::Vector &tactile_estimate,
                                        yarp::sig::Matrix &mismatch);
+
+    void correctMeasurements(const yarp::sig::Vector &tactile_estimate,
+                             const yarp::sig::Matrix &vis_tac_mismatch,
+                             const std::vector<yarp::sig::Vector> &measurements,
+                             std::vector<yarp::sig::Vector> &corrected_measurements);
     /*
      * Reset internal storage
      */

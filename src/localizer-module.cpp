@@ -1717,6 +1717,45 @@ void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &vis
     mismatch = SE3inv(T_tac) * T_vis;
 }
 
+void correctMeasurements(const yarp::sig::Vector &tactile_estimate,
+                         const yarp::sig::Matrix &vis_tac_mismatch,
+                         const std::vector<yarp::sig::Vector> &measurements,
+                         std::vector<yarp::sig::Vector> &corrected_measurements)
+{
+    // create correction matrix
+
+    // transformation due to tactile data
+    yarp::sig::Matrix T_tac(4, 4);
+    T_tac.zero();
+
+    T_tac.setCol(3, tactile_estimate.subVector(0, 2));
+    yarp::sig::Matrix rot = yarp::math::euler2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    T_tac.setSubmatrix(rot, 0, 0);
+
+    T_tac(3, 3) = 1.0;
+
+    // change of coordinate from root frame to
+    // object frame
+    yarp::sig::Matrix base_change = T_tac;
+    base_change(0, 3) = base_change(1, 3) = base_change(2, 3) = 0.0;
+    base_change = base_change.transposed();
+
+    // correction matrix
+    yarp::sig::Matrix correction = T_tac * vis_tac_mismatch * base_change;
+
+    // correct measurements
+    for (size_t i=0; i<measurements.size(); i++)
+    {
+        yarp::sig::Vector meas_homog(4, 0.0);
+        meas_homog.setSubvector(0, measurements[i]);
+        meas_homog[3] = 1.0;
+
+        yarp::sig::Vector meas_corr(4, 0.0);
+        meas_corr = correction  * meas_homog;
+        corrected_measurements.push_back(meas_corr.subVector(0, 2));
+    }
+}
+
 void LocalizerModule::resetStorage()
 {
     // reset internal storage

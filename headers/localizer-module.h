@@ -110,8 +110,9 @@ private:
     * Filter
     */
 
-    // pointer to Unscented Particle Filter
-    UnscentedParticleFilter upf;
+    // Unscented Particle Filter(s)
+    UnscentedParticleFilter upf0;
+    UnscentedParticleFilter upf1;
 
     // system noise covariance matrices
     yarp::sig::Vector Q_vision;

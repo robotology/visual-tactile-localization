@@ -1151,7 +1151,7 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
         stopFiltering();
 
         // then reset filter
-        upf.init();
+        upf0.init();
     }
     else if (cmd == yarp::os::createVocab('P','R','O','N'))
     {
@@ -1186,7 +1186,7 @@ void LocalizerModule::performFiltering()
         std::vector<yarp::sig::Vector> filtered_point_cloud;
 
         // clear inputs used during tactile localization
-        upf.clearInputs();
+        upf0.clearInputs();
 
         // check if a point cloud is available
         if (is_simulation)
@@ -1276,11 +1276,11 @@ void LocalizerModule::performFiltering()
         }
 
         // set noise covariances
-        upf.setQ(Q_vision);
-        upf.setR(R_vision);
+        upf0.setQ(Q_vision);
+        upf0.setR(R_vision);
 
         // set alpha parameter
-        upf.setAlpha(1.0);
+        upf0.setAlpha(1.0);
 
         // the variable 'all_meas' contains the measurements
         // due to all the chunks
@@ -1314,21 +1314,21 @@ void LocalizerModule::performFiltering()
                 measure.push_back(filtered_point_cloud[i+k]);
 
             // set measure
-            upf.setNewMeasure(measure);
+            upf0.setNewMeasure(measure);
 
             // set zero input (visual localization is static)
             yarp::sig::Vector input(3, 0.0);
-            upf.setNewInput(input);
+            upf0.setNewInput(input);
 
             // step
-            upf.step(time_stamp);
+            upf0.step(time_stamp);
 
             // extract estimate
-            last_estimate = upf.getEstimate();
+            last_estimate = upf0.getEstimate();
 
             // extract all the particles for logging purposes
             std::vector<yarp::sig::Vector> particles;
-            upf.getParticles(particles);
+            upf0.getParticles(particles);
 
             // evaluate final time and execution time
             //
@@ -1398,11 +1398,11 @@ void LocalizerModule::performFiltering()
         }
 
         // set noise covariances
-        upf.setQ(Q_tactile);
-        upf.setR(R_tactile);
+        upf0.setQ(Q_tactile);
+        upf0.setR(R_tactile);
 
         // set alpha parameter
-        upf.setAlpha(0.3);
+        upf0.setAlpha(0.3);
 
         // get data related to fingers
         yarp::sig::Vector input;
@@ -1462,29 +1462,29 @@ void LocalizerModule::performFiltering()
         // set input
         input = fingers_vels["middle"];
         input[2] = 0;
-        upf.setNewInput(input);
+        upf0.setNewInput(input);
         yInfo() << "input:" << input.toString();
 
         if (is_first_step)
         {
-            upf.resetTime();
+            upf0.resetTime();
             is_first_step = false;
         }
 
         if (points.size() <= 1)
             // skip step in case of too few measurements
-            upf.skipStep(time_stamp);
+            upf0.skipStep(time_stamp);
         else
         {
             // do normal filtering step
-            upf.setNewMeasure(points);
-            upf.step(time_stamp);
-            last_estimate = upf.getEstimate();
+            upf0.setNewMeasure(points);
+            upf0.step(time_stamp);
+            last_estimate = upf0.getEstimate();
         }
 
         // extract all the particles for logging purposes
         std::vector<yarp::sig::Vector> particles;
-        upf.getParticles(particles);
+        upf0.getParticles(particles);
 
         // evaluate final time and execution time
         t_f = yarp::os::Time::now();
@@ -1730,7 +1730,7 @@ bool LocalizerModule::saveMesh(const yarp::sig::Vector &pose,
     // obtain the mesh from the filter
     // (the filter contains the model of the object)
     Polyhedron p;
-    upf.transformObject(pose, p);
+    upf0.transformObject(pose, p);
 
     // save the model
     // overwrite in case it already exists
@@ -2477,7 +2477,7 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
     else if (cmd == "reset")
     {
         // reset the filter
-        upf.init();
+        upf0.init();
 
         reply.addString("Filter reset successful.");
     }
@@ -2874,9 +2874,15 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // using group 'upf' from the configuration file
     yarp::os::ResourceFinder rf_upf;
     rf_upf = rf.findNestedResourceFinder("upf");
-    if(!upf.configure(rf_upf))
+    if((!upf0.configure(rf_upf)) || (!upf1.configure(rf_upf)))
         return false;
-    upf.init();
+    upf0.init();
+    upf1.init();
+
+    // copy initial state
+    std::vector<yarp::sig::Vector> particles_0;
+    upf0.getInitialState(particles_0);
+    upf1.setInitialState(particles_0);
 
     // reset storage
     storage_on = false;

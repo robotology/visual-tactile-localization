@@ -1448,11 +1448,11 @@ void LocalizerModule::performFiltering()
 
         }
 
-        if (!is_simulation)
-        {
+        // if (!is_simulation)
+        // {
             // extract contact points from forward kinematics
             getContactPoints(fingers_contacts, fingers_pos, fingers_points);
-        }
+        // }
 
         // yInfo() << "Forward kinematics";
         // for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
@@ -1483,6 +1483,9 @@ void LocalizerModule::performFiltering()
             // record the estimate obtained using visual data
             last_vis_estimate = last_estimate;
 
+            // record initial time of tactile filtering
+            tac_t0 = yarp::os::Time::now();
+
             is_first_step = false;
         }
 
@@ -1501,15 +1504,27 @@ void LocalizerModule::performFiltering()
 
             // update the visuo tactile mismatch
             // until the object is not moving
-            if (yarp::math::norm(input) < 0.01)
+            // if (yarp::math::norm(input) < 0.003)
+            if ((yarp::os::Time::now() - tac_t0) < 0.5)
                 evaluateVisualTactileMismatch(last_vis_estimate,
                                               tmp_estimate,
                                               vis_tac_mismatch);
 
             // correct measurements using the mismatch
             std::vector<yarp::sig::Vector> corrected_points;
-            // TODO
-            corrected_points = points;
+            correctMeasurements(tmp_estimate, vis_tac_mismatch,
+                                points, corrected_points);
+            yInfo() << "meas";
+            for (size_t i=0; i<points.size(); i++)
+            {
+                yInfo() << "";
+                yInfo() << i;
+                yInfo() << points[i].toString();
+                yInfo() << corrected_points[i].toString();
+            }
+            yInfo() << "";
+            yInfo() << "meas end";
+            // corrected_points = points;
 
             // do normal filtering step
             upf0.setNewMeasure(corrected_points);

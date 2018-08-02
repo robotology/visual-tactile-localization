@@ -140,6 +140,9 @@ private:
     double t_f;
     double exec_time;
 
+    // initial time of tactile filtering
+    double tac_t0;
+
     // path where to save output
     std::string output_path;
 

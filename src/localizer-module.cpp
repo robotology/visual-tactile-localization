@@ -1187,6 +1187,7 @@ void LocalizerModule::performFiltering()
 
         // clear inputs used during tactile localization
         upf0.clearInputs();
+        upf1.clearInputs();
 
         // check if a point cloud is available
         if (is_simulation)
@@ -1277,10 +1278,13 @@ void LocalizerModule::performFiltering()
 
         // set noise covariances
         upf0.setQ(Q_vision);
+        upf1.setQ(Q_vision);
         upf0.setR(R_vision);
+        upf1.setR(R_vision);
 
         // set alpha parameter
         upf0.setAlpha(1.0);
+        upf1.setAlpha(1.0);
 
         // the variable 'all_meas' contains the measurements
         // due to all the chunks
@@ -1315,13 +1319,16 @@ void LocalizerModule::performFiltering()
 
             // set measure
             upf0.setNewMeasure(measure);
+            upf1.setNewMeasure(measure);
 
             // set zero input (visual localization is static)
             yarp::sig::Vector input(3, 0.0);
             upf0.setNewInput(input);
+            upf1.setNewInput(input);
 
             // step
             upf0.step(time_stamp);
+            upf1.step(time_stamp);
 
             // extract estimate
             last_estimate = upf0.getEstimate();
@@ -1399,10 +1406,13 @@ void LocalizerModule::performFiltering()
 
         // set noise covariances
         upf0.setQ(Q_tactile);
+        upf1.setQ(Q_tactile);
         upf0.setR(R_tactile);
+        upf1.setR(R_tactile);
 
         // set alpha parameter
         upf0.setAlpha(0.3);
+        upf1.setAlpha(0.3);
 
         // get data related to fingers
         yarp::sig::Vector input;
@@ -1468,17 +1478,23 @@ void LocalizerModule::performFiltering()
         if (is_first_step)
         {
             upf0.resetTime();
+            upf1.resetTime();
             is_first_step = false;
         }
 
         if (points.size() <= 1)
+        {
             // skip step in case of too few measurements
             upf0.skipStep(time_stamp);
+            upf1.skipStep(time_stamp);
+        }
         else
         {
             // do normal filtering step
             upf0.setNewMeasure(points);
+            upf1.setNewMeasure(points);
             upf0.step(time_stamp);
+            upf1.step(time_stamp);
             last_estimate = upf0.getEstimate();
         }
 

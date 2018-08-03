@@ -734,6 +734,11 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     arm_angles.resize(16);
     torso_angles.resize(3);
     bool ok = enc->getEncoders(arm_angles.data());
+    // hack encoders
+    arm_angles[4] -= 20;
+    arm_angles[5] += 0;
+    arm_angles[6] += 20;
+    //
     if(!ok)
         return false;
     ok = ienc_torso->getEncoders(torso_angles.data());
@@ -1451,7 +1456,7 @@ void LocalizerModule::performFiltering()
         // if (!is_simulation)
         // {
             // extract contact points from forward kinematics
-            getContactPoints(fingers_contacts, fingers_pos, fingers_points);
+        getContactPoints(fingers_contacts, fingers_pos, fingers_points);
         // }
 
         // yInfo() << "Forward kinematics";
@@ -1489,6 +1494,7 @@ void LocalizerModule::performFiltering()
             is_first_step = false;
         }
 
+        std::vector<yarp::sig::Vector> corrected_points;
         if (points.size() <= 1)
         {
             // skip step in case of too few measurements
@@ -1511,19 +1517,18 @@ void LocalizerModule::performFiltering()
                                               vis_tac_mismatch);
 
             // correct measurements using the mismatch
-            std::vector<yarp::sig::Vector> corrected_points;
             correctMeasurements(tmp_estimate, vis_tac_mismatch,
                                 points, corrected_points);
-            yInfo() << "meas";
-            for (size_t i=0; i<points.size(); i++)
-            {
-                yInfo() << "";
-                yInfo() << i;
-                yInfo() << points[i].toString();
-                yInfo() << corrected_points[i].toString();
-            }
-            yInfo() << "";
-            yInfo() << "meas end";
+            // yInfo() << "meas";
+            // for (size_t i=0; i<points.size(); i++)
+            // {
+            //     yInfo() << "";
+            //     yInfo() << i;
+            //     yInfo() << points[i].toString();
+            //     yInfo() << corrected_points[i].toString();
+            // }
+            // yInfo() << "";
+            // yInfo() << "meas end";
             // corrected_points = points;
 
             // do normal filtering step
@@ -1552,7 +1557,7 @@ void LocalizerModule::performFiltering()
             storeDataTactile(last_ground_truth,
                              last_estimate,
                              particles,
-                             points,
+                             corrected_points,
                              input,
                              fingers_angles,
                              fingers_pos,
@@ -1710,26 +1715,29 @@ void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &vis
                                                     yarp::sig::Matrix &mismatch)
 {
     yarp::sig::Matrix rot;
+    yarp::sig::Vector pos;
 
     // transformation due to visual data
     yarp::sig::Matrix T_vis(4,4);
     T_vis.zero();
 
-    T_vis.setCol(3, visual_estimate.subVector(0, 2));
+    pos.resize(4, 0.0);
+    pos.setSubvector(0, visual_estimate.subVector(0, 2));
+    pos[3] = 1.0;
+    T_vis.setCol(3, pos);
     rot = yarp::math::euler2dcm(visual_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
     T_vis.setSubmatrix(rot, 0, 0);
-
-    T_vis(3, 3) = 1.0;
 
     // transformation due to tactile data
     yarp::sig::Matrix T_tac(4,4);
     T_tac.zero();
 
-    T_tac.setCol(3, tactile_estimate.subVector(0, 2));
+    pos.resize(4, 0.0);
+    pos.setSubvector(0, tactile_estimate.subVector(0, 2));
+    pos[3] = 1.0;
+    T_tac.setCol(3, pos);
     rot = yarp::math::euler2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
     T_tac.setSubmatrix(rot, 0, 0);
-
-    T_tac(3, 3) = 1.0;
 
     mismatch = SE3inv(T_tac) * T_vis;
 }
@@ -1745,11 +1753,12 @@ void LocalizerModule::correctMeasurements(const yarp::sig::Vector &tactile_estim
     yarp::sig::Matrix T_tac(4, 4);
     T_tac.zero();
 
-    T_tac.setCol(3, tactile_estimate.subVector(0, 2));
+    yarp::sig::Vector pos(4, 0.0);
+    pos.setSubvector(0, tactile_estimate.subVector(0, 2));
+    pos[3] = 1.0;
+    T_tac.setCol(3, pos);
     yarp::sig::Matrix rot = yarp::math::euler2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
     T_tac.setSubmatrix(rot, 0, 0);
-
-    T_tac(3, 3) = 1.0;
 
     // change of coordinate from root frame to
     // object frame
@@ -1759,12 +1768,22 @@ void LocalizerModule::correctMeasurements(const yarp::sig::Vector &tactile_estim
 
     // correction matrix
     yarp::sig::Matrix correction = T_tac * vis_tac_mismatch * base_change;
+    yInfo() << "";
+    yInfo() << "ttac";
+    yInfo() << T_tac.toString();
+    yInfo() << "mismatch";
+    yInfo() << vis_tac_mismatch.toString();
+    yInfo() << "";
+    yInfo() << "base change";
+    yInfo() << base_change.toString();
+    yInfo() << "c";
+    yInfo() << correction.toString();
 
     // correct measurements
     for (size_t i=0; i<measurements.size(); i++)
     {
         yarp::sig::Vector meas_homog(4, 0.0);
-        meas_homog.setSubvector(0, measurements[i]);
+        meas_homog.setSubvector(0, measurements[i] - tactile_estimate.subVector(0, 2));
         meas_homog[3] = 1.0;
 
         yarp::sig::Vector meas_corr(4, 0.0);

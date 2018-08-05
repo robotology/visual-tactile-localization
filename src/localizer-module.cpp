@@ -1275,7 +1275,7 @@ bool LocalizerModule::getProcessedPointCloud(std::vector<yarp::sig::Vector> &poi
             filtered_point_cloud = subsampled_pc;
     }
 
-    return false;
+    return true;
 }
 
 void LocalizerModule::performVisualFiltering()
@@ -1432,6 +1432,8 @@ bool LocalizerModule::getContacts(std::unordered_map<std::string, bool> contacts
             contacts_springy[finger_name] = false;
         }
     }
+
+    return true;
 }
 
 void LocalizerModule::performTactileFiltering()

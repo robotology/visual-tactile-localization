@@ -1145,6 +1145,16 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
             filtering_type = FilteringType::tactile;
             tac_filt_hand_name = "left";
         }
+        else if (type == yarp::os::createVocab('V', 'T', 'M', 'R'))
+        {
+            filtering_type = FilteringType::visuo_tactile_matching;
+            tac_filt_hand_name = "right";
+        }
+        else if (type == yarp::os::createVocab('V', 'T', 'M', 'L'))
+        {
+            filtering_type = FilteringType::visuo_tactile_matching;
+            tac_filt_hand_name = "left";
+        }
     }
     else if (cmd == yarp::os::createVocab('O','F','F'))
     {

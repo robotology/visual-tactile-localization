@@ -42,7 +42,7 @@
 
 typedef yarp::sig::PointCloud<yarp::sig::DataXYZ> PointCloudXYZ;
 
-enum class FilteringType { visual = 0, tactile = 1 };
+enum class FilteringType { visual = 0, tactile = 1, visuo_tactile_matching = 2 };
 
 struct Data
 {

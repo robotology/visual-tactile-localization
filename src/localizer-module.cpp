@@ -1148,11 +1148,13 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
         {
             filtering_type = FilteringType::visuo_tactile_matching;
             tac_filt_hand_name = "right";
+            vis_tac_mismatch_counter = 0;
         }
         else if (type == yarp::os::createVocab('V', 'T', 'M', 'L'))
         {
             filtering_type = FilteringType::visuo_tactile_matching;
             tac_filt_hand_name = "left";
+            vis_tac_mismatch_counter = 0;
         }
     }
     else if (cmd == yarp::os::createVocab('O','F','F'))
@@ -1477,36 +1479,36 @@ void LocalizerModule::performTactileFiltering()
     yInfo() << "";
     yInfo() << "No. of contacts detected:" << points.size();
 
-    // set noise covariances
+    // set parameters
     upf0.setQ(Q_tactile);
     upf0.setR(R_tactile);
-    upf1.setQ(Q_tactile);
-    upf1.setR(R_tactile);
-
-    // set alpha parameter
     upf0.setAlpha(0.3);
-    upf1.setAlpha(0.3);
 
     // set input
     yarp::sig::Vector input;
     input = fingers_vels["middle"];
     input[2] = 0;
     upf0.setNewInput(input);
-    upf1.setNewInput(input);
+
+    if (is_vis_tac_mismatch)
+    {
+        // if visuo tactile mismatch
+        // is available update also the auxiliary filter
+        upf1.setQ(Q_tactile);
+        upf1.setR(R_tactile);
+        upf1.setAlpha(0.3);
+        upf1.setNewInput(input);
+    }
 
     if (is_first_step)
     {
         // reset internal time required to
         // evaluate velocity increments
         upf0.resetTime();
-        upf1.resetTime();
+        if (is_vis_tac_mismatch)
+            upf1.resetTime();
 
         is_first_step = false;
-
-        // record the estimate obtained using visual data
-        // last_vis_estimate = last_estimate;
-        // record initial time of tactile filtering
-        // tac_t0 = yarp::os::Time::now();
     }
 
     // filtering
@@ -1515,31 +1517,32 @@ void LocalizerModule::performTactileFiltering()
     {
         // skip step in case of too few measurements
         upf0.skipStep(time_stamp);
-        upf1.skipStep(time_stamp);
+        if (is_vis_tac_mismatch)
+            upf1.skipStep(time_stamp);
     }
     else
     {
-        // update the auxiliary filter
-        upf1.setNewMeasure(points);
-        upf1.step(time_stamp);
-        yarp::sig::Vector tmp_estimate = upf1.getEstimate();
-
-        // update the visuo tactile mismatch
-        // until the object is not moving
-        // if (yarp::math::norm(input) < 0.003)
-        // if ((yarp::os::Time::now() - tac_t0) < 0.5)
-        //     evaluateVisualTactileMismatch(last_vis_estimate,
-        //                                   tmp_estimate,
-        //                                   vis_tac_mismatch);
 
         // correct measurements using the visuo tactile mismatch
-        correctMeasurements(tmp_estimate, vis_tac_mismatch,
-                            points, corrected_points);
+        if (is_vis_tac_mismatch)
+        {
+            // update the auxiliary filter
+            upf1.setNewMeasure(points);
+            upf1.step(time_stamp);
+            yarp::sig::Vector tmp_estimate = upf1.getEstimate();
+
+            // correct measurements
+            correctMeasurements(tmp_estimate, vis_tac_mismatch,
+                                points, corrected_points);
+        }
+        else
+            corrected_points = points;
+
+        // set measures
+        upf0.setNewMeasure(corrected_points);
 
         // do normal filtering step
-        upf0.setNewMeasure(corrected_points);
         upf0.step(time_stamp);
-
         last_estimate = upf0.getEstimate();
     }
 
@@ -1574,6 +1577,119 @@ void LocalizerModule::performTactileFiltering()
     estimate_available = true;
 }
 
+void LocalizerModule::performVisuoTactileMatching()
+{
+    // store initial time
+    t_i = yarp::os::Time::now();
+
+    // storage for time stamp
+    double time_stamp;
+
+    // retrieve contacts
+    std::unordered_map<std::string, bool> contacts_tactile;
+    std::unordered_map<std::string, bool> contacts_springy;
+    std::unordered_map<std::string, bool> contacts_all;
+    std::unordered_map<std::string, yarp::sig::Vector> sim_contact_points;
+
+    if (!getContacts(contacts_tactile, contacts_springy,
+                     contacts_all, sim_contact_points))
+        return;
+
+    // get data related to fingers
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
+    getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
+
+    // extract contact points
+    std::unordered_map<std::string, yarp::sig::Vector> contact_points;
+    if (is_simulation)
+    {
+        contact_points = sim_contact_points;
+    }
+    else
+    {
+        // extract contact points from forward kinematics
+        getContactPoints(contacts_all, fingers_pos, contact_points);
+    }
+
+    // copy to a vector of yarp::sig::Vector(s)
+    std::vector<yarp::sig::Vector> points;
+    for (auto it=contact_points.begin(); it!=contact_points.end(); it++)
+    {
+        points.push_back(it->second);
+    }
+    yInfo() << "";
+    yInfo() << "No. of contacts detected:" << points.size();
+
+    // set parameters
+    upf1.setQ(Q_tactile);
+    upf1.setR(R_tactile);
+    upf1.setAlpha(0.3);
+
+    // set zero input
+    yarp::sig::Vector input(3, 0.0);
+    upf1.setNewInput(input);
+
+    // filtering
+    std::vector<yarp::sig::Vector> corrected_points;
+    if (points.size() > 1)
+    {
+        // step auxiliary filter
+        upf1.setNewMeasure(points);
+        upf1.step(time_stamp);
+        yarp::sig::Vector tmp_estimate = upf1.getEstimate();
+
+        // update the visuo tactile mismatch
+        evaluateVisualTactileMismatch(last_estimate,
+                                      tmp_estimate,
+                                      vis_tac_mismatch);
+
+        is_vis_tac_mismatch = true;
+    }
+
+    // here after data from the upf0 is logged
+
+    // extract all the particles for logging purposes
+    std::vector<yarp::sig::Vector> particles;
+    upf0.getParticles(particles);
+
+    // evaluate final time and execution time
+    t_f = yarp::os::Time::now();
+    exec_time = t_f - t_i;
+
+    storage_on_mutex.lock();
+
+    // store data if required
+    if (storage_on)
+        storeDataTactile(last_ground_truth,
+                         last_estimate,
+                         particles,
+                         points,
+                         input,
+                         fingers_angles,
+                         fingers_pos,
+                         fingers_vels,
+                         contacts_tactile,
+                         contacts_springy,
+                         time_stamp,
+                         exec_time);
+
+    storage_on_mutex.unlock();
+
+    // a new estimate is now available
+    estimate_available = true;
+
+    // update the counter
+    vis_tac_mismatch_counter++;
+
+    // check for end of the procedure
+    if (vis_tac_mismatch_counter > 100)
+    {
+        stopFiltering();
+    }
+}
+
 void LocalizerModule::performFiltering()
 {
     if (!filtering_enabled)
@@ -1584,7 +1700,7 @@ void LocalizerModule::performFiltering()
     else if (filtering_type == FilteringType::tactile)
         performTactileFiltering();
     else if (filtering_type == FilteringType::visuo_tactile_matching)
-        ;
+        performVisuoTactileMatching();
 }
 
 void LocalizerModule::performContactsProbe()
@@ -1802,16 +1918,6 @@ void LocalizerModule::correctMeasurements(const yarp::sig::Vector &tactile_estim
 
     // correction matrix
     yarp::sig::Matrix correction = T_tac * vis_tac_mismatch * base_change;
-    yInfo() << "";
-    yInfo() << "ttac";
-    yInfo() << T_tac.toString();
-    yInfo() << "mismatch";
-    yInfo() << vis_tac_mismatch.toString();
-    yInfo() << "";
-    yInfo() << "base change";
-    yInfo() << base_change.toString();
-    yInfo() << "c";
-    yInfo() << correction.toString();
 
     // correct measurements
     for (size_t i=0; i<measurements.size(); i++)
@@ -3074,6 +3180,7 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     filtering_enabled = false;
     contacts_probe_enabled = false;
     is_first_step = true;
+    is_vis_tac_mismatch = false;
 
     return true;
 }

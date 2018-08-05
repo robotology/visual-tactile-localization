@@ -124,7 +124,6 @@ private:
 
     // last estimate available
     yarp::sig::Vector last_estimate;
-    yarp::sig::Vector last_vis_estimate;
     // last ground truth available
     yarp::sig::Vector last_ground_truth;
 
@@ -191,6 +190,8 @@ private:
 
     // visual tactile mismatch
     yarp::sig::Matrix vis_tac_mismatch;
+    bool is_vis_tac_mismatch;
+    int vis_tac_mismatch_counter;
 
     /*
      */
@@ -642,6 +643,11 @@ private:
      * Perform tactile filtering
      */
     void performTactileFiltering();
+
+    /*
+     * Perform visuo tactile matching
+     */
+    void performVisuoTactileMatching();
 
     /*
      * Perform probe of contacts on finger tips

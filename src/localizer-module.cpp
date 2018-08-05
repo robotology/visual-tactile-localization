@@ -420,10 +420,6 @@ void LocalizerModule::removeDenseOutliersFromPointCloud(const double &threshold,
         if (yarp::math::norm(pc_in[i] - mean) < threshold)
             pc_out.push_back(pc_in[i]);
     }
-
-    yInfo() << "Dense outliers removal";
-    yInfo() << pc_in.size();
-    yInfo() << pc_out.size();
 }
 
 

@@ -1,4 +1,3 @@
-
 /******************************************************************************
  *                                                                            *
  * Copyright (C) 2017 Fondazione Istituto Italiano di Tecnologia (IIT)        *
@@ -655,8 +654,8 @@ bool LocalizerModule::getContactsSpringy(const std::string &hand_name,
     return true;
 }
 
-bool LocalizerModule::getContacts(const std::string &hand_name,
-                                  std::unordered_map<std::string, bool> &contacts)
+bool LocalizerModule::getContactsTactile(const std::string &hand_name,
+                                         std::unordered_map<std::string, bool> &contacts)
 {
     contacts.clear();
 
@@ -1184,369 +1183,173 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
     mutex.unlock();
 }
 
-void LocalizerModule::performFiltering()
+bool LocalizerModule::getProcessedPointCloud(std::vector<yarp::sig::Vector> &point_cloud,
+                                             std::vector<yarp::sig::Vector> filtered_point_cloud)
 {
-    if (!filtering_enabled)
-        return;
+    // check if a point cloud is available
+    if (is_simulation)
+    {
+        if(!getPointCloudSim(filtered_point_cloud))
+        {
+            // nothing to do here
+            return false;
+        }
+    }
+    else
+    {
+        if(!getPointCloud(point_cloud))
+        {
+            // nothing to do here
+            return false;
+        }
 
+        bool outlier_rem;
+        bool dense_outlier_rem;
+        bool subsampling;
+        bool shuffling;
+        mutex.lock();
+        outlier_rem = use_pc_outlier_rem;
+        dense_outlier_rem = use_pc_dense_outlier_rem;
+        subsampling = use_pc_subsampling;
+        shuffling = use_pc_shuffle;
+        mutex.unlock();
+
+        // remove outliers
+        std::vector<yarp::sig::Vector> inliers_pc;
+        if (outlier_rem)
+        {
+            double radius;
+            int neigh;
+            mutex.lock();
+            radius = outlier_rem_radius;
+            neigh = outlier_rem_neigh;
+            mutex.unlock();
+
+            removeOutliersFromPointCloud(point_cloud, inliers_pc,
+                                         radius, neigh);
+        }
+        else
+            inliers_pc = point_cloud;
+
+        // remove dense outliers
+        std::vector<yarp::sig::Vector> inliers_pc_alt;
+        if (dense_outlier_rem)
+        {
+            double threshold;
+            mutex.lock();
+            threshold = dense_outlier_rem_thr;
+            mutex.unlock();
+
+            removeDenseOutliersFromPointCloud(threshold, inliers_pc, inliers_pc_alt);
+        }
+        else
+            inliers_pc_alt = inliers_pc;
+
+        // subsample point cloud
+        std::vector<yarp::sig::Vector> subsampled_pc;
+        if (subsampling)
+        {
+            int n_points;
+            mutex.lock();
+            n_points = subsample_n_points;
+            mutex.unlock();
+
+            subsamplePointCloud(inliers_pc_alt, subsampled_pc, n_points);
+        }
+        else
+            subsampled_pc = inliers_pc;
+
+        // shuffle point cloud
+        if (shuffling)
+        {
+            double resize_factor;
+            mutex.lock();
+            resize_factor = shuffle_resize_factor;
+            mutex.unlock();
+
+            shufflePointCloud(subsampled_pc, filtered_point_cloud, resize_factor);
+        }
+        else
+            filtered_point_cloud = subsampled_pc;
+    }
+
+    return false;
+}
+
+void LocalizerModule::performVisualFiltering()
+{
     // store initial time
     t_i = yarp::os::Time::now();
 
     // storage for time stamp
     double time_stamp;
 
-    if (filtering_type == FilteringType::visual)
+    // point cloud
+    std::vector<yarp::sig::Vector> point_cloud;
+    std::vector<yarp::sig::Vector> filtered_point_cloud;
+    if (!getProcessedPointCloud(point_cloud, filtered_point_cloud))
+        return;
+
+    // clear inputs used during tactile localization
+    upf0.clearInputs();
+    upf1.clearInputs();
+
+    // set noise covariances
+    upf0.setQ(Q_vision);
+    upf1.setQ(Q_vision);
+    upf0.setR(R_vision);
+    upf1.setR(R_vision);
+
+    // set alpha parameter
+    upf0.setAlpha(1.0);
+    upf1.setAlpha(1.0);
+
+    // the variable 'all_meas' contains the measurements
+    // due to all the chunks
+    // this is saved for logging purposes
+    std::vector<yarp::sig::Vector> all_meas;
+    for (size_t i=0;
+         i+visual_chunk_size <= filtered_point_cloud.size();
+         i += visual_chunk_size)
     {
-        std::vector<yarp::sig::Vector> point_cloud;
-        std::vector<yarp::sig::Vector> filtered_point_cloud;
-
-        // clear inputs used during tactile localization
-        upf0.clearInputs();
-        upf1.clearInputs();
-
-        // check if a point cloud is available
-        if (is_simulation)
+        for (size_t k=0; k<visual_chunk_size; k++)
         {
-            if(!getPointCloudSim(filtered_point_cloud))
-            {
-                // nothing to do here
-                return;
-            }
-        }
-        else
-        {
-            if(!getPointCloud(point_cloud))
-            {
-                // nothing to do here
-                return;
-            }
-
-            bool outlier_rem;
-            bool dense_outlier_rem;
-            bool subsampling;
-            bool shuffling;
-            mutex.lock();
-            outlier_rem = use_pc_outlier_rem;
-            dense_outlier_rem = use_pc_dense_outlier_rem;
-            subsampling = use_pc_subsampling;
-            shuffling = use_pc_shuffle;
-            mutex.unlock();
-
-            // remove outliers
-            std::vector<yarp::sig::Vector> inliers_pc;
-            if (outlier_rem)
-            {
-                double radius;
-                int neigh;
-                mutex.lock();
-                radius = outlier_rem_radius;
-                neigh = outlier_rem_neigh;
-                mutex.unlock();
-
-                removeOutliersFromPointCloud(point_cloud, inliers_pc,
-                                             radius, neigh);
-            }
-            else
-                inliers_pc = point_cloud;
-
-            // remove dense outliers
-            std::vector<yarp::sig::Vector> inliers_pc_alt;
-            if (dense_outlier_rem)
-            {
-                double threshold;
-                mutex.lock();
-                threshold = dense_outlier_rem_thr;
-                mutex.unlock();
-
-                removeDenseOutliersFromPointCloud(threshold, inliers_pc, inliers_pc_alt);
-            }
-            else
-                inliers_pc_alt = inliers_pc;
-
-            // subsample point cloud
-            std::vector<yarp::sig::Vector> subsampled_pc;
-            if (subsampling)
-            {
-                int n_points;
-                mutex.lock();
-                n_points = subsample_n_points;
-                mutex.unlock();
-
-                subsamplePointCloud(inliers_pc_alt, subsampled_pc, n_points);
-            }
-            else
-                subsampled_pc = inliers_pc;
-
-            // shuffle point cloud
-            if (shuffling)
-            {
-                double resize_factor;
-                mutex.lock();
-                resize_factor = shuffle_resize_factor;
-                mutex.unlock();
-
-                shufflePointCloud(subsampled_pc, filtered_point_cloud, resize_factor);
-            }
-            else
-                filtered_point_cloud = subsampled_pc;
-        }
-
-        // set noise covariances
-        upf0.setQ(Q_vision);
-        upf1.setQ(Q_vision);
-        upf0.setR(R_vision);
-        upf1.setR(R_vision);
-
-        // set alpha parameter
-        upf0.setAlpha(1.0);
-        upf1.setAlpha(1.0);
-
-        // the variable 'all_meas' contains the measurements
-        // due to all the chunks
-        // this is saved for logging purposes
-        std::vector<yarp::sig::Vector> all_meas;
-        for (size_t i=0;
-             i+visual_chunk_size <= filtered_point_cloud.size();
-             i += visual_chunk_size)
-        {
-            for (size_t k=0; k<visual_chunk_size; k++)
-            {
-                all_meas.push_back(filtered_point_cloud[i+k]);
-            }
-        }
-
-        // perform filtering
-        for (size_t i=0;
-             i+visual_chunk_size <= filtered_point_cloud.size();
-             i += visual_chunk_size)
-        {
-            // since multiple chuncks are processed
-            // the initial time is reset from the second chunck on
-            if (i != 0)
-            {
-                t_i = yarp::os::Time::now();
-            }
-
-            // prepare measure
-            std::vector<yarp::sig::Vector> measure;
-            for (size_t k=0; k<visual_chunk_size; k++)
-                measure.push_back(filtered_point_cloud[i+k]);
-
-            // set measure
-            upf0.setNewMeasure(measure);
-            upf1.setNewMeasure(measure);
-
-            // set zero input (visual localization is static)
-            yarp::sig::Vector input(3, 0.0);
-            upf0.setNewInput(input);
-            upf1.setNewInput(input);
-
-            // step
-            upf0.step(time_stamp);
-            upf1.step(time_stamp);
-
-            // extract estimate
-            last_estimate = upf0.getEstimate();
-
-            // extract all the particles for logging purposes
-            std::vector<yarp::sig::Vector> particles;
-            upf0.getParticles(particles);
-
-            // evaluate final time and execution time
-            //
-            // yarp:os::Time use time of simulated environment
-            // in case env variable YARP_CLOCK is set
-            t_f = yarp::os::Time::now();
-            exec_time = t_f - t_i;
-
-            storage_on_mutex.lock();
-
-            // store data if required
-            if (storage_on)
-            {
-                if (is_simulation)
-                    point_cloud = filtered_point_cloud;
-
-                bool is_first_chunk = (i == 0);
-                storeDataVisual(FilteringType::visual,
-                                is_first_chunk,
-                                last_ground_truth,
-                                last_estimate,
-                                particles,
-                                measure,
-                                input,
-                                all_meas,
-                                point_cloud,
-                                time_stamp,
-                                exec_time);
-            }
-
-            storage_on_mutex.unlock();
-
-            // after a visual filtering step
-            // the filter disables automatically
-            // TODO: make this optional from configuration
-            //       or from FilterCommand
-            // stopFiltering();
-
-            // a new estimate is now available
-            estimate_available = true;
+            all_meas.push_back(filtered_point_cloud[i+k]);
         }
     }
-    else if (filtering_type == FilteringType::tactile)
+
+    // perform filtering
+    for (size_t i=0;
+         i+visual_chunk_size <= filtered_point_cloud.size();
+         i += visual_chunk_size)
     {
-        // check if contacts are available
-        std::unordered_map<std::string, yarp::sig::Vector> fingers_points;
-        std::unordered_map<std::string, bool> contacts_tactile;
-        std::unordered_map<std::string, bool> contacts_springy;
-        std::unordered_map<std::string, bool> fingers_contacts;
-        if (is_simulation)
+        // since multiple chuncks are processed
+        // the initial time is reset from the second chunck on
+        if (i != 0)
         {
-            // Gazebo provides contacts state and contact points
-            if(!getContactsSim(tac_filt_hand_name, contacts_tactile, fingers_points))
-                return;
-        }
-        else
-        {
-            // real robot provides binarized information on contacts
-            if (!getContacts(tac_filt_hand_name, contacts_tactile))
-                return;
-            if (use_springy)
-            {
-                // use also springy fingers model to detect contacts
-                if (!getContactsSpringy(tac_filt_hand_name, contacts_springy))
-                    return;
-            }
+            t_i = yarp::os::Time::now();
         }
 
-        // set noise covariances
-        upf0.setQ(Q_tactile);
-        upf1.setQ(Q_tactile);
-        upf0.setR(R_tactile);
-        upf1.setR(R_tactile);
+        // prepare measure
+        std::vector<yarp::sig::Vector> measure;
+        for (size_t k=0; k<visual_chunk_size; k++)
+            measure.push_back(filtered_point_cloud[i+k]);
 
-        // set alpha parameter
-        upf0.setAlpha(0.3);
-        upf1.setAlpha(0.3);
+        // set measure
+        upf0.setNewMeasure(measure);
+        upf1.setNewMeasure(measure);
 
-        // get data related to fingers
-        yarp::sig::Vector input;
-        std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
-        std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
-        std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
-        getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
-
-        // yInfo() << "Step";
-
-        // yInfo() << "Real contact points with noise";
-        // for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
-        //     yInfo() << it->first << ":" << (it->second).toString();
-
-        // fuse tactile contacts with springy contacts
-
-        if (use_springy)
-            for (auto it=contacts_tactile.begin(); it!=contacts_tactile.end(); it++)
-            {
-                fingers_contacts[it->first] = contacts_tactile[it->first] ||
-                    contacts_springy[it->first];
-            }
-        else
-        {
-            // all the contacts are those due to tactile perception
-            fingers_contacts = contacts_tactile;
-
-            // clear contacts according to springy fingers
-            for (std::string &finger_name : fingers_names)
-            {
-                contacts_springy[finger_name] = false;
-            }
-
-        }
-
-        // if (!is_simulation)
-        // {
-            // extract contact points from forward kinematics
-        getContactPoints(fingers_contacts, fingers_pos, fingers_points);
-        // }
-
-        // yInfo() << "Forward kinematics";
-        // for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
-        //     yInfo() << it->first << ":" << (it->second).toString();
-
-        // yInfo() << "";
-
-        // copy to a vector of yarp::sig::Vector(s)
-        std::vector<yarp::sig::Vector> points;
-        for (auto it=fingers_points.begin(); it!=fingers_points.end(); it++)
-        {
-            points.push_back(it->second);
-            // yInfo() << (it->second).toString();
-        }
-        yInfo() << "# contacts: " << points.size();
-
-        // set input
-        input = fingers_vels["middle"];
-        input[2] = 0;
+        // set zero input (visual localization is static)
+        yarp::sig::Vector input(3, 0.0);
         upf0.setNewInput(input);
-        yInfo() << "input:" << input.toString();
+        upf1.setNewInput(input);
 
-        if (is_first_step)
-        {
-            upf0.resetTime();
-            upf1.resetTime();
+        // step
+        upf0.step(time_stamp);
+        upf1.step(time_stamp);
 
-            // record the estimate obtained using visual data
-            last_vis_estimate = last_estimate;
-
-            // record initial time of tactile filtering
-            tac_t0 = yarp::os::Time::now();
-
-            is_first_step = false;
-        }
-
-        std::vector<yarp::sig::Vector> corrected_points;
-        if (points.size() <= 1)
-        {
-            // skip step in case of too few measurements
-            upf0.skipStep(time_stamp);
-            upf1.skipStep(time_stamp);
-        }
-        else
-        {
-            // update the auxiliary filter
-            upf1.setNewMeasure(points);
-            upf1.step(time_stamp);
-            yarp::sig::Vector tmp_estimate = upf1.getEstimate();
-
-            // update the visuo tactile mismatch
-            // until the object is not moving
-            // if (yarp::math::norm(input) < 0.003)
-            if ((yarp::os::Time::now() - tac_t0) < 0.5)
-                evaluateVisualTactileMismatch(last_vis_estimate,
-                                              tmp_estimate,
-                                              vis_tac_mismatch);
-
-            // correct measurements using the mismatch
-            correctMeasurements(tmp_estimate, vis_tac_mismatch,
-                                points, corrected_points);
-            // yInfo() << "meas";
-            // for (size_t i=0; i<points.size(); i++)
-            // {
-            //     yInfo() << "";
-            //     yInfo() << i;
-            //     yInfo() << points[i].toString();
-            //     yInfo() << corrected_points[i].toString();
-            // }
-            // yInfo() << "";
-            // yInfo() << "meas end";
-            // corrected_points = points;
-
-            // do normal filtering step
-            upf0.setNewMeasure(corrected_points);
-            upf0.step(time_stamp);
-
-            last_estimate = upf0.getEstimate();
-        }
+        // extract estimate
+        last_estimate = upf0.getEstimate();
 
         // extract all the particles for logging purposes
         std::vector<yarp::sig::Vector> particles;
@@ -1559,29 +1362,229 @@ void LocalizerModule::performFiltering()
         storage_on_mutex.lock();
 
         // store data if required
-        std::cout << std::fixed << "time stamp:" << time_stamp;
-        std::cout << std::defaultfloat;
-        // if (!is_simulation)
-        //     last_ground_truth = last_estimate;
         if (storage_on)
-            storeDataTactile(last_ground_truth,
-                             last_estimate,
-                             particles,
-                             corrected_points,
-                             input,
-                             fingers_angles,
-                             fingers_pos,
-                             fingers_vels,
-                             contacts_tactile,
-                             contacts_springy,
-                             time_stamp,
-                             exec_time);
+        {
+            if (is_simulation)
+                point_cloud = filtered_point_cloud;
+
+            bool is_first_chunk = (i == 0);
+            storeDataVisual(FilteringType::visual,
+                            is_first_chunk,
+                            last_ground_truth,
+                            last_estimate,
+                            particles,
+                            measure,
+                            input,
+                            all_meas,
+                            point_cloud,
+                            time_stamp,
+                            exec_time);
+        }
 
         storage_on_mutex.unlock();
 
         // a new estimate is now available
         estimate_available = true;
     }
+}
+
+bool LocalizerModule::getContacts(std::unordered_map<std::string, bool> contacts_tactile,
+                                  std::unordered_map<std::string, bool> contacts_springy,
+                                  std::unordered_map<std::string, bool> contacts_all,
+                                  std::unordered_map<std::string, yarp::sig::Vector> sim_contact_points)
+{
+    if (is_simulation)
+    {
+        // Gazebo provides contacts state and contact points
+        if(!getContactsSim(tac_filt_hand_name, contacts_tactile, sim_contact_points))
+            return false;
+    }
+    else
+    {
+        // real robot provides binarized information on contacts
+        if (!getContactsTactile(tac_filt_hand_name, contacts_tactile))
+            return false;
+        if (use_springy)
+        {
+            // use also springy fingers model to detect contacts
+            if (!getContactsSpringy(tac_filt_hand_name, contacts_springy))
+                return false;
+        }
+    }
+
+    // fuse tactile contacts with springy contacts
+    if (use_springy)
+        for (auto it=contacts_tactile.begin(); it!=contacts_tactile.end(); it++)
+        {
+            contacts_all[it->first] = contacts_tactile[it->first] ||
+                contacts_springy[it->first];
+        }
+    else
+    {
+        // all the contacts are those due to tactile perception
+        contacts_all = contacts_tactile;
+
+        // clear contacts according to springy fingers
+        for (std::string &finger_name : fingers_names)
+        {
+            contacts_springy[finger_name] = false;
+        }
+    }
+}
+
+void LocalizerModule::performTactileFiltering()
+{
+    // store initial time
+    t_i = yarp::os::Time::now();
+
+    // storage for time stamp
+    double time_stamp;
+
+    // retrieve contacts
+    std::unordered_map<std::string, bool> contacts_tactile;
+    std::unordered_map<std::string, bool> contacts_springy;
+    std::unordered_map<std::string, bool> contacts_all;
+    std::unordered_map<std::string, yarp::sig::Vector> sim_contact_points;
+
+    if (!getContacts(contacts_tactile, contacts_springy,
+                     contacts_all, sim_contact_points))
+        return;
+
+    // get data related to fingers
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
+    getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
+
+    // extract contact points
+    std::unordered_map<std::string, yarp::sig::Vector> contact_points;
+    if (is_simulation)
+    {
+        contact_points = sim_contact_points;
+    }
+    else
+    {
+        // extract contact points from forward kinematics
+        getContactPoints(contacts_all, fingers_pos, contact_points);
+    }
+
+    // copy to a vector of yarp::sig::Vector(s)
+    std::vector<yarp::sig::Vector> points;
+    for (auto it=contact_points.begin(); it!=contact_points.end(); it++)
+    {
+        points.push_back(it->second);
+    }
+    yInfo() << "";
+    yInfo() << "No. of contacts detected:" << points.size();
+
+    // set noise covariances
+    upf0.setQ(Q_tactile);
+    upf0.setR(R_tactile);
+    upf1.setQ(Q_tactile);
+    upf1.setR(R_tactile);
+
+    // set alpha parameter
+    upf0.setAlpha(0.3);
+    upf1.setAlpha(0.3);
+
+    // set input
+    yarp::sig::Vector input;
+    input = fingers_vels["middle"];
+    input[2] = 0;
+    upf0.setNewInput(input);
+    upf1.setNewInput(input);
+
+    if (is_first_step)
+    {
+        // reset internal time required to
+        // evaluate velocity increments
+        upf0.resetTime();
+        upf1.resetTime();
+
+        is_first_step = false;
+
+        // record the estimate obtained using visual data
+        // last_vis_estimate = last_estimate;
+        // record initial time of tactile filtering
+        // tac_t0 = yarp::os::Time::now();
+    }
+
+    // filtering
+    std::vector<yarp::sig::Vector> corrected_points;
+    if (points.size() <= 1)
+    {
+        // skip step in case of too few measurements
+        upf0.skipStep(time_stamp);
+        upf1.skipStep(time_stamp);
+    }
+    else
+    {
+        // update the auxiliary filter
+        upf1.setNewMeasure(points);
+        upf1.step(time_stamp);
+        yarp::sig::Vector tmp_estimate = upf1.getEstimate();
+
+        // update the visuo tactile mismatch
+        // until the object is not moving
+        // if (yarp::math::norm(input) < 0.003)
+        // if ((yarp::os::Time::now() - tac_t0) < 0.5)
+        //     evaluateVisualTactileMismatch(last_vis_estimate,
+        //                                   tmp_estimate,
+        //                                   vis_tac_mismatch);
+
+        // correct measurements using the visuo tactile mismatch
+        correctMeasurements(tmp_estimate, vis_tac_mismatch,
+                            points, corrected_points);
+
+        // do normal filtering step
+        upf0.setNewMeasure(corrected_points);
+        upf0.step(time_stamp);
+
+        last_estimate = upf0.getEstimate();
+    }
+
+    // extract all the particles for logging purposes
+    std::vector<yarp::sig::Vector> particles;
+    upf0.getParticles(particles);
+
+    // evaluate final time and execution time
+    t_f = yarp::os::Time::now();
+    exec_time = t_f - t_i;
+
+    storage_on_mutex.lock();
+
+    // store data if required
+    if (storage_on)
+        storeDataTactile(last_ground_truth,
+                         last_estimate,
+                         particles,
+                         corrected_points,
+                         input,
+                         fingers_angles,
+                         fingers_pos,
+                         fingers_vels,
+                         contacts_tactile,
+                         contacts_springy,
+                         time_stamp,
+                         exec_time);
+
+    storage_on_mutex.unlock();
+
+    // a new estimate is now available
+    estimate_available = true;
+}
+
+void LocalizerModule::performFiltering()
+{
+    if (!filtering_enabled)
+        return;
+
+    if (filtering_type == FilteringType::visual)
+        performVisualFiltering();
+    else if (filtering_type == FilteringType::tactile)
+        performTactileFiltering();
+    else if (filtering_type == FilteringType::visuo_tactile_matching)
+        ;
 }
 
 void LocalizerModule::performContactsProbe()
@@ -1628,7 +1631,7 @@ void LocalizerModule::performContactsProbe()
     else
     {
         // real robot provides binarized information on contacts
-        if (!getContacts(tac_filt_hand_name, fingers_contacts))
+        if (!getContactsTactile(tac_filt_hand_name, fingers_contacts))
             return;
     }
 

@@ -411,6 +411,17 @@ private:
     bool getPointCloud(std::vector<yarp::sig::Vector> &pc);
 
     /*
+     * Get a point cloud and its processed (subsampled, shuffled and
+     * without outliers) version.
+     *
+     * @param point_cloud the original point cloud
+     * @param filtered_point_cloud the processed point cloud
+     * @return true/false on success/failure
+     */
+    bool getProcessedPointCloud(std::vector<yarp::sig::Vector> &point_cloud,
+                                std::vector<yarp::sig::Vector> filtered_point_cloud);
+
+    /*
      * Setup the analog bounds for
      * encoders of proximal/distal joints
      *
@@ -447,8 +458,8 @@ private:
      * @param hand_name name of the hand to be used
      * @param points contact states on finger tips of the specified hand
      */
-    bool getContacts(const std::string &hand_name,
-                     std::unordered_map<std::string, bool> &contacts);
+    bool getContactsTactile(const std::string &hand_name,
+                            std::unordered_map<std::string, bool> &contacts);
 
     /*
      * Extract finger tips contacts state and contact points from skinContactList
@@ -464,6 +475,11 @@ private:
 
     bool getContactsSpringy(const std::string &hand_name,
                             std::unordered_map<std::string, bool> &contacts);
+
+    bool getContacts(std::unordered_map<std::string, bool> contacts_tactile,
+                     std::unordered_map<std::string, bool> contacts_springy,
+                     std::unordered_map<std::string, bool> contacts_all,
+                     std::unordered_map<std::string, yarp::sig::Vector> sim_contact_points);
 
     /*
      * Extract arm and torso angles and angular rates.
@@ -616,6 +632,16 @@ private:
      * Perform a filtering step
      */
     void performFiltering();
+
+    /*
+     * Perform visual filtering
+     */
+    void performVisualFiltering();
+
+    /*
+     * Perform tactile filtering
+     */
+    void performTactileFiltering();
 
     /*
      * Perform probe of contacts on finger tips

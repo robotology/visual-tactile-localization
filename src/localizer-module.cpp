@@ -1129,7 +1129,7 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
 }
 
 bool LocalizerModule::getProcessedPointCloud(std::vector<yarp::sig::Vector> &point_cloud,
-                                             std::vector<yarp::sig::Vector> filtered_point_cloud)
+                                             std::vector<yarp::sig::Vector> &filtered_point_cloud)
 {
     // check if a point cloud is available
     if (is_simulation)

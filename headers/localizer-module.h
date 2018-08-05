@@ -420,7 +420,7 @@ private:
      * @return true/false on success/failure
      */
     bool getProcessedPointCloud(std::vector<yarp::sig::Vector> &point_cloud,
-                                std::vector<yarp::sig::Vector> filtered_point_cloud);
+                                std::vector<yarp::sig::Vector> &filtered_point_cloud);
 
     /*
      * Setup the analog bounds for

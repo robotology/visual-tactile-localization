@@ -1710,10 +1710,31 @@ bool LocalizerModule::retrieveGroundTruth(yarp::sig::Vector &pose)
     return true;
 }
 
+yarp::sig::Matrix LocalizerModule::eulerZYX2dcm(const yarp::sig::Vector &euler)
+{
+    yarp::sig::Matrix dcm(3, 3);
+
+    double phi = euler[0];
+    double theta = euler[1];
+    double psi = euler[2];
+    dcm(0, 0) = cos(phi) * cos(theta);
+    dcm(0, 1) = cos(phi) * sin(theta) * sin(psi)-sin(phi) * cos(psi);
+    dcm(0, 2) = cos(phi) * sin(theta) * cos(psi)+sin(phi) * sin(psi);
+    dcm(1, 0) = sin(phi) * cos(theta);
+    dcm(1, 1) = sin(phi) * sin(theta) * sin(psi)+cos(phi) * cos(psi);
+    dcm(1, 2) = sin(phi) * sin(theta) * cos(psi)-cos(phi) * sin(psi);
+    dcm(2, 0) = -sin(theta);
+    dcm(2, 1) = cos(theta) * sin(psi);
+    dcm(2, 2) = cos(theta) * cos(psi);
+
+    return dcm;
+}
+
 void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &visual_estimate,
                                                     const yarp::sig::Vector &tactile_estimate,
                                                     yarp::sig::Matrix &mismatch)
 {
+
     yarp::sig::Matrix rot;
     yarp::sig::Vector pos;
 
@@ -1725,7 +1746,7 @@ void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &vis
     pos.setSubvector(0, visual_estimate.subVector(0, 2));
     pos[3] = 1.0;
     T_vis.setCol(3, pos);
-    rot = yarp::math::euler2dcm(visual_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    rot = eulerZYX2dcm(visual_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
     T_vis.setSubmatrix(rot, 0, 0);
 
     // transformation due to tactile data
@@ -1736,7 +1757,7 @@ void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &vis
     pos.setSubvector(0, tactile_estimate.subVector(0, 2));
     pos[3] = 1.0;
     T_tac.setCol(3, pos);
-    rot = yarp::math::euler2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    rot = eulerZYX2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
     T_tac.setSubmatrix(rot, 0, 0);
 
     mismatch = SE3inv(T_tac) * T_vis;
@@ -1757,7 +1778,7 @@ void LocalizerModule::correctMeasurements(const yarp::sig::Vector &tactile_estim
     pos.setSubvector(0, tactile_estimate.subVector(0, 2));
     pos[3] = 1.0;
     T_tac.setCol(3, pos);
-    yarp::sig::Matrix rot = yarp::math::euler2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    yarp::sig::Matrix rot = eulerZYX2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
     T_tac.setSubmatrix(rot, 0, 0);
 
     // change of coordinate from root frame to

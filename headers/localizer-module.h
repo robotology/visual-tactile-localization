@@ -646,6 +646,8 @@ private:
      */
     bool retrieveGroundTruth(yarp::sig::Vector &pose);
 
+    yarp::sig::Matrix eulerZYX2dcm(const yarp::sig::Vector &euler);
+
     void evaluateVisualTactileMismatch(const yarp::sig::Vector &visual_estimate,
                                        const yarp::sig::Vector &tactile_estimate,
                                        yarp::sig::Matrix &mismatch);

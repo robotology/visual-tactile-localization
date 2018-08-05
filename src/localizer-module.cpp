@@ -422,7 +422,6 @@ void LocalizerModule::removeDenseOutliersFromPointCloud(const double &threshold,
     }
 }
 
-
 bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &pc)
 {
     // original point cloud
@@ -443,44 +442,6 @@ bool LocalizerModule::getPointCloud(std::vector<yarp::sig::Vector> &pc)
 
     return true;
 }
-
-// bool LocalizerModule::getContactPointsSim(const std::string &hand_name,
-//                                           std::vector<yarp::sig::Vector> &points)
-// {
-//     // check if new data is available
-//     iCub::skinDynLib::skinContactList *list;
-//     list = port_contacts_sim.read(false);
-//     if (list == NULL)
-//         return false;
-
-//     // clear vector
-//     points.clear();
-
-//     // extract contacts coming from finger tips only
-//     for (size_t i=0; i<list->size(); i++)
-//     {
-//         // extract the skin contact
-//         const iCub::skinDynLib::skinContact &skin_contact = (*list)[i];
-
-//         // need to verify if this contact was effectively produced
-//         // by taxels on the finger tips
-//         // in order to simplify things the Gazebo plugin only sends one
-//         // taxel id that is used to identify which finger is in contact
-//         std::vector<unsigned int> taxels_ids = skin_contact.getTaxelList();
-//         // taxels ids for finger tips are between 0 and 59
-//         if (taxels_ids[0] >= 0 && taxels_ids[0] < 60)
-//         {
-//             if ((hand_name == "right") &&
-//                 (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_RIGHT_HAND))
-//                 points.push_back(skin_contact.getGeoCenter());
-//             else if ((hand_name == "left") &&
-//                      (skin_contact.getSkinPart() == iCub::skinDynLib::SkinPart::SKIN_LEFT_HAND))
-//                 points.push_back(skin_contact.getGeoCenter());
-//         }
-//     }
-
-//     return true;
-// }
 
 void LocalizerModule::setupAnalogBounds()
 {
@@ -755,12 +716,6 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
         rates = joints_vel_estimator->estimate(el);
         torso_ang_rates = rates.subVector(0, 2);
         arm_ang_rates = rates.subVector(3, 18);
-        // yarp::sig::Vector* ext_torso_vels = ext_vel_obs_torso.read(false);
-        // yarp::sig::Vector* ext_arm_vels = ext_vel_obs_arm->read(false);
-        // if ((ext_torso_vels == NULL) || (ext_arm_vels == NULL))
-        //     return false;
-        // torso_ang_rates = *ext_torso_vels;
-        // arm_ang_rates = *ext_arm_vels;
     }
     else
     {
@@ -862,14 +817,6 @@ void LocalizerModule::getFingerJointsState(const std::string &hand_name,
     // get the finger
     iCub::iKin::iCubFingerExt &finger = fingers_kin[hand_name + "_" + finger_name];
 
-    // get the finger angles
-    // if (finger_name == "ring")
-    // {
-    //     finger_angles.resize(4);
-    //     finger_angles[0] = arm_angles[7] / 3.0;
-    //     finger_angles[1] = arm_angles[15] / 3.0;
-    //     finger_angles[3] = finger_angles[2] = finger_angles[1];
-    // }
     if (use_analogs)
     {
         if (use_analogs_bounds)
@@ -2818,15 +2765,6 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
                      << "unable to open the point cloud port";
             return false;
         }
-
-        // ok_port = port_filtered_pc.open(port_filtered_pc_name);
-        // if (!ok_port)
-
-        // {
-        //     yError() << "LocalizerModule:Configure error:"
-        //              << "unable to open the filtered point cloud port";
-        //     return false;
-        // }
     }
 
     if (is_simulation)
@@ -2849,33 +2787,6 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
             return false;
         }
     }
-
-    // if (use_ext_vel_observer)
-    // {
-    //     ok_port = ext_vel_obs_torso.open("/upf-localizer/torsoObserver/vel:i");
-    //     if (!ok_port)
-    //     {
-    //         yError() << "LocalizerModule:Configure error:"
-    //                  << "unable to open the external velocity observer port for torso";
-    //         return false;
-    //     }
-
-    //     ok_port = ext_vel_obs_left_arm.open("/upf-localizer/leftArmObserver/vel:i");
-    //     if (!ok_port)
-    //     {
-    //         yError() << "LocalizerModule:Configure error:"
-    //                  << "unable to open the external velocity observer port for left arm";
-    //         return false;
-    //     }
-
-    //     ok_port = ext_vel_obs_right_arm.open("/upf-localizer/rightArmObserver/vel:i");
-    //     if (!ok_port)
-    //     {
-    //         yError() << "LocalizerModule:Configure error:"
-    //                  << "unable to open the external velocity observer port for the right arm";
-    //         return false;
-    //     }
-    // }
 
     // set FIFO policy
     port_in.setStrict();
@@ -3074,13 +2985,6 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         std::string left_finger = "left_" + finger_name;
         std::string right_finger_key = right_finger;
         std::string left_finger_key = left_finger;
-        // if (finger_name == "ring")
-        // {
-        //     // FIX ME :the forward kinematics of the ring finger is not available
-        //     // using the forward kinematics of the index finger
-        //     right_finger = "right_index";
-        //     left_finger = "left_index";
-        // }
         fingers_kin[right_finger_key] = iCub::iKin::iCubFingerExt(right_finger);
         fingers_kin[left_finger_key] = iCub::iKin::iCubFingerExt(left_finger);
 

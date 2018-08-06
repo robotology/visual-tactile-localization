@@ -2318,6 +2318,8 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
              << "phi_real;" << "theta_real;" << "psi_real;"
              << "x_sol;"   << "y_sol;"     << "z_sol;"
              << "phi_sol;" << "theta_sol;" << "psi_sol;"
+             << "x_aux;"   << "y_aux;"     << "z_aux;"
+             << "phi_aux;" << "theta_aux;" << "psi_aux;"
              << "input_x;"   << "input_y;" << "input_z;"
              << "time_stamp;"
              << "exec_time;"
@@ -2340,6 +2342,9 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
             // estimate
             for(size_t j=0; j<6; j++)
                 fout << d.estimate[j] << ";";
+            // aux estimate
+            for(size_t j=0; j<6; j++)
+                fout << d.corrected_est[j] << ";";
             // input
             for(size_t j=0; j<3; j++)
                 fout << d.input[j] << ";";
@@ -2367,6 +2372,14 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
             std::string meas_path = output_path + "meas_step_"
                 + std::to_string(step_index) + ".off";
             if (!saveMeas(d.meas, meas_path))
+            {
+                // error message is provided by saveMeas()
+                fout.close();
+                return false;
+            }
+            meas_path = output_path + "corr_meas_step_"
+                + std::to_string(step_index) + ".off";
+            if (!saveMeas(d.corr_meas, meas_path))
             {
                 // error message is provided by saveMeas()
                 fout.close();

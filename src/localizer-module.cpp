@@ -1564,8 +1564,18 @@ void LocalizerModule::performVisuoTactileMatching()
     {
         points.push_back(it->second);
     }
-    yInfo() << "";
-    yInfo() << "No. of contacts detected:" << points.size();
+
+    if (points.size() <= 1)
+    {
+        // in case of no contact use the position of the fingers anyway
+        points.clear();
+        for (auto it=fingers_pos.begin(); it!=fingers_pos.end(); it++)
+        {
+            if (std::find(excluded_fingers.begin(), excluded_fingers.end(), it->first)
+                == excluded_fingers.end())
+                points.push_back(it->second);
+        }
+    }
 
     // set parameters
     upf1.setQ(Q_tactile);
@@ -1576,22 +1586,17 @@ void LocalizerModule::performVisuoTactileMatching()
     yarp::sig::Vector input(3, 0.0);
     upf1.setNewInput(input);
 
-    // filtering
-    std::vector<yarp::sig::Vector> corrected_points;
-    if (points.size() > 1)
-    {
-        // step auxiliary filter
-        upf1.setNewMeasure(points);
-        upf1.step(time_stamp);
-        yarp::sig::Vector tmp_estimate = upf1.getEstimate();
+    // step auxiliary filter
+    upf1.setNewMeasure(points);
+    upf1.step(time_stamp);
+    yarp::sig::Vector tmp_estimate = upf1.getEstimate();
 
-        // update the visuo tactile mismatch
-        evaluateVisualTactileMismatch(last_estimate,
-                                      tmp_estimate,
-                                      vis_tac_mismatch);
-
-        is_vis_tac_mismatch = true;
-    }
+    // update the visuo tactile mismatch
+    evaluateVisualTactileMismatch(last_estimate,
+                                  tmp_estimate,
+                                  vis_tac_mismatch);
+    yInfo() << vis_tac_mismatch.toString();
+    is_vis_tac_mismatch = true;
 
     // here after data from the upf0 is logged
 

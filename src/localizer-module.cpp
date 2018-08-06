@@ -1612,7 +1612,7 @@ void LocalizerModule::performVisuoTactileMatching()
 
     // update the visuo tactile mismatch
     evaluateVisualTactileMismatch(last_estimate,
-                                  tmp_estimate,
+                                  last_aux_estimate,
                                   vis_tac_mismatch);
     is_vis_tac_mismatch = true;
 

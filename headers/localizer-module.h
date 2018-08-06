@@ -131,6 +131,7 @@ private:
 
     // last estimate available
     yarp::sig::Vector last_estimate;
+    yarp::sig::Vector last_aux_estimate;
     // last ground truth available
     yarp::sig::Vector last_ground_truth;
 
@@ -862,6 +863,7 @@ private:
 
 public:
     LocalizerModule() : last_estimate(6, 0.0),
+                        last_aux_estimate(6, 0.0),
                         Q_vision(6, 0.0),
                         Q_tactile(6, 0.0) { };
     /*

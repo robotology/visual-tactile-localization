@@ -1298,7 +1298,7 @@ void LocalizerModule::performVisualFiltering()
         upf1.step(time_stamp);
 
         // extract estimate
-        last_estimate = upf0.getEstimate();
+        last_aux_estimate = last_estimate = upf0.getEstimate();
 
         // extract all the particles for logging purposes
         std::vector<yarp::sig::Vector> particles;
@@ -1321,7 +1321,7 @@ void LocalizerModule::performVisualFiltering()
                             is_first_chunk,
                             last_ground_truth,
                             last_estimate,
-                            last_estimate,
+                            last_aux_estimate,
                             particles,
                             measure,
                             input,
@@ -1463,7 +1463,7 @@ void LocalizerModule::performTactileFiltering()
 
     // filtering
     std::vector<yarp::sig::Vector> corrected_points;
-    yarp::sig::Vector aux_estimate = last_estimate;
+    last_aux_estimate = last_estimate;
     if (points.size() <= 1)
     {
         // skip step in case of too few measurements
@@ -1480,10 +1480,10 @@ void LocalizerModule::performTactileFiltering()
             // update the auxiliary filter
             upf1.setNewMeasure(points);
             upf1.step(time_stamp);
-            aux_estimate = upf1.getEstimate();
+            last_aux_estimate = upf1.getEstimate();
 
             // correct measurements
-            correctMeasurements(aux_estimate, vis_tac_mismatch,
+            correctMeasurements(last_aux_estimate, vis_tac_mismatch,
                                 points, corrected_points);
         }
         else
@@ -1510,7 +1510,7 @@ void LocalizerModule::performTactileFiltering()
     // store data if required
     if (storage_on)
         storeDataTactile(last_ground_truth,
-                         aux_estimate,
+                         last_aux_estimate,
                          last_estimate,
                          particles,
                          points,
@@ -1598,7 +1598,7 @@ void LocalizerModule::performVisuoTactileMatching()
     // step auxiliary filter
     upf1.setNewMeasure(points);
     upf1.step(time_stamp);
-    yarp::sig::Vector tmp_estimate = upf1.getEstimate();
+    last_aux_estimate = upf1.getEstimate();
 
     // update the visuo tactile mismatch
     evaluateVisualTactileMismatch(last_estimate,
@@ -1621,7 +1621,7 @@ void LocalizerModule::performVisuoTactileMatching()
     // store data if required
     if (storage_on)
         storeDataTactile(last_ground_truth,
-                         tmp_estimate,
+                         last_aux_estimate,
                          last_estimate,
                          particles,
                          points,

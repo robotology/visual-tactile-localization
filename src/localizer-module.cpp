@@ -1405,15 +1405,15 @@ void LocalizerModule::performTactileFiltering()
 
     // extract contact points
     std::unordered_map<std::string, yarp::sig::Vector> contact_points;
-    if (is_simulation)
-    {
-        contact_points = sim_contact_points;
-    }
-    else
-    {
+    // if (is_simulation)
+    // {
+    //     contact_points = sim_contact_points;
+    // }
+    // else
+    // {
         // extract contact points from forward kinematics
         getContactPoints(contacts_all, fingers_pos, contact_points);
-    }
+    // }
 
     // copy to a vector of yarp::sig::Vector(s)
     std::vector<yarp::sig::Vector> points;
@@ -1530,39 +1530,39 @@ void LocalizerModule::performVisuoTactileMatching()
     // storage for time stamp
     double time_stamp;
 
-    // retrieve contacts
-    std::unordered_map<std::string, bool> contacts_tactile;
-    std::unordered_map<std::string, bool> contacts_springy;
-    std::unordered_map<std::string, bool> contacts_all;
-    std::unordered_map<std::string, yarp::sig::Vector> sim_contact_points;
-
-    if (!getContacts(contacts_tactile, contacts_springy,
-                     contacts_all, sim_contact_points))
-        return;
-
     // get data related to fingers
     std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
     std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
     std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
     getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
 
-    // extract contact points
-    std::unordered_map<std::string, yarp::sig::Vector> contact_points;
-    if (is_simulation)
+    std::unordered_map<std::string, bool> contacts_tactile;
+    std::unordered_map<std::string, bool> contacts_springy;
+    std::unordered_map<std::string, bool> contacts_all;
+
+    // reset contacts
+    for (std::string &finger_name : fingers_names)
     {
-        contact_points = sim_contact_points;
-    }
-    else
-    {
-        // extract contact points from forward kinematics
-        getContactPoints(contacts_all, fingers_pos, contact_points);
+        contacts_springy[finger_name] = false;
+        contacts_tactile[finger_name] = false;
     }
 
-    // copy to a vector of yarp::sig::Vector(s)
+    // retrieve contacts
     std::vector<yarp::sig::Vector> points;
-    for (auto it=contact_points.begin(); it!=contact_points.end(); it++)
+    std::unordered_map<std::string, yarp::sig::Vector> sim_contact_points;
+    if (getContacts(contacts_tactile, contacts_springy,
+                     contacts_all, sim_contact_points))
     {
-        points.push_back(it->second);
+        // extract contact points
+        std::unordered_map<std::string, yarp::sig::Vector> contact_points;
+        // extract contact points from forward kinematics
+        getContactPoints(contacts_all, fingers_pos, contact_points);
+
+        // copy to a vector of yarp::sig::Vector(s)
+        for (auto it=contact_points.begin(); it!=contact_points.end(); it++)
+        {
+            points.push_back(it->second);
+        }
     }
 
     if (points.size() <= 1)
@@ -1636,6 +1636,8 @@ void LocalizerModule::performVisuoTactileMatching()
     if (vis_tac_mismatch_counter > 100)
     {
         stopFiltering();
+        yInfo() << "Visual tactile matching completed!";
+        yInfo() << vis_tac_mismatch.toString();
     }
 }
 
@@ -1824,7 +1826,7 @@ void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &vis
     pos.setSubvector(0, visual_estimate.subVector(0, 2));
     pos[3] = 1.0;
     T_vis.setCol(3, pos);
-    rot = eulerZYX2dcm(visual_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    rot = eulerZYX2dcm(visual_estimate.subVector(3, 5));
     T_vis.setSubmatrix(rot, 0, 0);
 
     // transformation due to tactile data
@@ -1835,10 +1837,11 @@ void LocalizerModule::evaluateVisualTactileMismatch(const yarp::sig::Vector &vis
     pos.setSubvector(0, tactile_estimate.subVector(0, 2));
     pos[3] = 1.0;
     T_tac.setCol(3, pos);
-    rot = eulerZYX2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    rot = eulerZYX2dcm(tactile_estimate.subVector(3, 5));
     T_tac.setSubmatrix(rot, 0, 0);
 
     mismatch = SE3inv(T_tac) * T_vis;
+    mismatch(0, 3) = mismatch(1, 3) = mismatch(2, 3) = 0.0;
 }
 
 void LocalizerModule::correctMeasurements(const yarp::sig::Vector &tactile_estimate,
@@ -1856,7 +1859,7 @@ void LocalizerModule::correctMeasurements(const yarp::sig::Vector &tactile_estim
     pos.setSubvector(0, tactile_estimate.subVector(0, 2));
     pos[3] = 1.0;
     T_tac.setCol(3, pos);
-    yarp::sig::Matrix rot = eulerZYX2dcm(tactile_estimate.subVector(3, 5)).submatrix(0, 2, 0, 2);
+    yarp::sig::Matrix rot = eulerZYX2dcm(tactile_estimate.subVector(3, 5));
     T_tac.setSubmatrix(rot, 0, 0);
 
     // change of coordinate from root frame to

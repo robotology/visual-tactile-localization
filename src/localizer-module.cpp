@@ -1473,7 +1473,6 @@ void LocalizerModule::performTactileFiltering()
 
     // filtering
     std::vector<yarp::sig::Vector> corrected_points;
-    last_aux_estimate = last_estimate;
     if (points.size() <= 1)
     {
         // skip step in case of too few measurements

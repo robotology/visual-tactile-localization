@@ -690,11 +690,15 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     arm_angles.resize(16);
     torso_angles.resize(3);
     bool ok = enc->getEncoders(arm_angles.data());
-    // hack encoders
-    arm_angles[4] -= 20;
-    arm_angles[5] += 0;
-    arm_angles[6] += 20;
-    //
+    if (is_simulation)
+    {
+        // hack encoders in simulation in order to simulate
+        // mismatch between visual and tactile domains
+        arm_angles[4] -= 20;
+        arm_angles[5] += 0;
+        arm_angles[6] += 20;
+        //
+    }
     if(!ok)
         return false;
     ok = ienc_torso->getEncoders(torso_angles.data());

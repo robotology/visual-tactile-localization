@@ -1612,7 +1612,7 @@ void LocalizerModule::performVisuoTactileMatching()
     // store data if required
     if (storage_on)
         storeDataTactile(last_ground_truth,
-                         last_estimate,
+                         tmp_estimate,
                          particles,
                          points,
                          input,

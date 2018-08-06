@@ -2408,7 +2408,7 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
             }
             meas_path = output_path + "corr_meas_step_"
                 + std::to_string(step_index) + ".off";
-            if (!saveMeas(d.corr_meas, meas_path))
+            if (!saveMeas(d.corrected_meas, meas_path))
             {
                 // error message is provided by saveMeas()
                 fout.close();

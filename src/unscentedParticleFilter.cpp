@@ -575,7 +575,6 @@ void UnscentedParticleFilter::resampling()
 void UnscentedParticleFilter::selectionStep(const double &sum_squared)
 {
     double Neff=1.0/sum_squared;
-    yInfo() << Neff;
 
     // enable resampling only after params.n_steps_before_resampling;
     if (t >= params.n_steps_before_resampling)

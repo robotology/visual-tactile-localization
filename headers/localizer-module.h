@@ -221,6 +221,10 @@ private:
     std::string est_source_frame_name;
     std::string est_target_frame_name;
 
+    // source and target frame names for auxiliary estimate
+    std::string aux_est_source_frame_name;
+    std::string aux_est_target_frame_name;
+
     // source and target frame names for robot root frame (simulation only)
     std::string robot_source_frame_name;
     std::string robot_target_frame_name;

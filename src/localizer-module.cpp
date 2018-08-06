@@ -157,6 +157,16 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
         est_target_frame_name = "/estimate/frame";
     yInfo() << "Localizer module: estimate target frame name is" << est_target_frame_name;
 
+    aux_est_source_frame_name = rf.find("auxEstimateSourceFrame").asString();
+    if (rf.find("auxEstimateSourceFrame").isNull())
+        aux_est_source_frame_name = "/iCub/frame";
+    yInfo() << "Localizer module: aux estimate source frame name is" << aux_est_source_frame_name;
+
+    aux_est_target_frame_name = rf.find("auxEstimateTargetFrame").asString();
+    if (rf.find("auxEstimateTargetFrame").isNull())
+        aux_est_target_frame_name = "/estimate/aux/frame";
+    yInfo() << "Localizer module: aux estimate target frame name is" << aux_est_target_frame_name;
+
     robot_source_frame_name = rf.find("robotSourceFrame").asString();
     if (rf.find("robotSourceFrame").isNull())
         robot_source_frame_name = "/inertial";

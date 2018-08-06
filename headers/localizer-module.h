@@ -52,11 +52,17 @@ struct Data
     // estimated pose
     yarp::sig::Vector estimate;
 
+    // corrected pose
+    yarp::sig::Vector corrected_est;
+
     // particles
     std::vector<yarp::sig::Vector> particles;
 
     // current measurements
     std::vector<yarp::sig::Vector> meas;
+
+    // corrected measurements
+    std::vector<yarp::sig::Vector> corrected_meas;
 
     // current fingers joints angles
     std::unordered_map<std::string, yarp::sig::Vector> fingers_joints;
@@ -97,7 +103,8 @@ struct Data
     std::vector<yarp::sig::Vector> true_pc;
 
     Data() : ground_truth(6, 0.0),
-             estimate(6, 0.0) {};
+             estimate(6, 0.0),
+             corrected_est(6, 0.0) {};
 };
 
 /**
@@ -707,8 +714,10 @@ private:
     Data& storeData(const FilteringType &data_type,
                     const yarp::sig::Vector &ground_truth,
                     const yarp::sig::Vector &estimate,
+                    const yarp::sig::Vector &corrected_est,
                     const std::vector<yarp::sig::Vector> &particles,
                     const std::vector<yarp::sig::Vector> &meas,
+                    const std::vector<yarp::sig::Vector> &corrected_meas,
                     const yarp::sig::Vector &input,
                     const double &time_stamp,
                     const double &exec_time);
@@ -730,6 +739,7 @@ private:
 			 const bool &is_first_chunk,
 			 const yarp::sig::Vector &ground_truth,
 			 const yarp::sig::Vector &estimate,
+                         const yarp::sig::Vector &corrected_est,
                          const std::vector<yarp::sig::Vector> &particles,
 			 const std::vector<yarp::sig::Vector> &meas,
 			 const yarp::sig::Vector &input,
@@ -754,8 +764,10 @@ private:
      */
     void storeDataTactile(const yarp::sig::Vector &ground_truth,
                           const yarp::sig::Vector &estimate,
+                          const yarp::sig::Vector &corrected_est,
                           const std::vector<yarp::sig::Vector> &particles,
                           const std::vector<yarp::sig::Vector> &meas,
+                          const std::vector<yarp::sig::Vector> &corrected_meas,
                           const yarp::sig::Vector &input,
                           std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
                           std::unordered_map<std::string, yarp::sig::Vector> fingers_pos,

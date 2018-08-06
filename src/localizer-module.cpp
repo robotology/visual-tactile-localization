@@ -1317,6 +1317,7 @@ void LocalizerModule::performVisualFiltering()
                             is_first_chunk,
                             last_ground_truth,
                             last_estimate,
+                            last_estimate,
                             particles,
                             measure,
                             input,
@@ -1447,7 +1448,7 @@ void LocalizerModule::performTactileFiltering()
 
     if (is_first_step)
     {
-        // reset internal time required to
+        // reset internal time requiresd to
         // evaluate velocity increments
         upf0.resetTime();
         if (is_vis_tac_mismatch)
@@ -1458,6 +1459,7 @@ void LocalizerModule::performTactileFiltering()
 
     // filtering
     std::vector<yarp::sig::Vector> corrected_points;
+    yarp::sig::Vector aux_estimate = last_estimate;
     if (points.size() <= 1)
     {
         // skip step in case of too few measurements
@@ -1474,10 +1476,10 @@ void LocalizerModule::performTactileFiltering()
             // update the auxiliary filter
             upf1.setNewMeasure(points);
             upf1.step(time_stamp);
-            yarp::sig::Vector tmp_estimate = upf1.getEstimate();
+            aux_estimate = upf1.getEstimate();
 
             // correct measurements
-            correctMeasurements(tmp_estimate, vis_tac_mismatch,
+            correctMeasurements(aux_estimate, vis_tac_mismatch,
                                 points, corrected_points);
         }
         else
@@ -1504,8 +1506,10 @@ void LocalizerModule::performTactileFiltering()
     // store data if required
     if (storage_on)
         storeDataTactile(last_ground_truth,
+                         aux_estimate,
                          last_estimate,
                          particles,
+                         points,
                          corrected_points,
                          input,
                          fingers_angles,
@@ -1614,7 +1618,9 @@ void LocalizerModule::performVisuoTactileMatching()
     if (storage_on)
         storeDataTactile(last_ground_truth,
                          tmp_estimate,
+                         last_estimate,
                          particles,
+                         points,
                          points,
                          input,
                          fingers_angles,
@@ -1894,8 +1900,10 @@ void LocalizerModule::resetStorage()
 Data& LocalizerModule::storeData(const FilteringType &data_type,
                                  const yarp::sig::Vector &ground_truth,
                                  const yarp::sig::Vector &estimate,
+                                 const yarp::sig::Vector &corrected_est,
                                  const std::vector<yarp::sig::Vector> &particles,
                                  const std::vector<yarp::sig::Vector> &meas,
+                                 const std::vector<yarp::sig::Vector> &corrected_meas,
                                  const yarp::sig::Vector &input,
                                  const double &time_stamp,
                                  const double &exec_time)
@@ -1906,8 +1914,10 @@ Data& LocalizerModule::storeData(const FilteringType &data_type,
     d.data_type = data_type;
     d.ground_truth = ground_truth;
     d.estimate = estimate;
+    d.corrected_est = corrected_est;
     d.particles = particles;
     d.meas = meas;
+    d.corrected_meas = corrected_meas;
     d.input = input;
     d.time_stamp = time_stamp;
     d.exec_time = exec_time;
@@ -1923,6 +1933,7 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
                                       const bool &is_first_chunk,
                                       const yarp::sig::Vector &ground_truth,
                                       const yarp::sig::Vector &estimate,
+                                      const yarp::sig::Vector &corrected_est,
                                       const std::vector<yarp::sig::Vector> &particles,
                                       const std::vector<yarp::sig::Vector> &meas,
                                       const yarp::sig::Vector &input,
@@ -1933,7 +1944,8 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
 {
     // store common data
     Data &d = storeData(FilteringType::visual, ground_truth,
-                        estimate, particles, meas, input, time_stamp, exec_time);
+                        estimate, corrected_est, particles,
+                        meas, meas, input, time_stamp, exec_time);
 
     // add additional fields
     d.is_first_chunk = is_first_chunk;
@@ -1943,8 +1955,10 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
 
 void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
                                        const yarp::sig::Vector &estimate,
+                                       const yarp::sig::Vector &corrected_est,
                                        const std::vector<yarp::sig::Vector> &particles,
                                        const std::vector<yarp::sig::Vector> &meas,
+                                       const std::vector<yarp::sig::Vector> &corrected_meas,
                                        const yarp::sig::Vector &input,
                                        std::unordered_map<std::string, yarp::sig::Vector> fingers_joints,
                                        std::unordered_map<std::string, yarp::sig::Vector> fingers_pos,
@@ -1956,7 +1970,8 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
 {
     // store common data
     Data &d = storeData(FilteringType::tactile, ground_truth,
-                        estimate, particles, meas, input, time_stamp, exec_time);
+                        estimate, corrected_est, particles,
+                        meas, corrected_meas, input, time_stamp, exec_time);
 
     // add additional fields
     d.fingers_joints = fingers_joints;

@@ -1333,10 +1333,10 @@ void LocalizerModule::performVisualFiltering()
     }
 }
 
-bool LocalizerModule::getContacts(std::unordered_map<std::string, bool> contacts_tactile,
-                                  std::unordered_map<std::string, bool> contacts_springy,
-                                  std::unordered_map<std::string, bool> contacts_all,
-                                  std::unordered_map<std::string, yarp::sig::Vector> sim_contact_points)
+bool LocalizerModule::getContacts(std::unordered_map<std::string, bool> &contacts_tactile,
+                                  std::unordered_map<std::string, bool> &contacts_springy,
+                                  std::unordered_map<std::string, bool> &contacts_all,
+                                  std::unordered_map<std::string, yarp::sig::Vector> &sim_contact_points)
 {
     if (is_simulation)
     {
@@ -1595,7 +1595,6 @@ void LocalizerModule::performVisuoTactileMatching()
     evaluateVisualTactileMismatch(last_estimate,
                                   tmp_estimate,
                                   vis_tac_mismatch);
-    yInfo() << vis_tac_mismatch.toString();
     is_vis_tac_mismatch = true;
 
     // here after data from the upf0 is logged

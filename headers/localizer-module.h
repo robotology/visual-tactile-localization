@@ -477,10 +477,10 @@ private:
     bool getContactsSpringy(const std::string &hand_name,
                             std::unordered_map<std::string, bool> &contacts);
 
-    bool getContacts(std::unordered_map<std::string, bool> contacts_tactile,
-                     std::unordered_map<std::string, bool> contacts_springy,
-                     std::unordered_map<std::string, bool> contacts_all,
-                     std::unordered_map<std::string, yarp::sig::Vector> sim_contact_points);
+    bool getContacts(std::unordered_map<std::string, bool> &contacts_tactile,
+                     std::unordered_map<std::string, bool> &contacts_springy,
+                     std::unordered_map<std::string, bool> &contacts_all,
+                     std::unordered_map<std::string, yarp::sig::Vector> &sim_contact_points);
 
     /*
      * Extract arm and torso angles and angular rates.

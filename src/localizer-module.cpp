@@ -1779,6 +1779,21 @@ void LocalizerModule::publishEstimate()
     tf_client->setTransform(est_target_frame_name,
                            est_source_frame_name,
                            pose.toMatrix());
+
+    // same for the auxiliary estimate
+    pose.transFromVec(last_aux_estimate[0],
+                      last_aux_estimate[1],
+                      last_aux_estimate[2]);
+
+    // estimate is saved as x-y-z-Y-P-R
+    pose.rotFromRPY(last_aux_estimate[5],
+                    last_aux_estimate[4],
+                    last_aux_estimate[3]);
+
+    // Set a new transform
+    tf_client->setTransform(aux_est_target_frame_name,
+                            aux_est_source_frame_name,
+                            pose.toMatrix());
 }
 
 bool LocalizerModule::retrieveGroundTruth(yarp::sig::Vector &pose)

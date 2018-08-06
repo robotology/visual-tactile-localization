@@ -1565,8 +1565,9 @@ void LocalizerModule::performVisuoTactileMatching()
         }
     }
 
-    if (points.size() <= 1)
-    {
+    //if (points.size() <= 1)
+    //{
+    // testing, always use fingers positions
         // in case of no contact use the position of the fingers anyway
         points.clear();
         for (auto it=fingers_pos.begin(); it!=fingers_pos.end(); it++)
@@ -1575,7 +1576,7 @@ void LocalizerModule::performVisuoTactileMatching()
                 == excluded_fingers.end())
                 points.push_back(it->second);
         }
-    }
+    //}
 
     // set parameters
     upf1.setQ(Q_tactile);

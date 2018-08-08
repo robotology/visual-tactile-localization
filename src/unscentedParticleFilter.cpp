@@ -93,6 +93,7 @@ void UnscentedParticleFilter::initializationUPF()
         // obtained from the configuration file
         x[i].prev_weights=x[i].weights=1.0/params.N;
         x[i].P_corr=params.P0;
+        x[i].P_proj=params.P0;
 
         // zero matrices
         x[i].P_pred.zero();
@@ -109,6 +110,7 @@ void UnscentedParticleFilter::initialRandomize()
         x[i].x_corr_prev[3]=yarp::math::Rand::scalar(-M_PI / 2.0, M_PI / 2.0);
         x[i].x_corr_prev[4]=yarp::math::Rand::scalar(-M_PI / 2.0, M_PI / 2.0);
         x[i].x_corr_prev[5]=yarp::math::Rand::scalar(-M_PI / 2.0, M_PI / 2.0);
+        x[i].x_proj_prev = x[i].x_corr_prev;
     }
 }
 
@@ -392,6 +394,114 @@ void UnscentedParticleFilter::correctionStep(const int &i)
     x[i].P_corr=x[i].P_pred-x[i].K*x[i].Pyy*x[i].K.transposed();
 }
 
+void UnscentedParticleFilter::constrainedUKF(const int &i)
+{
+    // this function take the a posteriori estimate of the
+    // unconstrained UKF and produces a new estimate using
+    // PUKF or ECUKF
+    // constrained filtering is performed only on the positional part
+
+    // UT parameters
+    double beta = 2.0;
+    double alpha = 1.0;
+    double kappa = 0.0;
+    double lambda = pow(alpha, 2.0) * (3 + kappa) - 3;
+
+    // estimated state covariance matrix
+    yarp::sig::Matrix P_corr = x[i].P_corr.submatrix(0, 2, 0, 2);
+
+    // estimated state
+    yarp::sig::Vector x_corr = x[i].x_corr.subVector(0, 2);
+
+    // sigma points evaluation
+    yarp::sig::Vector aux;
+    yarp::sig::Matrix S,U,V,G;
+    yarp::sig::Vector s;
+    s.resize(3,0.0);
+    U.resize(3,3);
+    S.resize(3,3);
+    V.resize(3,3);
+    G.resize(3,3);
+    yarp::math::SVD((3 + lambda)* P_corr,U,s,V);
+    for(size_t k=0; k<params.n; k++)
+    {
+        s[k]=sqrt(s[k]);
+    }
+    S.diagonal(s);
+    G=U*S;
+
+    yarp::sig::Matrix sigma_points_x(3, 7);
+
+    sigma_points_x.setCol(0, x_corr);
+    for(size_t j=1; j<4; j++)
+        sigma_points_x.setCol(j, x_corr + G.getCol(j-1));
+
+    for(size_t j=4; j<7; j++)
+        sigma_points_x.setCol(j, x_corr - G.getCol(j-1-3));
+
+    yarp::sig::Vector weights_cov(7, 0.0);
+    yarp::sig::Vector weights_avg(7, 0.0);
+    weights_cov[0] = lambda / (3 + lambda) + 1 - pow(alpha, 2.0) + beta;
+    weights_avg[0] = lambda / (3 + lambda);
+    for(size_t j=1; j<7; j++)
+    {
+        weights_cov[j]= 1 / (2 * (3 + lambda));
+        weights_avg[j]= 1 / (2 * (3 + lambda));
+    }
+
+    // propagation of sigma points through constraints
+    yarp::sig::Matrix sigma_points_y(constraints_distances.size(), 7);
+    for(size_t j=0; j<7; j++)
+    {
+        yarp::sig::Vector propagated_sigma_point(constraints_distances.size());
+        for (size_t k=0; k<constraints_distances.size(); k++)
+        {
+            yarp::sig::Vector diff = constraints_positions[k] - sigma_points_x.getCol(j);
+            propagated_sigma_point[k] = yarp::math::norm(diff);
+        }
+        sigma_points_y.setCol(j, propagated_sigma_point);
+    }
+
+    // // predicted mean
+    yarp::sig::Vector y_pred;
+    y_pred = sigma_points_y * weights_avg;
+
+    // predicted covariance
+    yarp::sig::Matrix y_diff(constraints_distances.size(), 1);
+    yarp::sig::Matrix x_diff(3, 1);
+    yarp::sig::Matrix Pyy(constraints_distances.size(), constraints_distances.size());
+    yarp::sig::Matrix Pxy(3, constraints_distances.size());
+    Pyy.zero();
+    Pxy.zero();
+    for(size_t j=0; j<7; j++)
+    {
+        y_diff.setCol(0, sigma_points_y.getCol(j) - y_pred);
+        Pyy = Pyy + weights_cov[j] * y_diff * y_diff.transposed();
+
+        x_diff.setCol(0, sigma_points_x.getCol(j) - x_corr);
+        Pxy = Pxy + weights_cov[j] * x_diff * y_diff.transposed();
+    }
+
+    //add measurement noise covariance matrix to Pyy
+    yarp::sig::Vector diag_R(constraints_distances.size(), 1e-4);
+    yarp::sig::Matrix R(constraints_distances.size(), constraints_distances.size());
+    R.diagonal(diag_R);
+    Pyy = Pyy + R;
+
+    // projection
+    yarp::sig::Matrix K = Pxy * luinv(Pyy);
+
+    yarp::sig::Vector innovation = K * (constraints_distances - y_pred);
+    innovation[2] = 0.0;
+    yarp::sig::Vector x_proj = x_corr + innovation;
+    yarp::sig::Matrix P_prj = P_corr - K * Pyy * K.transposed();
+
+    x[i].x_proj = x[i].x_corr;
+    x[i].x_proj.setSubvector(0, x_proj);
+    x[i].P_proj = x[i].P_corr;
+    x[i].P_proj.setSubmatrix(P_prj, 0, 0);
+}
+
 double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
 {
     double sum=0.0;
@@ -401,7 +511,7 @@ double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)
 
     ParticleUPF &particle=x[k];
 
-    yarp::sig::Matrix H=homogeneousTransform(particle.x_corr);
+    yarp::sig::Matrix H=homogeneousTransform(particle.x_proj);
     H=SE3inv(H);
 
     // initialize the squared measurement error for the current measure
@@ -455,10 +565,10 @@ double UnscentedParticleFilter::tranProbability(const int &i,
                                                 const int &j)
 {
     // evaluate transition probability
-    yarp::sig::Vector mean = x[j].x_corr_prev;
+    yarp::sig::Vector mean = x[j].x_proj_prev;
     mean.setSubvector(0, mean.subVector(0,2) + propagated_input);
 
-    return multivariateGaussian(x[i].x_corr, mean, params.Q);
+    return multivariateGaussian(x[i].x_proj, mean, params.Q);
 }
 
 void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
@@ -476,7 +586,7 @@ void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
 
     // evaluate weights
     x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob/
-        multivariateGaussian(x[i].x_corr, x[i].x_corr, x[i].P_corr);
+        multivariateGaussian(x[i].x_proj, x[i].x_proj, x[i].P_proj);
 
     sum+=x[i].weights;
 }
@@ -527,7 +637,7 @@ void UnscentedParticleFilter::resampling()
 
         // evaluate sample mean before doing effective resampling
         for (size_t i=0; i<x.size(); i++)
-            sample_mean += x[i].weights * x[i].x_corr;
+            sample_mean += x[i].weights * x[i].x_proj;
         sample_mean[3] = normalizeAngle(sample_mean[3]);
         sample_mean[4] = normalizeAngle(sample_mean[4]);
         sample_mean[5] = normalizeAngle(sample_mean[5]);
@@ -540,7 +650,7 @@ void UnscentedParticleFilter::resampling()
         for (size_t i=0; i<x.size(); i++)
         {
             yarp::sig::Matrix particle_mat(6, 1);
-            particle_mat.setCol(0, x[i].x_corr);
+            particle_mat.setCol(0, x[i].x_proj);
             sample_covariance += x[i].weights * (particle_mat - sample_mean_mat) *
                 (particle_mat - sample_mean_mat).transposed();
             // sample_covariance /= x.size();
@@ -562,10 +672,10 @@ void UnscentedParticleFilter::resampling()
             yarp::sig::Vector delta_yarp(6, 0.0);
             for (size_t i=0; i<params.n; i++)
                 delta_yarp[i] = delta(i, 0);
-            new_x[i].x_corr += delta_yarp;
-            new_x[i].x_corr[3] = normalizeAngle(new_x[i].x_corr[3]);
-            new_x[i].x_corr[4] = normalizeAngle(new_x[i].x_corr[4]);
-            new_x[i].x_corr[5] = normalizeAngle(new_x[i].x_corr[5]);
+            new_x[i].x_proj += delta_yarp;
+            new_x[i].x_proj[3] = normalizeAngle(new_x[i].x_proj[3]);
+            new_x[i].x_proj[4] = normalizeAngle(new_x[i].x_proj[4]);
+            new_x[i].x_proj[5] = normalizeAngle(new_x[i].x_proj[5]);
         }
     }
 
@@ -810,6 +920,21 @@ void UnscentedParticleFilter::setRealPose(const yarp::sig::Vector &pose)
     real_pose = pose;
 }
 
+bool UnscentedParticleFilter::setConstraints(const yarp::sig::Vector &sources_distances,
+                                             const std::vector<yarp::sig::Vector> &sources_positions)
+{
+    // the number of distances of the measurement sources
+    // have to be the same as the number of positions of the
+    // measurement sources
+    if (sources_distances.size() != sources_positions.size())
+        return false;
+
+    constraints_distances = sources_distances;
+    constraints_positions = sources_positions;
+
+    use_constraints = true;
+}
+
 void UnscentedParticleFilter::setQ(const yarp::sig::Vector &covariance)
 {
     // assign a new covariance matrix
@@ -884,6 +1009,13 @@ void UnscentedParticleFilter::step(double &time_stamp)
         computeCorrectionMatrix(i);
         x[i].K=x[i].Pxy*luinv(x[i].Pyy);
         correctionStep(i);
+        if (use_constraints)
+            constrainedUKF(i);
+        else
+        {
+            x[i].x_proj = x[i].x_corr;
+            x[i].P_proj = x[i].P_corr;
+        }
         computeWeights(i, sum);
     }
 
@@ -913,10 +1045,18 @@ void UnscentedParticleFilter::step(double &time_stamp)
     // update previous value of filtering time
     t_prev = t_current;
 
+    // clear constrained filtering
+    use_constraints = false;
+    constraints_distances.clear();
+    constraints_positions.clear();
+
     for (size_t i=0; i<x.size(); i++)
     {
         // update previous value of x_corr
         x[i].x_corr_prev = x[i].x_corr;
+
+        // update previous vale of x_proj
+        x[i].x_proj_prev = x[i].x_proj;
 
         // update the weights for the next step
         x[i].prev_weights = x[i].weights;
@@ -931,7 +1071,7 @@ yarp::sig::Vector UnscentedParticleFilter::getEstimate()
 void UnscentedParticleFilter::getParticles(std::vector<yarp::sig::Vector> &particles)
 {
     for (size_t i=0; i<x.size(); i++)
-        particles.push_back(x[i].x_corr);
+        particles.push_back(x[i].x_proj);
 }
 
 void UnscentedParticleFilter::evalEstimate()
@@ -968,7 +1108,7 @@ void UnscentedParticleFilter::evalEstimate()
         }
     }
 
-    current_estimate = x[i_max_prob].x_corr;
+    current_estimate = x[i_max_prob].x_proj;
 }
 
 double UnscentedParticleFilter::evalPerformanceIndex(const yarp::sig::Vector &estimate,
@@ -1014,11 +1154,11 @@ void UnscentedParticleFilter::transformObject(const yarp::sig::Vector &estimate,
 void UnscentedParticleFilter::getInitialState(std::vector<yarp::sig::Vector> &particles)
 {
     for(size_t i=0; i<x.size(); i++)
-        particles.push_back(x[i].x_corr_prev);
+        particles.push_back(x[i].x_proj_prev);
 }
 
 void UnscentedParticleFilter::setInitialState(const std::vector<yarp::sig::Vector> &particles)
 {
     for(size_t i=0; i<x.size(); i++)
-        x[i].x_corr_prev = particles[i];
+        x[i].x_proj_prev = particles[i];
 }

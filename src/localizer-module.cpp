@@ -1090,7 +1090,11 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
     {
         filtering_enabled = true;
         if (type == yarp::os::createVocab('V', 'I', 'S'))
+        {
             filtering_type = FilteringType::visual;
+            // reset flag
+            is_vis_tac_mismatch = false;
+        }
         else if (type == yarp::os::createVocab('T','A','C','R'))
         {
             filtering_type = FilteringType::tactile;

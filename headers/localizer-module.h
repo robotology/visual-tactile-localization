@@ -153,9 +153,8 @@ private:
     // path where to save output
     std::string output_path;
 
-    // hand to be used during tactile filtering
-    // and contacts probing
-    std::string tac_filt_hand_name;
+    // hand to be used
+    std::string hand_name;
 
     // robot name
     std::string robot_name;
@@ -164,6 +163,8 @@ private:
     bool estimate_available;
     bool filtering_enabled;
     bool contacts_probe_enabled;
+    bool constraints_acquisition_enabled;
+    bool constraints_acquired;
     bool is_first_step;
     bool is_simulation;
     bool use_analogs;
@@ -200,6 +201,10 @@ private:
     yarp::sig::Matrix vis_tac_mismatch;
     bool is_vis_tac_mismatch;
     int vis_tac_mismatch_counter;
+
+    // storage for constants used in
+    // constrained filtering
+    std::unordered_map<std::string, double> fingers_constraints;
 
     /*
      */
@@ -665,6 +670,8 @@ private:
      * Perform probe of contacts on finger tips
      */
     void performContactsProbe();
+
+    void performConstraintsAcquisition();
 
     /*
      * Stops filtering

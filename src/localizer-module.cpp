@@ -1094,23 +1094,23 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
         else if (type == yarp::os::createVocab('T','A','C','R'))
         {
             filtering_type = FilteringType::tactile;
-            tac_filt_hand_name = "right";
+            hand_name = "right";
         }
         else if (type == yarp::os::createVocab('T','A','C','L'))
         {
             filtering_type = FilteringType::tactile;
-            tac_filt_hand_name = "left";
+            hand_name = "left";
         }
         else if (type == yarp::os::createVocab('V', 'T', 'M', 'R'))
         {
             filtering_type = FilteringType::visuo_tactile_matching;
-            tac_filt_hand_name = "right";
+            hand_name = "right";
             vis_tac_mismatch_counter = 0;
         }
         else if (type == yarp::os::createVocab('V', 'T', 'M', 'L'))
         {
             filtering_type = FilteringType::visuo_tactile_matching;
-            tac_filt_hand_name = "left";
+            hand_name = "left";
             vis_tac_mismatch_counter = 0;
         }
     }
@@ -1130,13 +1130,26 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
     {
         contacts_probe_enabled = true;
         if (type == yarp::os::createVocab('R', 'I', 'G', 'H'))
-            tac_filt_hand_name = "right";
+            hand_name = "right";
         else if (type == yarp::os::createVocab('L', 'E', 'F', 'T'))
-            tac_filt_hand_name = "left";
+            hand_name = "left";
     }
     else if (cmd == yarp::os::createVocab('P','R','O','F'))
     {
         contacts_probe_enabled = false;
+    }
+    // CNS{L, R} i.e. acquire position of fingers
+    // of the left (or right) hand
+    // required for constrained filtering
+    else if (cmd == yarp::os::createVocab('C','N','S','L'))
+    {
+        constraints_acquisition_enabled = true;
+        hand_name = "left";
+    }
+    else if (cmd == yarp::os::createVocab('C','N','S','R'))
+    {
+        constraints_acquisition_enabled = true;
+        hand_name = "right";
     }
 
     mutex.unlock();
@@ -1356,18 +1369,18 @@ bool LocalizerModule::getContacts(std::unordered_map<std::string, bool> &contact
     if (is_simulation)
     {
         // Gazebo provides contacts state and contact points
-        if(!getContactsSim(tac_filt_hand_name, contacts_tactile, sim_contact_points))
+        if(!getContactsSim(hand_name, contacts_tactile, sim_contact_points))
             return false;
     }
     else
     {
         // real robot provides binarized information on contacts
-        if (!getContactsTactile(tac_filt_hand_name, contacts_tactile))
+        if (!getContactsTactile(hand_name, contacts_tactile))
             return false;
         if (use_springy)
         {
             // use also springy fingers model to detect contacts
-            if (!getContactsSpringy(tac_filt_hand_name, contacts_springy))
+            if (!getContactsSpringy(hand_name, contacts_springy))
                 return false;
         }
     }
@@ -1416,7 +1429,7 @@ void LocalizerModule::performTactileFiltering()
     std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
     std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
     std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
-    getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
+    getFingersData(hand_name, fingers_angles, fingers_pos, fingers_vels);
 
     // extract contact points
     std::unordered_map<std::string, yarp::sig::Vector> contact_points;
@@ -1438,6 +1451,22 @@ void LocalizerModule::performTactileFiltering()
     }
     yInfo() << "";
     yInfo() << "No. of contacts detected:" << points.size();
+
+    // set constraints
+    std::vector<yarp::sig::Vector> constraints_positions;
+    yarp::sig::Vector constraints_distances;
+    if (constraints_acquired)
+    {
+        for (auto it=fingers_pos.begin(); it!=fingers_pos.end(); it++)
+        {
+            if (std::find(excluded_fingers.begin(), excluded_fingers.end(), it->first)
+                == excluded_fingers.end())
+            {
+                constraints_positions.push_back(it->second);
+                constraints_distances.push_back(fingers_constraints.at(it->first));
+            }
+        }
+    }
 
     // set parameters
     upf0.setQ(Q_tactile);
@@ -1498,6 +1527,10 @@ void LocalizerModule::performTactileFiltering()
         else
             corrected_points = points;
 
+        // set constraints if available
+        if (constraints_acquired)
+            upf0.setConstraints(constraints_distances, constraints_positions);
+
         // set measures
         upf0.setNewMeasure(corrected_points);
 
@@ -1551,7 +1584,7 @@ void LocalizerModule::performVisuoTactileMatching()
     std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
     std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
     std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
-    getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
+    getFingersData(hand_name, fingers_angles, fingers_pos, fingers_vels);
 
     std::unordered_map<std::string, bool> contacts_tactile;
     std::unordered_map<std::string, bool> contacts_springy;
@@ -1684,11 +1717,11 @@ void LocalizerModule::performContactsProbe()
     std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
     std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
     std::unordered_map<std::string, yarp::sig::Vector> fingers_points;
-    getFingersData(tac_filt_hand_name, fingers_angles, fingers_pos, fingers_vels);
+    getFingersData(hand_name, fingers_angles, fingers_pos, fingers_vels);
 
     // contacts detected using springy fingers
     std::unordered_map<std::string, bool> springy_contacts;
-    getContactsSpringy(tac_filt_hand_name, springy_contacts);
+    getContactsSpringy(hand_name, springy_contacts);
 
     // extract contact points
     getContactPoints(springy_contacts, fingers_pos, fingers_points);
@@ -1700,7 +1733,7 @@ void LocalizerModule::performContactsProbe()
     {
         if (it->second)
         {
-            yInfo() << "[SPRINGY][" << tac_filt_hand_name << "hand]"
+            yInfo() << "[SPRINGY][" << hand_name << "hand]"
                     << it->first;
             yInfo() << "@"
                     << fingers_points.at(it->first).toString();
@@ -1712,13 +1745,13 @@ void LocalizerModule::performContactsProbe()
     if (is_simulation)
     {
         // Gazebo provides contacts state and contact points
-        if (!getContactsSim(tac_filt_hand_name, fingers_contacts, fingers_points))
+        if (!getContactsSim(hand_name, fingers_contacts, fingers_points))
             return;
     }
     else
     {
         // real robot provides binarized information on contacts
-        if (!getContactsTactile(tac_filt_hand_name, fingers_contacts))
+        if (!getContactsTactile(hand_name, fingers_contacts))
             return;
     }
 
@@ -1732,7 +1765,7 @@ void LocalizerModule::performContactsProbe()
     {
         if (it->second)
         {
-            yInfo() << "[TACTILE][" << tac_filt_hand_name << "hand]"
+            yInfo() << "[TACTILE][" << hand_name << "hand]"
                     << it->first;
             yInfo() << "@"
                     << fingers_points.at(it->first).toString();
@@ -1740,6 +1773,60 @@ void LocalizerModule::performContactsProbe()
     }
 
     return;
+}
+
+void LocalizerModule::performConstraintsAcquisition()
+{
+    if (!constraints_acquisition_enabled)
+        return;
+
+    // constraints can be acquired only when
+    // the estimate is not changing
+    if (filtering_enabled)
+        return;
+
+    // constraints can be acquired only when
+    // the estimate is available
+    if (!estimate_available)
+        return;
+
+    // acquire the position of the fingers
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
+    std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
+    getFingersData(hand_name, fingers_angles, fingers_pos, fingers_vels);
+
+    const yarp::sig::Vector &estimate_pos = last_estimate.subVector(0, 2);
+    for (auto it = fingers_pos.begin(); it != fingers_pos.end(); it++)
+    {
+        const std::string &finger_name = it->first;
+        yarp::sig::Vector &finger_position = it->second;
+
+        if (std::find(excluded_fingers.begin(), excluded_fingers.end(), finger_name)
+                == excluded_fingers.end())
+
+        {
+            // use measurement correction if available
+            if (is_vis_tac_mismatch)
+            {
+                std::vector<yarp::sig::Vector> point;
+                std::vector<yarp::sig::Vector> corrected_point;
+                point.push_back(finger_position);
+                correctMeasurements(last_aux_estimate, vis_tac_mismatch,
+                                    point, corrected_point);
+                finger_position = corrected_point[0];
+            }
+            // evaluate distance between finger tip and position of the object
+            fingers_constraints[finger_name] = yarp::math::norm(finger_position - estimate_pos);
+
+            yInfo() << fingers_constraints[finger_name];
+        }
+    }
+
+    constraints_acquisition_enabled = false;
+    constraints_acquired = true;
+
+    yInfo() << "constraints acquisition completed";
 }
 
 void LocalizerModule::stopFiltering()
@@ -2555,7 +2642,7 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
             reply.addString("A valid hand name is required.");
         else
         {
-            std::string hand_name = hand_name_value.asString();
+            std::string hand_name_ = hand_name_value.asString();
 
             if ((hand_name != "right") && (hand_name != "left"))
                 reply.addString("A valid hand name is required.");
@@ -2563,7 +2650,7 @@ bool LocalizerModule::respond(const yarp::os::Bottle &command, yarp::os::Bottle 
             {
                 mutex.lock();
 
-                tac_filt_hand_name = hand_name;
+                hand_name = hand_name_;
                 filtering_enabled = true;
                 filtering_type = FilteringType::tactile;
 
@@ -3145,6 +3232,8 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     estimate_available = false;
     filtering_enabled = false;
     contacts_probe_enabled = false;
+    constraints_acquisition_enabled = false;
+    constraints_acquired = false;
     is_first_step = true;
     is_vis_tac_mismatch = false;
 
@@ -3179,6 +3268,9 @@ bool LocalizerModule::updateModule()
 
     // do contacts probe
     performContactsProbe();
+
+    // do contacts cosntraints acqusition
+    performConstraintsAcquisition();    
 
     // publish the last estimate available
     if (estimate_available)

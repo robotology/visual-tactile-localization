@@ -498,8 +498,8 @@ void UnscentedParticleFilter::constrainedUKF(const int &i)
 
     x[i].x_proj = x[i].x_corr;
     x[i].x_proj.setSubvector(0, x_proj);
+    x[i].x_corr = x[i].x_proj;
     x[i].P_proj = x[i].P_corr;
-    x[i].P_proj.setSubmatrix(P_prj, 0, 0);
 }
 
 double UnscentedParticleFilter::likelihood(const int &k, double &map_likelihood)

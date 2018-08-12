@@ -1094,6 +1094,7 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
             filtering_type = FilteringType::visual;
             // reset flag
             is_vis_tac_mismatch = false;
+            constraints_acquired = false;
         }
         else if (type == yarp::os::createVocab('T','A','C','R'))
         {
@@ -1456,22 +1457,6 @@ void LocalizerModule::performTactileFiltering()
     yInfo() << "";
     yInfo() << "No. of contacts detected:" << points.size();
 
-    // set constraints
-    std::vector<yarp::sig::Vector> constraints_positions;
-    yarp::sig::Vector constraints_distances;
-    if (constraints_acquired)
-    {
-        for (auto it=fingers_pos.begin(); it!=fingers_pos.end(); it++)
-        {
-            if (std::find(excluded_fingers.begin(), excluded_fingers.end(), it->first)
-                == excluded_fingers.end())
-            {
-                constraints_positions.push_back(it->second);
-                constraints_distances.push_back(fingers_constraints.at(it->first));
-            }
-        }
-    }
-
     // set parameters
     upf0.setQ(Q_tactile);
     upf0.setR(R_tactile);
@@ -1533,7 +1518,28 @@ void LocalizerModule::performTactileFiltering()
 
         // set constraints if available
         if (constraints_acquired)
+        {
+            // set constraints
+            std::vector<yarp::sig::Vector> constraints_positions;
+            std::vector<yarp::sig::Vector> constraints_positions_corr;
+            yarp::sig::Vector constraints_distances;
+            for (auto it=fingers_pos.begin(); it!=fingers_pos.end(); it++)
+            {
+                if (std::find(excluded_fingers.begin(), excluded_fingers.end(), it->first)
+                    == excluded_fingers.end())
+                {
+                    constraints_positions.push_back(it->second);
+                    constraints_distances.push_back(fingers_constraints.at(it->first));
+                }
+            }
+            if (is_vis_tac_mismatch)
+                correctMeasurements(last_aux_estimate, vis_tac_mismatch,
+                                    constraints_positions, constraints_positions_corr);
+            else
+                constraints_positions_corr = constraints_positions;
+
             upf0.setConstraints(constraints_distances, constraints_positions);
+        }
 
         // set measures
         upf0.setNewMeasure(corrected_points);
@@ -3274,7 +3280,7 @@ bool LocalizerModule::updateModule()
     performContactsProbe();
 
     // do contacts cosntraints acqusition
-    performConstraintsAcquisition();    
+    performConstraintsAcquisition();
 
     // publish the last estimate available
     if (estimate_available)

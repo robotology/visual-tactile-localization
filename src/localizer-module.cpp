@@ -704,9 +704,9 @@ bool LocalizerModule::getChainJointsState(const std::string &arm_name,
     {
         // hack encoders in simulation in order to simulate
         // mismatch between visual and tactile domains
-        arm_angles[4] -= 20;
-        arm_angles[5] += 0;
-        arm_angles[6] += 20;
+        // arm_angles[4] -= 20;
+        // arm_angles[5] += 0;
+        // arm_angles[6] += 20;
         //
     }
     if(!ok)
@@ -1270,16 +1270,24 @@ void LocalizerModule::performVisualFiltering()
     // clear inputs used during tactile localization
     upf0.clearInputs();
     upf1.clearInputs();
+    upf_vis.clearInputs();
+    upf_pred.clearInputs();
 
     // set noise covariances
     upf0.setQ(Q_vision);
     upf1.setQ(Q_vision);
+    upf_vis.setQ(Q_vision);
+    upf_pred.setQ(Q_vision);
     upf0.setR(R_vision);
     upf1.setR(R_vision);
+    upf_vis.setR(R_vision);
+    upf_pred.setR(R_vision);
 
     // set alpha parameter
     upf0.setAlpha(1.0);
     upf1.setAlpha(1.0);
+    upf_vis.setAlpha(1.0);
+    upf_pred.setAlpha(1.0);
 
     // the variable 'all_meas' contains the measurements
     // due to all the chunks
@@ -1315,18 +1323,27 @@ void LocalizerModule::performVisualFiltering()
         // set measure
         upf0.setNewMeasure(measure);
         upf1.setNewMeasure(measure);
+        upf_vis.setNewMeasure(measure);
+        upf_pred.setNewMeasure(measure);
 
         // set zero input (visual localization is static)
         yarp::sig::Vector input(3, 0.0);
         upf0.setNewInput(input);
         upf1.setNewInput(input);
+        upf_vis.setNewInput(input);
+        upf_pred.setNewInput(input);
 
         // step
         upf0.step(time_stamp);
         upf1.step(time_stamp);
+        upf_vis.step(time_stamp);
+        upf_pred.step(time_stamp);
 
         // extract estimate
-        last_aux_estimate = last_estimate = upf0.getEstimate();
+        last_estimate = upf0.getEstimate();
+        last_aux_estimate = upf1.getEstimate();
+        last_vis_estimate = upf_vis.getEstimate();
+        last_pred_estimate = upf_pred.getEstimate();
 
         // extract all the particles for logging purposes
         std::vector<yarp::sig::Vector> particles;
@@ -1350,6 +1367,8 @@ void LocalizerModule::performVisualFiltering()
                             last_ground_truth,
                             last_estimate,
                             last_aux_estimate,
+                            last_vis_estimate,
+                            last_pred_estimate,
                             particles,
                             measure,
                             input,
@@ -1438,15 +1457,15 @@ void LocalizerModule::performTactileFiltering()
 
     // extract contact points
     std::unordered_map<std::string, yarp::sig::Vector> contact_points;
-    // if (is_simulation)
-    // {
-    //     contact_points = sim_contact_points;
-    // }
-    // else
-    // {
+    if (is_simulation)
+    {
+        contact_points = sim_contact_points;
+    }
+    else
+    {
         // extract contact points from forward kinematics
         getContactPoints(contacts_all, fingers_pos, contact_points);
-    // }
+    }
 
     // copy to a vector of yarp::sig::Vector(s)
     std::vector<yarp::sig::Vector> points;
@@ -1459,14 +1478,17 @@ void LocalizerModule::performTactileFiltering()
 
     // set parameters
     upf0.setQ(Q_tactile);
+    upf_pred.setQ(Q_tactile);
     upf0.setR(R_tactile);
     upf0.setAlpha(0.3);
+    upf_pred.setAlpha(0.3);
 
     // set input
     yarp::sig::Vector input;
     input = fingers_vels["middle"];
     input[2] = 0;
     upf0.setNewInput(input);
+    upf_pred.setNewInput(input);
 
     if (is_vis_tac_mismatch)
     {
@@ -1483,6 +1505,7 @@ void LocalizerModule::performTactileFiltering()
         // reset internal time requiresd to
         // evaluate velocity increments
         upf0.resetTime();
+        upf_pred.resetTime();
         if (is_vis_tac_mismatch)
             upf1.resetTime();
 
@@ -1495,6 +1518,7 @@ void LocalizerModule::performTactileFiltering()
     {
         // skip step in case of too few measurements
         upf0.skipStep(time_stamp);
+        upf_pred.skipStep(time_stamp);
         if (is_vis_tac_mismatch)
             upf1.skipStep(time_stamp);
     }
@@ -1516,37 +1540,40 @@ void LocalizerModule::performTactileFiltering()
         else
             corrected_points = points;
 
-        // set constraints if available
-        if (constraints_acquired)
-        {
-            // set constraints
-            std::vector<yarp::sig::Vector> constraints_positions;
-            std::vector<yarp::sig::Vector> constraints_positions_corr;
-            yarp::sig::Vector constraints_distances;
-            for (auto it=fingers_pos.begin(); it!=fingers_pos.end(); it++)
-            {
-                if (std::find(excluded_fingers.begin(), excluded_fingers.end(), it->first)
-                    == excluded_fingers.end())
-                {
-                    constraints_positions.push_back(it->second);
-                    constraints_distances.push_back(fingers_constraints.at(it->first));
-                }
-            }
-            if (is_vis_tac_mismatch)
-                correctMeasurements(last_aux_estimate, vis_tac_mismatch,
-                                    constraints_positions, constraints_positions_corr);
-            else
-                constraints_positions_corr = constraints_positions;
+        // // set constraints if available
+        // if (constraints_acquired)
+        // {
+        //     // set constraints
+        //     std::vector<yarp::sig::Vector> constraints_positions;
+        //     std::vector<yarp::sig::Vector> constraints_positions_corr;
+        //     yarp::sig::Vector constraints_distances;
+        //     for (auto it=fingers_pos.begin(); it!=fingers_pos.end(); it++)
+        //     {
+        //         if (std::find(excluded_fingers.begin(), excluded_fingers.end(), it->first)
+        //             == excluded_fingers.end())
+        //         {
+        //             constraints_positions.push_back(it->second);
+        //             constraints_distances.push_back(fingers_constraints.at(it->first));
+        //         }
+        //     }
+        //     if (is_vis_tac_mismatch)
+        //         correctMeasurements(last_aux_estimate, vis_tac_mismatch,
+        //                             constraints_positions, constraints_positions_corr);
+        //     else
+        //         constraints_positions_corr = constraints_positions;
 
-            upf0.setConstraints(constraints_distances, constraints_positions);
-        }
+        //     upf0.setConstraints(constraints_distances, constraints_positions);
+        // }
 
         // set measures
         upf0.setNewMeasure(corrected_points);
 
         // do normal filtering step
         upf0.step(time_stamp);
+        bool skip_correction = true;
+        upf_pred.step(time_stamp, skip_correction);
         last_estimate = upf0.getEstimate();
+        last_pred_estimate = upf_pred.getEstimate();
     }
 
     // extract all the particles for logging purposes
@@ -1564,6 +1591,8 @@ void LocalizerModule::performTactileFiltering()
         storeDataTactile(last_ground_truth,
                          last_aux_estimate,
                          last_estimate,
+                         last_vis_estimate,
+                         last_pred_estimate,
                          particles,
                          points,
                          corrected_points,
@@ -1675,6 +1704,8 @@ void LocalizerModule::performVisuoTactileMatching()
         storeDataTactile(last_ground_truth,
                          last_aux_estimate,
                          last_estimate,
+                         last_vis_estimate,
+                         last_pred_estimate,
                          particles,
                          points,
                          points,
@@ -1851,11 +1882,15 @@ void LocalizerModule::initFilters()
 {
     upf0.init();
     upf1.init();
+    upf_pred.init();
+    upf_vis.init();
 
     // copy initial state
-    std::vector<yarp::sig::Vector> particles_0;
-    upf0.getInitialState(particles_0);
-    upf1.setInitialState(particles_0);
+    std::deque<ParticleUPF> particles;
+    upf0.getParticleSet(particles);
+    upf1.setParticleSet(particles);
+    upf_pred.setParticleSet(particles);
+    upf_vis.setParticleSet(particles);
 }
 
 void LocalizerModule::publishEstimate()
@@ -2026,6 +2061,8 @@ Data& LocalizerModule::storeData(const FilteringType &data_type,
                                  const yarp::sig::Vector &ground_truth,
                                  const yarp::sig::Vector &estimate,
                                  const yarp::sig::Vector &corrected_est,
+                                 const yarp::sig::Vector &vision_est,
+                                 const yarp::sig::Vector &pred_est,
                                  const std::vector<yarp::sig::Vector> &particles,
                                  const std::vector<yarp::sig::Vector> &meas,
                                  const std::vector<yarp::sig::Vector> &corrected_meas,
@@ -2040,6 +2077,8 @@ Data& LocalizerModule::storeData(const FilteringType &data_type,
     d.ground_truth = ground_truth;
     d.estimate = estimate;
     d.corrected_est = corrected_est;
+    d.vision_est = vision_est;
+    d.pred_est = pred_est;
     d.particles = particles;
     d.meas = meas;
     d.corrected_meas = corrected_meas;
@@ -2059,6 +2098,8 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
                                       const yarp::sig::Vector &ground_truth,
                                       const yarp::sig::Vector &estimate,
                                       const yarp::sig::Vector &corrected_est,
+                                      const yarp::sig::Vector &vision_est,
+                                      const yarp::sig::Vector &pred_est,
                                       const std::vector<yarp::sig::Vector> &particles,
                                       const std::vector<yarp::sig::Vector> &meas,
                                       const yarp::sig::Vector &input,
@@ -2069,7 +2110,8 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
 {
     // store common data
     Data &d = storeData(FilteringType::visual, ground_truth,
-                        estimate, corrected_est, particles,
+                        estimate, corrected_est, vision_est, pred_est,
+                        particles,
                         meas, meas, input, time_stamp, exec_time);
 
     // add additional fields
@@ -2081,6 +2123,8 @@ void LocalizerModule::storeDataVisual(const FilteringType &data_type,
 void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
                                        const yarp::sig::Vector &estimate,
                                        const yarp::sig::Vector &corrected_est,
+                                       const yarp::sig::Vector &vision_est,
+                                       const yarp::sig::Vector &pred_est,
                                        const std::vector<yarp::sig::Vector> &particles,
                                        const std::vector<yarp::sig::Vector> &meas,
                                        const std::vector<yarp::sig::Vector> &corrected_meas,
@@ -2095,7 +2139,8 @@ void LocalizerModule::storeDataTactile(const yarp::sig::Vector &ground_truth,
 {
     // store common data
     Data &d = storeData(FilteringType::tactile, ground_truth,
-                        estimate, corrected_est, particles,
+                        estimate, corrected_est, vision_est, pred_est,
+                        particles,
                         meas, corrected_meas, input, time_stamp, exec_time);
 
     // add additional fields
@@ -2445,6 +2490,10 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
              << "phi_sol;" << "theta_sol;" << "psi_sol;"
              << "x_aux;"   << "y_aux;"     << "z_aux;"
              << "phi_aux;" << "theta_aux;" << "psi_aux;"
+             << "x_pred;"   << "y_pred;"     << "z_pred;"
+             << "phi_pred;" << "theta_pred;" << "psi_pred;"
+             << "x_vis;"   << "y_vis;"     << "z_vis;"
+             << "phi_vis;" << "theta_vis;" << "psi_vis;"
              << "input_x;"   << "input_y;" << "input_z;"
              << "time_stamp;"
              << "exec_time;"
@@ -2470,6 +2519,12 @@ bool LocalizerModule::saveData(const std::vector<Data> &data)
             // aux estimate
             for(size_t j=0; j<6; j++)
                 fout << d.corrected_est[j] << ";";
+            // prediction only estimate
+            for(size_t j=0; j<6; j++)
+                fout << d.pred_est[j] << ";";
+            // vision only estimate
+            for(size_t j=0; j<6; j++)
+                fout << d.vision_est[j] << ";";
             // input
             for(size_t j=0; j<3; j++)
                 fout << d.input[j] << ";";
@@ -3226,7 +3281,8 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     // using group 'upf' from the configuration file
     yarp::os::ResourceFinder rf_upf;
     rf_upf = rf.findNestedResourceFinder("upf");
-    if((!upf0.configure(rf_upf)) || (!upf1.configure(rf_upf)))
+    if((!upf0.configure(rf_upf))     || (!upf1.configure(rf_upf)) ||
+       (!upf_pred.configure(rf_upf)) || (!upf_vis.configure(rf_upf)))
         return false;
     initFilters();
 

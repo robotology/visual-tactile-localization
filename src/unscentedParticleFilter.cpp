@@ -132,7 +132,7 @@ void UnscentedParticleFilter::initializeUKFMatrix(const int &i)
     x[i].Pyy.zero();
     x[i].Pxy.zero();
     x[i].K.zero();
-    x[i].P_pred_aux.zero();
+    // x[i].P_pred_aux.zero();
 }
 
 void UnscentedParticleFilter::computeSigmaPoints(const int &i)
@@ -156,13 +156,13 @@ void UnscentedParticleFilter::computeSigmaPoints(const int &i)
     S.diagonal(s);
     G=U*S;
 
-    x[i].XsigmaPoints_corr.setCol(0,x[i].x_corr_prev);
+    x[i].XsigmaPoints_corr.setCol(0,x[i].x_proj_prev);
 
     for(size_t j=1; j<params.n+1; j++)
-        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev+G.getCol(j-1));
+        x[i].XsigmaPoints_corr.setCol(j,x[i].x_proj_prev+G.getCol(j-1));
 
     for(size_t j=params.n+1; j<2*params.n+1; j++)
-        x[i].XsigmaPoints_corr.setCol(j,x[i].x_corr_prev-G.getCol(j-1-params.n));
+        x[i].XsigmaPoints_corr.setCol(j,x[i].x_proj_prev-G.getCol(j-1-params.n));
 
     x[i].WsigmaPoints_covariance[0]=params.lambda/(params.n+params.lambda)+1-pow(params.alpha,2.0)+params.beta;
     x[i].WsigmaPoints_average[0]=params.lambda/(params.n+params.lambda);
@@ -289,14 +289,18 @@ yarp::sig::Vector UnscentedParticleFilter::computeYIdeal(const int &k, const int
     return out;
 }
 
-void UnscentedParticleFilter::predictionStep(const int &i)
+void UnscentedParticleFilter::statePredictionStep(const int &i)
 {
-    yarp::sig::Vector random;
-    random.resize(params.n,0.0);
+    // system model is linear
+    // use plain kalman filter prediction here
+    x[i].x_pred = x[i].x_proj_prev;
+    for(size_t k=0; k<3; k++)
+        x[i].x_pred[k] += propagated_input[k];
+    x[i].P_pred=x[i].P_corr + params.Q;
+}
 
-    yarp::sig::Matrix cholQ;
-    cholQ(params.n,params.n);
-
+void UnscentedParticleFilter::measPredictionStep(const int &i)
+{
     for(size_t j=0; j<2*params.n+1; j++)
     {
         x[i].XsigmaPoints_pred.setCol(j,x[i].XsigmaPoints_corr.getCol(j));
@@ -316,35 +320,23 @@ void UnscentedParticleFilter::predictionStep(const int &i)
 
     }
 
-    // x[i].x_pred=x[i].XsigmaPoints_pred*x[i].WsigmaPoints_average;
-    // for (size_t k=3; k<6; k++)
-    //     x[i].x_pred[k] = normalizeAngle(x[i].x_pred[k]);
-
-    // system model is linear
-    // use plain kalman filter prediction here
-    x[i].x_pred = x[i].x_corr_prev;
-    for(size_t k=0; k<3; k++)
-        x[i].x_pred[k] += propagated_input[k];
-
     x[i].y_pred=x[i].YsigmaPoints_pred*x[i].WsigmaPoints_average;
-
 }
 
-void UnscentedParticleFilter::computePpred(const int &i)
-{
-    // for(size_t j=0; j<2*params.n+1; j++)
-    // {
-    //     x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
+// void UnscentedParticleFilter::computePpred(const int &i)
+// {
+//     // for(size_t j=0; j<2*params.n+1; j++)
+//     // {
+//     //     x[i].x_tilde.setCol(0,x[i].XsigmaPoints_pred.getCol(j)-x[i].x_pred);
 
-    //     x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
+//     //     x[i].P_pred_aux=x[i].P_pred_aux+x[i].WsigmaPoints_covariance[j]*x[i].x_tilde*x[i].x_tilde.transposed();
 
-    // }
-    // x[i].P_pred=x[i].P_pred_aux + params.Q_prev;
+//     // }
+//     // x[i].P_pred=x[i].P_pred_aux + params.Q_prev;
 
-    // system model is linear
-    // use plain kalman filter estimate covariance prediction
-    x[i].P_pred=x[i].P_corr + params.Q;
-}
+//     // system model is linear
+//     // use plain kalman filter estimate covariance prediction
+// }
 
 void UnscentedParticleFilter:: computeCorrectionMatrix(const int &i)
 {
@@ -571,21 +563,28 @@ double UnscentedParticleFilter::tranProbability(const int &i,
     return multivariateGaussian(x[i].x_proj, mean, params.Q);
 }
 
-void UnscentedParticleFilter::computeWeights(const int &i, double& sum)
+void UnscentedParticleFilter::computeWeights(const int &i, double& sum, const bool &skip_correction)
 {
-    double standard_likelihood;
+    double lik;
     double map_likelihood;
     double tran_prob;
 
-    // evaluate standard likelihood and
-    // likelihood corrected for MAP estimate
-    standard_likelihood = likelihood(i,map_likelihood);
+    if (skip_correction)
+    {
+        lik = 1.0;
+    }
+    else
+    {
+        // evaluate standard likelihood and
+        // likelihood corrected for MAP estimate
+        lik = likelihood(i,map_likelihood);
+    }
 
     // evaluate transition probability
     tran_prob = tranProbability(i, i);
 
     // evaluate weights
-    x[i].weights=x[i].prev_weights * standard_likelihood * tran_prob/
+    x[i].weights=x[i].prev_weights * lik * tran_prob/
         multivariateGaussian(x[i].x_proj, x[i].x_proj, x[i].P_proj);
 
     sum+=x[i].weights;
@@ -982,7 +981,7 @@ void UnscentedParticleFilter::skipStep(double &time_stamp)
     t_prev = t_current;
 }
 
-void UnscentedParticleFilter::step(double &time_stamp)
+void UnscentedParticleFilter::step(double &time_stamp, const bool &skip_correction)
 {
     t++;
 
@@ -1001,22 +1000,25 @@ void UnscentedParticleFilter::step(double &time_stamp)
     // process all the particles
     for(size_t i=0; i<x.size(); i++ )
     {
-        resizeParticle(i);
-        initializeUKFMatrix(i);
-        computeSigmaPoints(i);
-        predictionStep(i);
-        computePpred(i);
-        computeCorrectionMatrix(i);
-        x[i].K=x[i].Pxy*luinv(x[i].Pyy);
-        correctionStep(i);
-        if (use_constraints)
-            constrainedUKF(i);
+        statePredictionStep(i);
+        if (skip_correction)
+        {
+            x[i].x_proj = x[i].x_pred;
+            x[i].P_proj = x[i].P_pred;
+        }
         else
         {
+            resizeParticle(i);
+            initializeUKFMatrix(i);
+            computeSigmaPoints(i);
+            measPredictionStep(i);
+            computeCorrectionMatrix(i);
+            x[i].K=x[i].Pxy*luinv(x[i].Pyy);
+            correctionStep(i);
             x[i].x_proj = x[i].x_corr;
             x[i].P_proj = x[i].P_corr;
         }
-        computeWeights(i, sum);
+        computeWeights(i, sum, skip_correction);
     }
 
     // normalize weights
@@ -1029,7 +1031,7 @@ void UnscentedParticleFilter::step(double &time_stamp)
     selectionStep(sum_squared);
 
     // eval estimate
-    evalEstimate();
+    evalEstimate(skip_correction);
 
     // update previous value of Q
     params.Q_prev = params.Q;
@@ -1074,7 +1076,7 @@ void UnscentedParticleFilter::getParticles(std::vector<yarp::sig::Vector> &parti
         particles.push_back(x[i].x_proj);
 }
 
-void UnscentedParticleFilter::evalEstimate()
+void UnscentedParticleFilter::evalEstimate(const bool &skip_correction)
 {
     // extract MAP estimate
     std::deque<double> probability_per_particle;
@@ -1090,7 +1092,14 @@ void UnscentedParticleFilter::evalEstimate()
 
         // measurements likelihood
         double tmp;
-        meas_likelihood = likelihood(i, tmp);
+        if (skip_correction)
+        {
+            meas_likelihood = 1.0;
+        }
+        else
+        {
+            meas_likelihood = likelihood(i, tmp);
+        }
 
         // store probability
         probability_per_particle.push_back(meas_likelihood * sum_tran_probability);
@@ -1151,14 +1160,12 @@ void UnscentedParticleFilter::transformObject(const yarp::sig::Vector &estimate,
                    transformed.points_begin(),affine);
 }
 
-void UnscentedParticleFilter::getInitialState(std::vector<yarp::sig::Vector> &particles)
+void UnscentedParticleFilter::getParticleSet(std::deque<ParticleUPF> &set)
 {
-    for(size_t i=0; i<x.size(); i++)
-        particles.push_back(x[i].x_proj_prev);
+    set = x;
+}
+void UnscentedParticleFilter::setParticleSet(const std::deque<ParticleUPF> &set)
+{
+    x = set;
 }
 
-void UnscentedParticleFilter::setInitialState(const std::vector<yarp::sig::Vector> &particles)
-{
-    for(size_t i=0; i<x.size(); i++)
-        x[i].x_proj_prev = particles[i];
-}

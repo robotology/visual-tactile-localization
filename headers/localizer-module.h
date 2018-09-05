@@ -55,6 +55,12 @@ struct Data
     // corrected pose
     yarp::sig::Vector corrected_est;
 
+    // prediction only estimate
+    yarp::sig::Vector pred_est;
+
+    // vision only
+    yarp::sig::Vector vision_est;
+
     // particles
     std::vector<yarp::sig::Vector> particles;
 
@@ -120,6 +126,8 @@ private:
     // Unscented Particle Filter(s)
     UnscentedParticleFilter upf0;
     UnscentedParticleFilter upf1;
+    UnscentedParticleFilter upf_pred;
+    UnscentedParticleFilter upf_vis;
 
     // system noise covariance matrices
     yarp::sig::Vector Q_vision;
@@ -132,6 +140,8 @@ private:
     // last estimate available
     yarp::sig::Vector last_estimate;
     yarp::sig::Vector last_aux_estimate;
+    yarp::sig::Vector last_vis_estimate;
+    yarp::sig::Vector last_pred_estimate;
     // last ground truth available
     yarp::sig::Vector last_ground_truth;
 
@@ -727,6 +737,8 @@ private:
                     const yarp::sig::Vector &ground_truth,
                     const yarp::sig::Vector &estimate,
                     const yarp::sig::Vector &corrected_est,
+                    const yarp::sig::Vector &vision_est,
+                    const yarp::sig::Vector &pred_est,
                     const std::vector<yarp::sig::Vector> &particles,
                     const std::vector<yarp::sig::Vector> &meas,
                     const std::vector<yarp::sig::Vector> &corrected_meas,
@@ -752,6 +764,8 @@ private:
 			 const yarp::sig::Vector &ground_truth,
 			 const yarp::sig::Vector &estimate,
                          const yarp::sig::Vector &corrected_est,
+                         const yarp::sig::Vector &vision_est,
+                         const yarp::sig::Vector &pred_est,
                          const std::vector<yarp::sig::Vector> &particles,
 			 const std::vector<yarp::sig::Vector> &meas,
 			 const yarp::sig::Vector &input,
@@ -777,6 +791,8 @@ private:
     void storeDataTactile(const yarp::sig::Vector &ground_truth,
                           const yarp::sig::Vector &estimate,
                           const yarp::sig::Vector &corrected_est,
+                          const yarp::sig::Vector &vision_est,
+                          const yarp::sig::Vector &pred_est,
                           const std::vector<yarp::sig::Vector> &particles,
                           const std::vector<yarp::sig::Vector> &meas,
                           const std::vector<yarp::sig::Vector> &corrected_meas,
@@ -875,6 +891,8 @@ private:
 public:
     LocalizerModule() : last_estimate(6, 0.0),
                         last_aux_estimate(6, 0.0),
+                        last_vis_estimate(6, 0.0),
+                        last_pred_estimate(6, 0.0),
                         Q_vision(6, 0.0),
                         Q_tactile(6, 0.0) { };
     /*

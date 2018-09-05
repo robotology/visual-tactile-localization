@@ -265,16 +265,22 @@ private:
     yarp::sig::Vector computeYIdeal(const int &k, const int &j);
 
     /**
-     * Execute the prediction step required within the UPF.
+     * Execute the state prediction step required within the UPF.
      * @param i index of the current particle
      */
-    void predictionStep(const int &i);
+    void statePredictionStep(const int &i);
 
     /**
-     * Compute the predicted state covariance matrix.
+     * Execute the measurement prediction step required within the UPF.
      * @param i index of the current particle
      */
-    void computePpred(const int &i);
+    void measPredictionStep(const int &i);
+
+    /* /\** */
+    /*  * Compute the predicted state covariance matrix. */
+    /*  * @param i index of the current particle */
+    /*  *\/ */
+    /* void computePpred(const int &i); */
 
     /**
      * Compute matrices required to correct the predicted state
@@ -322,8 +328,9 @@ private:
      * update the sum of all the weights.
      * @param i index of the current particle
      * @param sum sum of the weights
+     * @param skip_correction
      */
-    void computeWeights(const int &i, double &sum);
+    void computeWeights(const int &i, double &sum, const bool &skip_correction);
 
     /**
      * Normalize weight for particle i using the sum and
@@ -424,7 +431,7 @@ public:
      * Single iteration of the algorithm.
      * @param time_stamp the time stamp relative to the current step
      */
-    void step(double &time_stamp);
+    void step(double &time_stamp, const bool &skip_correction = false);
 
     /**
      * Get the MAP estimate.
@@ -439,7 +446,7 @@ public:
     /**
      * Compute the MAP estimate.
      */
-    void evalEstimate();
+    void evalEstimate(const bool &skip_correction);
 
     /**
      * Compute the performance index
@@ -465,9 +472,8 @@ public:
      */
     void transformObject(const yarp::sig::Vector &estimate,
                          Polyhedron &transformed);
-
-    void getInitialState(std::vector<yarp::sig::Vector> &particles);
-    void setInitialState(const std::vector<yarp::sig::Vector> &particles);
+    void getParticleSet(std::deque<ParticleUPF> &set);
+    void setParticleSet(const std::deque<ParticleUPF> &set);
 };
 
 #endif

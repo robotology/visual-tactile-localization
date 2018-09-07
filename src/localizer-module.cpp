@@ -1094,7 +1094,6 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
             filtering_type = FilteringType::visual;
             // reset flag
             is_vis_tac_mismatch = false;
-            constraints_acquired = false;
         }
         else if (type == yarp::os::createVocab('T','A','C','R'))
         {
@@ -1142,19 +1141,6 @@ void LocalizerModule::processCommand(const yarp::sig::FilterCommand &filter_cmd)
     else if (cmd == yarp::os::createVocab('P','R','O','F'))
     {
         contacts_probe_enabled = false;
-    }
-    // CNS{L, R} i.e. acquire position of fingers
-    // of the left (or right) hand
-    // required for constrained filtering
-    else if (cmd == yarp::os::createVocab('C','N','S','L'))
-    {
-        constraints_acquisition_enabled = true;
-        hand_name = "left";
-    }
-    else if (cmd == yarp::os::createVocab('C','N','S','R'))
-    {
-        constraints_acquisition_enabled = true;
-        hand_name = "right";
     }
 
     mutex.unlock();
@@ -1540,31 +1526,6 @@ void LocalizerModule::performTactileFiltering()
         else
             corrected_points = points;
 
-        // // set constraints if available
-        // if (constraints_acquired)
-        // {
-        //     // set constraints
-        //     std::vector<yarp::sig::Vector> constraints_positions;
-        //     std::vector<yarp::sig::Vector> constraints_positions_corr;
-        //     yarp::sig::Vector constraints_distances;
-        //     for (auto it=fingers_pos.begin(); it!=fingers_pos.end(); it++)
-        //     {
-        //         if (std::find(excluded_fingers.begin(), excluded_fingers.end(), it->first)
-        //             == excluded_fingers.end())
-        //         {
-        //             constraints_positions.push_back(it->second);
-        //             constraints_distances.push_back(fingers_constraints.at(it->first));
-        //         }
-        //     }
-        //     if (is_vis_tac_mismatch)
-        //         correctMeasurements(last_aux_estimate, vis_tac_mismatch,
-        //                             constraints_positions, constraints_positions_corr);
-        //     else
-        //         constraints_positions_corr = constraints_positions;
-
-        //     upf0.setConstraints(constraints_distances, constraints_positions);
-        // }
-
         // set measures
         upf0.setNewMeasure(corrected_points);
 
@@ -1814,60 +1775,6 @@ void LocalizerModule::performContactsProbe()
     }
 
     return;
-}
-
-void LocalizerModule::performConstraintsAcquisition()
-{
-    if (!constraints_acquisition_enabled)
-        return;
-
-    // constraints can be acquired only when
-    // the estimate is not changing
-    if (filtering_enabled)
-        return;
-
-    // constraints can be acquired only when
-    // the estimate is available
-    if (!estimate_available)
-        return;
-
-    // acquire the position of the fingers
-    std::unordered_map<std::string, yarp::sig::Vector> fingers_angles;
-    std::unordered_map<std::string, yarp::sig::Vector> fingers_pos;
-    std::unordered_map<std::string, yarp::sig::Vector> fingers_vels;
-    getFingersData(hand_name, fingers_angles, fingers_pos, fingers_vels);
-
-    const yarp::sig::Vector &estimate_pos = last_estimate.subVector(0, 2);
-    for (auto it = fingers_pos.begin(); it != fingers_pos.end(); it++)
-    {
-        const std::string &finger_name = it->first;
-        yarp::sig::Vector &finger_position = it->second;
-
-        if (std::find(excluded_fingers.begin(), excluded_fingers.end(), finger_name)
-                == excluded_fingers.end())
-
-        {
-            // use measurement correction if available
-            if (is_vis_tac_mismatch)
-            {
-                std::vector<yarp::sig::Vector> point;
-                std::vector<yarp::sig::Vector> corrected_point;
-                point.push_back(finger_position);
-                correctMeasurements(last_aux_estimate, vis_tac_mismatch,
-                                    point, corrected_point);
-                finger_position = corrected_point[0];
-            }
-            // evaluate distance between finger tip and position of the object
-            fingers_constraints[finger_name] = yarp::math::norm(finger_position - estimate_pos);
-
-            yInfo() << fingers_constraints[finger_name];
-        }
-    }
-
-    constraints_acquisition_enabled = false;
-    constraints_acquired = true;
-
-    yInfo() << "constraints acquisition completed";
 }
 
 void LocalizerModule::stopFiltering()
@@ -3298,8 +3205,6 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
     estimate_available = false;
     filtering_enabled = false;
     contacts_probe_enabled = false;
-    constraints_acquisition_enabled = false;
-    constraints_acquired = false;
     is_first_step = true;
     is_vis_tac_mismatch = false;
 
@@ -3334,9 +3239,6 @@ bool LocalizerModule::updateModule()
 
     // do contacts probe
     performContactsProbe();
-
-    // do contacts cosntraints acqusition
-    performConstraintsAcquisition();
 
     // publish the last estimate available
     if (estimate_available)

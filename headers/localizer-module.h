@@ -173,8 +173,6 @@ private:
     bool estimate_available;
     bool filtering_enabled;
     bool contacts_probe_enabled;
-    bool constraints_acquisition_enabled;
-    bool constraints_acquired;
     bool is_first_step;
     bool is_simulation;
     bool use_analogs;
@@ -680,8 +678,6 @@ private:
      * Perform probe of contacts on finger tips
      */
     void performContactsProbe();
-
-    void performConstraintsAcquisition();
 
     /*
      * Stops filtering

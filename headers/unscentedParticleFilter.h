@@ -84,21 +84,15 @@ struct ParticleUPF
     double weights;
     double prev_weights;
 
-    // particle after projection step
-    yarp::sig::Vector x_proj;
     // particle after correction step
     yarp::sig::Vector x_corr;
     // previoust value of x_corr
     yarp::sig::Vector x_corr_prev;
-    // previous value of x_proj
-    yarp::sig::Vector x_proj_prev;
     // predicted state
     yarp::sig::Vector x_pred;
     // predicted measurement
     yarp::sig::Vector y_pred;
 
-    // projected state covariance matrix
-    yarp::sig::Matrix P_proj;
     // estimated state covariance matrix
     yarp::sig::Matrix P_corr;
     // predicted state covariance matrix
@@ -125,14 +119,11 @@ struct ParticleUPF
     yarp::sig::Vector WsigmaPoints_covariance;
 
     // initialization
-    ParticleUPF() : x_proj(6,0.0),
-                    x_proj_prev(6,0.0),
-                    x_corr(6,0.0),
+    ParticleUPF() : x_corr(6,0.0),
                     x_corr_prev(6,0.0),
                     x_pred(6,0.0),
                     x_tilde(6,1),
                     x_bar(6,0.0),
-                    P_proj(6,6),
                     P_corr(6,6),
                     P_pred(6,6),
                     P_pred_aux(6,6),
@@ -195,11 +186,6 @@ private:
 
     // gaussian sampler
     std::unique_ptr<Eigen::EigenMultivariateNormal<double>> gaussian_sampler;
-
-    // storage for constrained estimate
-    bool use_constraints;
-    yarp::sig::Vector constraints_distances;
-    std::vector<yarp::sig::Vector> constraints_positions;
 
     /**
      * Initialize some quantities of the UPF
@@ -294,8 +280,6 @@ private:
      * @param i index of the current particle
      */
     void correctionStep(const int &i);
-
-    void constrainedUKF(const int &i);
 
     /**
      * Compute the likelihood required within the UPF.
@@ -392,8 +376,6 @@ public:
      */
     void setRealPose(const yarp::sig::Vector &pose);
 
-    bool setConstraints(const yarp::sig::Vector &sources_distances,
-                        const std::vector<yarp::sig::Vector> &sources_positions);
     /**
      * Set the system noise covariance matrix.
      * @param covariance a yarp::sig::Vector containing the diagonal

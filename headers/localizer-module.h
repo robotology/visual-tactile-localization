@@ -37,7 +37,6 @@
 
 #include "headers/FilterCommand.h"
 #include "headers/unscentedParticleFilter.h"
-#include "headers/PointCloud.h"
 #include "headers/fwd_kin_ext.h"
 
 typedef yarp::sig::PointCloud<yarp::sig::DataXYZ> PointCloudXYZ;
@@ -315,11 +314,7 @@ private:
     yarp::os::BufferedPort<yarp::sig::FilterCommand> port_in;
 
     // point cloud
-    // used in simulation with Gazebo
-    yarp::os::BufferedPort<PointCloud> port_pc_sim;
-    // used with real robot
     yarp::os::BufferedPort<PointCloudXYZ> port_pc;
-    /* yarp::os::BufferedPort<PointCloudXYZ> port_filtered_pc; */
 
     // contact points
     // used in simulation (GazeboYarpSkin)

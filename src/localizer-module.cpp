@@ -326,20 +326,20 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
 
 bool LocalizerModule::getPointCloudSim(std::vector<yarp::sig::Vector> &pc)
 {
-    PointCloud *new_pc = port_pc_sim.read(false);
+    // original point cloud
+    PointCloudXYZ *new_pc = port_pc.read(false);
     if (new_pc == NULL)
         return false;
 
-    // copy data to pc
+    // transform point clouds to vectors of yarp::sig::Vector
     for (size_t i=0; i<new_pc->size(); i++)
     {
-        PointCloudItem item = (*new_pc)[i];
-        yarp::sig::Vector point(3, 0.0);
-        point[0] = item.x;
-        point[1] = item.y;
-        point[2] = item.z;
-
-        pc.push_back(point);
+        yarp::sig::DataXYZ &p_data = (*new_pc)(i);
+        yarp::sig::Vector p_vector(3);
+        p_vector[0] = p_data.x;
+        p_vector[1] = p_data.y;
+        p_vector[2] = p_data.z;
+        pc.push_back(p_vector);
     }
 
     // transform the points taking into account
@@ -2881,25 +2881,12 @@ bool LocalizerModule::configure(yarp::os::ResourceFinder &rf)
         return false;
     }
 
-    if (is_simulation)
+    ok_port = port_pc.open(port_pc_name);
+    if (!ok_port)
     {
-        ok_port = port_pc_sim.open(port_pc_name);
-        if (!ok_port)
-        {
-            yError() << "LocalizerModule:Configure error:"
-                     << "unable to open the simulated point cloud port";
-            return false;
-        }
-    }
-    else
-    {
-        ok_port = port_pc.open(port_pc_name);
-        if (!ok_port)
-        {
-            yError() << "LocalizerModule:Configure error:"
-                     << "unable to open the point cloud port";
-            return false;
-        }
+        yError() << "LocalizerModule:Configure error:"
+                 << "unable to open the point cloud port";
+        return false;
     }
 
     if (is_simulation)
@@ -3263,13 +3250,7 @@ bool LocalizerModule::close()
 {
     // close ports
     port_in.close();
-    if (is_simulation)
-        port_pc_sim.close();
-    else
-    {
-        port_pc.close();
-        // port_filtered_pc.close();
-    }
+    port_pc.close();
 
     // close drivers
     drv_transform_client.close();

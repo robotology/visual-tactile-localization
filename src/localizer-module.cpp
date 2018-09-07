@@ -1270,24 +1270,24 @@ void LocalizerModule::performVisualFiltering()
     // clear inputs used during tactile localization
     upf0.clearInputs();
     upf1.clearInputs();
-    upf_vis.clearInputs();
-    upf_pred.clearInputs();
+    // upf_vis.clearInputs();
+    // upf_pred.clearInputs();
 
     // set noise covariances
     upf0.setQ(Q_vision);
     upf1.setQ(Q_vision);
-    upf_vis.setQ(Q_vision);
-    upf_pred.setQ(Q_vision);
+    // upf_vis.setQ(Q_vision);
+    // upf_pred.setQ(Q_vision);
     upf0.setR(R_vision);
     upf1.setR(R_vision);
-    upf_vis.setR(R_vision);
-    upf_pred.setR(R_vision);
+    // upf_vis.setR(R_vision);
+    // upf_pred.setR(R_vision);
 
     // set alpha parameter
     upf0.setAlpha(1.0);
     upf1.setAlpha(1.0);
-    upf_vis.setAlpha(1.0);
-    upf_pred.setAlpha(1.0);
+    // upf_vis.setAlpha(1.0);
+    // upf_pred.setAlpha(1.0);
 
     // the variable 'all_meas' contains the measurements
     // due to all the chunks
@@ -1323,27 +1323,27 @@ void LocalizerModule::performVisualFiltering()
         // set measure
         upf0.setNewMeasure(measure);
         upf1.setNewMeasure(measure);
-        upf_vis.setNewMeasure(measure);
-        upf_pred.setNewMeasure(measure);
+        // upf_vis.setNewMeasure(measure);
+        // upf_pred.setNewMeasure(measure);
 
         // set zero input (visual localization is static)
         yarp::sig::Vector input(3, 0.0);
         upf0.setNewInput(input);
         upf1.setNewInput(input);
-        upf_vis.setNewInput(input);
-        upf_pred.setNewInput(input);
+        // upf_vis.setNewInput(input);
+        // upf_pred.setNewInput(input);
 
         // step
         upf0.step(time_stamp);
         upf1.step(time_stamp);
-        upf_vis.step(time_stamp);
-        upf_pred.step(time_stamp);
+        // upf_vis.step(time_stamp);
+        // upf_pred.step(time_stamp);
 
         // extract estimate
         last_estimate = upf0.getEstimate();
         last_aux_estimate = upf1.getEstimate();
-        last_vis_estimate = upf_vis.getEstimate();
-        last_pred_estimate = upf_pred.getEstimate();
+        // last_vis_estimate = upf_vis.getEstimate();
+        // last_pred_estimate = upf_pred.getEstimate();
 
         // extract all the particles for logging purposes
         std::vector<yarp::sig::Vector> particles;
@@ -1478,17 +1478,17 @@ void LocalizerModule::performTactileFiltering()
 
     // set parameters
     upf0.setQ(Q_tactile);
-    upf_pred.setQ(Q_tactile);
+    // upf_pred.setQ(Q_tactile);
     upf0.setR(R_tactile);
     upf0.setAlpha(0.3);
-    upf_pred.setAlpha(0.3);
+    // upf_pred.setAlpha(0.3);
 
     // set input
     yarp::sig::Vector input;
     input = fingers_vels["middle"];
     input[2] = 0;
     upf0.setNewInput(input);
-    upf_pred.setNewInput(input);
+    // upf_pred.setNewInput(input);
 
     if (is_vis_tac_mismatch)
     {
@@ -1505,7 +1505,7 @@ void LocalizerModule::performTactileFiltering()
         // reset internal time requiresd to
         // evaluate velocity increments
         upf0.resetTime();
-        upf_pred.resetTime();
+        // upf_pred.resetTime();
         if (is_vis_tac_mismatch)
             upf1.resetTime();
 
@@ -1518,7 +1518,7 @@ void LocalizerModule::performTactileFiltering()
     {
         // skip step in case of too few measurements
         upf0.skipStep(time_stamp);
-        upf_pred.skipStep(time_stamp);
+        // upf_pred.skipStep(time_stamp);
         if (is_vis_tac_mismatch)
             upf1.skipStep(time_stamp);
     }
@@ -1571,9 +1571,9 @@ void LocalizerModule::performTactileFiltering()
         // do normal filtering step
         upf0.step(time_stamp);
         bool skip_correction = true;
-        upf_pred.step(time_stamp, skip_correction);
+        // upf_pred.step(time_stamp, skip_correction);
         last_estimate = upf0.getEstimate();
-        last_pred_estimate = upf_pred.getEstimate();
+        // last_pred_estimate = upf_pred.getEstimate();
     }
 
     // extract all the particles for logging purposes
@@ -1882,15 +1882,15 @@ void LocalizerModule::initFilters()
 {
     upf0.init();
     upf1.init();
-    upf_pred.init();
-    upf_vis.init();
+    // upf_pred.init();
+    // upf_vis.init();
 
     // copy initial state
     std::deque<ParticleUPF> particles;
     upf0.getParticleSet(particles);
     upf1.setParticleSet(particles);
-    upf_pred.setParticleSet(particles);
-    upf_vis.setParticleSet(particles);
+    // upf_pred.setParticleSet(particles);
+    // upf_vis.setParticleSet(particles);
 }
 
 void LocalizerModule::publishEstimate()

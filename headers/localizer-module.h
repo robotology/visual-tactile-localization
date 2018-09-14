@@ -178,6 +178,7 @@ private:
     bool use_analogs_bounds;
     bool use_ext_vel_observer;
     bool use_springy;
+    bool skip_correction;
     FilteringType filtering_type;
 
     // period

@@ -321,6 +321,11 @@ bool LocalizerModule::loadParameters(yarp::os::ResourceFinder &rf)
     if(!loadListStrings(rf, "excludedFingers", excluded_fingers))
         excluded_fingers = {"thumb"};
 
+    // load parameter 'skipCorrection'
+    skip_correction = rf.find("skipCorrection").asBool();
+    if (rf.find("skipCorrection").isNull())
+        skip_correction = false;
+
     return true;
 }
 
@@ -1528,7 +1533,7 @@ void LocalizerModule::performTactileFiltering()
         {
             // update the auxiliary filter
             upf1.setNewMeasure(points);
-            upf1.step(time_stamp);
+            upf1.step(time_stamp, skip_correction);
             last_aux_estimate = upf1.getEstimate();
 
             // correct measurements
@@ -1542,7 +1547,7 @@ void LocalizerModule::performTactileFiltering()
         upf0.setNewMeasure(corrected_points);
 
         // do normal filtering step
-        upf0.step(time_stamp);
+        upf0.step(time_stamp, skip_correction);
         bool skip_correction = true;
         // upf_pred.step(time_stamp, skip_correction);
         last_estimate = upf0.getEstimate();
@@ -1714,7 +1719,10 @@ void LocalizerModule::performFiltering()
         return;
 
     if (filtering_type == FilteringType::visual)
+    {
         performVisualFiltering();
+        stopFiltering();
+    }
     else if (filtering_type == FilteringType::tactile)
         performTactileFiltering();
     else if (filtering_type == FilteringType::visuo_tactile_matching)

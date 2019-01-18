@@ -12,4 +12,4 @@ public:
     virtual std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) = 0;
 };
 
-#endif
+#endif /* POINTCLOUDPREDICTION_H */

@@ -21,6 +21,11 @@
 *                                                                           *
 ****************************************************************************/
 
+/**
+ * Modified version of __VCGLIB_IMPORT_OBJ to allow loading a mesh from a
+ * std::istream &stream instead of a file.
+ *
+ */
 
 #ifndef __VCGLIB_IMPORT_OBJ_W_STREAM
 #define __VCGLIB_IMPORT_OBJ_W_STREAM

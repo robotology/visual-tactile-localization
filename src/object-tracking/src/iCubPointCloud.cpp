@@ -36,6 +36,7 @@ iCubPointCloud::iCubPointCloud
 
     // Reset flags
     obj_bbox_set_ = false;
+    obj_estimate_set_ = false;
     ext_obj_bbox_set_ = false;
 }
 
@@ -53,6 +54,14 @@ void iCubPointCloud::setExternalObjectBoundingBox(std::pair<int, int> top_left, 
     ext_obj_bbox_br_ = bottom_right;
 
     ext_obj_bbox_set_ = true;
+}
+
+
+void iCubPointCloud::setObjectEstimate(Ref<const VectorXd>& pose)
+{
+    last_estimate_ = pose;
+
+    obj_estimate_set_ = true;
 }
 
 

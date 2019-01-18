@@ -31,6 +31,11 @@ public:
      */
     virtual void setExternalObjectBoundingBox(std::pair<int, int> top_left, std::pair<int, int> bottom_right);
 
+    /*
+     * Set the last estimate available.
+     */
+    virtual void setObjectEstimate(Eigen::Ref<const Eigen::VectorXd>& pose);
+
     std::pair<bool, bfl::Data> measure() const override;
 
     bool freezeMeasurements() override;
@@ -86,6 +91,13 @@ protected:
      * A vector of size 3 * L with L the number of points in the point cloud.
      */
     Eigen::VectorXd measurement_;
+
+    /**
+     * Last object estimate, to be used as hint to evaluate a better bounding box.
+     * The vector contains 3 Cartesian coordinates and a ZYX Euler angles parametrization.
+     */
+    Eigen::VectorXd last_estimate_;
+    bool obj_estimate_set_;
 };
 
 #endif /* ICUBPOINTCLOUD_H */

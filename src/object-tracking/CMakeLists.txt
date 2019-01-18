@@ -27,6 +27,8 @@ set(${EXE_TARGET_NAME}_HDR
     include/MeshImporter.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
+    include/VCGTriMesh.h
+    include/vcg_import_obj_w_stream.h
     )
 
 set(${EXE_TARGET_NAME}_SRC
@@ -42,7 +44,12 @@ add_executable(${EXE_TARGET_NAME}
                )
 
 target_include_directories(${EXE_TARGET_NAME}
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+                           PRIVATE
+                           ${CMAKE_CURRENT_SOURCE_DIR}/include
+                           # Include Visualization and Computer Graphics Library (VCG)
+                           # http://vcg.isti.cnr.it/vcglib/
+                           # https://github.com/cnr-isti-vclab/vcglib
+                           ${CMAKE_CURRENT_SOURCE_DIR}/include/vcglib
                            )
 
 target_link_libraries(${EXE_TARGET_NAME}

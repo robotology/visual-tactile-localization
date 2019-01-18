@@ -21,11 +21,14 @@ if(NOT EIGEN3_FOUND)
 endif()
 
 set(${EXE_TARGET_NAME}_HDR
-    include/PointCloud.h
+    include/iCubPointCloud.h
+    include/PointCloudModel.h
+    include/PointCloudPrediction.h
     )
 
 set(${EXE_TARGET_NAME}_SRC
-    src/PointCloud.cpp
+    src/iCubPointCloud.cpp
+    src/PointCloudModel.cpp
     src/main.cpp
     )
 

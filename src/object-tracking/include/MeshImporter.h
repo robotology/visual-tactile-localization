@@ -19,4 +19,4 @@ protected:
     std::pair<bool, std::istringstream> getMesh(const std::string& format_id);
 };
 
-#endif
+#endif /* MESHIMPORTER_H */

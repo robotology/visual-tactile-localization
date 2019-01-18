@@ -32,4 +32,4 @@ protected:
     }
 };
 
-#endif
+#endif /* POINTCLOUDMODEL_H */

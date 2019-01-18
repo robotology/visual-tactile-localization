@@ -12,6 +12,8 @@ find_package(YARP CONFIG REQUIRED
              COMPONENTS
              OS
              )
+# assimp
+find_package(assimp REQUIRED)
 
 # Eigen
 find_package(Eigen3 QUIET CONFIG)
@@ -22,12 +24,14 @@ endif()
 
 set(${EXE_TARGET_NAME}_HDR
     include/iCubPointCloud.h
+    include/MeshImporter.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
     )
 
 set(${EXE_TARGET_NAME}_SRC
     src/iCubPointCloud.cpp
+    src/MeshImporter.cpp
     src/PointCloudModel.cpp
     src/main.cpp
     )
@@ -43,6 +47,7 @@ target_include_directories(${EXE_TARGET_NAME}
 
 target_link_libraries(${EXE_TARGET_NAME}
                       PRIVATE
+                      assimp
                       BayesFilters::BayesFilters
                       YARP::YARP_OS
                       # YARP::YARP_init

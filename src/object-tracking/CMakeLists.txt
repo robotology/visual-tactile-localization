@@ -46,6 +46,8 @@ target_link_libraries(${EXE_TARGET_NAME}
                       BayesFilters::BayesFilters
                       YARP::YARP_OS
                       # YARP::YARP_init
+                      SFMLib
+                      stereoVision
                       )
 if(NOT TARGET Eigen3)
     target_include_directories(${EXE_TARGET_NAME}

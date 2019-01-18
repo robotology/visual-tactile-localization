@@ -73,6 +73,16 @@ bool SFM::configure(ResourceFinder &rf)
 
     loadIntrinsics(rf,KL,KR,DistL,DistR);
     loadExtrinsics(rf,R0,T0,eyes0);
+
+    // since SFM was calibrated with eyes vergence set to eyes0[2]
+    // it is required to block eyes with that vergence
+    if(!igaze->blockEyes(eyes0[2]))
+    {
+        cout << "Cannot block vergence of iCub eyes to " << eyes0[2] << std::endl;
+        return false;
+    }
+    //
+    
     eyes.resize(eyes0.length(),0.0);
 
     stereo->setIntrinsics(KL,KR,DistL,DistR);

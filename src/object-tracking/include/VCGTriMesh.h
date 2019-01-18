@@ -73,4 +73,4 @@ using VertexIterator = simpleTriMesh::VertexIterator;
 // VCG allocator
 using simpleTriMeshAllocator = vcg::tri::Allocator<simpleTriMesh>;
 
-#endif
+#endif /* VCGTRIMESH_H */

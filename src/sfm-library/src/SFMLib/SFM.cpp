@@ -31,6 +31,7 @@ bool SFM::configure(ResourceFinder &rf)
     string robot=rf.check("robot",Value("icub")).asString();
     string left=rf.check("leftPort",Value("/left:i")).asString();
     string right=rf.check("rightPort",Value("/right:i")).asString();
+    bool intrinsics_from_igaze=rf.check("loadIntrinsicsFromiGaze",Value(true)).asBool();
 
     string sname;
     sname="/"+name;
@@ -71,7 +72,7 @@ bool SFM::configure(ResourceFinder &rf)
 
     Mat KL, KR, DistL, DistR;
 
-    loadIntrinsics(rf,KL,KR,DistL,DistR);
+    loadIntrinsics(rf,KL,KR,DistL,DistR, intrinsics_from_igaze);
     loadExtrinsics(rf,R0,T0,eyes0);
 
     // since SFM was calibrated with eyes vergence set to eyes0[2]
@@ -403,18 +404,43 @@ bool SFM::loadExtrinsics(yarp::os::ResourceFinder& rf, Mat& Ro, Mat& To, yarp::s
 
 
 /******************************************************************************/
-bool SFM::loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL,
-        Mat &DistR)
+bool SFM::loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL, Mat &DistR, const bool use_igaze)
 {
+    double fx;
+    double fy;
+
+    double cx;
+    double cy;
+
     Bottle left=rf.findGroup("CAMERA_CALIBRATION_LEFT");
-    if(!left.check("fx") || !left.check("fy") || !left.check("cx") || !left.check("cy"))
-        return false;
+    if (use_igaze)
+    {
+        Bottle info;
+        igaze->getInfo(info);
+        std::string key = "camera_intrinsics_left";
 
-    double fx=left.find("fx").asDouble();
-    double fy=left.find("fy").asDouble();
+        if (info.find(key).isNull())
+            return false;
 
-    double cx=left.find("cx").asDouble();
-    double cy=left.find("cy").asDouble();
+        Bottle *list = info.find("camera_intrinsics_left").asList();
+
+        fx = list->get(0).asDouble();
+        cx = list->get(2).asDouble();
+        fy = list->get(5).asDouble();
+        cy = list->get(6).asDouble();
+
+    }
+    else
+    {
+        if(!left.check("fx") || !left.check("fy") || !left.check("cx") || !left.check("cy"))
+            return false;
+
+        fx=left.find("fx").asDouble();
+        fy=left.find("fy").asDouble();
+
+        cx=left.find("cx").asDouble();
+        cy=left.find("cy").asDouble();
+    }
 
     double k1=left.check("k1",Value(0)).asDouble();
     double k2=left.check("k2",Value(0)).asDouble();
@@ -445,14 +471,34 @@ bool SFM::loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &Di
     KL.at<double>(1,2)=cy;
 
     Bottle right=rf.findGroup("CAMERA_CALIBRATION_RIGHT");
-    if(!right.check("fx") || !right.check("fy") || !right.check("cx") || !right.check("cy"))
-        return false;
+    if (use_igaze)
+    {
+        Bottle info;
+        igaze->getInfo(info);
+        std::string key = "camera_intrinsics_right";
 
-    fx=right.find("fx").asDouble();
-    fy=right.find("fy").asDouble();
+        if (info.find(key).isNull())
+            return false;
 
-    cx=right.find("cx").asDouble();
-    cy=right.find("cy").asDouble();
+        Bottle *list = info.find("camera_intrinsics_right").asList();
+
+        fx = list->get(0).asDouble();
+        cx = list->get(2).asDouble();
+        fy = list->get(5).asDouble();
+        cy = list->get(6).asDouble();
+
+    }
+    else
+    {
+        if(!right.check("fx") || !right.check("fy") || !right.check("cx") || !right.check("cy"))
+            return false;
+
+        fx=right.find("fx").asDouble();
+        fy=right.find("fy").asDouble();
+
+        cx=right.find("cx").asDouble();
+        cy=right.find("cy").asDouble();
+    }
 
     k1=right.check("k1",Value(0)).asDouble();
     k2=right.check("k2",Value(0)).asDouble();

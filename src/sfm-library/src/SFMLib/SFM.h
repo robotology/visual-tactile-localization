@@ -319,7 +319,7 @@ class SFM: public yarp::os::RFModule
     Mat HR_root;
     Mat R0,T0;
 
-    bool loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL, Mat &DistR);
+    bool loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL, Mat &DistR, const bool use_igaze);
     Mat buildRotTras(const Mat& R, const Mat& T);
     Matrix getCameraHGazeCtrl(int camera);
     void convert(Matrix& matrix, Mat& mat);

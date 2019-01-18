@@ -25,16 +25,15 @@
 #endif
 
 /******************************************************************************/
-bool SFM::configure(ResourceFinder &rf)
+bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
 {
-    string name=rf.check("name",Value("SFM")).asString();
     string robot=rf.check("robot",Value("icub")).asString();
     string left=rf.check("leftPort",Value("/left:i")).asString();
     string right=rf.check("rightPort",Value("/right:i")).asString();
     bool intrinsics_from_igaze=rf.check("loadIntrinsicsFromiGaze",Value(true)).asBool();
 
     string sname;
-    sname="/"+name;
+    sname="/"+port_prefix + "/SFM";
     left=sname+left;
     right=sname+right;
 

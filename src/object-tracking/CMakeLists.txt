@@ -68,6 +68,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       # YARP::YARP_init
                       SFMLib
                       stereoVision
+                      iCubGazeCtrlLibrary
                       )
 if(NOT TARGET Eigen3)
     target_include_directories(${EXE_TARGET_NAME}

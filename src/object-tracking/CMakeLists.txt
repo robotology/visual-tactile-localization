@@ -7,6 +7,13 @@ if(NOT BayesFilters_FOUND)
     find_package(BayesFilters 0.9.100 REQUIRED)
 endif()
 
+# Superimpose Mesh
+find_package(SuperimposeMesh 0.9.4.0 QUIET)
+if(NOT SuperimposeMesh_FOUND)
+    message(STATUS "Did not found required master release of SuperimposeMesh. Looking for devel version.")
+    find_package(SuperimposeMesh 0.10.100.0 REQUIRED)
+endif()
+
 # YARP
 find_package(YARP CONFIG REQUIRED
              COMPONENTS
@@ -56,6 +63,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       PRIVATE
                       assimp
                       BayesFilters::BayesFilters
+                      SuperimposeMesh::SuperimposeMesh
                       YARP::YARP_OS
                       # YARP::YARP_init
                       SFMLib

@@ -1,15 +1,16 @@
 #ifndef ICUBPOINTCLOUD_H
 #define ICUBPOINTCLOUD_H
 
-#include <PointCloudModel.h>
-#include <PointCloudPrediction.h>
-#include <SFM.h>
-
 #include <BayesFilters/Data.h>
 
 #include <Eigen/Dense>
 
 #include <GazeController.h>
+
+#include <PointCloudModel.h>
+#include <PointCloudPrediction.h>
+
+#include <SFM.h>
 
 #include <string>
 #include <memory>

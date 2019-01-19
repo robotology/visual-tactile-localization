@@ -21,7 +21,8 @@ public:
             const string SFM_context_name,
             const string SFM_config_name,
             const string IOL_object_name,
-            std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix
+            std::unique_ptr<PointCloudPrediction> prediction,
+            const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix
         );
 
     virtual ~iCubPointCloud();

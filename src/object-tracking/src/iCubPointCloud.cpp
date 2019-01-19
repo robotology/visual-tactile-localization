@@ -23,7 +23,11 @@ iCubPointCloud::iCubPointCloud
     IOL_object_name_(IOL_object_name)
 {
     // Open ports.
-    opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o");
+    if (!opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o"));
+    {
+        std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot open OPC rpc port.";
+        throw(std::runtime_error(err));
+    }
 
     // Configure SFM library.
     ResourceFinder rf_sfm;
@@ -32,7 +36,11 @@ iCubPointCloud::iCubPointCloud
     rf_sfm.setDefaultContext(SFM_context_name.c_str());
     rf_sfm.configure(0, NULL);
 
-    sfm_.configure(rf_sfm, port_prefix);
+    if (!sfm_.configure(rf_sfm, port_prefix))
+    {
+        std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot configure instance of SFM library.";
+        throw(std::runtime_error(err));
+    }
 
     // Reset flags
     obj_bbox_set_ = false;

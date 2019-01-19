@@ -2,6 +2,7 @@
 #define ICUBPOINTCLOUD_H
 
 #include <BayesFilters/Data.h>
+#include <BayesFilters/EstimatesExtraction.h>
 
 #include <Eigen/Dense>
 
@@ -11,6 +12,8 @@
 #include <PointCloudPrediction.h>
 
 #include <SFM.h>
+
+#include <SuperimposeMesh/SICAD.h>
 
 #include <string>
 #include <memory>
@@ -25,6 +28,8 @@ public:
             const string SFM_config_name,
             const string IOL_object_name,
             const string obj_mesh_file,
+            const string sicad_shader_file,
+            const string eye_name,
             std::unique_ptr<PointCloudPrediction> prediction,
             const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix
         );
@@ -60,6 +65,12 @@ protected:
      */
     std::pair<bool, std::vector<std::pair<int, int>>> getObject2DCoordinates(std::size_t stride_u, std::size_t stride_v);
 
+    /*
+     * Update the object bounding box by projecting the object mesh, according to the last estimate available,
+     * on the camera plane.
+     */
+    void updateObjectBoundingBox();
+
     /**
      * This is iCub SFM.
      */
@@ -67,15 +78,14 @@ protected:
 
     /**
      * Object bounding box (top-left, bottom-right) of the target object.
-     * Note: this is relative to the **left** iCub eye.
      */
     std::pair<int, int> obj_bbox_tl_;
     std::pair<int, int> obj_bbox_br_;
     bool obj_bbox_set_;
+    bfl::EstimatesExtraction obj_bbox_estimator_;
 
     /**
      * Bounding box (top-left, bottom-right) of an **undesired** external object.
-     * Note: this is relative to the **left** iCub eye.
      */
     std::pair<int, int> ext_obj_bbox_tl_;
     std::pair<int, int> ext_obj_bbox_br_;
@@ -99,7 +109,8 @@ protected:
 
     /**
      * Last object estimate, to be used as hint to evaluate a better bounding box.
-     * The vector contains 3 Cartesian coordinates and a ZYX Euler angles parametrization.
+     * The vector contains 3 Cartesian coordinates (m), 3 Cartesian velocites (m/s),
+     * 3 Euler angle rates (rad/s) and a ZYX Euler angles parametrization (rad).
      */
     Eigen::VectorXd last_estimate_;
     bool obj_estimate_set_;
@@ -108,6 +119,18 @@ protected:
      * Interface to iCub cameras, required to predict the 2D object bounding box.
      */
     GazeController gaze_;
+
+    /**
+     * iCub camera selection, width/height in pixels.
+     */
+    const std::string eye_name_;
+    const int cam_width_ = 320;
+    const int cam_height_ = 240;
+
+    /**
+     * Instance of superimpose cad
+     */
+    std::unique_ptr<SICAD> object_sicad_;
 };
 
 #endif /* ICUBPOINTCLOUD_H */

@@ -1,10 +1,14 @@
 #include <iCubPointCloud.h>
 
 #include <yarp/os/ResourceFinder.h>
+#include <yarp/sig/Vector.h>
 
 #include <BayesFilters/Data.h>
 
 #include <Eigen/Dense>
+
+#include <SuperimposeMesh/Superimpose.h>
+#include <SuperimposeMesh/SICAD.h>
 
 using namespace bfl;
 using namespace yarp::os;
@@ -17,12 +21,16 @@ iCubPointCloud::iCubPointCloud
     const string SFM_config_name,
     const string IOL_object_name,
     const string obj_mesh_file,
+    const string sicad_shader_file,
+    const string eye_name,
     std::unique_ptr<PointCloudPrediction> prediction,
     const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix
 ) :
     PointCloudModel(std::move(prediction), noise_covariance_matrix),
     IOL_object_name_(IOL_object_name),
-    gaze_(port_prefix)
+    gaze_(port_prefix),
+    eye_name_(eye_name),
+    obj_bbox_estimator_(4)
 {
     // Open ports.
     if (!opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o"));
@@ -43,6 +51,39 @@ iCubPointCloud::iCubPointCloud
         std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot configure instance of SFM library.";
         throw(std::runtime_error(err));
     }
+
+    // Get iCub cameras intrinsics parameters
+    double cam_fx;
+    double cam_fy;
+    double cam_cx;
+    double cam_cy;
+    if (!gaze_.getCameraIntrinsics(eye_name, cam_fx, cam_fy, cam_cx, cam_cy))
+    {
+        std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot retrieve iCub camera intrinsicse.";
+        throw(std::runtime_error(err));
+    }
+
+    // Configure superimposition engine
+    SICAD::ModelPathContainer mesh_path;
+    mesh_path.emplace("object", obj_mesh_file);
+    object_sicad_ = std::unique_ptr<SICAD>
+        (
+            new SICAD(mesh_path,
+                      cam_width_,
+                      cam_height_,
+                      cam_fx,
+                      cam_fy,
+                      cam_cx,
+                      cam_cy,
+                      1,
+                      sicad_shader_file,
+                      {1.0, 0.0, 0.0, static_cast<float>(M_PI)})
+        );
+
+    // Configure object bounding box estimator to use exponential mean
+    obj_bbox_estimator_.setMethod(EstimatesExtraction::ExtractionMethod::emean);
+    // Leave default window size
+    // obj_bbox_estimator_.setMobileAverageWindowSize();
 
     // Reset flags
     obj_bbox_set_ = false;
@@ -177,6 +218,71 @@ std::pair<bool, std::vector<std::pair<int, int>>> iCubPointCloud::getObject2DCoo
     }
 
     return std::make_pair(true, coordinates);
+}
+
+
+void iCubPointCloud::updateObjectBoundingBox()
+{
+    // Object bounding box can be updated if the last estimate is available
+    if (obj_estimate_set_)
+    {
+        // Convert state to Superimpose::ModelPose format
+        Superimpose::ModelPose object_pose;
+        object_pose.resize(7);
+
+        // Cartesian coordinates
+        object_pose[0] = last_estimate_(0);
+        object_pose[1] = last_estimate_(1);
+        object_pose[2] = last_estimate_(2);
+
+        // Convert from Euler ZYX to axis/angle
+        AngleAxisd angle_axis(AngleAxisd(last_estimate_(9), Vector3d::UnitZ()) *
+                              AngleAxisd(last_estimate_(10), Vector3d::UnitY()) *
+                              AngleAxisd(last_estimate_(11), Vector3d::UnitX()));
+        object_pose[3] = angle_axis.axis()(0);
+        object_pose[4] = angle_axis.axis()(1);
+        object_pose[5] = angle_axis.axis()(2);
+        object_pose[6] = angle_axis.angle();
+
+        // Set pose
+        Superimpose::ModelPoseContainer object_pose_container;
+        object_pose_container.emplace("object", object_pose);
+
+        yarp::sig::Vector eye_pos;
+        yarp::sig::Vector eye_att;
+        if (!gaze_.getCameraPose(eye_name_, eye_pos, eye_att))
+        {
+            // Not updating the bounding box since the camera pose is not available
+            return;
+        }
+
+        // Project mesh onto the camera plane
+        // The shader is designed to have the mesh rendered as a white surface
+        cv::Mat rendered_image;
+        object_sicad_->superimpose(object_pose_container, eye_pos.data(), eye_att.data(), rendered_image);
+
+        // Find bounding box
+        cv::Mat points;
+        cv::findNonZero(rendered_image, points);
+        cv::Rect bbox_rect = cv::boundingRect(points);
+        VectorXd bbox_coordinates(4);
+        bbox_coordinates(0) = bbox_rect.x;
+        bbox_coordinates(1) = bbox_rect.y;
+        bbox_coordinates(2) = bbox_rect.x + bbox_rect.width;
+        bbox_coordinates(3) = bbox_rect.y + bbox_rect.height;
+        // EstimatesExtractor requires weights in logspace
+        // Since we have only a sample, only one weight is required
+        VectorXd weight(1);
+        weight(0) = std::log(1);
+        VectorXd filtered_bbox;
+        std::tie(std::ignore, filtered_bbox) = obj_bbox_estimator_.extract(bbox_coordinates, weight);
+
+        // Update bounding box
+        obj_bbox_tl_.first = filtered_bbox(0);
+        obj_bbox_tl_.second = filtered_bbox(1);
+        obj_bbox_br_.first = filtered_bbox(2);
+        obj_bbox_br_.second = filtered_bbox(3);
+    }
 }
 
 

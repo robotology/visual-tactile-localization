@@ -16,11 +16,13 @@ iCubPointCloud::iCubPointCloud
     const string SFM_context_name,
     const string SFM_config_name,
     const string IOL_object_name,
+    const string obj_mesh_file,
     std::unique_ptr<PointCloudPrediction> prediction,
     const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix
 ) :
     PointCloudModel(std::move(prediction), noise_covariance_matrix),
-    IOL_object_name_(IOL_object_name)
+    IOL_object_name_(IOL_object_name),
+    gaze_(port_prefix)
 {
     // Open ports.
     if (!opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o"));

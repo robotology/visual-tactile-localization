@@ -9,6 +9,8 @@
 
 #include <Eigen/Dense>
 
+#include <GazeController.h>
+
 #include <string>
 #include <memory>
 
@@ -21,6 +23,7 @@ public:
             const string SFM_context_name,
             const string SFM_config_name,
             const string IOL_object_name,
+            const string obj_mesh_file,
             std::unique_ptr<PointCloudPrediction> prediction,
             const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix
         );
@@ -99,6 +102,11 @@ protected:
      */
     Eigen::VectorXd last_estimate_;
     bool obj_estimate_set_;
+
+    /**
+     * Interface to iCub cameras, required to predict the 2D object bounding box.
+     */
+    GazeController gaze_;
 };
 
 #endif /* ICUBPOINTCLOUD_H */

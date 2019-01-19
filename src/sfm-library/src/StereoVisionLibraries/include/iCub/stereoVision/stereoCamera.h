@@ -46,9 +46,6 @@
 
 #include <yarp/os/all.h>
 
-#define LEFT    0
-#define RIGHT   1
-
 using namespace std;
 using namespace yarp::os;
 
@@ -534,7 +531,7 @@ public:
     * @param cam cam=1 for left image, cam=2 for right image.
     * @return the pixel position in the distorted image.
     */
-    Point2f getDistortedPixel(int u, int v, int cam=1);
+    Point2f getDistortedPixel(int u, int v, const std::string cam);
 
     /**
     * The method returns a 3-Channels 8bit image with the image matches.
@@ -571,5 +568,5 @@ public:
     * @param cam cam=1 for left image, cam=2 for right image.
     * @return the pixel position in the non-rectified image.
     */
-    Point2f fromRectifiedToOriginal(int u, int v, int camera);
+    Point2f fromRectifiedToOriginal(int u, int v, const std::string cam);
 };

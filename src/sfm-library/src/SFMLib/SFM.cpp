@@ -210,8 +210,8 @@ void SFM::updateViaKinematics(const yarp::sig::Vector& deyes)
 /******************************************************************************/
 void SFM::updateViaGazeCtrl(const bool update)
 {
-    Matrix L1=getCameraHGazeCtrl(LEFT);
-    Matrix R1=getCameraHGazeCtrl(RIGHT);
+    Matrix L1=getCameraHGazeCtrl("LEFT");
+    Matrix R1=getCameraHGazeCtrl("RIGHT");
 
     Matrix RT=SE3inv(R1)*L1;
 
@@ -327,8 +327,8 @@ bool SFM::updateDisparity(const bool do_block)
         init=false;
     }
 
-    getCameraHGazeCtrl(LEFT);
-    getCameraHGazeCtrl(RIGHT);
+    getCameraHGazeCtrl("LEFT");
+    getCameraHGazeCtrl("RIGHT");
 
     Mat leftMat=cvarrToMat(left);
     Mat rightMat=cvarrToMat(right);
@@ -608,7 +608,7 @@ Point3f SFM::get3DPointsAndDisp(int u, int v, int& uR, int& vR, const string &dr
     uR=u-(int)disparity;
     vR=(int)v;
 
-    Point2f orig=this->stereo->fromRectifiedToOriginal(uR,vR,RIGHT);
+    Point2f orig=this->stereo->fromRectifiedToOriginal(uR,vR,"RIGHT");
     uR=(int)orig.x;
     vR=(int)orig.y;
 
@@ -999,12 +999,12 @@ Mat SFM::buildRotTras(const Mat& R, const Mat& T)
 
 
 /******************************************************************************/
-Matrix SFM::getCameraHGazeCtrl(int camera)
+Matrix SFM::getCameraHGazeCtrl(const std::string camera)
 {
     yarp::sig::Vector x_curr;
     yarp::sig::Vector o_curr;
     bool check=false;
-    if(camera==LEFT)
+    if(camera=="LEFT")
         check=igaze->getLeftEyePose(x_curr, o_curr);
     else
         check=igaze->getRightEyePose(x_curr, o_curr);
@@ -1019,13 +1019,13 @@ Matrix SFM::getCameraHGazeCtrl(int camera)
     Matrix H_curr=R_curr;
     H_curr.setSubcol(x_curr,0,3);
 
-    if(camera==LEFT)
+    if(camera=="LEFT")
     {
         mutexDisp.lock();
         convert(H_curr,HL_root);
         mutexDisp.unlock();
     }
-    else if(camera==RIGHT)
+    else if(camera=="RIGHT")
     {
         mutexDisp.lock();
         convert(H_curr,HR_root);

@@ -251,9 +251,6 @@ against OpenCV versions: 2.4.
     #include <iCub/stereoVision/utils.h>
 #endif
 
-#define LEFT    0
-#define RIGHT   1
-
 using namespace std;
 using namespace yarp::os;
 using namespace yarp::dev;
@@ -321,7 +318,7 @@ class SFM: public yarp::os::RFModule
 
     bool loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL, Mat &DistR, const bool use_igaze);
     Mat buildRotTras(const Mat& R, const Mat& T);
-    Matrix getCameraHGazeCtrl(int camera);
+    Matrix getCameraHGazeCtrl(const std::string camera);
     void convert(Matrix& matrix, Mat& mat);
     void convert(Mat& mat, Matrix& matrix);
     void fillWorld3D(ImageOf<PixelRgbFloat> &worldCartImg, ImageOf<PixelRgbFloat> &worldCylImg);

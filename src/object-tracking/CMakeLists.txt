@@ -29,6 +29,9 @@ if(NOT EIGEN3_FOUND)
     find_package(Eigen3 REQUIRED)
 endif()
 
+# OpenCV
+find_package(OpenCV REQUIRED)
+
 set(${EXE_TARGET_NAME}_HDR
     include/iCubPointCloud.h
     include/MeshImporter.h
@@ -66,6 +69,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       SuperimposeMesh::SuperimposeMesh
                       YARP::YARP_OS
                       # YARP::YARP_init
+                      ${OpenCV_LIBS}
                       SFMLib
                       stereoVision
                       iCubGazeCtrlLibrary

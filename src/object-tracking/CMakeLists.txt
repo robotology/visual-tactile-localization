@@ -43,6 +43,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/NanoflannPointCloudPrediction.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
+    include/Random3DPose.h
     include/VCGTriMesh.h
     include/vcg_import_obj_w_stream.h
     )
@@ -54,6 +55,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
     src/PointCloudModel.cpp
+    src/Random3DPose.cpp
     src/main.cpp
     )
 

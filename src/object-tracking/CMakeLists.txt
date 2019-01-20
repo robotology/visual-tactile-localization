@@ -100,4 +100,8 @@ else()
                           )
 endif()
 
+set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini)
+
+yarp_install(FILES ${${EXE_TARGET_NAME}_CONF} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)
+
 install(TARGETS ${EXE_TARGET_NAME} DESTINATION bin)

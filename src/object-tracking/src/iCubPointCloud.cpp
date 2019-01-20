@@ -260,6 +260,17 @@ void iCubPointCloud::updateObjectBoundingBox(const Ref<const VectorXd>& object_p
 }
 
 
+void iCubPointCloud::reset()
+{
+    // By resetting this, the bounding box is initialized again using OPC
+    // when freezeMeasurements is called next time
+    obj_bbox_set_ = false;
+
+    // Reset the exogenous data class
+    exogenous_data_->reset();
+}
+
+
 bool iCubPointCloud::freezeMeasurements()
 {
     // HINT: maybe a blocking style may be better, i.e., while (!object_bbox_set_).
@@ -321,6 +332,20 @@ std::pair<std::size_t, std::size_t> iCubPointCloud::getOutputSize() const
 }
 
 
+bool iCubPointCloud::setProperty(const std::string& property)
+{
+    bool set_successful = false;
+
+    if (property == "reset")
+    {
+        reset();
+        set_successful = true;
+    }
+
+    return set_successful;
+}
+
+
 iCubPointCloudExogenousData::iCubPointCloudExogenousData() :
     obj_estimate_set_(false)
 { }
@@ -341,4 +366,10 @@ void iCubPointCloudExogenousData::setObjectEstimate(Ref<const VectorXd>& pose)
 std::pair<bool, VectorXd> iCubPointCloudExogenousData::getObjectEstimate()
 {
     return std::make_pair(obj_estimate_set_, last_estimate_);
+}
+
+
+void iCubPointCloudExogenousData::reset()
+{
+    obj_estimate_set_ = false;
 }

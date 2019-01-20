@@ -47,6 +47,8 @@ public:
 
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 
+    bool setProperty(const std::string& property) override;
+
 protected:
     /**
      * Retrieve the object bounding box according to iCub OPC (objects property collector).
@@ -64,6 +66,11 @@ protected:
      * on the camera plane.
      */
     void updateObjectBoundingBox(const Eigen::Ref<const Eigen::VectorXd>& object_pose);
+
+    /**
+     * Reset the measurement model class.
+     */    
+    void reset();
 
     /**
      * This is iCub SFM.
@@ -133,6 +140,8 @@ public:
      * Get the object pose.
      */
     std::pair<bool, Eigen::VectorXd> getObjectEstimate();
+
+    void reset();
 
 protected:
     /**

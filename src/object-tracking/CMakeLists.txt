@@ -22,6 +22,9 @@ find_package(YARP CONFIG REQUIRED
 # assimp
 find_package(assimp REQUIRED)
 
+# nanoflann
+find_package(nanoflann)
+
 # Eigen
 find_package(Eigen3 QUIET CONFIG)
 if(NOT EIGEN3_FOUND)
@@ -35,6 +38,7 @@ find_package(OpenCV REQUIRED)
 set(${EXE_TARGET_NAME}_HDR
     include/iCubPointCloud.h
     include/MeshImporter.h
+    include/NanoflannPointCloudPrediction.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
     include/VCGTriMesh.h
@@ -44,6 +48,7 @@ set(${EXE_TARGET_NAME}_HDR
 set(${EXE_TARGET_NAME}_SRC
     src/iCubPointCloud.cpp
     src/MeshImporter.cpp
+    src/NanoflannPointCloudPrediction.cpp
     src/PointCloudModel.cpp
     src/main.cpp
     )
@@ -65,6 +70,7 @@ target_include_directories(${EXE_TARGET_NAME}
 target_link_libraries(${EXE_TARGET_NAME}
                       PRIVATE
                       assimp
+                      nanoflann::nanoflann
                       BayesFilters::BayesFilters
                       SuperimposeMesh::SuperimposeMesh
                       YARP::YARP_OS

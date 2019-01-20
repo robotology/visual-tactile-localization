@@ -114,8 +114,13 @@ set(${EXE_TARGET_NAME}_SHADER_FRAG
         ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_background.frag
 )
 
-yarp_install(FILES ${${EXE_TARGET_NAME}_CONF}        DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)
-yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_VERT} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
-yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_FRAG} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
+set(${EXE_TARGET_NAME}_YCB_MUSTARD     ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard/nontextured.ply)
+set(${EXE_TARGET_NAME}_YCB_POWER_DRILL ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_power_drill/nontextured.ply)
+
+yarp_install(FILES ${${EXE_TARGET_NAME}_CONF}            DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)
+yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_VERT}     DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
+yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_FRAG}     DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
+yarp_install(FILES ${${EXE_TARGET_NAME}_YCB_MUSTARD}     DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/mesh/ycb_mustard)
+yarp_install(FILES ${${EXE_TARGET_NAME}_YCB_POWER_DRILL} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/mesh/ycb_power_drill)
 
 install(TARGETS ${EXE_TARGET_NAME} DESTINATION bin)

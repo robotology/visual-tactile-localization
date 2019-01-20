@@ -44,6 +44,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/PointCloudModel.h
     include/PointCloudPrediction.h
     include/Random3DPose.h
+    include/SimulatedPointCloud.h
     include/VCGTriMesh.h
     include/vcg_import_obj_w_stream.h
     )
@@ -56,6 +57,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/NanoflannPointCloudPrediction.cpp
     src/PointCloudModel.cpp
     src/Random3DPose.cpp
+    src/SimulatedPointCloud.cpp
     src/main.cpp
     )
 

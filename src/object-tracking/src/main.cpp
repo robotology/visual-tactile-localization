@@ -3,6 +3,7 @@
 #include <KinematicModel.h>
 #include <NanoflannPointCloudPrediction.h>
 #include <Random3DPose.h>
+#include <SimulatedPointCloud.h>
 
 int main(int argc, char** argv)
 {

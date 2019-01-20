@@ -102,6 +102,20 @@ endif()
 
 set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini)
 
-yarp_install(FILES ${${EXE_TARGET_NAME}_CONF} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)
+set(${EXE_TARGET_NAME}_SHADER_VERT
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_frame.vert
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_model.vert
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_background.vert
+)
+
+set(${EXE_TARGET_NAME}_SHADER_FRAG
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_frame.frag
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_model.frag
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_background.frag
+)
+
+yarp_install(FILES ${${EXE_TARGET_NAME}_CONF}        DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)
+yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_VERT} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
+yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_FRAG} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
 
 install(TARGETS ${EXE_TARGET_NAME} DESTINATION bin)

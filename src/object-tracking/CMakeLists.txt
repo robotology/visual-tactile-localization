@@ -37,6 +37,7 @@ find_package(OpenCV REQUIRED)
 
 set(${EXE_TARGET_NAME}_HDR
     include/iCubPointCloud.h
+    include/KinematicModel.h
     include/MeshImporter.h
     include/NanoflannPointCloudPrediction.h
     include/PointCloudModel.h
@@ -47,6 +48,7 @@ set(${EXE_TARGET_NAME}_HDR
 
 set(${EXE_TARGET_NAME}_SRC
     src/iCubPointCloud.cpp
+    src/KinematicModel.cpp
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
     src/PointCloudModel.cpp

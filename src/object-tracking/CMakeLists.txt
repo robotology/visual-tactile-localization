@@ -36,6 +36,7 @@ endif()
 find_package(OpenCV REQUIRED)
 
 set(${EXE_TARGET_NAME}_HDR
+    include/Correction.h
     include/iCubPointCloud.h
     include/KinematicModel.h
     include/MeshImporter.h
@@ -47,6 +48,7 @@ set(${EXE_TARGET_NAME}_HDR
     )
 
 set(${EXE_TARGET_NAME}_SRC
+    src/Correction.cpp
     src/iCubPointCloud.cpp
     src/KinematicModel.cpp
     src/MeshImporter.cpp

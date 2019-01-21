@@ -26,7 +26,7 @@ find_package(YARP CONFIG REQUIRED
 find_package(assimp REQUIRED)
 
 # nanoflann
-find_package(nanoflann)
+find_package(nanoflann QUIET)
 
 # Eigen
 find_package(Eigen3 QUIET CONFIG)
@@ -97,7 +97,6 @@ target_include_directories(${EXE_TARGET_NAME}
 target_link_libraries(${EXE_TARGET_NAME}
                       PRIVATE
                       assimp
-                      nanoflann::nanoflann
                       BayesFilters::BayesFilters
                       SuperimposeMesh::SuperimposeMesh
                       YARP::YARP_OS
@@ -119,6 +118,18 @@ if (USE_OPENMP)
                      PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS} Threads::Threads)
     endif()
     target_link_libraries(${EXE_TARGET_NAME} PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+if (nanoflann_FOUND)
+    message(STATUS "nanoflann found on the system. Using system library.")
+    target_link_libraries(${EXE_TARGET_NAME} PRIVATE nanoflann::nanoflann)
+else()
+    message(STATUS "nanoflann not found on the system. Using header shipped with this package.")
+    set(nanoflann_INCLUDE_DIR include/nanoflann/)
+    target_include_directories(${EXE_TARGET_NAME}
+                               PRIVATE
+                               ${nanoflann_INCLUDE_DIR}
+                               )
 endif()
 
 if(NOT TARGET Eigen3)

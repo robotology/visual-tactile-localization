@@ -20,6 +20,7 @@ endif()
 find_package(YARP CONFIG REQUIRED
              COMPONENTS
              OS
+             sig
              )
 # assimp
 find_package(assimp REQUIRED)
@@ -44,6 +45,7 @@ endif()
 
 set(${EXE_TARGET_NAME}_HDR
     include/Correction.h
+    include/Filter.h
     include/iCubPointCloud.h
     include/KinematicModel.h
     include/MeshImporter.h
@@ -59,6 +61,7 @@ set(${EXE_TARGET_NAME}_HDR
 
 set(${EXE_TARGET_NAME}_SRC
     src/Correction.cpp
+    src/Filter.cpp
     src/iCubPointCloud.cpp
     src/KinematicModel.cpp
     src/MeshImporter.cpp
@@ -70,9 +73,14 @@ set(${EXE_TARGET_NAME}_SRC
     src/main.cpp
     )
 
+set(${EXE_TARGET_NAME}_THRIFT_HDR thrift/objecttracking.thrift)
+
+yarp_add_idl(${EXE_TARGET_NAME}_THRIFT_SRC ${${EXE_TARGET_NAME}_THRIFT_HDR})
+
 add_executable(${EXE_TARGET_NAME}
                ${${EXE_TARGET_NAME}_HDR}
                ${${EXE_TARGET_NAME}_SRC}
+               ${${EXE_TARGET_NAME}_THRIFT_SRC}
                )
 
 target_include_directories(${EXE_TARGET_NAME}

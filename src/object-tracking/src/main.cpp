@@ -80,6 +80,8 @@ int main(int argc, char** argv)
     const std::string log_ID = "[Main]";
     yInfo() << log_ID << "Configuring and starting module...";
 
+    const std::string port_prefix = "object-tracking";
+
     ResourceFinder rf;
     rf.setVerbose();
     rf.setDefaultContext("object-tracking");
@@ -123,6 +125,7 @@ int main(int argc, char** argv)
     /* Measurement model. */
     ResourceFinder rf_measurement_model = rf.findNestedResourceFinder("MEASUREMENT_MODEL");
     VectorXd noise_covariance = loadVectorDouble(rf_measurement_model, "noise_covariance", 3);
+    MatrixXd noise_covariance_diagonal = noise_covariance.asDiagonal();
 
     /* Unscented transform. */
     ResourceFinder rf_unscented_transform = rf.findNestedResourceFinder("UNSCENTED_TRANSFORM");
@@ -169,7 +172,8 @@ int main(int argc, char** argv)
 
     /* Mesh parameters. */
     ResourceFinder rf_object = rf.findNestedResourceFinder("OBJECT");
-    const std::string object_name = rf_object.check("object_name", Value("ycb_mustard")).asString();
+    const std::string object_name      = rf_object.check("object_name", Value("ycb_mustard")).asString();
+    const std::string iol_object_name  = rf_object.check("iol_object_name", Value("mustard")).asString();
     const std::string object_mesh_path = rf.findPath("mesh/" + object_name) + "/nontextured.ply";
 
     /* Logging parameters. */
@@ -233,8 +237,9 @@ int main(int argc, char** argv)
     }
 
     yInfo() << log_ID << "Object:";
-    yInfo() << log_ID << "- object_name:"  << object_name;
-    yInfo() << log_ID << "- mesh path is:" << object_mesh_path;
+    yInfo() << log_ID << "- object_name:"     << object_name;
+    yInfo() << log_ID << "- mesh path is:"    << object_mesh_path;
+    yInfo() << log_ID << "- iol_object_name:" << iol_object_name;
 
     yInfo() << log_ID << "Logging:";
     yInfo() << log_ID << "- enable_log:"        << enable_log;
@@ -243,7 +248,7 @@ int main(int argc, char** argv)
     /**
      * Prepare pointer to the measurement model.
      */
-    std::unique_ptr<AdditiveMeasurementModel> measurement_model;
+
 
     /**
      * Initialize point cloud prediction.
@@ -253,8 +258,10 @@ int main(int argc, char** argv)
 
 
     /**
-     * Initialize simulation if required.
+     * Initialize measurement model.
      */
+    std::unique_ptr<AdditiveMeasurementModel> measurement_model;
+    std::shared_ptr<iCubPointCloudExogenousData> icub_pc_exog_data = std::make_shared<iCubPointCloudExogenousData>();
     if (mode == "simulation")
     {
         /**
@@ -285,7 +292,6 @@ int main(int argc, char** argv)
         /**
          * Initialize simulated measurement model.
          */
-        MatrixXd noise_covariance_diagonal = noise_covariance.asDiagonal();
         std::unique_ptr<SimulatedPointCloud> pc_simulation =
             std::unique_ptr<SimulatedPointCloud>(new SimulatedPointCloud(object_mesh_path,
                                                                          std::move(pc_prediction),
@@ -306,6 +312,21 @@ int main(int argc, char** argv)
         std::cout << "done." << std::endl;
 
         measurement_model = std::move(pc_simulation);
+    }
+    else
+    {
+        std::unique_ptr<iCubPointCloud> pc_icub =
+            std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
+                                                               "object-tracking",
+                                                               "sfm_config.ini",
+                                                               iol_object_name,
+                                                               object_mesh_path,
+                                                               rf.findPath("shader/"),
+                                                               "left",
+                                                               std::move(pc_prediction),
+                                                               noise_covariance_diagonal,
+                                                               icub_pc_exog_data));
+        measurement_model = std::move(pc_icub);
     }
 
     if (enable_log)

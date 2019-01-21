@@ -134,7 +134,7 @@ public:
     /**
      * Set the object pose.
      */
-    virtual void setObjectEstimate(Eigen::Ref<const Eigen::VectorXd>& pose);
+    virtual void setObjectEstimate(const Eigen::Ref<const Eigen::VectorXd>& pose);
 
     /**
      * Get the object pose.

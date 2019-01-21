@@ -355,7 +355,7 @@ iCubPointCloudExogenousData:: ~iCubPointCloudExogenousData()
 { }
 
 
-void iCubPointCloudExogenousData::setObjectEstimate(Ref<const VectorXd>& pose)
+void iCubPointCloudExogenousData::setObjectEstimate(const Ref<const VectorXd>& pose)
 {
     last_estimate_ = pose;
 

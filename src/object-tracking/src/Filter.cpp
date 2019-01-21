@@ -16,7 +16,7 @@ Filter::Filter
     const std::string port_prefix,
     Gaussian& initial_state,
     std::unique_ptr<GaussianPrediction> prediction,
-    std::unique_ptr<GaussianCorrection> correction,
+    std::unique_ptr<Correction> correction,
     std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
 ) :
     GaussianFilter(initial_state, std::move(prediction), std::move(correction)),
@@ -71,6 +71,9 @@ bool Filter::run_filter()
 
 bool Filter::reset_filter()
 {
+    // Reset the correction step
+    correction_->reset();
+
     reset();
 
     return true;

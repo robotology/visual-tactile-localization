@@ -46,6 +46,7 @@ endif()
 set(${EXE_TARGET_NAME}_HDR
     include/Correction.h
     include/Filter.h
+    include/GaussianFilter_.h
     include/iCubPointCloud.h
     include/KinematicModel.h
     include/MeshImporter.h
@@ -62,6 +63,7 @@ set(${EXE_TARGET_NAME}_HDR
 set(${EXE_TARGET_NAME}_SRC
     src/Correction.cpp
     src/Filter.cpp
+    src/GaussianFilter_.cpp
     src/iCubPointCloud.cpp
     src/KinematicModel.cpp
     src/MeshImporter.cpp

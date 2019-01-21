@@ -1,4 +1,5 @@
 #include <Correction.h>
+#include <GaussianFilter_.h>
 #include <iCubPointCloud.h>
 #include <KinematicModel.h>
 #include <NanoflannPointCloudPrediction.h>
@@ -8,7 +9,7 @@
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
 #include <BayesFilters/GaussianCorrection.h>
-#include <BayesFilters/GaussianFilter.h>
+// #include <BayesFilters/GaussianFilter.h>
 #include <BayesFilters/GaussianPrediction.h>
 #include <BayesFilters/KFPrediction.h>
 
@@ -380,7 +381,7 @@ int main(int argc, char** argv)
     std::size_t measurement_sub_size = 3; // i.e. a measurement is made of 3 * N points
                                           // where N is the number of points belonging to the point cloud
 
-    std::unique_ptr<GaussianCorrection> correction =
+    std::unique_ptr<Correction> correction =
         std::unique_ptr<Correction>(new Correction(std::move(measurement_model),
                                                    state_size,
                                                    ut_alpha, ut_beta, ut_kappa,

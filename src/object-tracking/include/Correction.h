@@ -25,6 +25,8 @@ public:
      ) noexcept;
 
     void correctStep(const bfl::GaussianMixture& pred_state, bfl::GaussianMixture& corr_state) override;
+
+    void reset();
 };
 
 #endif /* CORRECTION_H */

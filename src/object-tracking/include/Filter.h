@@ -1,12 +1,13 @@
 #ifndef FILTER_H
 #define FILTER_H
 
+#include <GaussianFilter_.h>
+
 #include <BayesFilters/Gaussian.h>
 #include <BayesFilters/GaussianCorrection.h>
-#include <BayesFilters/GaussianFilter.h>
-#include <iCubPointCloud.h>
-
+/* #include <BayesFilters/GaussianFilter.h> */
 #include <BayesFilters/GaussianPrediction.h>
+#include <iCubPointCloud.h>
 
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/Port.h>
@@ -25,7 +26,7 @@ public:
         const std::string port_prefix,
         bfl::Gaussian& initial_state,
         std::unique_ptr<bfl::GaussianPrediction> prediction,
-        std::unique_ptr<bfl::GaussianCorrection> correction,
+        std::unique_ptr<Correction> correction,
         std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
     );
 

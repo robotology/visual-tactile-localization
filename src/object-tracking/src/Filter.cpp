@@ -58,6 +58,8 @@ bool Filter::initialization()
     // Note that initialize() is also called when the a bfl::FilteringAlgorithm is reset
     corrected_state_ = initial_state_;
     predicted_state_ = Gaussian(initial_state_.dim_linear, initial_state_.dim_circular);
+
+    return true;
 }
 
 

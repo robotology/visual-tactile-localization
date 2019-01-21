@@ -80,13 +80,6 @@ int main(int argc, char** argv)
     const std::string log_ID = "[Main]";
     yInfo() << log_ID << "Configuring and starting module...";
 
-    Network yarp;
-    if (!yarp.checkNetwork())
-    {
-        yError() << log_ID << "YARP seems unavailable!";
-        return EXIT_FAILURE;
-    }
-
     ResourceFinder rf;
     rf.setVerbose();
     rf.setDefaultContext("object-tracking");
@@ -97,6 +90,18 @@ int main(int argc, char** argv)
     ResourceFinder rf_mode_parameters = rf.findNestedResourceFinder("MODE");
     const std::string mode  = rf_mode_parameters.check("mode",  Value("simulation")).asString();
     const std::string robot = rf_mode_parameters.check("robot", Value("icubSim")).asString();
+
+    std::unique_ptr<Network> yarp;
+    if (mode != "simulation")
+    {
+        yarp = std::move(std::unique_ptr<Network>(new Network()));
+
+        if (!yarp->checkNetwork())
+        {
+            yError() << log_ID << "YARP seems unavailable!";
+            return EXIT_FAILURE;
+        }
+    }
 
     /* Get initial condition. */
     ResourceFinder rf_initial_conditions = rf.findNestedResourceFinder("INITIAL_CONDITION");

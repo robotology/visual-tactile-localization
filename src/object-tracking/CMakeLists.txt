@@ -133,7 +133,10 @@ else()
                           )
 endif()
 
-set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini)
+set(${EXE_TARGET_NAME}_CONF
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/sfm_config.ini
+    )
 
 set(${EXE_TARGET_NAME}_SHADER_VERT
         ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_frame.vert

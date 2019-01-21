@@ -1,3 +1,5 @@
+option(USE_OPENMP "Use OpenMP" OFF)
+
 set(EXE_TARGET_NAME object-tracking)
 
 # Bayes Filters
@@ -34,6 +36,11 @@ endif()
 
 # OpenCV
 find_package(OpenCV REQUIRED)
+
+# OpenMP
+if (USE_OPENMP)
+  find_package(OpenMP REQUIRED)
+endif()
 
 set(${EXE_TARGET_NAME}_HDR
     include/Correction.h
@@ -90,6 +97,20 @@ target_link_libraries(${EXE_TARGET_NAME}
                       stereoVision
                       iCubGazeCtrlLibrary
                       )
+
+if (USE_OPENMP)
+    if(NOT TARGET OpenMP::OpenMP_CXX)
+        find_package(Threads REQUIRED)
+        add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
+        set_property(TARGET OpenMP::OpenMP_CXX
+                     PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
+        # Only works if the same flag is passed to the linker; use CMake 3.9+ otherwise (Intel, AppleClang)
+        set_property(TARGET OpenMP::OpenMP_CXX
+                     PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS} Threads::Threads)
+    endif()
+    target_link_libraries(${EXE_TARGET_NAME} PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
 if(NOT TARGET Eigen3)
     target_include_directories(${EXE_TARGET_NAME}
                                PRIVATE

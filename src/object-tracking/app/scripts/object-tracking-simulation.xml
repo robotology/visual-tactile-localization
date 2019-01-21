@@ -1,0 +1,10 @@
+<application>
+  <name>Object Tracking synthetic simulation</name>
+
+  <module>
+    <name>object-tracking</name>
+    <parameters></parameters>
+    <node>icub-cuda</node>
+  </module>
+
+</application>

@@ -1,0 +1,52 @@
+<application>
+  <name>Object Tracking on iCub</name>
+
+  <module>
+    <name>object-tracking</name>
+    <parameters></parameters>
+    <node>icub-cuda</node>
+  </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/disp:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
+  <connection>
+    <from>/icub/camcalib/right/out</from>
+    <to>/object-tracking/SFM/right:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking/SFM/left:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/SFM/disp:o</from>
+    <to>/object-tracking/viewer/disp:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/opc/rpc:o</from>
+    <to>/memory/rpc</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/estimate:o</from>
+    <to>/object-tracking-viewer/estimate:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+</application>

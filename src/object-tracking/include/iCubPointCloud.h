@@ -22,7 +22,7 @@
 class iCubPointCloudExogenousData;
 
 
-class iCubPointCloud : PointCloudModel
+class iCubPointCloud : public PointCloudModel
 {
 public:
     iCubPointCloud

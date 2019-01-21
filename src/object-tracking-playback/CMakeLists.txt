@@ -1,4 +1,4 @@
-set(EXE_TARGET_NAME object-tracking-viewer)
+set(EXE_TARGET_NAME object-tracking-playback)
 
 # VTK
 find_package(VTK             REQUIRED)

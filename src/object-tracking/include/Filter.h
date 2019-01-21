@@ -4,6 +4,8 @@
 #include <BayesFilters/Gaussian.h>
 #include <BayesFilters/GaussianCorrection.h>
 #include <BayesFilters/GaussianFilter.h>
+#include <iCubPointCloud.h>
+
 #include <BayesFilters/GaussianPrediction.h>
 
 #include <yarp/os/BufferedPort.h>
@@ -23,7 +25,8 @@ public:
         const std::string port_prefix,
         bfl::Gaussian& initial_state,
         std::unique_ptr<bfl::GaussianPrediction> prediction,
-        std::unique_ptr<bfl::GaussianCorrection> correction
+        std::unique_ptr<bfl::GaussianCorrection> correction,
+        std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
     );
 
     virtual ~Filter();
@@ -50,6 +53,8 @@ protected:
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_out_;
 
     yarp::os::Port port_rpc_command_;
+
+    std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share_;
 
 private:
     bfl::Gaussian initial_state_;

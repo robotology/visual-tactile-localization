@@ -16,10 +16,12 @@ Filter::Filter
     const std::string port_prefix,
     Gaussian& initial_state,
     std::unique_ptr<GaussianPrediction> prediction,
-    std::unique_ptr<GaussianCorrection> correction
+    std::unique_ptr<GaussianCorrection> correction,
+    std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
 ) :
     GaussianFilter(initial_state, std::move(prediction), std::move(correction)),
-    initial_state_(initial_state)
+    initial_state_(initial_state),
+    icub_point_cloud_share_(icub_point_cloud_share)
 {
     // Open estimate output port
     if (!port_estimate_out_.open("/" + port_prefix + "/estimate:o"))
@@ -115,13 +117,17 @@ void Filter::filteringStep()
               << " ms"
               << std::endl;
 
+    // Update shared data with iCubPointCloudData
+    VectorXd corrected_mean = corrected_state_.mean();
+    icub_point_cloud_share_->setObjectEstimate(corrected_mean);
+
     // Send estimate over the port using axis/angle representation
-    ;
+
     VectorXd estimate(7);
-    estimate.head<3>() = corrected_state_.mean().head<3>();
-    AngleAxisd angle_axis(AngleAxisd(corrected_state_.mean(3), Vector3d::UnitZ()) *
-                          AngleAxisd(corrected_state_.mean(4), Vector3d::UnitY()) *
-                          AngleAxisd(corrected_state_.mean(5), Vector3d::UnitX()));
+    estimate.head<3>() = corrected_mean.head<3>();
+    AngleAxisd angle_axis(AngleAxisd(corrected_mean(3), Vector3d::UnitZ()) *
+                          AngleAxisd(corrected_mean(4), Vector3d::UnitY()) *
+                          AngleAxisd(corrected_mean(5), Vector3d::UnitX()));
     estimate.segment<3>(3) = angle_axis.axis();
     estimate(6) = angle_axis.angle();
 

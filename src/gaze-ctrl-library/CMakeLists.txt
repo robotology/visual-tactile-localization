@@ -20,4 +20,5 @@ target_link_libraries(${LIBRARY_TARGET_NAME} PRIVATE
                                              YARP::YARP_OS
                                              YARP::YARP_math
                                              ${ICUB_LIBRARIES}
+                                             iKin
                                              )

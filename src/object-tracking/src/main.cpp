@@ -176,6 +176,14 @@ int main(int argc, char** argv)
     const std::string object_name      = rf_object.check("object_name", Value("ycb_mustard")).asString();
     const std::string iol_object_name  = rf_object.check("iol_object_name", Value("mustard")).asString();
     const std::string object_mesh_path = rf.findPath("mesh/" + object_name) + "/nontextured.ply";
+    bool use_bbox_0                    = rf_object.check("use_bbox_0", Value(false)).asBool();
+    VectorXd bbox_tl_0;
+    VectorXd bbox_br_0;
+    if (use_bbox_0)
+    {
+        bbox_tl_0 = loadVectorDouble(rf_object, "bbox_tl_0", 2);
+        bbox_br_0 = loadVectorDouble(rf_object, "bbox_br_0", 2);
+    }
 
     /* Logging parameters. */
     ResourceFinder rf_logging = rf.findNestedResourceFinder("LOG");
@@ -241,6 +249,12 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- object_name:"     << object_name;
     yInfo() << log_ID << "- mesh path is:"    << object_mesh_path;
     yInfo() << log_ID << "- iol_object_name:" << iol_object_name;
+    yInfo() << log_ID << "- use_bbox_0:"      << use_bbox_0;
+    if (use_bbox_0)
+    {
+        yInfo() << log_ID << "- bbox_tl_0:" << eigenToString(bbox_tl_0);
+        yInfo() << log_ID << "- bbox_br_0:" << eigenToString(bbox_br_0);
+    }
 
     yInfo() << log_ID << "Logging:";
     yInfo() << log_ID << "- enable_log:"        << enable_log;
@@ -316,17 +330,38 @@ int main(int argc, char** argv)
     }
     else
     {
-        std::unique_ptr<iCubPointCloud> pc_icub =
-            std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
-                                                               "object-tracking",
-                                                               "sfm_config.ini",
-                                                               iol_object_name,
-                                                               object_mesh_path,
-                                                               rf.findPath("shader/"),
-                                                               "left",
-                                                               std::move(pc_prediction),
-                                                               noise_covariance_diagonal,
-                                                               icub_pc_exog_data));
+        std::unique_ptr<iCubPointCloud> pc_icub;
+        if (use_bbox_0)
+        {
+            std::pair<int, int> top_left = std::make_pair(static_cast<int>(bbox_tl_0(0)), static_cast<int>(bbox_tl_0(1)));
+            std::pair<int, int> bottom_right = std::make_pair(static_cast<int>(bbox_br_0(0)), static_cast<int>(bbox_br_0(1)));
+            // Giving the initial bounding box of the object from outside
+             pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
+                                                                          "object-tracking",
+                                                                          "sfm_config.ini",
+                                                                          object_mesh_path,
+                                                                          rf.findPath("shader/"),
+                                                                          "left",
+                                                                          std::make_pair(top_left, bottom_right),
+                                                                          std::move(pc_prediction),
+                                                                          noise_covariance_diagonal,
+                                                                          icub_pc_exog_data));
+        }
+        else
+        {
+            // Using OPC/IOL to take the initial bounding box of the object
+            pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
+                                                                         "object-tracking",
+                                                                         "sfm_config.ini",
+                                                                         iol_object_name,
+                                                                         object_mesh_path,
+                                                                         rf.findPath("shader/"),
+                                                                         "left",
+                                                                         std::move(pc_prediction),
+                                                                         noise_covariance_diagonal,
+                                                                         icub_pc_exog_data));
+        }
+
         measurement_model = std::move(pc_icub);
     }
 

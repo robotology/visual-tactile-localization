@@ -247,6 +247,8 @@ against OpenCV versions: 2.4.
 
 #include <Eigen/Dense>
 
+#include <GazeController.h>
+
 #ifdef USING_GPU
     #include <iCub/stereoVision/utils.h>
 #endif
@@ -309,7 +311,8 @@ class SFM: public yarp::os::RFModule
 
     PolyDriver headCtrl,gazeCtrl;
     IEncoders* iencs;
-    IGazeControl* igaze;
+    // IGazeControl* igaze;
+    GazeController igaze;
     yarp::sig::Vector eyes0,eyes;
     int nHeadAxes;
     Mat HL_root;
@@ -330,7 +333,7 @@ class SFM: public yarp::os::RFModule
     bool init;
 
 public:
-
+    SFM (const std::string port_prefix);
     bool configure(ResourceFinder &rf, const std::string port_prefix);
     bool close();
     bool updateDisparity(const bool do_block);

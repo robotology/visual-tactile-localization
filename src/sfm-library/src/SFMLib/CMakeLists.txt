@@ -41,8 +41,10 @@ endif()
 if(NOT TARGET Eigen3)
     target_include_directories(${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                                                PRIVATE ${EIGEN3_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME}      PRIVATE stereoVision iKin ${OpenCV_LIBRARIES} ${YARP_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME}      PUBLIC iCubGazeCtrlLibrary
+                                               PRIVATE stereoVision iKin ${OpenCV_LIBRARIES} ${YARP_LIBRARIES})
 else()
     target_include_directories(${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-    target_link_libraries(${PROJECT_NAME}      PRIVATE stereoVision iKin Eigen3::Eigen ${OpenCV_LIBRARIES} ${YARP_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME}      PUBLIC iCubGazeCtrlLibrary
+                                               PRIVATE stereoVision iKin Eigen3::Eigen ${OpenCV_LIBRARIES} ${YARP_LIBRARIES} iCubGazeCtrlLibrary)
 endif()

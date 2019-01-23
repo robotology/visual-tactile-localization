@@ -25,6 +25,12 @@
 #endif
 
 /******************************************************************************/
+SFM::SFM (const std::string port_prefix) :
+    igaze(port_prefix + "/SFM")
+{ }
+
+
+/******************************************************************************/
 bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
 {
     string robot=rf.check("robot",Value("icub")).asString();
@@ -76,13 +82,16 @@ bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
 
     // since SFM was calibrated with eyes vergence set to eyes0[2]
     // it is required to block eyes with that vergence
-    if(!igaze->blockEyes(eyes0[2]))
+    if (igaze.isGazeInterfaceAvailable())
     {
-        cout << "Cannot block vergence of iCub eyes to " << eyes0[2] << std::endl;
-        return false;
+        if(!igaze.getGazeInterface().blockEyes(eyes0[2]))
+        {
+            cout << "Cannot block vergence of iCub eyes to " << eyes0[2] << std::endl;
+            return false;
+        }
     }
     //
-    
+
     eyes.resize(eyes0.length(),0.0);
 
     stereo->setIntrinsics(KL,KR,DistL,DistR);
@@ -142,18 +151,18 @@ bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
         return false;
     }
 
-    Property optionGaze;
-    optionGaze.put("device","gazecontrollerclient");
-    optionGaze.put("remote","/iKinGazeCtrl");
-    optionGaze.put("local",sname+"/gazeClient");
-    if (gazeCtrl.open(optionGaze))
-        gazeCtrl.view(igaze);
-    else
-    {
-        cout<<"Devices not available"<<endl;
-        headCtrl.close();
-        return false;
-    }
+    // Property optionGaze;
+    // optionGaze.put("device","gazecontrollerclient");
+    // optionGaze.put("remote","/iKinGazeCtrl");
+    // optionGaze.put("local",sname+"/gazeClient");
+    // if (gazeCtrl.open(optionGaze))
+    //     gazeCtrl.view(igaze);
+    // else
+    // {
+    //     cout<<"Devices not available"<<endl;
+    //     headCtrl.close();
+    //     return false;
+    // }
 
     if (!R0.empty() && !T0.empty())
     {
@@ -414,20 +423,9 @@ bool SFM::loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &Di
     Bottle left=rf.findGroup("CAMERA_CALIBRATION_LEFT");
     if (use_igaze)
     {
-        Bottle info;
-        igaze->getInfo(info);
-        std::string key = "camera_intrinsics_left";
-
-        if (info.find(key).isNull())
+        bool ok = igaze.getCameraIntrinsics("left", fx, fy, cx, cy);
+        if (!ok)
             return false;
-
-        Bottle *list = info.find("camera_intrinsics_left").asList();
-
-        fx = list->get(0).asDouble();
-        cx = list->get(2).asDouble();
-        fy = list->get(5).asDouble();
-        cy = list->get(6).asDouble();
-
     }
     else
     {
@@ -472,20 +470,9 @@ bool SFM::loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &Di
     Bottle right=rf.findGroup("CAMERA_CALIBRATION_RIGHT");
     if (use_igaze)
     {
-        Bottle info;
-        igaze->getInfo(info);
-        std::string key = "camera_intrinsics_right";
-
-        if (info.find(key).isNull())
+        bool ok = igaze.getCameraIntrinsics("right", fx, fy, cx, cy);
+        if (!ok)
             return false;
-
-        Bottle *list = info.find("camera_intrinsics_right").asList();
-
-        fx = list->get(0).asDouble();
-        cx = list->get(2).asDouble();
-        fy = list->get(5).asDouble();
-        cy = list->get(6).asDouble();
-
     }
     else
     {
@@ -1004,10 +991,30 @@ Matrix SFM::getCameraHGazeCtrl(const std::string camera)
     yarp::sig::Vector x_curr;
     yarp::sig::Vector o_curr;
     bool check=false;
-    if(camera=="LEFT")
-        check=igaze->getLeftEyePose(x_curr, o_curr);
-    else
-        check=igaze->getRightEyePose(x_curr, o_curr);
+
+    {
+        yarp::sig::Vector pos_left;
+        yarp::sig::Vector att_left;
+        yarp::sig::Vector pos_right;
+        yarp::sig::Vector att_right;
+
+        check = igaze.getCameraPoses(pos_left, att_left, pos_right, att_right);
+        if (camera == "LEFT")
+        {
+            x_curr = pos_left;
+            o_curr = att_left;
+        }
+        else if (camera == "RIGHT")
+        {
+            x_curr = pos_right;
+            o_curr = att_right;
+        }
+    }
+
+    // if(camera=="LEFT")
+    //     check=igaze->getLeftEyePose(x_curr, o_curr);
+    // else
+    //     check=igaze->getRightEyePose(x_curr, o_curr);
 
     if(!check)
     {

@@ -223,9 +223,11 @@ void iCubPointCloud::updateObjectBoundingBox(const Ref<const VectorXd>& object_p
     Superimpose::ModelPoseContainer object_pose_container;
     object_pose_container.emplace("object", si_object_pose);
 
-    yarp::sig::Vector eye_pos;
-    yarp::sig::Vector eye_att;
-    if (!gaze_.getCameraPose(eye_name_, eye_pos, eye_att))
+    yarp::sig::Vector eye_pos_left;
+    yarp::sig::Vector eye_att_left;
+    yarp::sig::Vector eye_pos_right;
+    yarp::sig::Vector eye_att_right;    
+    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
     {
         // Not updating the bounding box since the camera pose is not available
         return;
@@ -234,7 +236,10 @@ void iCubPointCloud::updateObjectBoundingBox(const Ref<const VectorXd>& object_p
     // Project mesh onto the camera plane
     // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
     cv::Mat rendered_image;
-    object_sicad_->superimpose(object_pose_container, eye_pos.data(), eye_att.data(), rendered_image);
+    if (eye_name_ == "left")
+        object_sicad_->superimpose(object_pose_container, eye_pos_left.data(), eye_att_left.data(), rendered_image);
+    else if (eye_name_ == "right")
+        object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), rendered_image);
 
     // Find bounding box
     cv::Mat points;

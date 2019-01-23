@@ -20,6 +20,10 @@ public:
 
     bool getCameraIntrinsics(const std::string eye_name, double &fx, double &fy, double &cx, double &cy);
 
+    bool isGazeInterfaceAvailable();
+
+    yarp::dev::IGazeControl& getGazeInterface();
+
 private:
     yarp::dev::PolyDriver drv_gaze;
 

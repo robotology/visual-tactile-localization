@@ -7,6 +7,7 @@
 
 #include <cmath>
 
+using namespace yarp::dev;
 using namespace yarp::os;
 using namespace yarp::sig;
 using namespace iCub::iKin;
@@ -21,7 +22,7 @@ GazeController::GazeController(const std::string port_prefix)
     Property prop;
     prop.put("device", "gazecontrollerclient");
     prop.put("remote", "/iKinGazeCtrl");
-    prop.put("local", port_prefix + "/gazecontroller");
+    prop.put("local", "/" + port_prefix + "/gazecontroller");
 
     if (!(drv_gaze.open(prop) && drv_gaze.view(igaze) && igaze != nullptr))
     {
@@ -201,4 +202,16 @@ bool GazeController::getCameraIntrinsics
 
         return true;
     }
+}
+
+
+bool GazeController::isGazeInterfaceAvailable()
+{
+    return (igaze != nullptr);
+}
+
+
+IGazeControl& GazeController::getGazeInterface()
+{
+    return *igaze;
 }

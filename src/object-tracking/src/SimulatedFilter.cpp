@@ -10,10 +10,10 @@ SimulatedFilter::SimulatedFilter
 (
     Gaussian& initial_state,
     std::unique_ptr<GaussianPrediction> prediction,
-    std::unique_ptr<GaussianCorrection> correction,
+    std::unique_ptr<Correction> correction,
     unsigned int simulation_steps
 ) :
-    GaussianFilter(initial_state, std::move(prediction), std::move(correction)),
+    GaussianFilter_(initial_state, std::move(prediction), std::move(correction)),
     simulation_steps_(simulation_steps)
 { }
 
@@ -42,7 +42,7 @@ void SimulatedFilter::filteringStep()
 {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    GaussianFilter::filteringStep();
+    GaussianFilter_::filteringStep();
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 

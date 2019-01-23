@@ -39,6 +39,20 @@ public:
             std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
         );
 
+        iCubPointCloud
+        (
+            const string port_prefix,
+            const string SFM_context_name,
+            const string SFM_config_name,
+            const string obj_mesh_file,
+            const string sicad_shader_path,
+            const string eye_name,
+            const std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox,
+            std::unique_ptr<PointCloudPrediction> prediction,
+            const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
+            std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+        );
+
     virtual ~iCubPointCloud();
 
     std::pair<bool, bfl::Data> measure() const override;
@@ -50,6 +64,19 @@ public:
     bool setProperty(const std::string& property) override;
 
 protected:
+    iCubPointCloud
+    (
+        const string port_prefix,
+        const string SFM_context_name,
+        const string SFM_config_name,
+        const string obj_mesh_file,
+        const string sicad_shader_path,
+        const string eye_name,
+        std::unique_ptr<PointCloudPrediction> prediction,
+        const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
+        std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+     );
+
     /**
      * Retrieve the object bounding box according to iCub OPC (objects property collector).
      * Return a boolean indicating the outcome, a pair of top-left u-v coordinates and a pair of bottom-right u-v coordinates.
@@ -69,7 +96,7 @@ protected:
 
     /**
      * Reset the measurement model class.
-     */    
+     */
     void reset();
 
     /**
@@ -88,7 +115,7 @@ protected:
     /**
      * IOL object category name (required to initialize the bounding box of the object).
      */
-    const std::string IOL_object_name_;
+    std::string IOL_object_name_;
 
     /**
      * RPC clients.

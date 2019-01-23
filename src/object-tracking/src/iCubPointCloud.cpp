@@ -28,8 +28,69 @@ iCubPointCloud::iCubPointCloud
     const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
     std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
 ) :
+    iCubPointCloud
+    (
+        port_prefix,
+        SFM_context_name,
+        SFM_config_name,
+        obj_mesh_file,
+        sicad_shader_path,
+        eye_name,
+        std::move(prediction),
+        noise_covariance_matrix,
+        exogenous_data
+    )
+{
+    IOL_object_name_ = IOL_object_name;
+
+    obj_bbox_set_ = false;
+}
+
+iCubPointCloud::iCubPointCloud
+(
+    const string port_prefix,
+    const string SFM_context_name,
+    const string SFM_config_name,
+    const string obj_mesh_file,
+    const string sicad_shader_path,
+    const string eye_name,
+    const std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox,
+    std::unique_ptr<PointCloudPrediction> prediction,
+    const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
+    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+) :
+    iCubPointCloud
+    (
+        port_prefix,
+        SFM_context_name,
+        SFM_config_name,
+        obj_mesh_file,
+        sicad_shader_path,
+        eye_name,
+        std::move(prediction),
+        noise_covariance_matrix,
+        exogenous_data
+    )
+{
+    obj_bbox_tl_ = initial_bbox.first;
+    obj_bbox_br_ = initial_bbox.second;
+
+    obj_bbox_set_ = true;
+}
+
+iCubPointCloud::iCubPointCloud
+(
+    const string port_prefix,
+    const string SFM_context_name,
+    const string SFM_config_name,
+    const string obj_mesh_file,
+    const string sicad_shader_path,
+    const string eye_name,
+    std::unique_ptr<PointCloudPrediction> prediction,
+    const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
+    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+) :
     PointCloudModel(std::move(prediction), noise_covariance_matrix),
-    IOL_object_name_(IOL_object_name),
     gaze_(port_prefix),
     eye_name_(eye_name),
     obj_bbox_estimator_(4),
@@ -88,9 +149,6 @@ iCubPointCloud::iCubPointCloud
     obj_bbox_estimator_.setMethod(EstimatesExtraction::ExtractionMethod::emean);
     // Leave default window size
     // obj_bbox_estimator_.setMobileAverageWindowSize();
-
-    // Reset flags
-    obj_bbox_set_ = false;
 }
 
 
@@ -227,7 +285,7 @@ void iCubPointCloud::updateObjectBoundingBox(const Ref<const VectorXd>& object_p
     yarp::sig::Vector eye_pos_left;
     yarp::sig::Vector eye_att_left;
     yarp::sig::Vector eye_pos_right;
-    yarp::sig::Vector eye_att_right;    
+    yarp::sig::Vector eye_att_right;
     if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
     {
         // Not updating the bounding box since the camera pose is not available

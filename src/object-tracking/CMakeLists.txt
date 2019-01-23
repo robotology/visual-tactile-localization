@@ -161,7 +161,7 @@ set(${EXE_TARGET_NAME}_SHADER_FRAG
         ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_background.frag
 )
 
-set(${EXE_TARGET_NAME}_YCB_MUSTARD     ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard/nontextured.ply)
+set(${EXE_TARGET_NAME}_YCB_MUSTARD     ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard/nontextured.ply ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard/nontextured.obj)
 set(${EXE_TARGET_NAME}_YCB_POWER_DRILL ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_power_drill/nontextured.ply)
 
 file(GLOB ${EXE_TARGET_NAME}_XML ${CMAKE_CURRENT_SOURCE_DIR}/app/scripts/*.xml)

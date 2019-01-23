@@ -136,20 +136,20 @@ bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
     utils->initSIFT_GPU();
 #endif
 
-    Property optionHead;
-    optionHead.put("device","remote_controlboard");
-    optionHead.put("remote","/"+robot+"/head");
-    optionHead.put("local",sname+"/headClient");
-    if (headCtrl.open(optionHead))
-    {
-        headCtrl.view(iencs);
-        iencs->getAxes(&nHeadAxes);
-    }
-    else
-    {
-        cout<<"Devices not available"<<endl;
-        return false;
-    }
+    // Property optionHead;
+    // optionHead.put("device","remote_controlboard");
+    // optionHead.put("remote","/"+robot+"/head");
+    // optionHead.put("local",sname+"/headClient");
+    // if (headCtrl.open(optionHead))
+    // {
+    //     headCtrl.view(iencs);
+    //     iencs->getAxes(&nHeadAxes);
+    // }
+    // else
+    // {
+    //     cout<<"Devices not available"<<endl;
+    //     return false;
+    // }
 
     // Property optionGaze;
     // optionGaze.put("device","gazecontrollerclient");
@@ -279,8 +279,8 @@ bool SFM::close()
     // outLeftRectImgPort.close();
     // outRightRectImgPort.close();
 
-    headCtrl.close();
-    gazeCtrl.close();
+    // headCtrl.close();
+    // gazeCtrl.close();
 
 #ifdef USING_GPU
     delete utils;
@@ -318,9 +318,10 @@ bool SFM::updateDisparity(const bool do_block)
     }
 
     // read encoders
-    iencs->getEncoder(nHeadAxes-3,&eyes[0]);
-    iencs->getEncoder(nHeadAxes-2,&eyes[1]);
-    iencs->getEncoder(nHeadAxes-1,&eyes[2]);
+    // iencs->getEncoder(nHeadAxes-3,&eyes[0]);
+    // iencs->getEncoder(nHeadAxes-2,&eyes[1]);
+    // iencs->getEncoder(nHeadAxes-1,&eyes[2]);
+    igaze.getEyesConfiguration(eyes);
 
     updateViaKinematics(eyes-eyes0);
     updateViaGazeCtrl(false);

@@ -1,4 +1,5 @@
 #include <Correction.h>
+#include <Filter.h>
 #include <GaussianFilter_.h>
 #include <iCubPointCloud.h>
 #include <KinematicModel.h>
@@ -278,7 +279,7 @@ int main(int argc, char** argv)
      * Initialize measurement model.
      */
     std::unique_ptr<AdditiveMeasurementModel> measurement_model;
-    std::shared_ptr<iCubPointCloudExogenousData> icub_pc_exog_data = std::make_shared<iCubPointCloudExogenousData>();
+    std::shared_ptr<iCubPointCloudExogenousData> icub_pc_shared_data = std::make_shared<iCubPointCloudExogenousData>();
     if (mode == "simulation")
     {
         /**
@@ -347,7 +348,7 @@ int main(int argc, char** argv)
                                                                           std::make_pair(top_left, bottom_right),
                                                                           std::move(pc_prediction),
                                                                           noise_covariance_diagonal,
-                                                                          icub_pc_exog_data));
+                                                                          icub_pc_shared_data));
         }
         else
         {
@@ -361,7 +362,7 @@ int main(int argc, char** argv)
                                                                          "left",
                                                                          std::move(pc_prediction),
                                                                          noise_covariance_diagonal,
-                                                                         icub_pc_exog_data));
+                                                                         icub_pc_shared_data));
         }
 
         measurement_model = std::move(pc_icub);
@@ -436,6 +437,15 @@ int main(int argc, char** argv)
                                                    std::move(prediction),
                                                    std::move(correction),
                                                    sim_duration / sim_sample_time)));
+    }
+    else if ((mode == "robot" || mode == "play"))
+    {
+        filter = std::move(std::unique_ptr<Filter>(
+                               new Filter(port_prefix,
+                                          initial_state,
+                                          std::move(prediction),
+                                          std::move(correction),
+                                          icub_pc_shared_data)));
     }
 
     std::cout << "done." << std::endl;

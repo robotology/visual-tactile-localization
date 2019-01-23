@@ -3,7 +3,7 @@
 using namespace bfl;
 
 
-GaussianFilter::GaussianFilter
+GaussianFilter_::GaussianFilter_
 (
     Gaussian& initial_state,
     std::unique_ptr<GaussianPrediction> prediction,
@@ -16,7 +16,7 @@ GaussianFilter::GaussianFilter
 { }
 
 
-GaussianFilter::GaussianFilter(GaussianFilter&& gf) noexcept :
+GaussianFilter_::GaussianFilter_(GaussianFilter_&& gf) noexcept :
     predicted_state_(std::move(gf.predicted_state_)),
     corrected_state_(std::move(gf.corrected_state_)),
     prediction_(std::move(gf.prediction_)),
@@ -24,17 +24,17 @@ GaussianFilter::GaussianFilter(GaussianFilter&& gf) noexcept :
 { }
 
 
-GaussianFilter::~GaussianFilter() noexcept
+GaussianFilter_::~GaussianFilter_() noexcept
 { }
 
 
-bool GaussianFilter::initialization()
+bool GaussianFilter_::initialization()
 {
     return true;
 }
 
 
-void GaussianFilter::filteringStep()
+void GaussianFilter_::filteringStep()
 {
     prediction_->predict(corrected_state_, predicted_state_);
     correction_->correct(predicted_state_, corrected_state_);
@@ -43,13 +43,13 @@ void GaussianFilter::filteringStep()
 }
 
 
-bool GaussianFilter::runCondition()
+bool GaussianFilter_::runCondition()
 {
     return true;
 }
 
 
-bool GaussianFilter::skip(const std::string& what_step, const bool status)
+bool GaussianFilter_::skip(const std::string& what_step, const bool status)
 {
     if (what_step == "prediction" ||
         what_step == "state"      ||

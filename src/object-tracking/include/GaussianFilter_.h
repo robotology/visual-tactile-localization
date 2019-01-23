@@ -7,20 +7,20 @@
 #include <Correction.h>
 
 namespace bfl {
-    class GaussianFilter;
+    class GaussianFilter_;
 }
 
 
-class bfl::GaussianFilter: public bfl::FilteringAlgorithm
+class bfl::GaussianFilter_: public bfl::FilteringAlgorithm
 {
 public:
-    GaussianFilter(Gaussian& initial_state, std::unique_ptr<GaussianPrediction> prediction, std::unique_ptr<Correction> correction) noexcept;
+    GaussianFilter_(Gaussian& initial_state, std::unique_ptr<GaussianPrediction> prediction, std::unique_ptr<Correction> correction) noexcept;
 
-    GaussianFilter(GaussianFilter&& kf) noexcept;
+    GaussianFilter_(GaussianFilter_&& kf) noexcept;
 
-    GaussianFilter& operator=(GaussianFilter&& gf) noexcept;
+    GaussianFilter_& operator=(GaussianFilter_&& gf) noexcept;
 
-    virtual ~GaussianFilter() noexcept;
+    virtual ~GaussianFilter_() noexcept;
 
     bool initialization() override;
 

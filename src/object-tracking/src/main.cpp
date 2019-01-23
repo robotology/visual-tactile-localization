@@ -173,10 +173,11 @@ int main(int argc, char** argv)
 
     /* Mesh parameters. */
     ResourceFinder rf_object = rf.findNestedResourceFinder("OBJECT");
-    const std::string object_name      = rf_object.check("object_name", Value("ycb_mustard")).asString();
-    const std::string iol_object_name  = rf_object.check("iol_object_name", Value("mustard")).asString();
-    const std::string object_mesh_path = rf.findPath("mesh/" + object_name) + "/nontextured.ply";
-    bool use_bbox_0                    = rf_object.check("use_bbox_0", Value(false)).asBool();
+    const std::string object_name          = rf_object.check("object_name", Value("ycb_mustard")).asString();
+    const std::string iol_object_name      = rf_object.check("iol_object_name", Value("mustard")).asString();
+    const std::string object_mesh_path_obj = rf.findPath("mesh/" + object_name) + "/nontextured.obj";
+    const std::string object_mesh_path_ply = rf.findPath("mesh/" + object_name) + "/nontextured.ply";
+    bool use_bbox_0                        = rf_object.check("use_bbox_0", Value(false)).asBool();
     VectorXd bbox_tl_0;
     VectorXd bbox_br_0;
     if (use_bbox_0)
@@ -246,10 +247,11 @@ int main(int argc, char** argv)
     }
 
     yInfo() << log_ID << "Object:";
-    yInfo() << log_ID << "- object_name:"     << object_name;
-    yInfo() << log_ID << "- mesh path is:"    << object_mesh_path;
-    yInfo() << log_ID << "- iol_object_name:" << iol_object_name;
-    yInfo() << log_ID << "- use_bbox_0:"      << use_bbox_0;
+    yInfo() << log_ID << "- object_name:"        << object_name;
+    yInfo() << log_ID << "- mesh path is (obj):" << object_mesh_path_obj;
+    yInfo() << log_ID << "- mesh path is (ply):" << object_mesh_path_ply;
+    yInfo() << log_ID << "- iol_object_name:"    << iol_object_name;
+    yInfo() << log_ID << "- use_bbox_0:"         << use_bbox_0;
     if (use_bbox_0)
     {
         yInfo() << log_ID << "- bbox_tl_0:" << eigenToString(bbox_tl_0);
@@ -269,7 +271,7 @@ int main(int argc, char** argv)
      * Initialize point cloud prediction.
      */
     std::unique_ptr<PointCloudPrediction> pc_prediction =
-        std::unique_ptr<NanoflannPointCloudPrediction>(new NanoflannPointCloudPrediction(object_mesh_path, pc_pred_num_samples));
+        std::unique_ptr<NanoflannPointCloudPrediction>(new NanoflannPointCloudPrediction(object_mesh_path_ply, pc_pred_num_samples));
 
 
     /**
@@ -308,7 +310,7 @@ int main(int argc, char** argv)
          * Initialize simulated measurement model.
          */
         std::unique_ptr<SimulatedPointCloud> pc_simulation =
-            std::unique_ptr<SimulatedPointCloud>(new SimulatedPointCloud(object_mesh_path,
+            std::unique_ptr<SimulatedPointCloud>(new SimulatedPointCloud(object_mesh_path_ply,
                                                                          std::move(pc_prediction),
                                                                          std::move(sim_rand_pose),
                                                                          // This is the modeled noise covariance
@@ -339,7 +341,7 @@ int main(int argc, char** argv)
              pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
                                                                           "object-tracking",
                                                                           "sfm_config.ini",
-                                                                          object_mesh_path,
+                                                                          object_mesh_path_obj,
                                                                           rf.findPath("shader/"),
                                                                           "left",
                                                                           std::make_pair(top_left, bottom_right),
@@ -354,7 +356,7 @@ int main(int argc, char** argv)
                                                                          "object-tracking",
                                                                          "sfm_config.ini",
                                                                          iol_object_name,
-                                                                         object_mesh_path,
+                                                                         object_mesh_path_obj,
                                                                          rf.findPath("shader/"),
                                                                          "left",
                                                                          std::move(pc_prediction),
@@ -426,7 +428,7 @@ int main(int argc, char** argv)
      */
     std::cout << "Initializing filter..." << std::flush;
 
-    std::unique_ptr<GaussianFilter> filter;
+    std::unique_ptr<GaussianFilter_> filter;
     if (mode == "simulation")
     {
         filter = std::move(std::unique_ptr<SimulatedFilter>(

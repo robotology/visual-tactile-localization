@@ -19,7 +19,7 @@ Filter::Filter
     std::unique_ptr<Correction> correction,
     std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
 ) :
-    GaussianFilter(initial_state, std::move(prediction), std::move(correction)),
+    GaussianFilter_(initial_state, std::move(prediction), std::move(correction)),
     initial_state_(initial_state),
     icub_point_cloud_share_(icub_point_cloud_share)
 {
@@ -113,7 +113,7 @@ void Filter::filteringStep()
 {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    GaussianFilter::filteringStep();
+    GaussianFilter_::filteringStep();
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 

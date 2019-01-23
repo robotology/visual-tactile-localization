@@ -1,10 +1,11 @@
 #ifndef FILTER_H
 #define FILTER_H
 
+#include <Correction.h>
 #include <GaussianFilter_.h>
 
 #include <BayesFilters/Gaussian.h>
-#include <BayesFilters/GaussianCorrection.h>
+// #include <BayesFilters/GaussianCorrection.h>
 /* #include <BayesFilters/GaussianFilter.h> */
 #include <BayesFilters/GaussianPrediction.h>
 #include <iCubPointCloud.h>
@@ -17,7 +18,7 @@
 
 #include <memory>
 
-class Filter : public bfl::GaussianFilter,
+class Filter : public bfl::GaussianFilter_,
                public ObjectTrackingIDL
 {
 public:

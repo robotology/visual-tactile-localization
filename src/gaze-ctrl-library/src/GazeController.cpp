@@ -14,6 +14,8 @@ using namespace iCub::iKin;
 
 GazeController::GazeController(const std::string port_prefix)
 {
+    use_ienc = false;
+
     /**
      * Drivers configuration
      */
@@ -27,6 +29,8 @@ GazeController::GazeController(const std::string port_prefix)
     if (!(drv_gaze.open(prop) && drv_gaze.view(igaze) && igaze != nullptr))
     {
         yWarning() << "GAZECONTROLLER::CTOR. Warning: cannot open the Gaze controller driver, switching to the encoders.";
+
+        use_igaze = false;
 
         // Open ports
         port_head_enc_.open("/" + port_prefix + "/icub/head:i");
@@ -65,12 +69,16 @@ GazeController::GazeController(const std::string port_prefix)
         cx_right_ = rf_intrinsics_right.check("cx", Value(160.77)).asDouble();
         cy_right_ = rf_intrinsics_right.check("cy", Value(123.491)).asDouble();
     }
+    else
+    {
+        use_igaze = true;
+    }
 }
 
 
 GazeController::~GazeController()
 {
-    if (igaze != nullptr)
+    if (use_igaze)
     {
         // Close the driver
         drv_gaze.close();
@@ -84,6 +92,29 @@ GazeController::~GazeController()
 }
 
 
+bool GazeController::getEyesConfiguration(Vector& eye_enc)
+{
+    if (use_ienc)
+    {
+        // TODO
+        return false;
+    }
+    else
+    {
+        eye_enc.resize(3);
+
+        Bottle* bottle_head  = port_head_enc_.read(true);
+        if (bottle_head == nullptr)
+            return false;
+
+        for (std::size_t i = 0; i < 3; i++)
+            eye_enc(i) = bottle_head->get(i).asDouble();
+
+        return true;
+    }
+}
+
+
 bool GazeController::getCameraPoses
 (
     yarp::sig::Vector& pos_left,
@@ -92,7 +123,7 @@ bool GazeController::getCameraPoses
     yarp::sig::Vector& att_right
 )
 {
-    if (igaze != nullptr)
+    if (use_igaze)
     {
         return igaze->getLeftEyePose(pos_left, att_left) &&
                igaze->getRightEyePose(pos_right, att_right);
@@ -165,7 +196,7 @@ bool GazeController::getCameraIntrinsics
     if ((eye_name != "left") && (eye_name != "right"))
         return false;
 
-    if (igaze != nullptr)
+    if (use_igaze)
     {
         Bottle info;
         igaze->getInfo(info);
@@ -207,7 +238,7 @@ bool GazeController::getCameraIntrinsics
 
 bool GazeController::isGazeInterfaceAvailable()
 {
-    return (igaze != nullptr);
+    return use_igaze;
 }
 
 

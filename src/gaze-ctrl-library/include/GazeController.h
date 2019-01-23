@@ -16,6 +16,8 @@ public:
 
     virtual ~GazeController();
 
+    bool getEyesConfiguration(yarp::sig::Vector& eye_enc);
+
     bool getCameraPoses(yarp::sig::Vector& pos_left, yarp::sig::Vector& att_left, yarp::sig::Vector& pos_right, yarp::sig::Vector& att_right);
 
     bool getCameraIntrinsics(const std::string eye_name, double &fx, double &fy, double &cx, double &cy);
@@ -28,6 +30,10 @@ private:
     yarp::dev::PolyDriver drv_gaze;
 
     yarp::dev::IGazeControl *igaze;
+
+    bool use_igaze;
+
+    bool use_ienc;
 
     yarp::os::BufferedPort<yarp::os::Bottle> port_head_enc_;
 

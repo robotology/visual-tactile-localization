@@ -37,7 +37,7 @@ Filter::Filter
         throw(std::runtime_error(err));
     }
 
-    if (!(this->yarp().attachAsServer(port_rpc_command_)));
+    if (!(this->yarp().attachAsServer(port_rpc_command_)))
     {
         std::string err = "FILTER::CTOR::ERROR\n\tError: cannot attach the RPC command port.";
         throw(std::runtime_error(err));

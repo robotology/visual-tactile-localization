@@ -1,0 +1,135 @@
+<application>
+  <name>Object Tracking on iCub (Play)</name>
+
+  <module>
+    <name>object-tracking</name>
+    <parameters></parameters>
+    <node>icub-cuda</node>
+  </module>
+
+  <module>
+    <name>yarpdataplayer</name>
+    <parameters>--withExtraTimeCol 2</parameters>
+    <node>localhost</node>
+  </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/disp:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/cam/left:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/cam/right:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
+  <connection>
+    <from>/icub/camcalib/right/out</from>
+    <to>/object-tracking/SFM/right:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking/SFM/left:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/right/out</from>
+    <to>/object-tracking/viewer/cam/right:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+    <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking/viewer/cam/left:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/SFM/disp:o</from>
+    <to>/object-tracking/viewer/disp:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/opc/rpc:o</from>
+    <to>/memory/rpc</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/estimate:o</from>
+    <to>/object-tracking-viewer/estimate:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/estimate:o</from>
+    <to>/object-tracking-viewer/estimate:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/estimate:o</from>
+    <to>/object-tracking-viewer/estimate:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/estimate:o</from>
+    <to>/object-tracking-viewer/estimate:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking/SFM/icub/torso:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking/SFM/icub/head:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking/icub/torso:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking/icub/torso:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+</application>

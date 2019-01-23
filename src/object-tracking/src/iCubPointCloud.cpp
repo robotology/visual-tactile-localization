@@ -98,7 +98,7 @@ iCubPointCloud::iCubPointCloud
     sfm_(port_prefix)
 {
     // Open ports.
-    if (!opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o"));
+    if (!(opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
     {
         std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot open OPC rpc port.";
         throw(std::runtime_error(err));

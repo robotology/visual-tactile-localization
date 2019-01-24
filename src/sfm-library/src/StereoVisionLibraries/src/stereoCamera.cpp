@@ -667,7 +667,7 @@ void StereoCamera::computeDisparity(bool best, int uniquenessRatio, int speckleW
 }
 
 
-Point2f StereoCamera::fromRectifiedToOriginal(int u, int v, const std::string camera)
+Point2f StereoCamera::fromRectifiedToOriginal(int u, int v, int camera)
 {
     cv::Point2f originalPoint;
 
@@ -678,7 +678,7 @@ Point2f StereoCamera::fromRectifiedToOriginal(int u, int v, const std::string ca
         originalPoint.y=0;
         return originalPoint;
     }
-    if(camera=="LEFT")
+    if(camera==LEFTCAM)
     {
         originalPoint.x=map11.ptr<float>(v)[u];
         originalPoint.y=map12.ptr<float>(v)[u];
@@ -2288,12 +2288,12 @@ void StereoCamera::buildUndistortRemap()
 
 }
 
-Point2f StereoCamera::getDistortedPixel(int u, int v, const std::string cam)
+Point2f StereoCamera::getDistortedPixel(int u, int v, int cam)
 {
     Point2f distortedPixel;
     Mat MapperX,MapperY;
 
-    if(cam=="LEFT")
+    if(cam==LEFTCAM)
     {
         MapperX=mapxL;
         MapperY=mapyL;

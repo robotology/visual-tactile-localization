@@ -25,21 +25,16 @@
 #endif
 
 /******************************************************************************/
-SFM::SFM (const std::string port_prefix) :
-    igaze(port_prefix + "/SFM")
-{ }
-
-
-/******************************************************************************/
-bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
+bool SFM::configure(ResourceFinder &rf)
 {
+    string name=rf.check("name",Value("SFM")).asString();
+	name = "object-tracking/SFM";
     string robot=rf.check("robot",Value("icub")).asString();
     string left=rf.check("leftPort",Value("/left:i")).asString();
     string right=rf.check("rightPort",Value("/right:i")).asString();
-    bool intrinsics_from_igaze=rf.check("loadIntrinsicsFromiGaze",Value(true)).asBool();
 
     string sname;
-    sname="/"+port_prefix + "/SFM";
+    sname="/"+name;
     left=sname+left;
     right=sname+right;
 
@@ -77,21 +72,8 @@ bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
 
     Mat KL, KR, DistL, DistR;
 
-    loadIntrinsics(rf,KL,KR,DistL,DistR, intrinsics_from_igaze);
+    loadIntrinsics(rf,KL,KR,DistL,DistR);
     loadExtrinsics(rf,R0,T0,eyes0);
-
-    // since SFM was calibrated with eyes vergence set to eyes0[2]
-    // it is required to block eyes with that vergence
-    if (igaze.isGazeInterfaceAvailable())
-    {
-        if(!igaze.getGazeInterface().blockEyes(eyes0[2]))
-        {
-            cout << "Cannot block vergence of iCub eyes to " << eyes0[2] << std::endl;
-            return false;
-        }
-    }
-    //
-
     eyes.resize(eyes0.length(),0.0);
 
     stereo->setIntrinsics(KL,KR,DistL,DistR);
@@ -136,33 +118,33 @@ bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
     utils->initSIFT_GPU();
 #endif
 
-    // Property optionHead;
-    // optionHead.put("device","remote_controlboard");
-    // optionHead.put("remote","/"+robot+"/head");
-    // optionHead.put("local",sname+"/headClient");
-    // if (headCtrl.open(optionHead))
-    // {
-    //     headCtrl.view(iencs);
-    //     iencs->getAxes(&nHeadAxes);
-    // }
-    // else
-    // {
-    //     cout<<"Devices not available"<<endl;
-    //     return false;
-    // }
+    Property optionHead;
+    optionHead.put("device","remote_controlboard");
+    optionHead.put("remote","/"+robot+"/head");
+    optionHead.put("local",sname+"/headClient");
+    if (headCtrl.open(optionHead))
+    {
+        headCtrl.view(iencs);
+        iencs->getAxes(&nHeadAxes);
+    }
+    else
+    {
+        cout<<"Devices not available"<<endl;
+        return false;
+    }
 
-    // Property optionGaze;
-    // optionGaze.put("device","gazecontrollerclient");
-    // optionGaze.put("remote","/iKinGazeCtrl");
-    // optionGaze.put("local",sname+"/gazeClient");
-    // if (gazeCtrl.open(optionGaze))
-    //     gazeCtrl.view(igaze);
-    // else
-    // {
-    //     cout<<"Devices not available"<<endl;
-    //     headCtrl.close();
-    //     return false;
-    // }
+    Property optionGaze;
+    optionGaze.put("device","gazecontrollerclient");
+    optionGaze.put("remote","/iKinGazeCtrl");
+    optionGaze.put("local",sname+"/gazeClient");
+    if (gazeCtrl.open(optionGaze))
+        gazeCtrl.view(igaze);
+    else
+    {
+        cout<<"Devices not available"<<endl;
+        headCtrl.close();
+        return false;
+    }
 
     if (!R0.empty() && !T0.empty())
     {
@@ -219,8 +201,8 @@ void SFM::updateViaKinematics(const yarp::sig::Vector& deyes)
 /******************************************************************************/
 void SFM::updateViaGazeCtrl(const bool update)
 {
-    Matrix L1=getCameraHGazeCtrl("LEFT");
-    Matrix R1=getCameraHGazeCtrl("RIGHT");
+    Matrix L1=getCameraHGazeCtrl(LEFTCAM);
+    Matrix R1=getCameraHGazeCtrl(RIGHTCAM);
 
     Matrix RT=SE3inv(R1)*L1;
 
@@ -279,8 +261,8 @@ bool SFM::close()
     // outLeftRectImgPort.close();
     // outRightRectImgPort.close();
 
-    // headCtrl.close();
-    // gazeCtrl.close();
+    headCtrl.close();
+    gazeCtrl.close();
 
 #ifdef USING_GPU
     delete utils;
@@ -318,10 +300,9 @@ bool SFM::updateDisparity(const bool do_block)
     }
 
     // read encoders
-    // iencs->getEncoder(nHeadAxes-3,&eyes[0]);
-    // iencs->getEncoder(nHeadAxes-2,&eyes[1]);
-    // iencs->getEncoder(nHeadAxes-1,&eyes[2]);
-    igaze.getEyesConfiguration(eyes);
+    iencs->getEncoder(nHeadAxes-3,&eyes[0]);
+    iencs->getEncoder(nHeadAxes-2,&eyes[1]);
+    iencs->getEncoder(nHeadAxes-1,&eyes[2]);
 
     updateViaKinematics(eyes-eyes0);
     updateViaGazeCtrl(false);
@@ -337,8 +318,8 @@ bool SFM::updateDisparity(const bool do_block)
         init=false;
     }
 
-    getCameraHGazeCtrl("LEFT");
-    getCameraHGazeCtrl("RIGHT");
+    getCameraHGazeCtrl(LEFTCAM);
+    getCameraHGazeCtrl(RIGHTCAM);
 
     Mat leftMat=cvarrToMat(left);
     Mat rightMat=cvarrToMat(right);
@@ -413,32 +394,18 @@ bool SFM::loadExtrinsics(yarp::os::ResourceFinder& rf, Mat& Ro, Mat& To, yarp::s
 
 
 /******************************************************************************/
-bool SFM::loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL, Mat &DistR, const bool use_igaze)
+bool SFM::loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL,
+        Mat &DistR)
 {
-    double fx;
-    double fy;
-
-    double cx;
-    double cy;
-
     Bottle left=rf.findGroup("CAMERA_CALIBRATION_LEFT");
-    if (use_igaze)
-    {
-        bool ok = igaze.getCameraIntrinsics("left", fx, fy, cx, cy);
-        if (!ok)
-            return false;
-    }
-    else
-    {
-        if(!left.check("fx") || !left.check("fy") || !left.check("cx") || !left.check("cy"))
-            return false;
+    if(!left.check("fx") || !left.check("fy") || !left.check("cx") || !left.check("cy"))
+        return false;
 
-        fx=left.find("fx").asDouble();
-        fy=left.find("fy").asDouble();
+    double fx=left.find("fx").asDouble();
+    double fy=left.find("fy").asDouble();
 
-        cx=left.find("cx").asDouble();
-        cy=left.find("cy").asDouble();
-    }
+    double cx=left.find("cx").asDouble();
+    double cy=left.find("cy").asDouble();
 
     double k1=left.check("k1",Value(0)).asDouble();
     double k2=left.check("k2",Value(0)).asDouble();
@@ -469,23 +436,14 @@ bool SFM::loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &Di
     KL.at<double>(1,2)=cy;
 
     Bottle right=rf.findGroup("CAMERA_CALIBRATION_RIGHT");
-    if (use_igaze)
-    {
-        bool ok = igaze.getCameraIntrinsics("right", fx, fy, cx, cy);
-        if (!ok)
-            return false;
-    }
-    else
-    {
-        if(!right.check("fx") || !right.check("fy") || !right.check("cx") || !right.check("cy"))
-            return false;
+    if(!right.check("fx") || !right.check("fy") || !right.check("cx") || !right.check("cy"))
+        return false;
 
-        fx=right.find("fx").asDouble();
-        fy=right.find("fy").asDouble();
+    fx=right.find("fx").asDouble();
+    fy=right.find("fy").asDouble();
 
-        cx=right.find("cx").asDouble();
-        cy=right.find("cy").asDouble();
-    }
+    cx=right.find("cx").asDouble();
+    cy=right.find("cy").asDouble();
 
     k1=right.check("k1",Value(0)).asDouble();
     k2=right.check("k2",Value(0)).asDouble();
@@ -596,7 +554,7 @@ Point3f SFM::get3DPointsAndDisp(int u, int v, int& uR, int& vR, const string &dr
     uR=u-(int)disparity;
     vR=(int)v;
 
-    Point2f orig=this->stereo->fromRectifiedToOriginal(uR,vR,"RIGHT");
+    Point2f orig=this->stereo->fromRectifiedToOriginal(uR,vR,RIGHTCAM);
     uR=(int)orig.x;
     vR=(int)orig.y;
 
@@ -987,35 +945,15 @@ Mat SFM::buildRotTras(const Mat& R, const Mat& T)
 
 
 /******************************************************************************/
-Matrix SFM::getCameraHGazeCtrl(const std::string camera)
+Matrix SFM::getCameraHGazeCtrl(int camera)
 {
     yarp::sig::Vector x_curr;
     yarp::sig::Vector o_curr;
     bool check=false;
-
-    {
-        yarp::sig::Vector pos_left;
-        yarp::sig::Vector att_left;
-        yarp::sig::Vector pos_right;
-        yarp::sig::Vector att_right;
-
-        check = igaze.getCameraPoses(pos_left, att_left, pos_right, att_right);
-        if (camera == "LEFT")
-        {
-            x_curr = pos_left;
-            o_curr = att_left;
-        }
-        else if (camera == "RIGHT")
-        {
-            x_curr = pos_right;
-            o_curr = att_right;
-        }
-    }
-
-    // if(camera=="LEFT")
-    //     check=igaze->getLeftEyePose(x_curr, o_curr);
-    // else
-    //     check=igaze->getRightEyePose(x_curr, o_curr);
+    if(camera==LEFTCAM)
+        check=igaze->getLeftEyePose(x_curr, o_curr);
+    else
+        check=igaze->getRightEyePose(x_curr, o_curr);
 
     if(!check)
     {
@@ -1027,13 +965,13 @@ Matrix SFM::getCameraHGazeCtrl(const std::string camera)
     Matrix H_curr=R_curr;
     H_curr.setSubcol(x_curr,0,3);
 
-    if(camera=="LEFT")
+    if(camera==LEFTCAM)
     {
         mutexDisp.lock();
         convert(H_curr,HL_root);
         mutexDisp.unlock();
     }
-    else if(camera=="RIGHT")
+    else if(camera==RIGHTCAM)
     {
         mutexDisp.lock();
         convert(H_curr,HR_root);

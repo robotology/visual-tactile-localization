@@ -247,11 +247,12 @@ against OpenCV versions: 2.4.
 
 #include <Eigen/Dense>
 
-#include <GazeController.h>
-
 #ifdef USING_GPU
     #include <iCub/stereoVision/utils.h>
 #endif
+
+#define LEFTCAM    0
+#define RIGHTCAM   1
 
 using namespace std;
 using namespace yarp::os;
@@ -309,19 +310,18 @@ class SFM: public yarp::os::RFModule
     Event calibEndEvent;
     yarp::os::Mutex mutexDisp;
 
-    // PolyDriver headCtrl,gazeCtrl;
-    // IEncoders* iencs;
-    // IGazeControl* igaze;
-    GazeController igaze;
+    PolyDriver headCtrl,gazeCtrl;
+    IEncoders* iencs;
+    IGazeControl* igaze;
     yarp::sig::Vector eyes0,eyes;
     int nHeadAxes;
     Mat HL_root;
     Mat HR_root;
     Mat R0,T0;
 
-    bool loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL, Mat &DistR, const bool use_igaze);
+    bool loadIntrinsics(yarp::os::ResourceFinder &rf, Mat &KL, Mat &KR, Mat &DistL, Mat &DistR);
     Mat buildRotTras(const Mat& R, const Mat& T);
-    Matrix getCameraHGazeCtrl(const std::string camera);
+    Matrix getCameraHGazeCtrl(int camera);
     void convert(Matrix& matrix, Mat& mat);
     void convert(Mat& mat, Matrix& matrix);
     void fillWorld3D(ImageOf<PixelRgbFloat> &worldCartImg, ImageOf<PixelRgbFloat> &worldCylImg);
@@ -333,8 +333,8 @@ class SFM: public yarp::os::RFModule
     bool init;
 
 public:
-    SFM (const std::string port_prefix);
-    bool configure(ResourceFinder &rf, const std::string port_prefix);
+
+    bool configure(ResourceFinder &rf);
     bool close();
     bool updateDisparity(const bool do_block);
     bool updateModule();

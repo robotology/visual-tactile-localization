@@ -94,8 +94,8 @@ iCubPointCloud::iCubPointCloud
     gaze_(port_prefix),
     eye_name_(eye_name),
     obj_bbox_estimator_(4),
-    exogenous_data_(exogenous_data),
-    sfm_(port_prefix)
+    exogenous_data_(exogenous_data)//,
+    //sfm_(port_prefix)
 {
     // Open ports.
     if (!(opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
@@ -111,10 +111,24 @@ iCubPointCloud::iCubPointCloud
     rf_sfm.setDefaultContext(SFM_context_name.c_str());
     rf_sfm.configure(0, NULL);
 
-    if (!sfm_.configure(rf_sfm, port_prefix))
+    if (!sfm_.configure(rf_sfm))//, port_prefix))
     {
         std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot configure instance of SFM library.";
         throw(std::runtime_error(err));
+    }
+
+    // test sfm
+    while (true)
+    {
+        std::vector<std::pair<int, int>> indexes;
+        std::pair<int, int> index = std::make_pair(174, 158);
+        indexes.push_back(index);
+        bool valid;
+        MatrixXd pc;
+        std::tie(valid, pc) = sfm_.get3DPoints(indexes, true);
+
+        if (valid)
+            std::cout << pc.transpose() << std::endl << std::endl;
     }
 
     // Get iCub cameras intrinsics parameters

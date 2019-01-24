@@ -26,7 +26,22 @@ GazeController::GazeController(const std::string port_prefix)
     prop.put("remote", "/iKinGazeCtrl");
     prop.put("local", "/" + port_prefix + "/gazecontroller");
 
-    if (!(drv_gaze.open(prop) && drv_gaze.view(igaze) && igaze != nullptr))
+	// let's give the controller some time to warm up
+    bool ok = false;
+    double t0 = yarp::os::SystemClock::nowSystem();
+    while (yarp::os::SystemClock::nowSystem() - t0 < 10.0)
+    {
+        // this might fail if controller
+        // is not connected to solver yet
+        if (drv_gaze.open(prop))
+        {
+            ok = true;
+            break;
+        }
+        yarp::os::SystemClock::delaySystem(1.0);
+    }
+
+    if (!ok)
     {
         yWarning() << "GAZECONTROLLER::CTOR. Warning: cannot open the Gaze controller driver, switching to the encoders.";
 
@@ -52,7 +67,7 @@ GazeController::GazeController(const std::string port_prefix)
         // Also load instrinsic parameters from configuration file
         // installed by the package 'object-tracking'
         ResourceFinder rf;
-        rf.setVerbose();
+        rf.setVerbose(true);
         rf.setDefaultContext("object-tracking");
         rf.setDefaultConfigFile("sfm_config.ini");
         rf.configure(0, nullptr);

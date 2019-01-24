@@ -14,17 +14,19 @@ using namespace iCub::iKin;
 
 GazeController::GazeController(const std::string port_prefix)
 {
-    use_ienc = false;
+    use_ienc = true;
+
+	use_igaze = true;
 
     /**
-     * Drivers configuration
+     * Drivers configuration for gaze controller
      */
 
     // Prepare properties for the GazeController
-    Property prop;
-    prop.put("device", "gazecontrollerclient");
-    prop.put("remote", "/iKinGazeCtrl");
-    prop.put("local", "/" + port_prefix + "/gazecontroller");
+    Property prop_gaze;
+    prop_gaze.put("device", "gazecontrollerclient");
+    prop_gaze.put("remote", "/iKinGazeCtrl");
+    prop_gaze.put("local", "/" + port_prefix + "/gazecontroller");
 
 	// let's give the controller some time to warm up
     bool ok = false;
@@ -33,7 +35,7 @@ GazeController::GazeController(const std::string port_prefix)
     {
         // this might fail if controller
         // is not connected to solver yet
-        if (drv_gaze.open(prop))
+        if (drv_gaze.open(prop_gaze))
         {
             ok = true;
             break;
@@ -49,9 +51,11 @@ GazeController::GazeController(const std::string port_prefix)
 	    ok &= (igaze != nullptr);
     }
 
-    if (!ok)
+    if (ok)
+        yInfo() << "GAZECONTROLLER::CTOR. Using the Gaze interface.";
+    else
     {
-        yWarning() << "GAZECONTROLLER::CTOR. Warning: cannot open the Gaze controller driver, switching to the encoders.";
+        yWarning() << "GAZECONTROLLER::CTOR. Warning: cannot open the Gaze controller driver, switching to raw encoders.";
 
         use_igaze = false;
 
@@ -102,9 +106,41 @@ GazeController::GazeController(const std::string port_prefix)
 		yInfo() << "GAZECONTROLLER::CTOR. cx_right_ from configuration file is:" << cx_right_;
 		yInfo() << "GAZECONTROLLER::CTOR. cy_right_ from configuration file is:" << cy_right_;
     }
+
+    /**
+     * Drivers configuration for eyes encoders
+     */
+
+    // Prepare properties for the encoders
+    Property prop_enc;
+    prop_enc.put("device", "remote_controlboard");
+    prop_enc.put("remote", "/icub/head");
+    prop_enc.put("local", "/" + port_prefix + "/eyes_encoders");
+
+    // let's give the controller some time to warm up
+    ok = drv_enc.open(prop_enc);
+
+    // try to retrieve the view
+    if (ok)
+    {
+        ok &= drv_enc.view(ienc);
+	    ok &= (ienc != nullptr);
+    }
+
+    if (ok)
+        yInfo() << "GAZECONTROLLER::CTOR. Using the Encoders interface for the eyes configuration.";
     else
     {
-        use_igaze = true;
+        yWarning() << "GAZECONTROLLER::CTOR. Warning: cannot open the eyes encoders driver, switching to the raw encoders.";
+
+        use_ienc = false;
+
+        if (use_igaze)
+        {
+            // If the gaze interface was available, then it is required
+            // to open a port to read the encoders from
+            port_head_enc_.open("/" + port_prefix + "/icub/head:i");
+        }
     }
 }
 
@@ -122,20 +158,37 @@ GazeController::~GazeController()
         port_head_enc_.close();
         port_torso_enc_.close();
     }
+
+    if (use_ienc)
+    {
+        // close the driver
+        drv_enc.close();
+    }
+    else
+    {
+        // if the gaze interface was available, then
+        // the eyes encoders port was opened and need to be closed
+        if (use_igaze)
+            port_head_enc_.close();
+    }
 }
 
 
 bool GazeController::getEyesConfiguration(Vector& eye_enc)
 {
+    eye_enc.resize(3);
+
     if (use_ienc)
     {
-        // TODO
-        return false;
+        bool valid = true;
+        valid &= ienc->getEncoder(3,&eye_enc[0]);
+        valid &= ienc->getEncoder(4,&eye_enc[1]);
+        valid &= ienc->getEncoder(5,&eye_enc[2]);
+
+        return valid;
     }
     else
     {
-        eye_enc.resize(3);
-
         Bottle* bottle_head  = port_head_enc_.read(true);
         if (bottle_head == nullptr)
             return false;

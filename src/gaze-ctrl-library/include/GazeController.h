@@ -4,6 +4,7 @@
 #include <iCub/iKin/iKinFwd.h>
 
 #include <yarp/dev/GazeControl.h>
+#include <yarp/dev/IEncoders.h>
 #include <yarp/dev/PolyDriver.h>
 #include <yarp/os/Bottle.h>
 #include <yarp/os/BufferedPort.h>
@@ -29,7 +30,11 @@ public:
 private:
     yarp::dev::PolyDriver drv_gaze;
 
+    yarp::dev::PolyDriver drv_enc;
+
     yarp::dev::IGazeControl *igaze;
+
+	yarp::dev::IEncoders* ienc;
 
     bool use_igaze;
 

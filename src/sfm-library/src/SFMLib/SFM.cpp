@@ -24,10 +24,15 @@
 #include <omp.h>
 #endif
 
+SFM::SFM(const std::string port_prefix) :
+    port_prefix_(port_prefix),
+    igaze_(port_prefix + "/SFM")
+{ }
+
 /******************************************************************************/
-bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
+bool SFM::configure(ResourceFinder &rf)
 {
-    string name= port_prefix + "/SFM";
+    string name= port_prefix_ + "/SFM";
     string robot=rf.check("robot",Value("icub")).asString();
     string left=rf.check("leftPort",Value("/left:i")).asString();
     string right=rf.check("rightPort",Value("/right:i")).asString();
@@ -132,18 +137,18 @@ bool SFM::configure(ResourceFinder &rf, const std::string port_prefix)
         return false;
     }
 
-    Property optionGaze;
-    optionGaze.put("device","gazecontrollerclient");
-    optionGaze.put("remote","/iKinGazeCtrl");
-    optionGaze.put("local",sname+"/gazeClient");
-    if (gazeCtrl.open(optionGaze))
-        gazeCtrl.view(igaze);
-    else
-    {
-        cout<<"Devices not available"<<endl;
-        headCtrl.close();
-        return false;
-    }
+    //Property optionGaze;
+    //optionGaze.put("device","gazecontrollerclient");
+    //optionGaze.put("remote","/iKinGazeCtrl");
+    //optionGaze.put("local",sname+"/gazeClient");
+    //if (gazeCtrl.open(optionGaze))
+        //gazeCtrl.view(igaze);
+    //else
+    //{
+        //cout<<"Devices not available"<<endl;
+        //headCtrl.close();
+        //return false;
+    //}
 
     if (!R0.empty() && !T0.empty())
     {
@@ -261,7 +266,7 @@ bool SFM::close()
     // outRightRectImgPort.close();
 
     headCtrl.close();
-    gazeCtrl.close();
+    //gazeCtrl.close();
 
 #ifdef USING_GPU
     delete utils;
@@ -949,10 +954,29 @@ Matrix SFM::getCameraHGazeCtrl(int camera)
     yarp::sig::Vector x_curr;
     yarp::sig::Vector o_curr;
     bool check=false;
-    if(camera==LEFTCAM)
-        check=igaze->getLeftEyePose(x_curr, o_curr);
-    else
-        check=igaze->getRightEyePose(x_curr, o_curr);
+    //if(camera==LEFTCAM)
+        //check=igaze->getLeftEyePose(x_curr, o_curr);
+    //else
+        //check=igaze->getRightEyePose(x_curr, o_curr);
+
+    {
+        yarp::sig::Vector x_curr_left;
+        yarp::sig::Vector o_curr_left;
+        yarp::sig::Vector x_curr_right;
+        yarp::sig::Vector o_curr_right;
+        check = igaze_.getCameraPoses(x_curr_left, o_curr_left, x_curr_right, o_curr_right);
+
+        if (camera == LEFTCAM)
+        {
+            x_curr = x_curr_left;
+            o_curr = o_curr_left;
+        }
+        else
+        {
+            x_curr = x_curr_right;
+            o_curr = o_curr_right;
+        }
+    }
 
     if(!check)
     {

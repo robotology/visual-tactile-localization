@@ -15,8 +15,8 @@ using namespace yarp::os;
 using namespace yarp::sig;
 using namespace Eigen;
 
-Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) //:
-    //sfm_(port_prefix + "/SFM")
+Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
+    sfm_(port_prefix)
 {
     // Open input port
     if(!port_estimate_in_.open("/" + port_prefix + "/estimate:i"))

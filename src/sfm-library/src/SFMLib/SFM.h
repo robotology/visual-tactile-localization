@@ -312,8 +312,8 @@ class SFM: public yarp::os::RFModule
     Event calibEndEvent;
     yarp::os::Mutex mutexDisp;
 
-    PolyDriver headCtrl,gazeCtrl;
-    IEncoders* iencs;
+    //PolyDriver headCtrl,gazeCtrl;
+    //IEncoders* iencs;
     //IGazeControl* igaze;
 	GazeController igaze_;
     yarp::sig::Vector eyes0,eyes;

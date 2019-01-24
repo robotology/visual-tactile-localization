@@ -1,21 +1,22 @@
 set(EXE_TARGET_NAME object-tracking-viewer)
 
-# YARP
-find_package(YARP CONFIG REQUIRED
-             COMPONENTS
-             OS
-             sig
-             )
-# VTK
-find_package(VTK             REQUIRED)
-include(${VTK_USE_FILE})
-
 # Eigen
 find_package(Eigen3 QUIET CONFIG)
 if(NOT EIGEN3_FOUND)
     # in case the cmake/FindEigen3.cmake fails
     find_package(Eigen3 REQUIRED)
 endif()
+
+# YARP
+find_package(YARP CONFIG REQUIRED
+             COMPONENTS
+             OS
+             sig
+             eigen
+             )
+# VTK
+find_package(VTK             REQUIRED)
+include(${VTK_USE_FILE})
 
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR
@@ -44,6 +45,7 @@ target_link_libraries(${EXE_TARGET_NAME} PRIVATE
                                          YARP::YARP_init
                                          YARP::YARP_OS
                                          YARP::YARP_sig
+                                         YARP::YARP_eigen
                                          SFMLib
                                          stereoVision
                                          )

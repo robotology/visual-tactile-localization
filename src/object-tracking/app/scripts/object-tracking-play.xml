@@ -84,27 +84,6 @@
   </connection>
 
   <connection>
-    <from>/object-tracking/estimate:o</from>
-    <to>/object-tracking-viewer/estimate:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/object-tracking/estimate:o</from>
-    <to>/object-tracking-viewer/estimate:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/object-tracking/estimate:o</from>
-    <to>/object-tracking-viewer/estimate:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
     <from>/icub/head/state:o</from>
     <to>/object-tracking/SFM/icub/torso:i</to>
     <protocol>tcp</protocol>

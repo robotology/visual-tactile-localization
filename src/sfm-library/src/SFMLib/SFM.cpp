@@ -150,6 +150,13 @@ bool SFM::configure(ResourceFinder &rf)
         //return false;
     //}
 
+	if (igaze_.isGazeInterfaceAvailable())
+	{
+		// Block eyes vergence according to the value used during the calibration
+		// (stored in eyes0(2))
+		igaze_.getGazeInterface().blockEyes(eyes0(2));
+	}
+
     if (!R0.empty() && !T0.empty())
     {
         stereo->setRotation(R0,0);

@@ -640,95 +640,24 @@ Point3f SFM::get3DPointsAndDisp(int u, int v, int& uR, int& vR, const string &dr
 /******************************************************************************/
 Point3f SFM::get3DPoint(int u, int v, const string &drive)
 {
-    Point3f point(0.0f,0.0f,0.0f);
-    if ((drive!="RIGHT") && (drive!="LEFT") && (drive!="ROOT"))
-        return point;
+    Point3f point_cv(0.0f,0.0f,0.0f);
 
-    LockGuard lg(mutexDisp);
+    std::pair<int, int> coord = std::make_pair(u, v);
+    std::vector<std::pair<int, int>> coords;
+	coords.push_back(coord);
+    
+    Eigen::MatrixXd point;
+    bool valid_point;
+    std::tie(valid_point, point) = get3DPoints(coords, true);
 
-    // Mapping from Rectified Cameras to Original Cameras
-    const Mat& Mapper=this->stereo->getMapperL();
-    if (Mapper.empty())
-        return point;
+    if (!valid_point)
+        return point_cv;
 
-    float usign=Mapper.ptr<float>(v)[2*u];
-    float vsign=Mapper.ptr<float>(v)[2*u+1];
+    point_cv.x = point(0, 0);
+    point_cv.y = point(1, 0);
+    point_cv.z = point(2, 0);
 
-    u=cvRound(usign);
-    v=cvRound(vsign);
-
-    const Mat& disp16m=this->stereo->getDisparity16();
-    if (disp16m.empty() || (u<0) || (u>=disp16m.cols) || (v<0) || (v>=disp16m.rows))
-        return point;
-
-    const Mat& Q=this->stereo->getQ();
-    IplImage disp16=disp16m;
-    CvScalar scal=cvGet2D(&disp16,v,u);
-    double disparity=scal.val[0]/16.0;
-    float w=(float)(disparity*Q.at<double>(3,2)+Q.at<double>(3,3));
-    point.x=(float)((usign+1)*Q.at<double>(0,0)+Q.at<double>(0,3));
-    point.y=(float)((vsign+1)*Q.at<double>(1,1)+Q.at<double>(1,3));
-    point.z=(float)Q.at<double>(2,3);
-
-    point.x/=w;
-    point.y/=w;
-    point.z/=w;
-
-    // discard points far more than 10 meters or with not valid disparity (<0)
-    if ((point.z>10.0f) || (point.z<0.0f))
-        return point;
-
-    if (drive=="ROOT")
-    {
-        const Mat& RLrect=this->stereo->getRLrect().t();
-        Mat Tfake=Mat::zeros(0,3,CV_64F);
-        Mat P(4,1,CV_64FC1);
-        P.at<double>(0,0)=point.x;
-        P.at<double>(1,0)=point.y;
-        P.at<double>(2,0)=point.z;
-        P.at<double>(3,0)=1.0;
-
-        Mat Hrect=buildRotTras(RLrect,Tfake);
-        P=HL_root*Hrect*P;
-        point.x=(float)(P.at<double>(0,0)/P.at<double>(3,0));
-        point.y=(float)(P.at<double>(1,0)/P.at<double>(3,0));
-        point.z=(float)(P.at<double>(2,0)/P.at<double>(3,0));
-    }
-    else if (drive=="LEFT")
-    {
-        Mat P(3,1,CV_64FC1);
-        P.at<double>(0,0)=point.x;
-        P.at<double>(1,0)=point.y;
-        P.at<double>(2,0)=point.z;
-
-        P=this->stereo->getRLrect().t()*P;
-        point.x=(float)P.at<double>(0,0);
-        point.y=(float)P.at<double>(1,0);
-        point.z=(float)P.at<double>(2,0);
-    }
-    else if (drive=="RIGHT")
-    {
-        const Mat& Rright=this->stereo->getRotation();
-        const Mat& Tright=this->stereo->getTranslation();
-        const Mat& RRright=this->stereo->getRRrect().t();
-        Mat TRright=Mat::zeros(0,3,CV_64F);
-
-        Mat HRL=buildRotTras(Rright,Tright);
-        Mat Hrect=buildRotTras(RRright,TRright);
-
-        Mat P(4,1,CV_64FC1);
-        P.at<double>(0,0)=point.x;
-        P.at<double>(1,0)=point.y;
-        P.at<double>(2,0)=point.z;
-        P.at<double>(3,0)=1.0;
-
-        P=Hrect*HRL*P;
-        point.x=(float)(P.at<double>(0,0)/P.at<double>(3,0));
-        point.y=(float)(P.at<double>(1,0)/P.at<double>(3,0));
-        point.z=(float)(P.at<double>(2,0)/P.at<double>(3,0));
-    }
-
-    return point;
+    return point_cv;
 }
 
 std::pair<bool, Eigen::MatrixXd> SFM::get3DPoints(const std::vector<std::pair<int, int>> & u_v_coordinates, const bool do_block, const float left_z_threshold)

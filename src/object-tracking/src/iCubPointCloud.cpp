@@ -377,8 +377,8 @@ bool iCubPointCloud::freezeMeasurements()
         return false;
 
     // Resize measurements to be a column vector.
-    measurement_.resize(3 * point_cloud.cols());
-    measurement_.swap(Map<VectorXd>(point_cloud.data(), point_cloud.size()));
+    measurement_.resize(3 * point_cloud.cols(), 1);
+    measurement_.swap(Map<MatrixXd>(point_cloud.data(), point_cloud.size(), 1));
 
     return true;
 }

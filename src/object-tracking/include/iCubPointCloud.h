@@ -126,7 +126,7 @@ protected:
      * Local copy of measurements.
      * A vector of size 3 * L with L the number of points in the point cloud.
      */
-    Eigen::VectorXd measurement_;
+    Eigen::MatrixXd measurement_;
 
     /**
      * Interface to iCub cameras, required to predict the 2D object bounding box.

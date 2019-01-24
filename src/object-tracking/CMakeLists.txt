@@ -16,17 +16,6 @@ if(NOT SuperimposeMesh_FOUND)
     find_package(SuperimposeMesh 0.10.100.0 REQUIRED)
 endif()
 
-# YARP
-find_package(YARP CONFIG REQUIRED
-             COMPONENTS
-             OS
-             sig
-             )
-# assimp
-find_package(assimp REQUIRED)
-
-# nanoflann
-find_package(nanoflann QUIET)
 
 # Eigen
 find_package(Eigen3 QUIET CONFIG)
@@ -34,6 +23,19 @@ if(NOT EIGEN3_FOUND)
     # in case the cmake/FindEigen3.cmake fails
     find_package(Eigen3 REQUIRED)
 endif()
+
+# YARP
+find_package(YARP CONFIG REQUIRED
+             COMPONENTS
+             OS
+             sig
+             eigen
+             )
+# assimp
+find_package(assimp REQUIRED)
+
+# nanoflann
+find_package(nanoflann QUIET)
 
 # OpenCV
 find_package(OpenCV REQUIRED)
@@ -100,6 +102,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       BayesFilters::BayesFilters
                       SuperimposeMesh::SuperimposeMesh
                       YARP::YARP_OS
+                      YARP::YARP_eigen
                       # YARP::YARP_init
                       ${OpenCV_LIBS}
                       SFMLib

@@ -117,20 +117,6 @@ iCubPointCloud::iCubPointCloud
         throw(std::runtime_error(err));
     }
 
-    // test sfm
-    while (true)
-    {
-        std::vector<std::pair<int, int>> indexes;
-        std::pair<int, int> index = std::make_pair(174, 158);
-        indexes.push_back(index);
-        bool valid;
-        MatrixXd pc;
-        std::tie(valid, pc) = sfm_.get3DPoints(indexes, true);
-
-        if (valid)
-            std::cout << pc.transpose() << std::endl << std::endl;
-    }
-
     // Get iCub cameras intrinsics parameters
     double cam_fx;
     double cam_fy;

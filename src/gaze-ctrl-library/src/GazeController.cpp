@@ -108,7 +108,7 @@ bool GazeController::getEyesConfiguration(Vector& eye_enc)
             return false;
 
         for (std::size_t i = 0; i < 3; i++)
-            eye_enc(i) = bottle_head->get(i).asDouble();
+            eye_enc(i) = bottle_head->get(i + 3).asDouble();
 
         return true;
     }

@@ -334,7 +334,7 @@ class SFM: public yarp::os::RFModule
 
 public:
 
-    bool configure(ResourceFinder &rf);
+    bool configure(ResourceFinder &rf, const std::string port_prefix);
     bool close();
     bool updateDisparity(const bool do_block);
     bool updateModule();

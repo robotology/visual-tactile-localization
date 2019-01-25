@@ -380,6 +380,8 @@ bool iCubPointCloud::freezeMeasurements()
     measurement_.resize(3 * point_cloud.cols(), 1);
     measurement_.swap(Map<MatrixXd>(point_cloud.data(), point_cloud.size(), 1));
 
+    logger(measurement_.transpose());
+
     return true;
 }
 

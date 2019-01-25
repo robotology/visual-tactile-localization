@@ -157,6 +157,8 @@ private:
 
     int step_;
 
+    int num_steps_;
+
     bool use_ground_truth_;
 };
 

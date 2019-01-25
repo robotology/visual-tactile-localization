@@ -201,6 +201,12 @@ Visualizer::Visualizer
     vtk_measurements = std::unique_ptr<Points>(new Points(measurements_[0], 4));
     vtk_measurements->set_color("red");
 
+    // Evaluate the total number of steps taking into account the size of the data
+    std::vector<int> sizes{static_cast<int>(estimate_.cols()), static_cast<int>(prediction_.cols()), measurements_.size()};
+    if (use_ground_truth_)
+        sizes.push_back(static_cast<int>(target_.cols()));
+    num_steps_ = *(std::min_element(sizes.begin(), sizes.end()));
+
     // Load mesh
     reader_ = vtkSmartPointer<vtkPLYReader>::New();
     reader_->SetFileName(mesh_filename.c_str());
@@ -267,8 +273,8 @@ Visualizer::Visualizer
 void Visualizer::stepForward()
 {
     step_++;
-    if (step_ >= estimate_.cols())
-        step_ = (target_.cols() - 1);
+    if (step_ >= num_steps_)
+        step_ = (num_steps_ - 1);
 
     updateView();
 }

@@ -159,15 +159,20 @@ Visualizer::Visualizer
     const std::string target_data_filename,
     const std::string estimate_data_filename,
     const std::string prediction_data_filename,
-    const std::string measurements_data_filename
+    const std::string measurements_data_filename,
+    const std::string use_ground_truth
 )
 {
-    // Load target data
-    bool valid_target;
-    std::tie(valid_target, target_) = readStateFromFile(target_data_filename, 13);
-    if (!valid_target)
+    use_ground_truth_ = (use_ground_truth == "true");
+    if (use_ground_truth_)
     {
-        throw std::runtime_error("ERROR::VISUALIZER::CTOR\nERROR:Invalid target data.");
+        // Load target data
+        bool valid_target;
+        std::tie(valid_target, target_) = readStateFromFile(target_data_filename, 13);
+        if (!valid_target)
+        {
+            throw std::runtime_error("ERROR::VISUALIZER::CTOR\nERROR:Invalid target data.");
+        }
     }
 
     // Load estimate data
@@ -207,8 +212,11 @@ Visualizer::Visualizer
     mapper_ = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper_->SetInputConnection(reader_->GetOutputPort());
 
-    mesh_actor_ = vtkSmartPointer<vtkActor>::New();
-    mesh_actor_->SetMapper(mapper_);
+    if (use_ground_truth_)
+    {
+        mesh_actor_ = vtkSmartPointer<vtkActor>::New();
+        mesh_actor_->SetMapper(mapper_);
+    }
 
     estimate_actor_ = vtkSmartPointer<vtkActor>::New();
     estimate_actor_->SetMapper(mapper_);
@@ -221,7 +229,10 @@ Visualizer::Visualizer
     prediction_actor_->GetProperty()->SetOpacity(0.3);
 
     renderer_ = vtkSmartPointer<vtkRenderer>::New();
-    renderer_->AddActor(mesh_actor_);
+    if (use_ground_truth_)
+    {
+        renderer_->AddActor(mesh_actor_);
+    }
     renderer_->AddActor(estimate_actor_);
     renderer_->AddActor(prediction_actor_);
     renderer_->SetBackground(0.8, 0.8, 0.8);
@@ -256,7 +267,7 @@ Visualizer::Visualizer
 void Visualizer::stepForward()
 {
     step_++;
-    if (step_ >= target_.cols())
+    if (step_ >= estimate_.cols())
         step_ = (target_.cols() - 1);
 
     updateView();
@@ -274,6 +285,7 @@ void Visualizer::stepBackward()
 void Visualizer::updateView()
 {
     // Ground truth
+    if (use_ground_truth_)
     {
         // Get the current data
         Ref<VectorXd> state = target_.col(step_);

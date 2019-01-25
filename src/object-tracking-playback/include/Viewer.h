@@ -112,7 +112,8 @@ public:
         const std::string trajectory_filename,
         const std::string estimate_filename,
         const std::string prediction_filename,
-        const std::string measurements_data_filename
+        const std::string measurements_data_filename,
+        const std::string use_ground_truth
     );
 
     void stepForward();
@@ -155,6 +156,8 @@ private:
     vtkSmartPointer<LeftRightArrowManualPlayback> manualPlaybackCtrl_;
 
     int step_;
+
+    bool use_ground_truth_;
 };
 
 #endif /* VIEWER_H */

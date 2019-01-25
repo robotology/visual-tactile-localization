@@ -16,6 +16,8 @@
  * Public License for more details
  */
 
+#include <chrono>
+
 #ifndef USING_GPU
     #ifdef OPENCV_GREATER_2
         #include <opencv2/xfeatures2d/nonfree.hpp>
@@ -539,7 +541,7 @@ void StereoCamera::computeDisparity(bool best, int uniquenessRatio, int speckleW
 
     if (cameraChanged)
     {
-        mutex->wait();
+        // mutex->wait();
         stereoRectify(this->Kleft, this->DistL, this->Kright, this->DistR, img_size,
                 this->R, this->T, this->RLrect, this->RRrect, this->PLrect,
                 this->PRrect, this->Q, -1);
@@ -551,7 +553,7 @@ void StereoCamera::computeDisparity(bool best, int uniquenessRatio, int speckleW
             this->PLrect=this->Kleft;
             this->PRrect=this->Kright;
         }
-        mutex->post();
+        // mutex->post();
     }
 
     if (cameraChanged)
@@ -620,7 +622,7 @@ void StereoCamera::computeDisparity(bool best, int uniquenessRatio, int speckleW
     {
         if (cameraChanged)
         {
-            this->mutex->wait();
+            // this->mutex->wait();
 
             Mat inverseMapL(map.rows*map.cols,1,CV_32FC2);
             Mat inverseMapR(map.rows*map.cols,1,CV_32FC2);
@@ -644,7 +646,7 @@ void StereoCamera::computeDisparity(bool best, int uniquenessRatio, int speckleW
             this->MapperL=mapperL;
             this->MapperR=mapperR;
 
-            this->mutex->post();
+            // this->mutex->post();
 
             cameraChanged = false;
         }
@@ -657,12 +659,12 @@ void StereoCamera::computeDisparity(bool best, int uniquenessRatio, int speckleW
             disp.convertTo(disp, CV_16SC1, 16.0);
     }
 
-    this->mutex->wait();
+    // this->mutex->wait();
 
     this->Disparity = disp8;
     this->Disparity16 = disp;
 
-    this->mutex->post();
+    // this->mutex->post();
 
 }
 

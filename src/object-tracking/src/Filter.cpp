@@ -130,9 +130,9 @@ void Filter::filteringStep()
 
     VectorXd estimate(7);
     estimate.head<3>() = corrected_mean.head<3>();
-    AngleAxisd angle_axis(AngleAxisd(corrected_mean(3), Vector3d::UnitZ()) *
-                          AngleAxisd(corrected_mean(4), Vector3d::UnitY()) *
-                          AngleAxisd(corrected_mean(5), Vector3d::UnitX()));
+    AngleAxisd angle_axis(AngleAxisd(corrected_mean(9), Vector3d::UnitZ()) *
+                          AngleAxisd(corrected_mean(10), Vector3d::UnitY()) *
+                          AngleAxisd(corrected_mean(11), Vector3d::UnitX()));
     estimate.segment<3>(3) = angle_axis.axis();
     estimate(6) = angle_axis.angle();
 

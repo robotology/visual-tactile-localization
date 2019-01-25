@@ -1375,23 +1375,3 @@ void SFM::floodFill(const Point &seed, const Point3f &p0, const double dist,
         }
     }
 }
-
-
-/******************************************************************************/
-// int main(int argc, char *argv[])
-// {
-//     Network yarp;
-
-//     if (!yarp.checkNetwork())
-//         return 1;
-
-//     ResourceFinder rf;
-//     rf.setVerbose(true);
-//     rf.setDefaultConfigFile("config.ini");
-//     rf.setDefaultContext("pointCloudMeasurements");
-//     rf.configure(argc,argv);
-
-//     SFM mod;
-
-//     return mod.runModule(rf);
-// }

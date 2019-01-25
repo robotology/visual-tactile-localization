@@ -484,5 +484,7 @@ int main(int argc, char** argv)
             return EXIT_FAILURE;
     }
 
+    yInfo() << log_ID << "Application closed succesfully.";
+
     return EXIT_SUCCESS;
 }

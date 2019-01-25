@@ -746,7 +746,7 @@ std::pair<bool, Eigen::MatrixXd> SFM::get3DPoints(const std::vector<std::pair<in
 
     // take only valid points
     Eigen::MatrixXd points(3, num_valid_points);
-    for (int i = 0, j = 0; i < num_valid_points; i++)
+    for (int i = 0, j = 0; i < points_all.cols(); i++)
     {
         if (valid_points(i) == 1)
         {

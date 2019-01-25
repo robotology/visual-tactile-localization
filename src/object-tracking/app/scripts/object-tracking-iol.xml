@@ -10,7 +10,7 @@
   </module>
   <module>
     <name>caffeCoder</name>
-    <parameters></parameters>
+    <parameters>--from caffeCoder_resnet.ini</parameters>
     <node>icub-cuda</node>
   </module>
   <module>

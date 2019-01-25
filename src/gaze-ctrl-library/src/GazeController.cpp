@@ -16,7 +16,7 @@ GazeController::GazeController(const std::string port_prefix)
 {
     use_ienc = true;
 
-	use_igaze = true;
+    use_igaze = true;
 
     /**
      * Drivers configuration for gaze controller
@@ -28,9 +28,9 @@ GazeController::GazeController(const std::string port_prefix)
     prop_gaze.put("remote", "/iKinGazeCtrl");
     prop_gaze.put("local", "/" + port_prefix + "/gazecontroller");
 
-	// let's give the controller some time to warm up
+    // let's give the controller some time to warm up
     bool ok = false;
-    int number_temptatives = 5;
+    int number_temptatives = 1;
     while (number_temptatives > 0)
     {
         // this might fail if controller
@@ -41,14 +41,14 @@ GazeController::GazeController(const std::string port_prefix)
             break;
         }
         yarp::os::SystemClock::delaySystem(1.0);
-		number_temptatives--;
+        number_temptatives--;
     }
 
     // try to retrieve the view
     if (ok)
     {
         ok &= drv_gaze.view(igaze);
-	    ok &= (igaze != nullptr);
+        ok &= (igaze != nullptr);
     }
 
     if (ok)
@@ -90,10 +90,10 @@ GazeController::GazeController(const std::string port_prefix)
         cx_left_ = rf_intrinsics_left.check("cx", Value(149.795)).asDouble();
         cy_left_ = rf_intrinsics_left.check("cy", Value(123.059)).asDouble();
 
-		yInfo() << "GAZECONTROLLER::CTOR. fx_left_ from configuration file is:" << fx_left_;
-		yInfo() << "GAZECONTROLLER::CTOR. fy_left_ from configuration file is:" << fy_left_;
-		yInfo() << "GAZECONTROLLER::CTOR. cx_left_ from configuration file is:" << cx_left_;
-		yInfo() << "GAZECONTROLLER::CTOR. cy_left_ from configuration file is:" << cy_left_;
+        yInfo() << "GAZECONTROLLER::CTOR. fx_left_ from configuration file is:" << fx_left_;
+        yInfo() << "GAZECONTROLLER::CTOR. fy_left_ from configuration file is:" << fy_left_;
+        yInfo() << "GAZECONTROLLER::CTOR. cx_left_ from configuration file is:" << cx_left_;
+        yInfo() << "GAZECONTROLLER::CTOR. cy_left_ from configuration file is:" << cy_left_;
 
         ResourceFinder rf_intrinsics_right = rf.findNestedResourceFinder("CAMERA_CALIBRATION_RIGHT");
         fx_right_ = rf_intrinsics_right.check("fx", Value(234.88)).asDouble();
@@ -101,10 +101,10 @@ GazeController::GazeController(const std::string port_prefix)
         cx_right_ = rf_intrinsics_right.check("cx", Value(160.77)).asDouble();
         cy_right_ = rf_intrinsics_right.check("cy", Value(123.491)).asDouble();
 
-		yInfo() << "GAZECONTROLLER::CTOR. fx_right_ from configuration file is:" << fx_right_;
-		yInfo() << "GAZECONTROLLER::CTOR. fy_right_ from configuration file is:" << fy_right_;
-		yInfo() << "GAZECONTROLLER::CTOR. cx_right_ from configuration file is:" << cx_right_;
-		yInfo() << "GAZECONTROLLER::CTOR. cy_right_ from configuration file is:" << cy_right_;
+        yInfo() << "GAZECONTROLLER::CTOR. fx_right_ from configuration file is:" << fx_right_;
+        yInfo() << "GAZECONTROLLER::CTOR. fy_right_ from configuration file is:" << fy_right_;
+        yInfo() << "GAZECONTROLLER::CTOR. cx_right_ from configuration file is:" << cx_right_;
+        yInfo() << "GAZECONTROLLER::CTOR. cy_right_ from configuration file is:" << cy_right_;
     }
 
     /**
@@ -124,7 +124,7 @@ GazeController::GazeController(const std::string port_prefix)
     if (ok)
     {
         ok &= drv_enc.view(ienc);
-	    ok &= (ienc != nullptr);
+        ok &= (ienc != nullptr);
     }
 
     if (ok)
@@ -207,12 +207,12 @@ bool GazeController::getCameraPoses
     yarp::sig::Vector& att_left,
     yarp::sig::Vector& pos_right,
     yarp::sig::Vector& att_right
-)
+    )
 {
     if (use_igaze)
     {
         return igaze->getLeftEyePose(pos_left, att_left) &&
-               igaze->getRightEyePose(pos_right, att_right);
+            igaze->getRightEyePose(pos_right, att_right);
     }
     else
     {
@@ -277,7 +277,7 @@ bool GazeController::getCameraIntrinsics
     double &fy,
     double &cx,
     double &cy
-)
+    )
 {
     if ((eye_name != "left") && (eye_name != "right"))
         return false;

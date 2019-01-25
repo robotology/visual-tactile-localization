@@ -364,11 +364,11 @@ bool iCubPointCloud::freezeMeasurements()
 
     // Update bounding box using last state estimate
     // provided by exogenous data
-    VectorXd last_estimate;
-    bool valid_last_estimate;
-    std::tie(valid_last_estimate, last_estimate) = exogenous_data_->getObjectEstimate();
-    if (valid_last_estimate)
-        updateObjectBoundingBox(last_estimate);
+    // VectorXd last_estimate;
+    // bool valid_last_estimate;
+    // std::tie(valid_last_estimate, last_estimate) = exogenous_data_->getObjectEstimate();
+    // if (valid_last_estimate)
+    //     updateObjectBoundingBox(last_estimate);
 
     // Get 2D coordinates.
     std::size_t stride_u = 1;
@@ -389,9 +389,31 @@ bool iCubPointCloud::freezeMeasurements()
     if (!valid_point_cloud)
         return false;
 
+    // Evaluate centroid of point cloud
+    VectorXd centroid = (point_cloud.rowwise().sum()) / point_cloud.cols();
+    VectorXi good_points(point_cloud.cols());
+
+    for (int i = 0 ; i < point_cloud.cols(); i++)
+    {
+        good_points(i) = 0;
+        if ((point_cloud.col(i) - centroid).norm() < 0.1)
+            good_points(i) = 1;
+    }
+
+    // take only valid points
+    Eigen::MatrixXd points(3, good_points.sum());
+    for (int i = 0, j = 0; i < point_cloud.cols(); i++)
+    {
+        if (good_points(i) == 1)
+        {
+            point_cloud.col(i).swap(points.col(j));
+            j++;
+        }
+    }
+
     // Resize measurements to be a column vector.
-    measurement_.resize(3 * point_cloud.cols(), 1);
-    measurement_.swap(Map<MatrixXd>(point_cloud.data(), point_cloud.size(), 1));
+    measurement_.resize(3 * points.cols(), 1);
+    measurement_.swap(Map<MatrixXd>(points.data(), points.size(), 1));
 
     logger(measurement_.transpose());
 

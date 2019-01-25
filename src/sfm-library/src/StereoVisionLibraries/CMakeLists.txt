@@ -8,23 +8,19 @@ project(stereoVision)
 
 list(APPEND CMAKE_CXX_FLAGS "-msse3")
 
-if(UNIX)
-    find_package(OpenMP)
+option(USE_OPENMP_libElas "Use OpenMP for libElas" OFF)
+
+if (USE_OPENMP_libElas)
+  find_package(OpenMP REQUIRED)
 endif()
 
-if(OPENMP_FOUND)
-  message(STATUS "OpenMP FOUND")
-
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-
+if(USE_OPENMP_libElas)
   set(folder_source_elas src/elas/elas_omp.cpp
                          src/elas/descriptor.cpp
                          src/elas/filter.cpp
                          src/elas/matrix.cpp
                          src/elas/triangle.cpp)
 else()
-  message(STATUS "OpenMP NOT FOUND")
   set(folder_source_elas src/elas/elas.cpp
                          src/elas/descriptor.cpp
                          src/elas/filter.cpp
@@ -78,12 +74,21 @@ add_library(${PROJECT_NAME} ${folder_source} ${folder_source_elas} ${folder_head
 target_include_directories(${PROJECT_NAME} PUBLIC  $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/iCub/stereoVision/elas)
 
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES} iKin ${YARP_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCV_LIBRARIES} iKin ${YARP_LIBRARIES})
 
 if(USE_SIFT_GPU)
-    target_link_libraries(${PROJECT_NAME} ${SIFTGPU_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${SIFTGPU_LIBRARIES})
 endif()
 
-if(OPENMP_FOUND)
-   target_link_libraries(${PROJECT_NAME} ${OpenMP_C_FLAGS} ${OpenMP_CXX_FLAGS})
+if (USE_OPENMP_SFMLib)
+  if(NOT TARGET OpenMP::OpenMP_CXX)
+    find_package(Threads REQUIRED)
+    add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
+    set_property(TARGET OpenMP::OpenMP_CXX
+      PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
+    # Only works if the same flag is passed to the linker; use CMake 3.9+ otherwise (Intel, AppleClang)
+    set_property(TARGET OpenMP::OpenMP_CXX
+      PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS} Threads::Threads)
+  endif()
+  target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
 endif()

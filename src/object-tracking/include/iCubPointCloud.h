@@ -110,6 +110,10 @@ protected:
     std::pair<int, int> obj_bbox_tl_;
     std::pair<int, int> obj_bbox_br_;
     bool obj_bbox_set_;
+
+    std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox_;
+    bool use_initial_bbox_;
+
     bfl::EstimatesExtraction obj_bbox_estimator_;
 
     /**

@@ -43,6 +43,8 @@ iCubPointCloud::iCubPointCloud
 {
     IOL_object_name_ = IOL_object_name;
 
+    use_initial_bbox_ = false;
+
     obj_bbox_set_ = false;
 }
 
@@ -72,8 +74,11 @@ iCubPointCloud::iCubPointCloud
         exogenous_data
     )
 {
-    obj_bbox_tl_ = initial_bbox.first;
-    obj_bbox_br_ = initial_bbox.second;
+    initial_bbox_ = initial_bbox;
+    obj_bbox_tl_ = initial_bbox_.first;
+    obj_bbox_br_ = initial_bbox_.second;
+
+    use_initial_bbox_ = true;
 
     obj_bbox_set_ = true;
 }
@@ -329,6 +334,14 @@ void iCubPointCloud::reset()
     // By resetting this, the bounding box is initialized again using OPC
     // when freezeMeasurements is called next time
     obj_bbox_set_ = false;
+
+    if (use_initial_bbox_)
+    {
+        obj_bbox_tl_ = initial_bbox_.first;
+        obj_bbox_br_ = initial_bbox_.second;
+
+        obj_bbox_set_ = true;
+    }
 
     // Reset the exogenous data class
     exogenous_data_->reset();

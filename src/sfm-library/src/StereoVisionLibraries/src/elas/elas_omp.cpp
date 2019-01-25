@@ -23,10 +23,13 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 #include <algorithm>
 #include <math.h>
-#include <omp.h>
 #include "descriptor.h"
 #include "triangle.h"
 #include "matrix.h"
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 using namespace std;
 

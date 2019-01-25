@@ -29,6 +29,11 @@ SFM::SFM(const std::string port_prefix) :
     igaze_(port_prefix + "/SFM")
 { }
 
+SFM::~SFM()
+{
+    close();
+}
+
 /******************************************************************************/
 bool SFM::configure(ResourceFinder &rf)
 {
@@ -61,10 +66,10 @@ bool SFM::configure(ResourceFinder &rf)
     rightImgPort.open(right);
     // outMatch.open(outMatchName);
     outDisp.open(outDispName);
-    handlerPort.open(rpc_name);
+    // handlerPort.open(rpc_name);
     // worldCartPort.open(world_name+"/cartesian:o");
     // worldCylPort.open(world_name+"/cylindrical:o");
-    attach(handlerPort);
+    // attach(handlerPort);
 
     // outLeftRectImgPort.open(outLeftRectImgPortName);
     // outRightRectImgPort.open(outRightRectImgPortName);
@@ -238,31 +243,13 @@ void SFM::updateViaGazeCtrl(const bool update)
 
 
 /******************************************************************************/
-bool SFM::interruptModule()
-{
-    leftImgPort.interrupt();
-    rightImgPort.interrupt();
-    outDisp.interrupt();
-    handlerPort.interrupt();
-    // outMatch.interrupt();
-    // worldCartPort.interrupt();
-    // worldCylPort.interrupt();
-
-    // outLeftRectImgPort.interrupt();
-    // outRightRectImgPort.interrupt();
-
-    return true;
-}
-
-
-/******************************************************************************/
 bool SFM::close()
 {
     leftImgPort.close();
     rightImgPort.close();
     outDisp.close();
     // outMatch.close();
-    handlerPort.close();
+    // handlerPort.close();
     // worldCartPort.close();
     // worldCylPort.close();
 
@@ -284,12 +271,6 @@ bool SFM::close()
     return true;
 }
 
-
-/******************************************************************************/
-bool SFM::updateModule()
-{
-    return true;
-}
 
 /******************************************************************************/
 bool SFM::updateDisparity(const bool do_block)

@@ -265,7 +265,7 @@ using namespace iCub::ctrl;
 using namespace iCub::iKin;
 
 
-class SFM: public yarp::os::RFModule
+class SFM
 {
     IplImage*     left;
     IplImage*     right;
@@ -338,12 +338,11 @@ class SFM: public yarp::os::RFModule
 	const std::string port_prefix_;
 
 public:
-	SFM(const std::string port_prefix);
+    SFM(const std::string port_prefix);
+    virtual ~SFM();
     bool configure(ResourceFinder &rf);
     bool close();
     bool updateDisparity(const bool do_block);
-    bool updateModule();
-    bool interruptModule();
     bool respond(const Bottle& command, Bottle& reply);
 
     void setDispParameters(bool _useBestDisp, int _uniquenessRatio, int _speckleWindowSize,

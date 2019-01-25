@@ -16,9 +16,9 @@ target_include_directories(${LIBRARY_TARGET_NAME} PUBLIC
                                                   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                                                   )
 
-target_link_libraries(${LIBRARY_TARGET_NAME} PRIVATE
+target_link_libraries(${LIBRARY_TARGET_NAME} PUBLIC
+                                             iKin
+                                             PRIVATE
                                              YARP::YARP_OS
                                              YARP::YARP_math
-                                             ${ICUB_LIBRARIES}
-                                             iKin
-                                             )
+                                             ${ICUB_LIBRARIES})

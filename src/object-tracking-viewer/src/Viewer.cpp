@@ -18,27 +18,53 @@ using namespace Eigen;
 Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     sfm_(port_prefix)
 {
-    // Open input port
+    // Open estimate input port
     if(!port_estimate_in_.open("/" + port_prefix + "/estimate:i"))
     {
         std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open estimate input port.";
         throw(std::runtime_error(err));
     }
 
+    // Open camera input port
+    // (required to get coloured 3D point cloud)
+    if(!port_image_in_.open("/" + port_prefix + "/cam/left:i"))
+    {
+        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open left camera input port.";
+        throw(std::runtime_error(err));
+    }
+
     // Load period
     const int period = static_cast<int>(rf.check("period", Value(1.0)).asDouble() * 1000);
-    
+
     // Load mesh
     const std::string object_name = rf.check("object_name", Value("ycb_mustard")).asString();
-    
+
     ResourceFinder rf_object_tracking;
     rf_object_tracking.setVerbose(true);
     rf_object_tracking.setDefaultContext("object-tracking");
     const std::string mesh_path = rf_object_tracking.findPath("mesh/" + object_name) + "/nontextured.ply";
-    
+
     reader_ = vtkSmartPointer<vtkPLYReader>::New();
     reader_->SetFileName(mesh_path.c_str());
     reader_->Update();
+
+    // Configure SFM library.
+    ResourceFinder rf_sfm;
+    rf_sfm.setVerbose(true);
+    rf_sfm.setDefaultConfigFile("sfm_config.ini");
+    rf_sfm.setDefaultContext("object-tracking");
+    rf_sfm.configure(0, NULL);
+
+    if (!sfm_.configure(rf_sfm))
+    {
+        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot configure instance of SFM library.";
+        throw(std::runtime_error(err));
+    }
+
+    // Set 2d coordinates
+    std::size_t u_stride = 1;
+    std::size_t v_stride = 1;
+    set2DCoordinates(u_stride, v_stride);
 
     // Configure mesh actor
     mapper_ = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -48,7 +74,8 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     mesh_actor_->SetMapper(mapper_);
 
     // Configure measurements actor
-    // renderer_->AddActor(vtk_measurements->get_actor());
+    int points_size = 2;
+    vtk_measurements_ = unique_ptr<Points>(new Points(points_size));
 
     // Configure axes
     axes_ = vtkSmartPointer<vtkAxesActor>::New();
@@ -73,6 +100,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     render_window_->SetSize(600,600);
     render_window_interactor_->SetRenderWindow(render_window_);
     renderer_->AddActor(mesh_actor_);
+    renderer_->AddActor(vtk_measurements_->get_actor());
     renderer_->SetBackground(0.8, 0.8, 0.8);
 
     // Activate camera
@@ -82,7 +110,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     render_window_interactor_->SetInteractorStyle(interactor_style_);
 
     // Enable orientation widget
-    orientation_widget_->SetInteractor(render_window_interactor_);    
+    orientation_widget_->SetInteractor(render_window_interactor_);
     orientation_widget_->SetEnabled(1);
     orientation_widget_->InteractiveOn();
 
@@ -104,31 +132,67 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
 Viewer::~Viewer()
 {
     port_estimate_in_.close();
+    port_image_in_.close();
 }
 
 
 void Viewer::updateView()
 {
-    Vector* estimate = port_estimate_in_.read(false);
+    // Update estimate
+    {
+        Vector* estimate = port_estimate_in_.read(false);
 
-    if (estimate == nullptr)
-        return;
-    
-    VectorXd state = toEigen(*estimate);
+        if (estimate != nullptr)
+        {
 
-    // Create a new transform
-    vtkSmartPointer<vtkTransform> vtk_transform = vtkSmartPointer<vtkTransform>::New();
+            VectorXd state = toEigen(*estimate);
 
-    // Set translation
-    vtk_transform->Translate(state.head<3>().data());
+            // Create a new transform
+            vtkSmartPointer<vtkTransform> vtk_transform = vtkSmartPointer<vtkTransform>::New();
 
-    // Set rotation
-    vtk_transform->RotateWXYZ(state(6) * 180 / M_PI,
-                              state(3), state(4), state(5));
-    // Apply transform
-    mesh_actor_->SetUserTransform(vtk_transform);
-    
-    // Set measurements
-    // vtk_measurements->set_points(measurements_[step_]);
-    // vtk_measurements->set_color("red");
+            // Set translation
+            vtk_transform->Translate(state.head<3>().data());
+
+            // Set rotation
+            vtk_transform->RotateWXYZ(state(6) * 180 / M_PI,
+                                      state(3), state(4), state(5));
+            // Apply transform
+            mesh_actor_->SetUserTransform(vtk_transform);
+        }
+    }
+
+    // Update point cloud of the scene
+    {
+        // Try to get input image
+        yarp::sig::ImageOf<PixelRgb>* image_in = port_image_in_.read(false);
+
+        if (image_in == nullptr)
+            return;
+
+        // Try to get the point cloud
+        bool valid_point_cloud;
+        Eigen::MatrixXd point_cloud;
+        Eigen::VectorXi valid_coordinates;
+        std::tie(valid_point_cloud, point_cloud, valid_coordinates) = sfm_.get3DPoints(coordinates_2d_, false);
+
+        if (!valid_point_cloud)
+            return;
+
+        // Set 3D points
+        vtk_measurements_->set_points(point_cloud);
+        // Extract corresponding colors from the rgb image
+        vtk_measurements_->set_colors(coordinates_2d_, valid_coordinates, *image_in);
+    }
+}
+
+
+void Viewer::set2DCoordinates(const std::size_t u_stride, const std::size_t v_stride)
+{
+    for (std::size_t u = 0; u < cam_width_; u += u_stride)
+    {
+        for (std::size_t v = 0; v < cam_height_; v += v_stride)
+        {
+            coordinates_2d_.push_back(std::make_pair(u, v));
+        }
+    }
 }

@@ -4,6 +4,7 @@
 #include <vtkActor.h>
 #include <vtkAxesActor.h>
 #include <vtkCamera.h>
+#include <vtkDoubleArray.h>
 #include <vtkInteractorStyleSwitch.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkPLYReader.h>
@@ -41,23 +42,44 @@ public:
     }
 };
 
+// class vtkPointsEigen : public vtkPoints
+// {
+// public:
+//     vtkPointsEigen() :
+//         data_double_(vtkSmartPointer<vtkDoubleArray>::New())
+//     { }
+
+//     void set_data(Eigen::Ref<Eigen::MatrixXd> points)
+//     {
+//         Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>> points_row_major(points.data(), points.rows(), points.cols());
+
+//         data_double_->SetArray(points_row_major.data(), points_row_major.size(), 1);
+//         Data = data_double_.Get();
+//     }
+
+// private:
+//     vtkSmartPointer<vtkDoubleArray> data_double_;
+// };
 
 class Points : public Object
 {
 protected:
+    // std::shared_ptr<vtkPoints> vtk_points;
+    // std::shared_ptr<vtkPointsEigen> vtk_points_eigen;
     vtkSmartPointer<vtkPoints> vtk_points;
     vtkSmartPointer<vtkUnsignedCharArray> vtk_colors;
     vtkSmartPointer<vtkPolyData> vtk_polydata;
     vtkSmartPointer<vtkVertexGlyphFilter> vtk_glyphFilter;
 
 public:
-    Points(const Eigen::Ref<const Eigen::MatrixXd>&points, const int point_size)
+    Points(const int point_size)
     {
+        // vtk_points_eigen=std::make_shared<vtkPointsEigen>();
+        // vtk_points = vtk_points_eigen;
         vtk_points=vtkSmartPointer<vtkPoints>::New();
-        for (size_t i=0; i<points.cols(); i++)
-            vtk_points->InsertNextPoint(points(0, i), points(1, i), points(2, i));
 
         vtk_polydata=vtkSmartPointer<vtkPolyData>::New();
+        // vtk_polydata->SetPoints(vtk_points.get());
         vtk_polydata->SetPoints(vtk_points);
 
         vtk_glyphFilter=vtkSmartPointer<vtkVertexGlyphFilter>::New();
@@ -74,24 +96,31 @@ public:
 
     void set_points(const Eigen::Ref<const Eigen::MatrixXd>& points)
     {
+        // vtk_points_eigen->set_data(points);
         vtk_points=vtkSmartPointer<vtkPoints>::New();
+
         for (size_t i=0; i<points.cols(); i++)
             vtk_points->InsertNextPoint(points(0, i), points(1, i), points(2, i));
 
+        // vtk_polydata->SetPoints(vtk_points.get());
         vtk_polydata->SetPoints(vtk_points);
     }
 
-    bool set_color(const int r, const int g, const int b)
+    bool set_colors(const std::vector<std::pair<int, int>>& coordinates, const Eigen::Ref<const Eigen::VectorXi>& valid_coordinates, const yarp::sig::ImageOf<yarp::sig::PixelRgb>& rgb_image)
     {
-        std::vector<unsigned char> color =  {static_cast<unsigned char>(r),
-                                             static_cast<unsigned char>(g),
-                                             static_cast<unsigned char>(b)};
-
-        vtk_colors=vtkSmartPointer<vtkUnsignedCharArray>::New();
+        vtk_colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
         vtk_colors->SetNumberOfComponents(3);
 
-        for (size_t i=0; i<vtk_points->GetNumberOfPoints(); i++)
+        for (std::size_t i = 0; i < coordinates.size(); i++)
+        {
+            if (valid_coordinates(i) == 0)
+                continue;
+
+            yarp::sig::PixelRgb pixel = rgb_image.pixel(coordinates[i].first, coordinates[i].second);
+            std::vector<unsigned char> color = {pixel.r, pixel.g, pixel.b};
+
             vtk_colors->InsertNextTypedTuple(color.data());
+        }
 
         vtk_polydata->GetPointData()->SetScalars(vtk_colors);
 
@@ -115,15 +144,23 @@ public:
     void updateView();
 
 private:
-    std::pair<bool, Eigen::MatrixXd> readStateFromFile(const std::string& filename, const std::size_t num_fields);
+    void set2DCoordinates(const std::size_t u_stride, const std::size_t v_stride);
 
-    std::pair<bool, std::vector<Eigen::MatrixXd>> readMeasurementsFromFile(const std::string& filename);
+    std::pair<bool, Eigen::MatrixXd> readStateFromFile(const std::string& filename, const std::size_t num_fields);
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_in_;
 
-    // std::vector<Eigen::MatrixXd> measurements_;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_in_;
 
-    // std::unique_ptr<Points> vtk_measurements;
+    std::vector<std::pair<int, int>> coordinates_2d_;
+
+    std::unique_ptr<Points> vtk_measurements_;
+
+    // Eigen::MatrixXd point_cloud_;s
+
+    const std::size_t cam_width_ = 320;
+
+    const std::size_t cam_height_ = 240;
 
     vtkSmartPointer<vtkPLYReader> reader_;
 
@@ -138,11 +175,11 @@ private:
     vtkSmartPointer<vtkRenderWindowInteractor> render_window_interactor_;
 
     vtkSmartPointer<vtkAxesActor> axes_;
-    
+
     vtkSmartPointer<vtkOrientationMarkerWidget> orientation_widget_;
-    
+
     vtkSmartPointer<vtkCamera> camera_;
-    
+
     vtkSmartPointer<vtkInteractorStyleSwitch> interactor_style_;
 
     SFM sfm_;
@@ -165,7 +202,7 @@ public:
     void Execute(vtkObject *caller, unsigned long vtkNotUsed(eventId), void * vtkNotUsed(callData))
     {
         viewer_->updateView();
-        
+
         vtkRenderWindowInteractor *iren = vtkRenderWindowInteractor::SafeDownCast(caller);
         iren->GetRenderWindow()->Render();
     }

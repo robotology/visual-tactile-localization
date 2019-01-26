@@ -29,6 +29,20 @@
   </connection>
 
   <connection>
+    <from>/icub/camcalib/right/out</from>
+    <to>/object-tracking-viewer/SFM/right:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking-viewer/SFM/left:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
     <from>/object-tracking/SFM/disp:o</from>
     <to>/object-tracking/viewer/disp:i</to>
     <protocol>mjpeg</protocol>

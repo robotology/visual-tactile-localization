@@ -206,7 +206,7 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- x_0: "           << eigenToString(x_0);
     yInfo() << log_ID << "- v_0: "           << eigenToString(v_0);
     yInfo() << log_ID << "- euler_0: "       << eigenToString(euler_0);
-    yInfo() << log_ID << "- euler_dot_0: "   << eigenToString(euler_0);
+    yInfo() << log_ID << "- euler_dot_0: "   << eigenToString(euler_dot_0);
     yInfo() << log_ID << "- cov_x_0: "       << eigenToString(cov_x_0);
     yInfo() << log_ID << "- cov_v_0: "       << eigenToString(cov_v_0);
     yInfo() << log_ID << "- cov_eul_0: "     << eigenToString(cov_eul_0);

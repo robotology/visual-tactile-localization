@@ -47,10 +47,10 @@ endif()
 
 set(${EXE_TARGET_NAME}_HDR
     include/Correction.h
+    include/DiscretizedKinematicModel.h
     include/Filter.h
     include/GaussianFilter_.h
     include/iCubPointCloud.h
-    include/KinematicModel.h
     include/MeshImporter.h
     include/NanoflannPointCloudPrediction.h
     include/PointCloudModel.h
@@ -64,10 +64,10 @@ set(${EXE_TARGET_NAME}_HDR
 
 set(${EXE_TARGET_NAME}_SRC
     src/Correction.cpp
+    src/DiscretizedKinematicModel.cpp
     src/Filter.cpp
     src/GaussianFilter_.cpp
     src/iCubPointCloud.cpp
-    src/KinematicModel.cpp
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
     src/PointCloudModel.cpp

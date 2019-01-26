@@ -1,11 +1,11 @@
-#include <KinematicModel.h>
+#include <DiscretizedKinematicModel.h>
 
 #include <Eigen/Dense>
 
 using namespace Eigen;
 
 
-KinematicModel::KinematicModel
+DiscretizedKinematicModel::DiscretizedKinematicModel
 (
     const double T,
     const double sigma_x,  const double sigma_y,  const double sigma_z,
@@ -20,7 +20,7 @@ KinematicModel::KinematicModel
     F_.block<3, 3>(6, 6) = Matrix3d::Identity();
     F_.block<3, 3>(9, 6) = T * Matrix3d::Identity();
     F_.block<3, 3>(9, 9) = Matrix3d::Identity();
-    F_ = MatrixXd::Identity(12, 12);
+    // F_ = MatrixXd::Identity(12, 12);
 
     Vector3d sigmas;
 
@@ -43,23 +43,23 @@ KinematicModel::KinematicModel
     Q_ang.block<3, 3>(0, 0) = sigmas.asDiagonal() * T;
 
     Q_ = MatrixXd::Zero(12, 12);
-    // Q_.block<6, 6>(0, 0) = Q_pos;
-    // Q_.block<6, 6>(6, 6) = Q_ang;
+    Q_.block<6, 6>(0, 0) = Q_pos;
+    Q_.block<6, 6>(6, 6) = Q_ang;
 
-    Q_(0, 0) = sigma_x;
-    Q_(1, 1) = sigma_y;
-    Q_(2, 2) = sigma_z;
-    Q_(9, 9) = sigma_yaw;
-    Q_(10, 10) = sigma_pitch;
-    Q_(11, 11) = sigma_roll;
+    // Q_(0, 0) = sigma_x;
+    // Q_(1, 1) = sigma_y;
+    // Q_(2, 2) = sigma_z;
+    // Q_(9, 9) = sigma_yaw;
+    // Q_(10, 10) = sigma_pitch;
+    // Q_(11, 11) = sigma_roll;
 }
 
 
-KinematicModel::~KinematicModel()
+DiscretizedKinematicModel::~DiscretizedKinematicModel()
 { }
 
 
-std::pair<std::size_t, std::size_t> KinematicModel::getOutputSize() const
+std::pair<std::size_t, std::size_t> DiscretizedKinematicModel::getOutputSize() const
 {
     // 9 linear components (x, y, z, x_dot, y_dot, z_dot, yaw_dot, pitch_dot, roll_dot)
     // 3 angular components (yaw, pitch, roll)
@@ -67,19 +67,19 @@ std::pair<std::size_t, std::size_t> KinematicModel::getOutputSize() const
 }
 
 
-Eigen::MatrixXd KinematicModel::getStateTransitionMatrix()
+Eigen::MatrixXd DiscretizedKinematicModel::getStateTransitionMatrix()
 {
     return F_;
 }
 
 
-Eigen::MatrixXd KinematicModel::getNoiseCovarianceMatrix()
+Eigen::MatrixXd DiscretizedKinematicModel::getNoiseCovarianceMatrix()
 {
     return Q_;
 }
 
 
-bool KinematicModel::setProperty(const std::string& property)
+bool DiscretizedKinematicModel::setProperty(const std::string& property)
 {
     return false;
 }

@@ -1,14 +1,14 @@
-#ifndef KINEMATICMODEL_H
-#define KINEMATICMODEL_H
+#ifndef DISCRETIZEDKINEMATICMODEL_H
+#define DISCRETIZEDKINEMATICMODEL_H
 
 #include <BayesFilters/LinearStateModel.h>
 
 #include <Eigen/Dense>
 
-class KinematicModel : public bfl::LinearStateModel
+class DiscretizedKinematicModel : public bfl::LinearStateModel
 {
 public:
-    KinematicModel
+    DiscretizedKinematicModel
     (
         const double T,
         const double sigma_x,
@@ -19,7 +19,7 @@ public:
         const double sigma_psi
     );
 
-    virtual ~KinematicModel();
+    virtual ~DiscretizedKinematicModel();
 
     Eigen::MatrixXd getStateTransitionMatrix() override;
 
@@ -41,4 +41,4 @@ protected:
     Eigen::MatrixXd Q_;
 };
 
-#endif /* KINEMATICMODEL_H */
+#endif /* DISCRETIZEDKINEMATICMODEL_H */

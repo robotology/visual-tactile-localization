@@ -2,7 +2,7 @@
 #include <Filter.h>
 #include <GaussianFilter_.h>
 #include <iCubPointCloud.h>
-#include <KinematicModel.h>
+#include <DiscreteKinematicModel.h>
 #include <NanoflannPointCloudPrediction.h>
 #include <Random3DPose.h>
 #include <SimulatedFilter.h>
@@ -378,10 +378,12 @@ int main(int argc, char** argv)
     /**
      * StateModel
      */
-    std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<KinematicModel>(
-        new KinematicModel(sample_time,
-                           kin_psd_acc(0), kin_psd_acc(1), kin_psd_acc(2),
-                           kin_psd_euler(0), kin_psd_euler(1), kin_psd_euler(2)));
+    std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<DiscreteKinematicModel>(
+        new DiscreteKinematicModel(sample_time,
+                                   kin_psd_acc(0), kin_psd_acc(1), kin_psd_acc(2),
+                                   0.0, 0.0, 0.0,
+                                   kin_psd_euler(0), kin_psd_euler(1), kin_psd_euler(2),
+                                   0.0, 0.0, 0.0));
 
     std::size_t dim_linear;
     std::size_t dim_circular;

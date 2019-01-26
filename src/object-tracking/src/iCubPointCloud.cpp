@@ -385,7 +385,7 @@ bool iCubPointCloud::freezeMeasurements()
     bool blocking_call = false;
     bool valid_point_cloud;
     MatrixXd point_cloud;
-    std::tie(valid_point_cloud, point_cloud) = sfm_.get3DPoints(coordinates, blocking_call);
+    std::tie(valid_point_cloud, point_cloud, std::ignore) = sfm_.get3DPoints(coordinates, blocking_call);
     if (!valid_point_cloud)
         return false;
 

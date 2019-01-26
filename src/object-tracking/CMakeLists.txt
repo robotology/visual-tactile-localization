@@ -47,6 +47,7 @@ endif()
 
 set(${EXE_TARGET_NAME}_HDR
     include/Correction.h
+    include/DiscreteKinematicModel.h
     include/DiscretizedKinematicModel.h
     include/Filter.h
     include/GaussianFilter_.h
@@ -64,6 +65,7 @@ set(${EXE_TARGET_NAME}_HDR
 
 set(${EXE_TARGET_NAME}_SRC
     src/Correction.cpp
+    src/DiscreteKinematicModel.cpp
     src/DiscretizedKinematicModel.cpp
     src/Filter.cpp
     src/GaussianFilter_.cpp

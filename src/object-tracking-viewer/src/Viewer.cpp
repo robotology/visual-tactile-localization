@@ -173,7 +173,7 @@ void Viewer::updateView()
         bool valid_point_cloud;
         Eigen::MatrixXd point_cloud;
         Eigen::VectorXi valid_coordinates;
-        std::tie(valid_point_cloud, point_cloud, valid_coordinates) = sfm_.get3DPoints(coordinates_2d_, false);
+        std::tie(valid_point_cloud, point_cloud, valid_coordinates) = sfm_.get3DPoints(coordinates_2d_, false, 1.0);
 
         if (!valid_point_cloud)
             return;

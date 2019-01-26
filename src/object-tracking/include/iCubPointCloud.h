@@ -153,6 +153,10 @@ protected:
      * Exogenous data used by this class.
      */
     std::shared_ptr<iCubPointCloudExogenousData> exogenous_data_;
+
+    const std::size_t steady_state_thr_ = 100;
+
+    std::size_t steady_state_counter_;
 };
 
 class iCubPointCloudExogenousData

@@ -154,6 +154,9 @@ iCubPointCloud::iCubPointCloud
     obj_bbox_estimator_.setMethod(EstimatesExtraction::ExtractionMethod::emean);
     // Leave default window size
     // obj_bbox_estimator_.setMobileAverageWindowSize();
+
+    // Reset the steady state counter
+    steady_state_counter_ = 0;
 }
 
 
@@ -305,9 +308,13 @@ void iCubPointCloud::updateObjectBoundingBox(const Ref<const VectorXd>& object_p
     else if (eye_name_ == "right")
         object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), rendered_image);
 
+    // Convert to gray scale
+    cv::Mat rendered_gray;
+    cv::cvtColor(rendered_image, rendered_gray, CV_BGR2GRAY);
+
     // Find bounding box
     cv::Mat points;
-    cv::findNonZero(rendered_image, points);
+    cv::findNonZero(rendered_gray, points);
     cv::Rect bbox_rect = cv::boundingRect(points);
     VectorXd bbox_coordinates(4);
     bbox_coordinates(0) = bbox_rect.x;
@@ -335,6 +342,8 @@ void iCubPointCloud::reset()
     // when freezeMeasurements is called next time
     obj_bbox_set_ = false;
 
+    // However if the user provided an initial bounding box
+    // then it is required to set it again
     if (use_initial_bbox_)
     {
         obj_bbox_tl_ = initial_bbox_.first;
@@ -343,13 +352,21 @@ void iCubPointCloud::reset()
         obj_bbox_set_ = true;
     }
 
+    // Reset the object bounding box estimator
+    obj_bbox_estimator_.clear();
+
     // Reset the exogenous data class
     exogenous_data_->reset();
+
+    // Reset the steady state counter
+    steady_state_counter_ = 0;
 }
 
 
 bool iCubPointCloud::freezeMeasurements()
 {
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
     // HINT: maybe a blocking style may be better, i.e., while (!object_bbox_set_).
     if (!obj_bbox_set_)
     {
@@ -364,15 +381,18 @@ bool iCubPointCloud::freezeMeasurements()
 
     // Update bounding box using last state estimate
     // provided by exogenous data
-    // VectorXd last_estimate;
-    // bool valid_last_estimate;
-    // std::tie(valid_last_estimate, last_estimate) = exogenous_data_->getObjectEstimate();
-    // if (valid_last_estimate)
-    //     updateObjectBoundingBox(last_estimate);
+    if (steady_state_counter_ > steady_state_thr_)
+    {
+        VectorXd last_estimate;
+        bool valid_last_estimate;
+        std::tie(valid_last_estimate, last_estimate) = exogenous_data_->getObjectEstimate();
+        if (valid_last_estimate)
+            updateObjectBoundingBox(last_estimate);
+    }
 
     // Get 2D coordinates.
-    std::size_t stride_u = 1;
-    std::size_t stride_v = 1;
+    std::size_t stride_u = 3;
+    std::size_t stride_v = 3;
 
     bool valid_coordinates;
     std::vector<std::pair<int, int>> coordinates;
@@ -416,6 +436,15 @@ bool iCubPointCloud::freezeMeasurements()
     measurement_.swap(Map<MatrixXd>(points.data(), points.size(), 1));
 
     logger(measurement_.transpose());
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    std::cout << "freezeMeasurements in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << " ms"
+              << std::endl;
+
+    steady_state_counter_++;
 
     return true;
 }

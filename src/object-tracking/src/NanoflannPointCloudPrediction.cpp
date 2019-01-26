@@ -123,7 +123,6 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
     Map<const MatrixXd> meas_matrix(meas.data(), 3, components);
 
     // Process all the states
-    // #pragma omp parallel for
     MatrixXd meas_body(3, components * state.cols());
     std::vector<Transform<double, 3, Eigen::Affine>> poses(state.cols());
     #pragma omp parallel for

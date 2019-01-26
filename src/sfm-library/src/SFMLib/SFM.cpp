@@ -629,7 +629,7 @@ Point3f SFM::get3DPoint(int u, int v, const string &drive)
     
     Eigen::MatrixXd point;
     bool valid_point;
-    std::tie(valid_point, point) = get3DPoints(coords, true);
+    std::tie(valid_point, point, std::ignore) = get3DPoints(coords, true);
 
     if (!valid_point)
         return point_cv;
@@ -641,13 +641,13 @@ Point3f SFM::get3DPoint(int u, int v, const string &drive)
     return point_cv;
 }
 
-std::pair<bool, Eigen::MatrixXd> SFM::get3DPoints(const std::vector<std::pair<int, int>> & u_v_coordinates, const bool do_block, const float left_z_threshold)
+std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> SFM::get3DPoints(const std::vector<std::pair<int, int>> & u_v_coordinates, const bool do_block, const float left_z_threshold)
 {
     //std::cout << "number of queries is: " << u_v_coordinates.size() << std::endl;
     if (!updateDisparity(do_block))
     {
         // std::cout << "updateDisparity failed" << std::endl;
-        return std::make_pair(false, Eigen::MatrixXd(0, 0));
+        return std::make_tuple(false, Eigen::MatrixXd(0, 0), Eigen::VectorXi(0));
     }
 
     Eigen::MatrixXd points_all(3, u_v_coordinates.size());
@@ -658,7 +658,7 @@ std::pair<bool, Eigen::MatrixXd> SFM::get3DPoints(const std::vector<std::pair<in
     if (Mapper.empty())
     {
         // std::cout << "Empty mapper" << std::endl;
-        return std::make_pair(false, Eigen::MatrixXd(0, 0));
+        return std::make_tuple(false, Eigen::MatrixXd(0, 0), Eigen::VectorXi(0));
     }
 
     // get disparity
@@ -666,7 +666,7 @@ std::pair<bool, Eigen::MatrixXd> SFM::get3DPoints(const std::vector<std::pair<in
     if (disp16m.empty())
     {
         // std::cout << "Empty disparity" << std::endl;
-        return std::make_pair(false, Eigen::MatrixXd(0, 0));
+        return std::make_tuple(false, Eigen::MatrixXd(0, 0), Eigen::VectorXi(0));
     }
 
     // what is Q?
@@ -722,7 +722,7 @@ std::pair<bool, Eigen::MatrixXd> SFM::get3DPoints(const std::vector<std::pair<in
     if (num_valid_points == 0)
     {
         // std::cout << "no valid points" << std::endl;
-        return std::make_pair(false, Eigen::MatrixXd(0, 0));
+        return std::make_tuple(false, Eigen::MatrixXd(0, 0), Eigen::VectorXi(0));
     }
 
     // take only valid points
@@ -749,7 +749,7 @@ std::pair<bool, Eigen::MatrixXd> SFM::get3DPoints(const std::vector<std::pair<in
 
     //std::cout << "number of points produced is " << points.cols() << std::endl;
 
-    return std::make_pair(true, points);
+    return std::make_tuple(true, points, valid_points);
 }
 
 

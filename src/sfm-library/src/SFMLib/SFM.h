@@ -349,7 +349,7 @@ public:
                            int _speckleRange, int _numberOfDisparities, int _SADWindowSize,
                            int _minDisparity, int _preFilterCap, int _disp12MaxDiff);
     Point3f get3DPoint(int u, int v, const string &drive="LEFT");
-    std::pair<bool, Eigen::MatrixXd> get3DPoints(const std::vector<std::pair<int, int>>& u_v_coordinates, const bool do_block, const float left_z_threshold = 10.0);
+    std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> get3DPoints(const std::vector<std::pair<int, int>>& u_v_coordinates, const bool do_block, const float left_z_threshold = 10.0);
     Point3f get3DPointsAndDisp(int u, int v, int &uR, int &vR, const string &drive);
 
     Point3f get3DPointMatch(double u1, double v1, double u2, double v2, const string &drive="LEFT");

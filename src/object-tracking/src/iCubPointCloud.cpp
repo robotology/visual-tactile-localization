@@ -111,21 +111,33 @@ iCubPointCloud::iCubPointCloud
     }
 
     send_bbox_ = true;
-    if (send_bbox_)
+    send_mask_ = true;
+    if (send_bbox_ || send_mask_)
     {
-        // Required to draw the bounding box on top of the camera image.
-
         // Open camera input port.
         if(!port_image_in_.open("/" + port_prefix + "/cam/" + eye_name + ":i"))
         {
             std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open " + eye_name + " camera input port.";
             throw(std::runtime_error(err));
         }
+    }
 
-        // Open camera output port.
+    if (send_bbox_)
+    {
+        // Open image output port.
         if(!port_bbox_image_out_.open("/" + port_prefix + "/bbox:o"))
         {
             std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open bounding box output port.";
+            throw(std::runtime_error(err));
+        }
+    }
+
+    if (send_mask_)
+    {
+        // Open image output port.
+        if(!port_mask_image_out_.open("/" + port_prefix + "/mask:o"))
+        {
+            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open mask output port.";
             throw(std::runtime_error(err));
         }
     }
@@ -271,19 +283,36 @@ std::tuple<bool, std::pair<int, int>, std::pair<int, int>> iCubPointCloud::retri
 }
 
 
-bool iCubPointCloud::sendObjectBoundingBox()
+void iCubPointCloud::sendObjectMask(yarp::sig::ImageOf<PixelRgb>& camera_image)
 {
-    // Try to get input image
-    yarp::sig::ImageOf<PixelRgb>* image_in = port_image_in_.read(false);
+    if (!(object_mask_.empty()))
+    {
+        // Prepare output image
+        yarp::sig::ImageOf<PixelRgb>& image_out = port_mask_image_out_.prepare();
 
-    if (image_in == nullptr)
-        return false;
+        // Copy input to output and wrap around a cv::Mat
+        image_out = camera_image;
+        cv::Mat image = yarp::cv::toCvMat(image_out);
+        cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
 
+        // Draw mask on top of image
+        cv::Mat mask = object_mask_.clone();
+
+        cv::cvtColor(mask, mask, cv::COLOR_GRAY2RGB);
+        cv::bitwise_or(image, mask, image);
+
+        port_mask_image_out_.write();
+    }
+}
+
+
+void iCubPointCloud::sendObjectBoundingBox(yarp::sig::ImageOf<PixelRgb>& camera_image)
+{
     // Prepare output image
     yarp::sig::ImageOf<PixelRgb>& image_out = port_bbox_image_out_.prepare();
 
     // Copy input to output and wrap around a cv::Mat
-    image_out = *image_in;
+    image_out = camera_image;
     cv::Mat image = yarp::cv::toCvMat(image_out);
     cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
 
@@ -299,8 +328,6 @@ bool iCubPointCloud::sendObjectBoundingBox()
 
     // Send the image
     port_bbox_image_out_.write();
-
-    return true;
 }
 
 
@@ -325,6 +352,58 @@ std::pair<bool, std::vector<std::pair<int, int>>> iCubPointCloud::getObject2DCoo
     return std::make_pair(true, coordinates);
 }
 
+bool iCubPointCloud::updateObjectMask()
+{
+    VectorXd object_pose;
+    bool valid_object_pose;
+    std::tie(valid_object_pose, object_pose) = exogenous_data_->getObjectEstimate();
+    if (!valid_object_pose)
+        return false;
+
+    // Convert state to Superimpose::ModelPose format
+    Superimpose::ModelPose si_object_pose;
+    si_object_pose.resize(7);
+
+    // Cartesian coordinates
+    si_object_pose[0] = object_pose(0);
+    si_object_pose[1] = object_pose(1);
+    si_object_pose[2] = object_pose(2);
+
+    // Convert from Euler ZYX to axis/angle
+    AngleAxisd angle_axis(AngleAxisd(object_pose(9), Vector3d::UnitZ()) *
+                          AngleAxisd(object_pose(10), Vector3d::UnitY()) *
+                          AngleAxisd(object_pose(11), Vector3d::UnitX()));
+    si_object_pose[3] = angle_axis.axis()(0);
+    si_object_pose[4] = angle_axis.axis()(1);
+    si_object_pose[5] = angle_axis.axis()(2);
+    si_object_pose[6] = angle_axis.angle();
+
+    // Set pose
+    Superimpose::ModelPoseContainer object_pose_container;
+    object_pose_container.emplace("object", si_object_pose);
+
+    yarp::sig::Vector eye_pos_left;
+    yarp::sig::Vector eye_att_left;
+    yarp::sig::Vector eye_pos_right;
+    yarp::sig::Vector eye_att_right;
+    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
+    {
+        // Not updating the bounding box since the camera pose is not available
+        return false;
+    }
+
+    // Project mesh onto the camera plane
+    // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
+    if (eye_name_ == "left")
+        object_sicad_->superimpose(object_pose_container, eye_pos_left.data(), eye_att_left.data(), object_mask_);
+    else if (eye_name_ == "right")
+        object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), object_mask_);
+
+    // Convert to gray scale
+    cv::cvtColor(object_mask_, object_mask_, CV_BGR2GRAY);
+
+    return true;
+}
 
 void iCubPointCloud::updateObjectBoundingBox()
 {
@@ -346,60 +425,9 @@ void iCubPointCloud::updateObjectBoundingBox()
     }
     else
     {
-        // After steady state, use the last 3D pose estimate from the object tracker
-        VectorXd object_pose;
-        bool valid_object_pose;
-        std::tie(valid_object_pose, object_pose) = exogenous_data_->getObjectEstimate();
-        if (!valid_object_pose)
-            return;
-
-        // Convert state to Superimpose::ModelPose format
-        Superimpose::ModelPose si_object_pose;
-        si_object_pose.resize(7);
-
-        // Cartesian coordinates
-        si_object_pose[0] = object_pose(0);
-        si_object_pose[1] = object_pose(1);
-        si_object_pose[2] = object_pose(2);
-
-        // Convert from Euler ZYX to axis/angle
-        AngleAxisd angle_axis(AngleAxisd(object_pose(9), Vector3d::UnitZ()) *
-                              AngleAxisd(object_pose(10), Vector3d::UnitY()) *
-                              AngleAxisd(object_pose(11), Vector3d::UnitX()));
-        si_object_pose[3] = angle_axis.axis()(0);
-        si_object_pose[4] = angle_axis.axis()(1);
-        si_object_pose[5] = angle_axis.axis()(2);
-        si_object_pose[6] = angle_axis.angle();
-
-        // Set pose
-        Superimpose::ModelPoseContainer object_pose_container;
-        object_pose_container.emplace("object", si_object_pose);
-
-        yarp::sig::Vector eye_pos_left;
-        yarp::sig::Vector eye_att_left;
-        yarp::sig::Vector eye_pos_right;
-        yarp::sig::Vector eye_att_right;
-        if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
-        {
-            // Not updating the bounding box since the camera pose is not available
-            return;
-        }
-
-        // Project mesh onto the camera plane
-        // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
-        cv::Mat rendered_image;
-        if (eye_name_ == "left")
-            object_sicad_->superimpose(object_pose_container, eye_pos_left.data(), eye_att_left.data(), rendered_image);
-        else if (eye_name_ == "right")
-            object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), rendered_image);
-
-        // Convert to gray scale
-        cv::Mat rendered_gray;
-        cv::cvtColor(rendered_image, rendered_gray, CV_BGR2GRAY);
-
         // Find bounding box
         cv::Mat points;
-        cv::findNonZero(rendered_gray, points);
+        cv::findNonZero(object_mask_, points);
         cv::Rect bbox_rect = cv::boundingRect(points);
         VectorXd bbox_coordinates(4);
         bbox_coordinates(0) = bbox_rect.x;
@@ -463,11 +491,25 @@ bool iCubPointCloud::freezeMeasurements()
         }
     }
 
-    // Update bounding
+    // Update object mask
+    updateObjectMask();
+
+    // Update bounding box
     updateObjectBoundingBox();
 
-    // Send the bounding box over the network
-    sendObjectBoundingBox();
+    // Send bounding box and mask over the network
+    yarp::sig::ImageOf<PixelRgb>* image_in;
+    if (send_bbox_ || send_mask_)
+         image_in = port_image_in_.read(false);
+
+    if (image_in != nullptr)
+    {
+        if (send_bbox_)
+            sendObjectBoundingBox(*image_in);
+
+        if (send_mask_)
+            sendObjectMask(*image_in);
+    }
 
     // Get 2D coordinates.
     std::size_t stride_u = 1;

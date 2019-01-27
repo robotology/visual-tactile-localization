@@ -86,7 +86,12 @@ protected:
     /**
      * Draw the current bounding box on the camera image and send the rendered image on the network.
      */
-    bool sendObjectBoundingBox();
+    void sendObjectBoundingBox(yarp::sig::ImageOf<PixelRgb>& camera_image);
+
+    /**
+     * Draw the current object mask on the camera image and send the rendered image on the network.
+     */
+    void sendObjectMask(yarp::sig::ImageOf<PixelRgb>& camera_image);
 
     /**
      * Evaluate the 2D coordinates of the object.
@@ -94,8 +99,13 @@ protected:
     std::pair<bool, std::vector<std::pair<int, int>>> getObject2DCoordinates(std::size_t stride_u, std::size_t stride_v);
 
     /**
-     * Update the object bounding box by projecting the object mesh, according to the last estimate available,
+     * Update the object mask by projecting the object mesh, according to the last estimate available,
      * on the camera plane.
+     */
+    bool updateObjectMask();
+
+    /**
+     * Update the object bounding box using the last object mask available.
      */
     void updateObjectBoundingBox();
 
@@ -115,6 +125,11 @@ protected:
     std::pair<int, int> obj_bbox_tl_;
     std::pair<int, int> obj_bbox_br_;
     bool obj_bbox_set_;
+
+    /**
+     * Object mask.
+     */
+    cv::Mat object_mask_;
 
     std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox_;
     bool use_initial_bbox_;
@@ -154,7 +169,9 @@ protected:
      */
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_in_;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_bbox_image_out_;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_mask_image_out_;
     bool send_bbox_;
+    bool send_mask_;
 
     /**
      * Instance of superimpose cad

@@ -23,17 +23,19 @@ DiscreteKinematicModel::DiscreteKinematicModel
 )
 {
     // Compute the state transition matrix
-    F_ = MatrixXd::Identity(12, 12);
+    // F_ = MatrixXd::Identity(12, 12);
+    F_ = MatrixXd::Zero(12, 12);
+    F_.block<3, 3>(0, 0) = Matrix3d::Identity();
+    F_.block<3, 3>(0, 3) = T * Matrix3d::Identity();
+    F_.block<3, 3>(3, 3) = Matrix3d::Identity();
+    F_.block<3, 3>(6, 6) = Matrix3d::Identity();
+    F_.block<3, 3>(9, 6) = T * Matrix3d::Identity();
+    F_.block<3, 3>(9, 9) = Matrix3d::Identity();
 
     // Compute the noise covariance matrix
-    Q_ = MatrixXd::Zero(12, 12);
-
-    Q_(0, 0) = q_x;
-    Q_(1, 1) = q_y;
-    Q_(2, 2) = q_z;
-    Q_(9, 9) = q_yaw;
-    Q_(10, 10) = q_pitch;
-    Q_(11, 11) = q_roll;
+    VectorXd Q_vector(12);
+    Q_vector << q_x, q_y, q_z, q_x_dot, q_y_dot, q_z_dot, q_yaw_dot, q_pitch_dot, q_roll_dot, q_yaw, q_pitch, q_roll;
+    Q_ = Q_vector.asDiagonal();
 }
 
 

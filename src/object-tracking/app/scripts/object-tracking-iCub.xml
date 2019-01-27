@@ -14,6 +14,13 @@
     <prefix></prefix>
   </module>
 
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/bbox:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
   <connection>
     <from>/icub/camcalib/right/out</from>
     <to>/object-tracking/SFM/right:i</to>
@@ -60,6 +67,20 @@
     <from>/object-tracking/estimate:o</from>
     <to>/object-tracking-viewer/estimate:i</to>
     <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking/bbox:o</from>
+    <to>/object-tracking/viewer/bbox:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking/cam/left:i</to>
+    <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
 

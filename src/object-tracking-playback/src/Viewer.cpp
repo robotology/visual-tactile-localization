@@ -177,7 +177,7 @@ Visualizer::Visualizer
 
     // Load estimate data
     bool valid_estimate;
-    std::tie(valid_estimate, estimate_) = readStateFromFile(estimate_data_filename, 6);
+    std::tie(valid_estimate, estimate_) = readStateFromFile(estimate_data_filename, 12);
     if (!valid_estimate)
     {
         throw std::runtime_error("ERROR::VISUALIZER::CTOR\nERROR:Invalid estimate data.");
@@ -185,7 +185,7 @@ Visualizer::Visualizer
 
     // Load prediction data
     bool valid_prediction;
-    std::tie(valid_prediction, prediction_) = readStateFromFile(prediction_data_filename, 6);
+    std::tie(valid_prediction, prediction_) = readStateFromFile(prediction_data_filename, 12);
     if (!valid_prediction)
     {
         throw std::runtime_error("ERROR::VISUALIZER::CTOR\nERROR:Invalid prediction data.");

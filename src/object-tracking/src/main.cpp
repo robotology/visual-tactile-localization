@@ -32,7 +32,7 @@ VectorXd loadVectorDouble
     ResourceFinder &rf,
     const std::string key,
     const std::size_t size
-)
+    )
 {
     bool ok = true;
 
@@ -141,6 +141,14 @@ int main(int argc, char** argv)
     ResourceFinder rf_point_cloud_prediction = rf.findNestedResourceFinder("POINT_CLOUD_PREDICTION");
     std::size_t pc_pred_num_samples = rf_point_cloud_prediction.check("number_samples", Value("100")).asInt();
 
+    /* Point cloud filtering. */
+    double pc_outlier_threshold;
+    if (mode != "simulation")
+    {
+        ResourceFinder rf_point_cloud_filtering = rf.findNestedResourceFinder("POINT_CLOUD_FILTERING");
+        pc_outlier_threshold = rf_point_cloud_filtering.check("outlier_threshold", Value("0.1")).asDouble();
+    }
+
     /* Simulation parameters. */
     double sim_sample_time;
     double sim_duration;
@@ -199,6 +207,16 @@ int main(int argc, char** argv)
         enable_log = false;
     }
 
+    /* Miscellaneous. */
+    bool enable_send_bbox;
+    bool enable_send_mask;
+    if (mode != "SIMULATION")
+    {
+        ResourceFinder rf_misc = rf.findNestedResourceFinder("MISC");
+        enable_send_bbox = rf_misc.check("send_bbox", Value(false)).asBool();
+        enable_send_mask = rf_misc.check("send_mask", Value(false)).asBool();
+    }
+
     /* Log parameters. */
     yInfo() << log_ID << "Mode of operation:";
     yInfo() << log_ID << "- mode:"  << mode;
@@ -232,6 +250,9 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Point cloud prediction:";
     yInfo() << log_ID << "- num_samples:" << pc_pred_num_samples;
+
+    yInfo() << log_ID << "Point cloud filtering:";
+    yInfo() << log_ID << "- outlier_threshold:" << pc_outlier_threshold;
 
     if (mode == "simulation")
     {
@@ -267,6 +288,10 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "Logging:";
     yInfo() << log_ID << "- enable_log:"        << enable_log;
     yInfo() << log_ID << "- absolute_log_path:" << log_path;
+
+    yInfo() << log_ID << "Miscellaneous:";
+    yInfo() << log_ID << "- send_bbox:" << enable_send_bbox;
+    yInfo() << log_ID << "- send_mask:" << enable_send_mask;
 
     /**
      * Prepare pointer to the measurement model.
@@ -344,16 +369,19 @@ int main(int argc, char** argv)
             std::pair<int, int> top_left = std::make_pair(static_cast<int>(bbox_tl_0(0)), static_cast<int>(bbox_tl_0(1)));
             std::pair<int, int> bottom_right = std::make_pair(static_cast<int>(bbox_br_0(0)), static_cast<int>(bbox_br_0(1)));
             // Giving the initial bounding box of the object from outside
-             pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
-                                                                          "object-tracking",
-                                                                          "sfm_config.ini",
-                                                                          object_mesh_path_obj,
-                                                                          rf.findPath("shader/"),
-                                                                          "left",
-                                                                          std::make_pair(top_left, bottom_right),
-                                                                          std::move(pc_prediction),
-                                                                          noise_covariance_diagonal,
-                                                                          icub_pc_shared_data));
+            pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
+                                                                         "object-tracking",
+                                                                         "sfm_config.ini",
+                                                                         object_mesh_path_obj,
+                                                                         rf.findPath("shader/"),
+                                                                         "left",
+                                                                         std::make_pair(top_left, bottom_right),
+                                                                         std::move(pc_prediction),
+                                                                         pc_outlier_threshold,
+                                                                         noise_covariance_diagonal,
+                                                                         icub_pc_shared_data,
+                                                                         enable_send_bbox,
+                                                                         enable_send_mask));
         }
         else
         {
@@ -366,8 +394,11 @@ int main(int argc, char** argv)
                                                                          rf.findPath("shader/"),
                                                                          "left",
                                                                          std::move(pc_prediction),
+                                                                         pc_outlier_threshold,
                                                                          noise_covariance_diagonal,
-                                                                         icub_pc_shared_data));
+                                                                         icub_pc_shared_data,
+                                                                         enable_send_bbox,
+                                                                         enable_send_mask));
         }
 
         measurement_model = std::move(pc_icub);

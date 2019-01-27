@@ -53,43 +53,26 @@ def main():
     theta_c = corr_mean_data[:, 10];
     psi_c = corr_mean_data[:, 11];
 
-    # target
-    target_data = read_data(prefix, "target")
-    x_t = target_data[:, 0];
-    y_t = target_data[:, 1];
-    z_t = target_data[:, 2];
-    q_t = target_data[:, 6:10];
-    angles = quats_to_zyx(q_t)
-    phi_t = angles[:, 0]
-    theta_t = angles[:, 1]
-    psi_t = angles[:, 2]
-
     # make plot
     fig, ax = plt.subplots(2,3)
 
     corr_x_plot, = plot_y(ax[0, 0], x_c, "x est")
-    target_x_plot, = plot_y(ax[0, 0], x_t, "x")
-    ax[0, 0].legend(handles = [corr_x_plot, target_x_plot])
+    ax[0, 0].legend(handles = [corr_x_plot])
 
     corr_y_plot, = plot_y(ax[0, 1], y_c, "y est")
-    target_y_plot, = plot_y(ax[0, 1], y_t, "y")
-    ax[0, 1].legend(handles = [corr_y_plot, target_y_plot])
+    ax[0, 1].legend(handles = [corr_y_plot])
 
     corr_z_plot, = plot_y(ax[0, 2], z_c, "z est")
-    target_z_plot, = plot_y(ax[0, 2], z_t, "z")
-    ax[0, 2].legend(handles = [corr_z_plot, target_z_plot])
+    ax[0, 2].legend(handles = [corr_z_plot])
 
     corr_phi_plot, = plot_y(ax[1, 0], phi_c, "phi est")
-    target_phi_plot, = plot_y(ax[1, 0], phi_t, "phi")
-    ax[1, 0].legend(handles = [corr_phi_plot, target_phi_plot])
+    ax[1, 0].legend(handles = [corr_phi_plot])
 
     corr_theta_plot, = plot_y(ax[1, 1], theta_c, "theta est")
-    target_theta_plot, = plot_y(ax[1, 1], theta_t, "theta")
-    ax[1, 1].legend(handles = [corr_theta_plot, target_theta_plot])
+    ax[1, 1].legend(handles = [corr_theta_plot])
 
     corr_psi_plot, = plot_y(ax[1, 2], psi_c, "psi est")
-    target_psi_plot, = plot_y(ax[1, 2], psi_t, "psi")
-    ax[1, 2].legend(handles = [corr_psi_plot, target_psi_plot])
+    ax[1, 2].legend(handles = [corr_psi_plot])
 
     plt.show()
 

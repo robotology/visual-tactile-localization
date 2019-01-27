@@ -266,73 +266,97 @@ std::pair<bool, std::vector<std::pair<int, int>>> iCubPointCloud::getObject2DCoo
 }
 
 
-void iCubPointCloud::updateObjectBoundingBox(const Ref<const VectorXd>& object_pose)
+void iCubPointCloud::updateObjectBoundingBox()
 {
-    // Convert state to Superimpose::ModelPose format
-    Superimpose::ModelPose si_object_pose;
-    si_object_pose.resize(7);
-
-    // Cartesian coordinates
-    si_object_pose[0] = object_pose(0);
-    si_object_pose[1] = object_pose(1);
-    si_object_pose[2] = object_pose(2);
-
-    // Convert from Euler ZYX to axis/angle
-    AngleAxisd angle_axis(AngleAxisd(object_pose(9), Vector3d::UnitZ()) *
-                          AngleAxisd(object_pose(10), Vector3d::UnitY()) *
-                          AngleAxisd(object_pose(11), Vector3d::UnitX()));
-    si_object_pose[3] = angle_axis.axis()(0);
-    si_object_pose[4] = angle_axis.axis()(1);
-    si_object_pose[5] = angle_axis.axis()(2);
-    si_object_pose[6] = angle_axis.angle();
-
-    // Set pose
-    Superimpose::ModelPoseContainer object_pose_container;
-    object_pose_container.emplace("object", si_object_pose);
-
-    yarp::sig::Vector eye_pos_left;
-    yarp::sig::Vector eye_att_left;
-    yarp::sig::Vector eye_pos_right;
-    yarp::sig::Vector eye_att_right;
-    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
-    {
-        // Not updating the bounding box since the camera pose is not available
-        return;
-    }
-
-    // Project mesh onto the camera plane
-    // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
-    cv::Mat rendered_image;
-    if (eye_name_ == "left")
-        object_sicad_->superimpose(object_pose_container, eye_pos_left.data(), eye_att_left.data(), rendered_image);
-    else if (eye_name_ == "right")
-        object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), rendered_image);
-
-    // Convert to gray scale
-    cv::Mat rendered_gray;
-    cv::cvtColor(rendered_image, rendered_gray, CV_BGR2GRAY);
-
-    // Find bounding box
-    cv::Mat points;
-    cv::findNonZero(rendered_gray, points);
-    cv::Rect bbox_rect = cv::boundingRect(points);
-    VectorXd bbox_coordinates(4);
-    bbox_coordinates(0) = bbox_rect.x;
-    bbox_coordinates(1) = bbox_rect.y;
-    bbox_coordinates(2) = bbox_rect.x + bbox_rect.width;
-    bbox_coordinates(3) = bbox_rect.y + bbox_rect.height;
     // EstimatesExtractor requires weights in logspace
     // Since we have only a sample, only one weight is required
     VectorXd weight(1);
-    weight(0) = std::log(1);
-    VectorXd filtered_bbox;
-    std::tie(std::ignore, filtered_bbox) = obj_bbox_estimator_.extract(bbox_coordinates, weight);
+    weight(0) = std::log(1.0);
 
-    // Update bounding box
-    obj_bbox_tl_.first = filtered_bbox(0);
-    obj_bbox_tl_.second = filtered_bbox(1);
-    obj_bbox_br_.first = filtered_bbox(2);
-    obj_bbox_br_.second = filtered_bbox(3);
+    if (steady_state_counter_ <= steady_state_thr_)
+    {
+        // Until steady state, use the initial bounding box
+        VectorXd bbox_coordinates(4);
+        bbox_coordinates(0) = obj_bbox_tl_.first;
+        bbox_coordinates(1) = obj_bbox_tl_.second;
+        bbox_coordinates(2) = obj_bbox_br_.first;
+        bbox_coordinates(3) = obj_bbox_br_.second;
+
+        obj_bbox_estimator_.extract(bbox_coordinates, weight);
+    }
+    else
+    {
+        // After steady state, use the last 3D pose estimate from the object tracker
+        VectorXd object_pose;
+        bool valid_object_pose;
+        std::tie(valid_object_pose, object_pose) = exogenous_data_->getObjectEstimate();
+        if (!valid_object_pose)
+            return;
+
+        // Convert state to Superimpose::ModelPose format
+        Superimpose::ModelPose si_object_pose;
+        si_object_pose.resize(7);
+
+        // Cartesian coordinates
+        si_object_pose[0] = object_pose(0);
+        si_object_pose[1] = object_pose(1);
+        si_object_pose[2] = object_pose(2);
+
+        // Convert from Euler ZYX to axis/angle
+        AngleAxisd angle_axis(AngleAxisd(object_pose(9), Vector3d::UnitZ()) *
+                              AngleAxisd(object_pose(10), Vector3d::UnitY()) *
+                              AngleAxisd(object_pose(11), Vector3d::UnitX()));
+        si_object_pose[3] = angle_axis.axis()(0);
+        si_object_pose[4] = angle_axis.axis()(1);
+        si_object_pose[5] = angle_axis.axis()(2);
+        si_object_pose[6] = angle_axis.angle();
+
+        // Set pose
+        Superimpose::ModelPoseContainer object_pose_container;
+        object_pose_container.emplace("object", si_object_pose);
+
+        yarp::sig::Vector eye_pos_left;
+        yarp::sig::Vector eye_att_left;
+        yarp::sig::Vector eye_pos_right;
+        yarp::sig::Vector eye_att_right;
+        if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
+        {
+            // Not updating the bounding box since the camera pose is not available
+            return;
+        }
+
+        // Project mesh onto the camera plane
+        // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
+        cv::Mat rendered_image;
+        if (eye_name_ == "left")
+            object_sicad_->superimpose(object_pose_container, eye_pos_left.data(), eye_att_left.data(), rendered_image);
+        else if (eye_name_ == "right")
+            object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), rendered_image);
+
+        // Convert to gray scale
+        cv::Mat rendered_gray;
+        cv::cvtColor(rendered_image, rendered_gray, CV_BGR2GRAY);
+
+        // Find bounding box
+        cv::Mat points;
+        cv::findNonZero(rendered_gray, points);
+        cv::Rect bbox_rect = cv::boundingRect(points);
+        VectorXd bbox_coordinates(4);
+        bbox_coordinates(0) = bbox_rect.x;
+        bbox_coordinates(1) = bbox_rect.y;
+        bbox_coordinates(2) = bbox_rect.x + bbox_rect.width;
+        bbox_coordinates(3) = bbox_rect.y + bbox_rect.height;
+
+        // Update the bounding box estimate
+        VectorXd filtered_bbox;
+        std::tie(std::ignore, filtered_bbox) = obj_bbox_estimator_.extract(bbox_coordinates, weight);
+
+        // Update bounding box
+        obj_bbox_tl_.first = filtered_bbox(0);
+        obj_bbox_tl_.second = filtered_bbox(1);
+        obj_bbox_br_.first = filtered_bbox(2);
+        obj_bbox_br_.second = filtered_bbox(3);
+    }
 }
 
 
@@ -379,16 +403,8 @@ bool iCubPointCloud::freezeMeasurements()
         }
     }
 
-    // Update bounding box using last state estimate
-    // provided by exogenous data
-    if (steady_state_counter_ > steady_state_thr_)
-    {
-        VectorXd last_estimate;
-        bool valid_last_estimate;
-        std::tie(valid_last_estimate, last_estimate) = exogenous_data_->getObjectEstimate();
-        if (valid_last_estimate)
-            updateObjectBoundingBox(last_estimate);
-    }
+    // Update bounding
+    updateObjectBoundingBox();
 
     // Get 2D coordinates.
     std::size_t stride_u = 3;

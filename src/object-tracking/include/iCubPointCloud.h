@@ -92,7 +92,7 @@ protected:
      * Update the object bounding box by projecting the object mesh, according to the last estimate available,
      * on the camera plane.
      */
-    void updateObjectBoundingBox(const Eigen::Ref<const Eigen::VectorXd>& object_pose);
+    void updateObjectBoundingBox();
 
     /**
      * Reset the measurement model class.

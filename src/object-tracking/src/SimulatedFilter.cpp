@@ -55,13 +55,5 @@ void SimulatedFilter::filteringStep()
 
 void SimulatedFilter::log()
 {
-    VectorXd predicted_mean(6);
-    predicted_mean.segment(0, 3) = predicted_state_.mean().segment(0, 3);
-    predicted_mean.segment(3, 3) = predicted_state_.mean().segment(9, 3);
-
-    VectorXd corrected_mean(6);
-    corrected_mean.segment(0, 3) = corrected_state_.mean().segment(0, 3);
-    corrected_mean.segment(3, 3) = corrected_state_.mean().segment(9, 3);
-
-    logger(predicted_mean.transpose(), corrected_mean.transpose());
+    logger(predicted_state_.mean().transpose(), corrected_state_.mean().transpose());
 }

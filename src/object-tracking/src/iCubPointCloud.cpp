@@ -407,8 +407,8 @@ bool iCubPointCloud::freezeMeasurements()
     updateObjectBoundingBox();
 
     // Get 2D coordinates.
-    std::size_t stride_u = 3;
-    std::size_t stride_v = 3;
+    std::size_t stride_u = 1;
+    std::size_t stride_v = 1;
 
     bool valid_coordinates;
     std::vector<std::pair<int, int>> coordinates;

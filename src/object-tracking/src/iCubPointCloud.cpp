@@ -26,8 +26,11 @@ iCubPointCloud::iCubPointCloud
     const string sicad_shader_path,
     const string eye_name,
     std::unique_ptr<PointCloudPrediction> prediction,
+    const double point_cloud_outlier_threshold,
     const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
+    const bool send_bounding_box,
+    const bool send_mask
 ) :
     iCubPointCloud
     (
@@ -38,8 +41,11 @@ iCubPointCloud::iCubPointCloud
         sicad_shader_path,
         eye_name,
         std::move(prediction),
+        point_cloud_outlier_threshold,
         noise_covariance_matrix,
-        exogenous_data
+        exogenous_data,
+        send_bounding_box,
+        send_mask
     )
 {
     IOL_object_name_ = IOL_object_name;
@@ -59,8 +65,11 @@ iCubPointCloud::iCubPointCloud
     const string eye_name,
     const std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox,
     std::unique_ptr<PointCloudPrediction> prediction,
+    const double point_cloud_outlier_threshold,
     const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
+    const bool send_bounding_box,
+    const bool send_mask
 ) :
     iCubPointCloud
     (
@@ -71,8 +80,11 @@ iCubPointCloud::iCubPointCloud
         sicad_shader_path,
         eye_name,
         std::move(prediction),
+        point_cloud_outlier_threshold,
         noise_covariance_matrix,
-        exogenous_data
+        exogenous_data,
+        send_bounding_box,
+        send_mask
     )
 {
     initial_bbox_ = initial_bbox;
@@ -93,15 +105,21 @@ iCubPointCloud::iCubPointCloud
     const string sicad_shader_path,
     const string eye_name,
     std::unique_ptr<PointCloudPrediction> prediction,
+    const double point_cloud_outlier_threshold,
     const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
+    const bool send_bounding_box,
+    const bool send_mask
 ) :
     PointCloudModel(std::move(prediction), noise_covariance_matrix),
     gaze_(port_prefix),
     eye_name_(eye_name),
     obj_bbox_estimator_(4),
     exogenous_data_(exogenous_data),
-    sfm_(port_prefix)
+    sfm_(port_prefix),
+    pc_outlier_threshold_(point_cloud_outlier_threshold),
+    send_bbox_(send_bounding_box),
+    send_mask_(send_mask)
 {
     // Open ports.
     if (!(opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
@@ -110,8 +128,6 @@ iCubPointCloud::iCubPointCloud
         throw(std::runtime_error(err));
     }
 
-    send_bbox_ = true;
-    send_mask_ = true;
     if (send_bbox_ || send_mask_)
     {
         // Open camera input port.
@@ -537,7 +553,7 @@ bool iCubPointCloud::freezeMeasurements()
     for (int i = 0 ; i < point_cloud.cols(); i++)
     {
         good_points(i) = 0;
-        if ((point_cloud.col(i) - centroid).norm() < 0.1)
+        if ((point_cloud.col(i) - centroid).norm() < pc_outlier_threshold_)
             good_points(i) = 1;
     }
 

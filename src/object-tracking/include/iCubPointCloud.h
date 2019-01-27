@@ -35,8 +35,11 @@ public:
             const string sicad_shader_path,
             const string eye_name,
             std::unique_ptr<PointCloudPrediction> prediction,
+            const double point_cloud_outlier_threshold,
             const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-            std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+            std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
+            const bool send_bounding_box,
+            const bool send_mask
         );
 
         iCubPointCloud
@@ -49,8 +52,11 @@ public:
             const string eye_name,
             const std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox,
             std::unique_ptr<PointCloudPrediction> prediction,
+            const double point_cloud_outlier_threshold,
             const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-            std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+            std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
+            const bool send_bounding_box,
+            const bool send_mask
         );
 
     virtual ~iCubPointCloud();
@@ -73,8 +79,11 @@ protected:
         const string sicad_shader_path,
         const string eye_name,
         std::unique_ptr<PointCloudPrediction> prediction,
+        const double point_cloud_outlier_threshold,
         const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-        std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+        std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
+        const bool send_bounding_box,
+        const bool send_mask
      );
 
     /**
@@ -177,6 +186,11 @@ protected:
      * Instance of superimpose cad
      */
     std::unique_ptr<SICAD> object_sicad_;
+
+    /**
+     * Point cloud outlier rejection threshold.
+     */
+    double pc_outlier_threshold_;
 
     /**
      * Exogenous data used by this class.

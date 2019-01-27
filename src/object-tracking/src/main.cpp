@@ -121,8 +121,10 @@ int main(int argc, char** argv)
     /* Kinematic model. */
     ResourceFinder rf_kinematic_model = rf.findNestedResourceFinder("KINEMATIC_MODEL");
     double sample_time     = rf_kinematic_model.check("sample_time", Value("1.0")).asDouble();
-    VectorXd kin_psd_acc   = loadVectorDouble(rf_kinematic_model, "psd_acc", 3);
-    VectorXd kin_psd_euler = loadVectorDouble(rf_kinematic_model, "psd_euler_acc", 3);
+    VectorXd kin_q_x       = loadVectorDouble(rf_kinematic_model, "q_x", 3);
+    VectorXd kin_q_x_dot   = loadVectorDouble(rf_kinematic_model, "q_x_dot", 3);
+    VectorXd kin_q_eul     = loadVectorDouble(rf_kinematic_model, "q_eul", 3);
+    VectorXd kin_q_eul_dot = loadVectorDouble(rf_kinematic_model, "q_eul_dot", 3);
 
     /* Measurement model. */
     ResourceFinder rf_measurement_model = rf.findNestedResourceFinder("MEASUREMENT_MODEL");
@@ -213,9 +215,12 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- cov_eul_dot_0: " << eigenToString(cov_eul_dot_0);
 
     yInfo() << log_ID << "Kinematic model:";
-    yInfo() << log_ID << "- sample_time:"   << sample_time;
-    yInfo() << log_ID << "- psd_acc:"       << eigenToString(kin_psd_acc);
-    yInfo() << log_ID << "- psd_euler_acc:" << eigenToString(kin_psd_euler);
+    yInfo() << log_ID << "- sample_time:" << sample_time;
+    yInfo() << log_ID << "- q_x:"         << eigenToString(kin_q_x);
+    yInfo() << log_ID << "- q_x_dot:"     << eigenToString(kin_q_x_dot);
+    yInfo() << log_ID << "- q_eul:"       << eigenToString(kin_q_eul);
+    yInfo() << log_ID << "- q_eul_dot:"   << eigenToString(kin_q_eul_dot);
+
 
     yInfo() << log_ID << "Measurement model:";
     yInfo() << log_ID << "- noise_covariance:" << eigenToString(noise_covariance);
@@ -380,10 +385,10 @@ int main(int argc, char** argv)
      */
     std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<DiscreteKinematicModel>(
         new DiscreteKinematicModel(sample_time,
-                                   kin_psd_acc(0), kin_psd_acc(1), kin_psd_acc(2),
-                                   0.0, 0.0, 0.0,
-                                   kin_psd_euler(0), kin_psd_euler(1), kin_psd_euler(2),
-                                   0.0, 0.0, 0.0));
+                                   kin_q_x(0), kin_q_x(1), kin_q_x(2),
+                                   kin_q_x_dot(0), kin_q_x_dot(1), kin_q_x_dot(2),
+                                   kin_q_eul(0), kin_q_eul(1), kin_q_eul(2),
+                                   kin_q_eul_dot(0), kin_q_eul_dot(1), kin_q_eul_dot(2)));
 
     std::size_t dim_linear;
     std::size_t dim_circular;

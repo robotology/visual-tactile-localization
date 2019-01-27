@@ -84,6 +84,11 @@ protected:
     std::tuple<bool, std::pair<int, int>, std::pair<int, int>> retrieveObjectBoundingBox(const string obj_name);
 
     /**
+     * Draw the current bounding box on the camera image and send the rendered image on the network.
+     */
+    bool sendObjectBoundingBox();
+
+    /**
      * Evaluate the 2D coordinates of the object.
      */
     std::pair<bool, std::vector<std::pair<int, int>>> getObject2DCoordinates(std::size_t stride_u, std::size_t stride_v);
@@ -143,6 +148,13 @@ protected:
     const std::string eye_name_;
     const int cam_width_ = 320;
     const int cam_height_ = 240;
+
+    /**
+     * Image input/output.
+     */
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_in_;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_bbox_image_out_;
+    bool send_bbox_;
 
     /**
      * Instance of superimpose cad

@@ -1,5 +1,6 @@
 #include <iCubPointCloud.h>
 
+#include <yarp/cv/Cv.h>
 #include <yarp/os/ResourceFinder.h>
 #include <yarp/sig/Vector.h>
 
@@ -109,6 +110,26 @@ iCubPointCloud::iCubPointCloud
         throw(std::runtime_error(err));
     }
 
+    send_bbox_ = true;
+    if (send_bbox_)
+    {
+        // Required to draw the bounding box on top of the camera image.
+
+        // Open camera input port.
+        if(!port_image_in_.open("/" + port_prefix + "/cam/" + eye_name + ":i"))
+        {
+            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open " + eye_name + " camera input port.";
+            throw(std::runtime_error(err));
+        }
+
+        // Open camera output port.
+        if(!port_bbox_image_out_.open("/" + port_prefix + "/bbox:o"))
+        {
+            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open bounding box output port.";
+            throw(std::runtime_error(err));
+        }
+    }
+
     // Configure SFM library.
     ResourceFinder rf_sfm;
     rf_sfm.setVerbose(true);
@@ -164,6 +185,12 @@ iCubPointCloud::~iCubPointCloud()
 {
     // Close ports
     opc_rpc_client_.close();
+
+    if (send_bbox_)
+    {
+        port_image_in_.close();
+        port_bbox_image_out_.close();
+    }
 }
 
 
@@ -241,6 +268,39 @@ std::tuple<bool, std::pair<int, int>, std::pair<int, int>> iCubPointCloud::retri
     }
 
     return std::make_tuple(outcome, top_left, bottom_right);
+}
+
+
+bool iCubPointCloud::sendObjectBoundingBox()
+{
+    // Try to get input image
+    yarp::sig::ImageOf<PixelRgb>* image_in = port_image_in_.read(false);
+
+    if (image_in == nullptr)
+        return false;
+
+    // Prepare output image
+    yarp::sig::ImageOf<PixelRgb>& image_out = port_bbox_image_out_.prepare();
+
+    // Copy input to output and wrap around a cv::Mat
+    image_out = *image_in;
+    cv::Mat image = yarp::cv::toCvMat(image_out);
+    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+
+    // Draw the bounding box
+    cv::Point p_tl;
+    cv::Point p_br;
+    p_tl.x = obj_bbox_tl_.first;
+    p_tl.y = obj_bbox_tl_.second;
+    p_br.x = obj_bbox_br_.first;
+    p_br.y = obj_bbox_br_.second;
+
+    cv::rectangle(image, p_tl, p_br, cv::Scalar(255, 0, 0));
+
+    // Send the image
+    port_bbox_image_out_.write();
+
+    return true;
 }
 
 
@@ -405,6 +465,9 @@ bool iCubPointCloud::freezeMeasurements()
 
     // Update bounding
     updateObjectBoundingBox();
+
+    // Send the bounding box over the network
+    sendObjectBoundingBox();
 
     // Get 2D coordinates.
     std::size_t stride_u = 1;

@@ -140,7 +140,7 @@ void Viewer::updateView()
 {
     // Update estimate
     {
-        Vector* estimate = port_estimate_in_.read(false);
+        yarp::sig::Vector* estimate = port_estimate_in_.read(false);
 
         if (estimate != nullptr)
         {

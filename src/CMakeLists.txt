@@ -1,5 +1,6 @@
 add_subdirectory(gaze-ctrl-library)
 add_subdirectory(sfm-library)
+add_subdirectory(object-tracking-depth)
 add_subdirectory(object-tracking)
 
 option(BUILD_OBJECT_TRACKING_PLAYBACK "Build object-tracking-playback" OFF)

@@ -288,6 +288,7 @@ class SFM
     Port handlerPort;
 
     BufferedPort<ImageOf<PixelMono> > outDisp;
+    BufferedPort<ImageOf<PixelFloat>> outDepth;
     BufferedPort<ImageOf<PixelBgr> >  outMatch;
 
     BufferedPort<ImageOf<PixelRgb> >  outLeftRectImgPort;
@@ -343,6 +344,7 @@ public:
     bool configure(ResourceFinder &rf);
     bool close();
     bool updateDisparity(const bool do_block);
+    bool updateDepth();
     bool respond(const Bottle& command, Bottle& reply);
 
     void setDispParameters(bool _useBestDisp, int _uniquenessRatio, int _speckleWindowSize,

@@ -48,6 +48,7 @@ bool SFM::configure(ResourceFinder &rf)
     right=sname+right;
 
     string outDispName=rf.check("outDispPort",Value("/disp:o")).asString();
+    string outDepthName=rf.check("outDepthPort",Value("/depth:o")).asString();
     string outMatchName=rf.check("outMatchPort",Value("/match:o")).asString();
 
     string outLeftRectImgPortName=rf.check("outLeftRectImgPort",Value("/rect_left:o")).asString();
@@ -55,6 +56,7 @@ bool SFM::configure(ResourceFinder &rf)
 
     outMatchName=sname+outMatchName;
     outDispName=sname+outDispName;
+    outDepthName=sname+outDepthName;
 
     outLeftRectImgPortName=sname+outLeftRectImgPortName;
     outRightRectImgPortName=sname+outRightRectImgPortName;
@@ -66,6 +68,7 @@ bool SFM::configure(ResourceFinder &rf)
     rightImgPort.open(right);
     // outMatch.open(outMatchName);
     outDisp.open(outDispName);
+    outDepth.open(outDepthName);
     // handlerPort.open(rpc_name);
     // worldCartPort.open(world_name+"/cartesian:o");
     // worldCylPort.open(world_name+"/cylindrical:o");
@@ -248,6 +251,7 @@ bool SFM::close()
     leftImgPort.close();
     rightImgPort.close();
     outDisp.close();
+    outDepth.close();
     // outMatch.close();
     // handlerPort.close();
     // worldCartPort.close();
@@ -291,10 +295,6 @@ bool SFM::updateDisparity(const bool do_block)
         rightImgPort.getEnvelope(stamp_right);
     }
 
-    // read encoders
-    //iencs->getEncoder(nHeadAxes-3,&eyes[0]);
-    //iencs->getEncoder(nHeadAxes-2,&eyes[1]);
-    //iencs->getEncoder(nHeadAxes-1,&eyes[2]);
 	igaze_.getEyesConfiguration(eyes);
 
     updateViaKinematics(eyes-eyes0);
@@ -750,6 +750,61 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> SFM::get3DPoints(const std::v
     //std::cout << "number of points produced is " << points.cols() << std::endl;
 
     return std::make_tuple(true, points, valid_points);
+}
+
+
+bool SFM::updateDepth()
+{
+    // Get disparity
+    if (!updateDisparity(true))
+        return false;
+
+    const Mat& disparity = this->stereo->getDisparity16();
+    if (disparity.empty())
+        return false;
+
+    IplImage ipl_disparity = disparity;
+
+    // Get disparity to depth map
+    const Mat& Q = this->stereo->getQ();
+
+    // Get rotation matrix from unrectified left camera plane to rectified left camera plane
+    const Mat& R = this->stereo->getRLrect();
+
+    // Store values required for next computation
+    float q_00 = float(Q.at<double>(0, 0));
+    float q_03 = float(Q.at<double>(0, 3));
+    float q_11 = float(Q.at<double>(1, 1));
+    float q_13 = float(Q.at<double>(1, 3));
+    float q_23 = float(Q.at<double>(2, 3));
+    float q_32 = float(Q.at<double>(3, 2));
+    float q_33 = float(Q.at<double>(3, 3));
+    float r_02 = float(R.at<double>(0, 2));
+    float r_12 = float(R.at<double>(1, 2));
+    float r_22 = float(R.at<double>(2, 2));
+
+    // Evaluate depth map
+    ImageOf<PixelFloat>& depth_out = outDepth.prepare();
+    depth_out.resize(disparity.cols, disparity.rows);
+    #pragma omp parallel for collapse(2)
+    for (int u = 0; u < disparity.cols; u++)
+    {
+        for (int v = 0; v < disparity.rows; v++)
+        {
+            // Evaluate disparity(u, v)
+            CvScalar scalar = cvGet2D(&ipl_disparity, v, u);
+            float disp = scalar.val[0] / 16.0;
+
+            // Evaluate depth(u, v)
+            depth_out(u, v) = (r_02 * (float(u) * q_00 + q_03) + r_12 * (float(v) * q_11 + q_13) + r_22 * q_23) /
+                              (disp * q_32 + q_33);
+        }
+    }
+
+    // Send over the network
+    outDepth.write();
+
+    return true;
 }
 
 

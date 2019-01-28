@@ -87,12 +87,22 @@ iCubPointCloud::iCubPointCloud
         send_mask
     )
 {
-    initial_bbox_ = initial_bbox;
-    obj_bbox_tl_ = initial_bbox_.first;
-    obj_bbox_br_ = initial_bbox_.second;
+    // Initialize center, width and height
+    auto top_left = initial_bbox.first;
+    auto bottom_right = initial_bbox.second;
+    obj_bbox_0_.resize(4);
+    obj_bbox_0_(0) = (top_left.first + bottom_right.first) / 2.0;
+    obj_bbox_0_(1) = (top_left.second + bottom_right.second) / 2.0;
+    obj_bbox_0_(2) = (bottom_right.first - top_left.first);
+    obj_bbox_0_(3) = (bottom_right.second - top_left.second);
 
+    // Initialize bounding box
+    obj_bbox_ = obj_bbox_0_;
+
+    // Remember that the user provided an initial condition within the ctor
     use_initial_bbox_ = true;
 
+    // Set flag
     obj_bbox_set_ = true;
 }
 
@@ -114,7 +124,6 @@ iCubPointCloud::iCubPointCloud
     PointCloudModel(std::move(prediction), noise_covariance_matrix),
     gaze_(port_prefix),
     eye_name_(eye_name),
-    obj_bbox_estimator_(4),
     exogenous_data_(exogenous_data),
     sfm_(port_prefix),
     pc_outlier_threshold_(point_cloud_outlier_threshold),
@@ -199,11 +208,6 @@ iCubPointCloud::iCubPointCloud
                       {1.0, 0.0, 0.0, static_cast<float>(M_PI)})
         );
 
-    // Configure object bounding box estimator to use exponential mean
-    obj_bbox_estimator_.setMethod(EstimatesExtraction::ExtractionMethod::emean);
-    // Leave default window size
-    // obj_bbox_estimator_.setMobileAverageWindowSize();
-
     // Reset the steady state counter
     steady_state_counter_ = 0;
 }
@@ -222,17 +226,14 @@ iCubPointCloud::~iCubPointCloud()
 }
 
 
-std::tuple<bool, std::pair<int, int>, std::pair<int, int>> iCubPointCloud::retrieveObjectBoundingBox(const string obj_name)
+std::tuple<bool, VectorXd> iCubPointCloud::retrieveObjectBoundingBox(const string obj_name)
 {
     /*
      * Get object bounding box from OPC module given object name.
      *
      * Adapted from https://github.com/robotology/point-cloud-read
      */
-
-    std::pair<int, int> top_left;
-    std::pair<int, int> bottom_right;
-
+    VectorXd bbox(4);
     bool outcome = false;
 
     // Command message format is: [ask] (("prop0" "<" <val0>) || ("prop1" ">=" <val1>) ...)
@@ -280,11 +281,20 @@ std::tuple<bool, std::pair<int, int>, std::pair<int, int>> iCubPointCloud::retri
                         {
                             if (Bottle* position_2d_bb = prop_field->find("position_2d_left").asList())
                             {
+                                std::pair<int, int> top_left;
+                                std::pair<int, int> bottom_right;
+
                                 //  position_2d_left contains x,y of top left and x,y of bottom right
                                 top_left.first      = position_2d_bb->get(0).asInt();
                                 top_left.second     = position_2d_bb->get(1).asInt();
                                 bottom_right.first  = position_2d_bb->get(2).asInt();
                                 bottom_right.second = position_2d_bb->get(3).asInt();
+
+                                // initialize center, width and height
+                                bbox(0) = (top_left.first + bottom_right.first) / 2.0;
+                                bbox(1) = (top_left.second + bottom_right.second) / 2.0;
+                                bbox(2) = (bottom_right.first - top_left.first);
+                                bbox(3) = (bottom_right.second - top_left.second);
 
                                 outcome = true;
                             }
@@ -295,7 +305,7 @@ std::tuple<bool, std::pair<int, int>, std::pair<int, int>> iCubPointCloud::retri
         }
     }
 
-    return std::make_tuple(outcome, top_left, bottom_right);
+    return std::make_tuple(outcome, bbox);
 }
 
 
@@ -335,10 +345,10 @@ void iCubPointCloud::sendObjectBoundingBox(yarp::sig::ImageOf<PixelRgb>& camera_
     // Draw the bounding box
     cv::Point p_tl;
     cv::Point p_br;
-    p_tl.x = obj_bbox_tl_.first;
-    p_tl.y = obj_bbox_tl_.second;
-    p_br.x = obj_bbox_br_.first;
-    p_br.y = obj_bbox_br_.second;
+    p_tl.x = obj_bbox_(0) - obj_bbox_(2) / 2.0;
+    p_tl.y = obj_bbox_(1) - obj_bbox_(3) / 2.0;
+    p_br.x = obj_bbox_(0) + obj_bbox_(2) / 2.0;
+    p_br.y = obj_bbox_(1) + obj_bbox_(3) / 2.0;
 
     cv::rectangle(image, p_tl, p_br, cv::Scalar(255, 0, 0));
 
@@ -355,9 +365,17 @@ std::pair<bool, std::vector<std::pair<int, int>>> iCubPointCloud::getObject2DCoo
     if (!obj_bbox_set_)
         return std::make_pair(false, coordinates);
 
-    for (std::size_t u = obj_bbox_tl_.first; u < obj_bbox_br_.first; u += stride_u)
+    std::pair<int, int> top_left;
+    top_left.first = int(obj_bbox_(0) - obj_bbox_(2) / 2.0);
+    top_left.second = int(obj_bbox_(1) - obj_bbox_(3) / 2.0);
+
+    std::pair<int, int> bottom_right;
+    bottom_right.first = int(obj_bbox_(0) + obj_bbox_(2) / 2.0);
+    bottom_right.second = int(obj_bbox_(1) + obj_bbox_(3) / 2.0);
+
+    for (std::size_t u = top_left.first; u < bottom_right.first; u += stride_u)
     {
-        for (std::size_t v = obj_bbox_tl_.second; v < obj_bbox_br_.second; v+= stride_v)
+        for (std::size_t v = top_left.second; v < bottom_right.second; v+= stride_v)
         {
             // TODO
             // check for undesired object coordinates
@@ -423,44 +441,40 @@ bool iCubPointCloud::updateObjectMask()
 
 void iCubPointCloud::updateObjectBoundingBox()
 {
-    // EstimatesExtractor requires weights in logspace
-    // Since we have only a sample, only one weight is required
-    VectorXd weight(1);
-    weight(0) = std::log(1.0);
+    if (steady_state_counter_ < steady_state_thr_)
+        return;
 
-    if (steady_state_counter_ <= steady_state_thr_)
+    // Find projected bounding box
+    cv::Mat points;
+    cv::findNonZero(object_mask_, points);
+    cv::Rect bbox_rect = cv::boundingRect(points);
+
+    // Form vector containing center, width and height of projected bounding box
+    VectorXd curr_bbox(4);
+    curr_bbox(0) = bbox_rect.x + bbox_rect.width / 2.0;
+    curr_bbox(1) = bbox_rect.y + bbox_rect.height / 2.0;
+    curr_bbox(2) = bbox_rect.width;
+    curr_bbox(3) = bbox_rect.height;
+
+    if (steady_state_counter_ == steady_state_thr_)
     {
-        // Until steady state, use the initial bounding box
-        VectorXd bbox_coordinates(4);
-        bbox_coordinates(0) = obj_bbox_tl_.first;
-        bbox_coordinates(1) = obj_bbox_tl_.second;
-        bbox_coordinates(2) = obj_bbox_br_.first;
-        bbox_coordinates(3) = obj_bbox_br_.second;
-
-        obj_bbox_estimator_.extract(bbox_coordinates, weight);
+        // Evaluate width and height ratio
+        bbox_width_ratio_ = obj_bbox_(2) / bbox_rect.width;
+        bbox_height_ratio_ = obj_bbox_(3) / bbox_rect.height;
     }
     else
     {
-        // Find bounding box
-        cv::Mat points;
-        cv::findNonZero(object_mask_, points);
-        cv::Rect bbox_rect = cv::boundingRect(points);
-        VectorXd bbox_coordinates(4);
-        bbox_coordinates(0) = bbox_rect.x;
-        bbox_coordinates(1) = bbox_rect.y;
-        bbox_coordinates(2) = bbox_rect.x + bbox_rect.width;
-        bbox_coordinates(3) = bbox_rect.y + bbox_rect.height;
+        // Evaluate finite differences
+        VectorXd delta = curr_bbox - proj_bbox_;
+        delta(2) *= bbox_width_ratio_;
+        delta(3) *= bbox_height_ratio_;
 
-        // Update the bounding box estimate
-        VectorXd filtered_bbox;
-        std::tie(std::ignore, filtered_bbox) = obj_bbox_estimator_.extract(bbox_coordinates, weight);
-
-        // Update bounding box
-        obj_bbox_tl_.first = filtered_bbox(0);
-        obj_bbox_tl_.second = filtered_bbox(1);
-        obj_bbox_br_.first = filtered_bbox(2);
-        obj_bbox_br_.second = filtered_bbox(3);
+        // Predict new bounding box
+        obj_bbox_ += delta;
     }
+
+    // Store projected bounding box for next iteration
+    proj_bbox_ = curr_bbox;
 }
 
 
@@ -474,14 +488,10 @@ void iCubPointCloud::reset()
     // then it is required to set it again
     if (use_initial_bbox_)
     {
-        obj_bbox_tl_ = initial_bbox_.first;
-        obj_bbox_br_ = initial_bbox_.second;
+        obj_bbox_ = obj_bbox_0_;
 
         obj_bbox_set_ = true;
     }
-
-    // Reset the object bounding box estimator
-    obj_bbox_estimator_.clear();
 
     // Reset the exogenous data class
     exogenous_data_->reset();
@@ -496,7 +506,7 @@ bool iCubPointCloud::freezeMeasurements()
     // HINT: maybe a blocking style may be better, i.e., while (!object_bbox_set_).
     if (!obj_bbox_set_)
     {
-        std::tie(obj_bbox_set_, obj_bbox_tl_, obj_bbox_br_) = retrieveObjectBoundingBox(IOL_object_name_);
+        std::tie(obj_bbox_set_, obj_bbox_) = retrieveObjectBoundingBox(IOL_object_name_);
 
         if (!obj_bbox_set_)
         {

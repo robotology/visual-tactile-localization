@@ -2,7 +2,6 @@
 #define ICUBPOINTCLOUD_H
 
 #include <BayesFilters/Data.h>
-#include <BayesFilters/EstimatesExtraction.h>
 
 #include <Eigen/Dense>
 
@@ -88,9 +87,9 @@ protected:
 
     /**
      * Retrieve the object bounding box according to iCub OPC (objects property collector).
-     * Return a boolean indicating the outcome, a pair of top-left u-v coordinates and a pair of bottom-right u-v coordinates.
+     * Return a boolean indicating the outcome and a 4-vector containing center, width and height.
      */
-    std::tuple<bool, std::pair<int, int>, std::pair<int, int>> retrieveObjectBoundingBox(const string obj_name);
+    std::tuple<bool, Eigen::VectorXd> retrieveObjectBoundingBox(const string obj_name);
 
     /**
      * Draw the current bounding box on the camera image and send the rendered image on the network.
@@ -131,19 +130,27 @@ protected:
     /**
      * Object bounding box (top-left, bottom-right) of the target object.
      */
-    std::pair<int, int> obj_bbox_tl_;
-    std::pair<int, int> obj_bbox_br_;
+    Eigen::VectorXd obj_bbox_;
+    Eigen::VectorXd obj_bbox_0_;
+    bool use_initial_bbox_;
     bool obj_bbox_set_;
+
+    /**
+     * Object projected bounding box (center, width, height)
+     */
+    Eigen::VectorXd proj_bbox_;
+
+    /**
+     * Width and height ratio between initial bounding box and predicted bounding box
+     * (required to take into account bad scaling of the point cloud).
+     */
+    double bbox_width_ratio_;
+    double bbox_height_ratio_;
 
     /**
      * Object mask.
      */
     cv::Mat object_mask_;
-
-    std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox_;
-    bool use_initial_bbox_;
-
-    bfl::EstimatesExtraction obj_bbox_estimator_;
 
     /**
      * IOL object category name (required to initialize the bounding box of the object).

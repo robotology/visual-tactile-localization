@@ -493,8 +493,6 @@ void iCubPointCloud::reset()
 
 bool iCubPointCloud::freezeMeasurements()
 {
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-
     // HINT: maybe a blocking style may be better, i.e., while (!object_bbox_set_).
     if (!obj_bbox_set_)
     {
@@ -542,7 +540,16 @@ bool iCubPointCloud::freezeMeasurements()
     bool blocking_call = false;
     bool valid_point_cloud;
     MatrixXd point_cloud;
+
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     std::tie(valid_point_cloud, point_cloud, std::ignore) = sfm_.get3DPoints(coordinates, blocking_call);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    std::cout << "Got 3D points in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << " ms"
+              << std::endl;
+
     if (!valid_point_cloud)
         return false;
 
@@ -573,13 +580,6 @@ bool iCubPointCloud::freezeMeasurements()
     measurement_.swap(Map<MatrixXd>(points.data(), points.size(), 1));
 
     logger(measurement_.transpose());
-
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-    std::cout << "freezeMeasurements in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms"
-              << std::endl;
 
     steady_state_counter_++;
 

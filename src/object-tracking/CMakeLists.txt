@@ -30,6 +30,7 @@ find_package(YARP CONFIG REQUIRED
              OS
              sig
              eigen
+             cv
              )
 # assimp
 find_package(assimp REQUIRED)
@@ -105,6 +106,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       SuperimposeMesh::SuperimposeMesh
                       YARP::YARP_OS
                       YARP::YARP_eigen
+                      YARP::YARP_cv
                       # YARP::YARP_init
                       ${OpenCV_LIBS}
                       SFMLib

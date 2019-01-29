@@ -10,13 +10,15 @@
 
 #include <Eigen/Dense>
 
+#include <chrono>
+
 using namespace yarp::eigen;
 using namespace yarp::os;
 using namespace yarp::sig;
 using namespace Eigen;
 
 Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
-    sfm_(port_prefix)
+    gaze_(port_prefix)
 {
     // Open estimate input port
     if(!port_estimate_in_.open("/" + port_prefix + "/estimate:i"))
@@ -33,8 +35,18 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
         throw(std::runtime_error(err));
     }
 
+    // Open depth input port
+    if(!port_depth_in_.open("/" + port_prefix + "/depth:i"))
+    {
+        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open depth input port.";
+        throw(std::runtime_error(err));
+    }
+
     // Load period
     const int period = static_cast<int>(rf.check("period", Value(1.0)).asDouble() * 1000);
+
+    // Load point cloud z threshold
+    pc_left_z_threshold_  = rf.check("pc_left_z_thr", Value(1.0)).asDouble();
 
     // Load mesh
     const std::string object_name = rf.check("object_name", Value("ycb_mustard")).asString();
@@ -48,23 +60,14 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     reader_->SetFileName(mesh_path.c_str());
     reader_->Update();
 
-    // Configure SFM library.
-    ResourceFinder rf_sfm;
-    rf_sfm.setVerbose(true);
-    rf_sfm.setDefaultConfigFile("sfm_config.ini");
-    rf_sfm.setDefaultContext("object-tracking");
-    rf_sfm.configure(0, NULL);
-
-    if (!sfm_.configure(rf_sfm))
-    {
-        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot configure instance of SFM library.";
-        throw(std::runtime_error(err));
-    }
-
     // Set 2d coordinates
     std::size_t u_stride = 1;
     std::size_t v_stride = 1;
     set2DCoordinates(u_stride, v_stride);
+
+    // Set default deprojection matrix
+    std::string eye_name = "left";
+    setDefaultDeprojectionMatrix(eye_name);
 
     // Configure mesh actor
     mapper_ = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -75,7 +78,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
 
     // Configure measurements actor
     int points_size = 2;
-    vtk_measurements_ = unique_ptr<Points>(new Points(points_size));
+    vtk_measurements_ = std::unique_ptr<Points>(new Points(points_size));
 
     // Configure axes
     axes_ = vtkSmartPointer<vtkAxesActor>::New();
@@ -133,6 +136,7 @@ Viewer::~Viewer()
 {
     port_estimate_in_.close();
     port_image_in_.close();
+    port_depth_in_.close();
 }
 
 
@@ -165,15 +169,19 @@ void Viewer::updateView()
     {
         // Try to get input image
         yarp::sig::ImageOf<PixelRgb>* image_in = port_image_in_.read(false);
-
         if (image_in == nullptr)
+            return;
+
+        yarp::sig::ImageOf<PixelFloat>* depth_in = port_depth_in_.read(false);
+        if (depth_in == nullptr)
             return;
 
         // Try to get the point cloud
         bool valid_point_cloud;
         Eigen::MatrixXd point_cloud;
         Eigen::VectorXi valid_coordinates;
-        std::tie(valid_point_cloud, point_cloud, valid_coordinates) = sfm_.get3DPoints(coordinates_2d_, false, 1.0);
+
+        std::tie(valid_point_cloud, point_cloud, valid_coordinates) = get3DPointCloud(*depth_in, "left", pc_left_z_threshold_);
 
         if (!valid_point_cloud)
             return;
@@ -194,5 +202,100 @@ void Viewer::set2DCoordinates(const std::size_t u_stride, const std::size_t v_st
         {
             coordinates_2d_.push_back(std::make_pair(u, v));
         }
+    }
+}
+
+
+std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud
+(
+    const yarp::sig::ImageOf<yarp::sig::PixelFloat>& depth,
+    const std::string eye_name,
+    const float z_threshold
+)
+{
+    if ((eye_name != "left") && (eye_name != "right"))
+        return std::make_tuple(false, MatrixXd(), VectorXi());
+
+    // Get the camera pose
+    yarp::sig::Vector eye_pos_left;
+    yarp::sig::Vector eye_att_left;
+    yarp::sig::Vector eye_pos_right;
+    yarp::sig::Vector eye_att_right;
+    Eigen::VectorXd eye_pos(3);
+    Eigen::VectorXd eye_att(4);
+    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
+        return std::make_tuple(false, MatrixXd(), VectorXi());
+
+    if (eye_name == "left")
+    {
+        eye_pos = toEigen(eye_pos_left);
+        eye_att = toEigen(eye_att_left);
+    }
+    else
+    {
+        eye_pos = toEigen(eye_pos_right);
+        eye_att = toEigen(eye_att_right);
+    }
+    Eigen::AngleAxisd angle_axis(eye_att(3), eye_att.head<3>());
+
+    Eigen::Transform<double, 3, Eigen::Affine> camera_pose;
+
+    // Compose translation
+    camera_pose = Translation<double, 3>(eye_pos);
+
+    // Compose rotation
+    camera_pose.rotate(angle_axis);
+
+    // Valid points mask
+    Eigen::VectorXi valid_points(coordinates_2d_.size());
+
+    for (std::size_t i = 0; i < valid_points.size(); i++)
+    {
+        valid_points(i) = 0;
+
+        float depth_u_v = depth(coordinates_2d_[i].first, coordinates_2d_[i].second);
+        if ((depth_u_v > 0) && (depth_u_v < z_threshold))
+            valid_points(i) = 1;
+    }
+
+    std::size_t num_valids = valid_points.sum();
+    if (num_valids == 0)
+        return std::make_tuple(false, MatrixXd(), VectorXi());
+
+    // Compose 3d points with respect to left camera referece frame
+    Eigen::MatrixXd points(3, num_valids);
+    for (int i = 0, j = 0; i < coordinates_2d_.size(); i++)
+    {
+        if(valid_points(i) == 1)
+        {
+            float depth_u_v = depth(coordinates_2d_[i].first, coordinates_2d_[i].second);
+            points.col(j) = default_deprojection_matrix_.col(i) * depth_u_v;
+
+            j++;
+        }
+    }
+
+    // Points with respect to robot root frame
+    MatrixXd points_robot = camera_pose * points.colwise().homogeneous();
+
+    return std::make_tuple(true, points_robot, valid_points);
+}
+
+void Viewer::setDefaultDeprojectionMatrix(const std::string eye_name)
+{
+    // Get intrinsic parameters for left camera
+    double fx;
+    double fy;
+    double cx;
+    double cy;
+    gaze_.getCameraIntrinsics(eye_name, fx, fy, cx, cy);
+
+    // Compose default deprojection matrix
+    default_deprojection_matrix_.resize(3, coordinates_2d_.size());
+    for (std::size_t i = 0; i < default_deprojection_matrix_.cols(); i++)
+    {
+        default_deprojection_matrix_(0, i) = (coordinates_2d_[i].first - cx) / fx;
+        default_deprojection_matrix_(1, i) = (coordinates_2d_[i].second - cy) / fy;
+        default_deprojection_matrix_(2, i) = 1.0;
     }
 }

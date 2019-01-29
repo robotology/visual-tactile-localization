@@ -17,12 +17,13 @@
 #include <vtkSmartPointer.h>
 #include <vtkVertexGlyphFilter.h>
 
-#include <SFM.h>
-
 #include <Eigen/Dense>
+
+#include <GazeController.h>
 
 #include <yarp/os/ResourceFinder.h>
 #include <yarp/os/BufferedPort.h>
+#include <yarp/sig/Image.h>
 #include <yarp/sig/Vector.h>
 
 #include <memory>
@@ -146,17 +147,21 @@ public:
 private:
     void set2DCoordinates(const std::size_t u_stride, const std::size_t v_stride);
 
+    std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> get3DPointCloud(const yarp::sig::ImageOf<yarp::sig::PixelFloat>& depth, const std::string eye_name, const float z_threshold = 1.0);
+
+    void setDefaultDeprojectionMatrix(const std::string eye_name);
+
     std::pair<bool, Eigen::MatrixXd> readStateFromFile(const std::string& filename, const std::size_t num_fields);
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_in_;
 
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_in_;
 
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat>> port_depth_in_;
+
     std::vector<std::pair<int, int>> coordinates_2d_;
 
     std::unique_ptr<Points> vtk_measurements_;
-
-    // Eigen::MatrixXd point_cloud_;s
 
     const std::size_t cam_width_ = 320;
 
@@ -182,7 +187,11 @@ private:
 
     vtkSmartPointer<vtkInteractorStyleSwitch> interactor_style_;
 
-    SFM sfm_;
+    GazeController gaze_;
+
+    Eigen::MatrixXd default_deprojection_matrix_;
+
+    float pc_left_z_threshold_;
 };
 
 

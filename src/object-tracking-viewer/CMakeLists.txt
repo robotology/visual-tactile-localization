@@ -46,8 +46,7 @@ target_link_libraries(${EXE_TARGET_NAME} PRIVATE
                                          YARP::YARP_OS
                                          YARP::YARP_sig
                                          YARP::YARP_eigen
-                                         SFMLib
-                                         stereoVision
+                                         iCubGazeCtrlLibrary
                                          )
 
 set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini)

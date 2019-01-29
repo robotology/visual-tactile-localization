@@ -54,6 +54,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/Filter.h
     include/GaussianFilter_.h
     include/iCubPointCloud.h
+    include/InitParticles.h
     include/MeshImporter.h
     include/NanoflannPointCloudPrediction.h
     include/PointCloudModel.h
@@ -74,6 +75,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/Filter.cpp
     src/GaussianFilter_.cpp
     src/iCubPointCloud.cpp
+    src/InitParticles.cpp
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
     src/PointCloudModel.cpp

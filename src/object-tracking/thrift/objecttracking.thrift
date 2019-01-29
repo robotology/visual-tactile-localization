@@ -46,6 +46,22 @@ service ObjectTrackingIDL
     bool skip_step(1:string what_step, 2:bool status);
 
     /**
+     * Get information on the point estimates extraction.
+     *
+     * @return a string containing the requested information.
+     */
+    list<string> get_point_estimate_info();
+
+    /**
+     * Change the current point estimate extraction method.
+     *
+     * @param method a string with the name of point estimate extraction method to be used.
+     *
+     * @return true/false on success/failure.
+     */
+    bool set_point_estimate_method(1:string method);
+
+    /**
      * Quit the filter in graceful way.
      */
     bool quit();

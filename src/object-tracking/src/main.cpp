@@ -149,6 +149,10 @@ int main(int argc, char** argv)
         pc_outlier_threshold = rf_point_cloud_filtering.check("outlier_threshold", Value("0.1")).asDouble();
     }
 
+    /* Depth. */
+    ResourceFinder rf_depth = rf.findNestedResourceFinder("DEPTH");
+    std::string depth_fetch_mode = rf_depth.check("fetch_mode", Value("new_image")).toString();
+
     /* Simulation parameters. */
     double sim_sample_time;
     double sim_duration;
@@ -253,6 +257,9 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Point cloud filtering:";
     yInfo() << log_ID << "- outlier_threshold:" << pc_outlier_threshold;
+
+    yInfo() << log_ID << "Depth:";
+    yInfo() << log_ID << "- fetch_mode:" << depth_fetch_mode;
 
     if (mode == "simulation")
     {
@@ -369,36 +376,34 @@ int main(int argc, char** argv)
             std::pair<int, int> top_left = std::make_pair(static_cast<int>(bbox_tl_0(0)), static_cast<int>(bbox_tl_0(1)));
             std::pair<int, int> bottom_right = std::make_pair(static_cast<int>(bbox_br_0(0)), static_cast<int>(bbox_br_0(1)));
             // Giving the initial bounding box of the object from outside
-            pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
-                                                                         "object-tracking",
-                                                                         "sfm_config.ini",
+            pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(std::move(pc_prediction),
+                                                                         noise_covariance_diagonal,
+                                                                         std::make_pair(top_left, bottom_right),
+                                                                         port_prefix,
+                                                                         "left",
                                                                          object_mesh_path_obj,
                                                                          rf.findPath("shader/"),
-                                                                         "left",
-                                                                         std::make_pair(top_left, bottom_right),
-                                                                         std::move(pc_prediction),
+                                                                         depth_fetch_mode,
                                                                          pc_outlier_threshold,
-                                                                         noise_covariance_diagonal,
-                                                                         icub_pc_shared_data,
                                                                          enable_send_bbox,
-                                                                         enable_send_mask));
+                                                                         enable_send_mask,
+                                                                         icub_pc_shared_data));
         }
         else
         {
             // Using OPC/IOL to take the initial bounding box of the object
-            pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(port_prefix,
-                                                                         "object-tracking",
-                                                                         "sfm_config.ini",
+            pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(std::move(pc_prediction),
+                                                                         noise_covariance_diagonal,
                                                                          iol_object_name,
+                                                                         port_prefix,
+                                                                         "left",
                                                                          object_mesh_path_obj,
                                                                          rf.findPath("shader/"),
-                                                                         "left",
-                                                                         std::move(pc_prediction),
+                                                                         depth_fetch_mode,
                                                                          pc_outlier_threshold,
-                                                                         noise_covariance_diagonal,
-                                                                         icub_pc_shared_data,
                                                                          enable_send_bbox,
-                                                                         enable_send_mask));
+                                                                         enable_send_mask,
+                                                                         icub_pc_shared_data));
         }
 
         measurement_model = std::move(pc_icub);

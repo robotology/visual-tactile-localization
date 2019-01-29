@@ -57,6 +57,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/NanoflannPointCloudPrediction.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
+    include/ProximityLikelihood.h
     include/Random3DPose.h
     include/SimulatedFilter.h
     include/SimulatedPointCloud.h
@@ -74,6 +75,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
     src/PointCloudModel.cpp
+    src/ProximityLikelihood.cpp
     src/Random3DPose.cpp
     src/SimulatedFilter.cpp
     src/SimulatedPointCloud.cpp

@@ -14,6 +14,12 @@
   </module>
 
   <module>
+    <name>object-tracking-depth</name>
+    <parameters></parameters>
+    <node>localhost</node>
+  </module>
+
+  <module>
     <name>yarpdataplayer</name>
     <parameters>--withExtraTimeCol 2</parameters>
     <node>localhost</node>
@@ -56,28 +62,14 @@
 
   <connection>
     <from>/icub/camcalib/right/out</from>
-    <to>/object-tracking/SFM/right:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/camcalib/right/out</from>
-    <to>/object-tracking-viewer/SFM/right:i</to>
+    <to>/object-tracking-depth/SFM/right:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking/SFM/left:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking-viewer/SFM/left:i</to>
+    <to>/object-tracking-depth/SFM/left:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
@@ -125,9 +117,16 @@
   </connection>
 
   <connection>
-    <from>/object-tracking/SFM/disp:o</from>
+    <from>/object-tracking-depth/SFM/disp:o</from>
     <to>/object-tracking/viewer/disp:i</to>
-    <protocol>mjpeg</protocol>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking-depth/SFM/depth:o</from>
+    <to>/object-tracking-viewer/depth:i</to>
+    <protocol>tcp</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
 
@@ -147,14 +146,14 @@
 
   <connection>
     <from>/icub/head/state:o</from>
-    <to>/object-tracking/SFM/icub/head:i</to>
+    <to>/object-tracking-depth/SFM/icub/head:i</to>
     <protocol>tcp</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/head/state:o</from>
-    <to>/object-tracking-viewer/SFM/icub/head:i</to>
+    <to>/object-tracking-viewer/icub/head:i</to>
     <protocol>tcp</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
@@ -168,14 +167,14 @@
 
   <connection>
     <from>/icub/torso/state:o</from>
-    <to>/object-tracking/SFM/icub/torso:i</to>
+    <to>/object-tracking-viewer/icub/torso:i</to>
     <protocol>tcp</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/torso/state:o</from>
-    <to>/object-tracking-viewer/SFM/icub/torso:i</to>
+    <to>/object-tracking-depth/SFM/icub/torso:i</to>
     <protocol>tcp</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>

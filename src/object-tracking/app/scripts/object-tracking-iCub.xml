@@ -8,6 +8,18 @@
   </module>
 
   <module>
+    <name>object-tracking-viewer</name>
+    <parameters></parameters>
+    <node>icub-cuda</node>
+  </module>
+
+  <module>
+    <name>object-tracking-depth</name>
+    <parameters></parameters>
+    <node>icub-cuda</node>
+  </module>
+
+  <module>
     <name>yarpview</name>
     <parameters>--name /object-tracking/viewer/disp:i</parameters>
     <node>localhost</node>
@@ -43,23 +55,16 @@
   </connection>
 
   <connection>
-    <from>/icub/camcalib/right/out</from>
-    <to>/object-tracking-viewer/SFM/right:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking-viewer/SFM/left:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
     <from>/object-tracking/SFM/disp:o</from>
     <to>/object-tracking/viewer/disp:i</to>
-    <protocol>mjpeg</protocol>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking-depth/SFM/depth:o</from>
+    <to>/object-tracking-viewer/depth:i</to>
+    <protocol>tcp</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
 
@@ -94,6 +99,13 @@
   <connection>
     <from>/icub/camcalib/left/out</from>
     <to>/object-tracking/cam/left:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking-viewer/cam/left:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>

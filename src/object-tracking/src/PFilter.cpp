@@ -167,6 +167,15 @@ bool PFilter::set_point_estimate_method(const std::string& method)
 }
 
 
+bool PFilter::set_history_window(const int16_t window)
+{
+    if (window > 0)
+        return point_estimate_extraction_.setMobileAverageWindowSize(window);
+    else
+        return false;
+}
+
+
 bool PFilter::quit()
 {
     return teardown();

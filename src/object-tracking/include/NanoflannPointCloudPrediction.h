@@ -49,6 +49,8 @@ public:
 
     std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
 
+    std::pair<bool, Eigen::MatrixXd> evalDistances(ConstMatrixXdRef state, ConstVectorXdRef meas);
+
 protected:
     void samplePointCloud();
 

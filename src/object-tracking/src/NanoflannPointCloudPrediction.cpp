@@ -177,3 +177,57 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
 
     return std::make_pair(true, predictions);
 }
+
+
+std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::evalDistances(ConstMatrixXdRef state, ConstVectorXdRef meas)
+{
+    // Check if meas size is multiple of 3
+    if ((meas.size() % 3) != 0)
+        return std::make_pair(false, MatrixXd(0, 0));
+
+    std::size_t components = meas.size() / 3;
+    MatrixXd squared_distances(state.cols(), components);
+
+    // Reshape measurement as a matrix
+    Map<const MatrixXd> meas_matrix(meas.data(), 3, components);
+
+    // Process all the states
+    MatrixXd meas_body(3, components * state.cols());
+    std::vector<Transform<double, 3, Eigen::Affine>> poses(state.cols());
+    #pragma omp parallel for
+    for (std::size_t i = 0; i < state.cols(); i++)
+    {
+        // Compose translation
+        poses[i] = Translation<double, 3>(state.col(i).segment(0, 3));
+
+        // Compose rotation
+        poses[i].rotate(AngleAxis<double>(state(9,  i), Vector3d::UnitZ()));
+        poses[i].rotate(AngleAxis<double>(state(10, i), Vector3d::UnitY()));
+        poses[i].rotate(AngleAxis<double>(state(11, i), Vector3d::UnitX()));
+
+        // Express measurement in body fixed frame
+        meas_body.middleCols(components * i, components) = poses[i].inverse() * meas_matrix.colwise().homogeneous();
+    }
+
+    // Eval distances
+    #pragma omp parallel for collapse(2)
+    for (std::size_t i = 0; i < state.cols(); i++)
+    {
+        for (std::size_t j = 0; j < components; j++)
+        {
+            const Ref<const Vector3d> meas_j = meas_body.middleCols(components * i, components).col(j);
+
+            std::size_t ret_index;
+            double out_dist_sqr;
+            KNNResultSet<double> resultSet(1);
+            resultSet.init(&ret_index, &out_dist_sqr);
+            // Querying tree_ is thread safe as per this issue
+            // https://github.com/jlblancoc/nanoflann/issues/54
+            tree_->findNeighbors(resultSet, meas_j.data(), nanoflann::SearchParams(10));
+
+            squared_distances(i, j) = out_dist_sqr;
+        }
+    }
+
+    return std::make_pair(true, squared_distances);
+}

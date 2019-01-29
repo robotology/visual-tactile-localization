@@ -62,6 +62,15 @@ service ObjectTrackingIDL
     bool set_point_estimate_method(1:string method);
 
     /**
+     * Change the window size of the history buffer used for point estimate extraction.
+     *
+     * @param window specifies the window size.
+     *
+     * @return true/fale on success/failure.
+     */
+    bool set_history_window(1:i16 window);
+
+    /**
      * Quit the filter in graceful way.
      */
     bool quit();

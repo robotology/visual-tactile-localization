@@ -101,6 +101,72 @@ bool PFilter::skip_step(const std::string& what_step, const bool status)
 }
 
 
+std::vector<std::string> PFilter::get_point_estimate_info()
+{
+    return point_estimate_extraction_.getInfo();
+}
+
+
+bool PFilter::set_point_estimate_method(const std::string& method)
+{
+    if (method == "mean")
+    {
+        point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::mean);
+
+        return true;
+    }
+    else if (method == "smean")
+    {
+        point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::smean);
+
+        return true;
+    }
+    else if (method == "wmean")
+    {
+        point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::wmean);
+
+        return true;
+    }
+    else if (method == "emean")
+    {
+        point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::emean);
+
+        return true;
+    }
+    else if (method == "mode")
+    {
+        point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::mode);
+
+        return true;
+    }
+    else if (method == "smode")
+    {
+        point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::smode);
+
+        return true;
+    }
+    else if (method == "wmode")
+    {
+        point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::wmode);
+
+        return true;
+    }
+    else if (method == "emode")
+    {
+        point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::emode);
+
+        return true;
+    }
+    else if ((method == "map") || (method == "smap") || (method == "wmap") || (method == "emap"))
+    {
+        /* These extraction methods are not supported. */
+        return false;
+    }
+
+    return false;
+}
+
+
 bool PFilter::quit()
 {
     return teardown();
@@ -129,27 +195,32 @@ void PFilter::filteringStep()
     // Update the point estimate extraction
     bool valid_estimate;
     VectorXd point_estimate;
-    std::tie(valid_estimate, point_estimate) =  point_estimate_extraction_h.extract(cor_particle_.state(), cor_particle_.weight());
+    std::tie(valid_estimate, point_estimate) =  point_estimate_extraction_.extract(cor_particle_.state(), cor_particle_.weight());
+    if (!valid_estimate)
+        yInfo() << log_ID_ << "Cannot extract point estimate!";
 
-    // Log
-    logger(point_estimate_.transpose());
+    if (valid_estimate)
+    {
+        // Log
+        logger(point_estimate_.transpose());
 
-    // Update shared data with iCubPointCloudData
-    icub_point_cloud_share_->setObjectEstimate(point_estimate);
+        // Update shared data with iCubPointCloudData
+        icub_point_cloud_share_->setObjectEstimate(point_estimate);
 
-    // Send estimate over the port using axis/angle representation
-    VectorXd estimate(7);
-    estimate.head<3>() = point_estimate.head<3>();
-    AngleAxisd angle_axis(AngleAxisd(point_estimate(9), Vector3d::UnitZ()) *
-                          AngleAxisd(point_estimate(10), Vector3d::UnitY()) *
-                          AngleAxisd(point_estimate(11), Vector3d::UnitX()));
-    estimate.segment<3>(3) = angle_axis.axis();
-    estimate(6) = angle_axis.angle();
+        // Send estimate over the port using axis/angle representation
+        VectorXd estimate(7);
+        estimate.head<3>() = point_estimate.head<3>();
+        AngleAxisd angle_axis(AngleAxisd(point_estimate(9), Vector3d::UnitZ()) *
+                              AngleAxisd(point_estimate(10), Vector3d::UnitY()) *
+                              AngleAxisd(point_estimate(11), Vector3d::UnitX()));
+        estimate.segment<3>(3) = angle_axis.axis();
+        estimate(6) = angle_axis.angle();
 
-    Vector& estimate_yarp = port_estimate_out_.prepare();
-    estimate_yarp.resize(7);
-    toEigen(estimate_yarp) = estimate;
-    port_estimate_out_.write();
+        Vector& estimate_yarp = port_estimate_out_.prepare();
+        estimate_yarp.resize(7);
+        toEigen(estimate_yarp) = estimate;
+        port_estimate_out_.write();
+    }
 }
 
 

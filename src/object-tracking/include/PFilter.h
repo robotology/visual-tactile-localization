@@ -58,6 +58,10 @@ public:
 
     bool skip_step(const std::string& what_step, const bool status) override;
 
+    std::vector<std::string> get_point_estimate_info() override;
+
+    bool set_point_estimate_method(const std::string& method) override;
+
     bool quit() override;
 
 protected:

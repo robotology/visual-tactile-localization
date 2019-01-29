@@ -2,17 +2,24 @@
 #include <Filter.h>
 #include <GaussianFilter_.h>
 #include <iCubPointCloud.h>
+#include <InitParticles.h>
 #include <DiscreteKinematicModel.h>
 #include <NanoflannPointCloudPrediction.h>
+#include <ParticlesCorrection.h>
+#include <PFilter.h>
+#include <ProximityLikelihood.h>
 #include <Random3DPose.h>
 #include <SimulatedFilter.h>
 #include <SimulatedPointCloud.h>
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
+#include <BayesFilters/FilteringAlgorithm.h>
 #include <BayesFilters/GaussianCorrection.h>
 // #include <BayesFilters/GaussianFilter.h>
 #include <BayesFilters/GaussianPrediction.h>
+#include <BayesFilters/GPFPrediction.h>
 #include <BayesFilters/KFPrediction.h>
+#include <BayesFilters/Resampling.h>
 
 #include <yarp/os/LogStream.h>
 #include <yarp/os/ResourceFinder.h>
@@ -92,8 +99,9 @@ int main(int argc, char** argv)
 
     /* Get mode of operation. */
     ResourceFinder rf_mode_parameters = rf.findNestedResourceFinder("MODE");
-    const std::string mode  = rf_mode_parameters.check("mode",  Value("simulation")).asString();
-    const std::string robot = rf_mode_parameters.check("robot", Value("icubSim")).asString();
+    const std::string mode        = rf_mode_parameters.check("mode",  Value("simulation")).asString();
+    const std::string robot       = rf_mode_parameters.check("robot", Value("icubSim")).asString();
+    const std::string filter_type = rf_mode_parameters.check("filter", Value("ukf")).asString();
 
     std::unique_ptr<Network> yarp;
     if (mode != "simulation")
@@ -107,6 +115,14 @@ int main(int argc, char** argv)
         }
     }
 
+    std::size_t number_particles;
+    if (filter_type == "upf")
+    {
+        /* Get number of particles. */
+        ResourceFinder rf_particles = rf.findNestedResourceFinder("PARTICLES");
+        number_particles = rf_particles.check("number",  Value(1)).asInt();
+    }
+
     /* Get initial condition. */
     ResourceFinder rf_initial_conditions = rf.findNestedResourceFinder("INITIAL_CONDITION");
     VectorXd x_0           = loadVectorDouble(rf_initial_conditions, "x_0",           3);
@@ -117,6 +133,8 @@ int main(int argc, char** argv)
     VectorXd cov_v_0       = loadVectorDouble(rf_initial_conditions, "cov_v_0",       3);
     VectorXd cov_eul_0     = loadVectorDouble(rf_initial_conditions, "cov_eul_0",     3);
     VectorXd cov_eul_dot_0 = loadVectorDouble(rf_initial_conditions, "cov_eul_dot_0", 3);
+    VectorXd center_0      = loadVectorDouble(rf_initial_conditions, "center_0",      3);
+    VectorXd radius_0      = loadVectorDouble(rf_initial_conditions, "radius_0",      3);
 
     /* Kinematic model. */
     ResourceFinder rf_kinematic_model = rf.findNestedResourceFinder("KINEMATIC_MODEL");
@@ -223,14 +241,29 @@ int main(int argc, char** argv)
 
     /* Log parameters. */
     yInfo() << log_ID << "Mode of operation:";
-    yInfo() << log_ID << "- mode:"  << mode;
-    yInfo() << log_ID << "- robot:" << robot;
+    yInfo() << log_ID << "- mode:"        << mode;
+    yInfo() << log_ID << "- robot:"       << robot;
+    yInfo() << log_ID << "- filter_type:" << filter_type;
+
+    if (filter_type == "upf")
+    {
+        yInfo() << log_ID << "Particles:";
+        yInfo() << log_ID << "- number:" << number_particles;
+    }
 
     yInfo() << log_ID << "Initial conditions:";
-    yInfo() << log_ID << "- x_0: "           << eigenToString(x_0);
-    yInfo() << log_ID << "- v_0: "           << eigenToString(v_0);
-    yInfo() << log_ID << "- euler_0: "       << eigenToString(euler_0);
-    yInfo() << log_ID << "- euler_dot_0: "   << eigenToString(euler_dot_0);
+    if (filter_type == "ukf")
+    {
+        yInfo() << log_ID << "- x_0: "           << eigenToString(x_0);
+        yInfo() << log_ID << "- v_0: "           << eigenToString(v_0);
+        yInfo() << log_ID << "- euler_0: "       << eigenToString(euler_0);
+        yInfo() << log_ID << "- euler_dot_0: "   << eigenToString(euler_dot_0);
+    }
+    else if (filter_type == "upf")
+    {
+        yInfo() << log_ID << "- center_0: "      << eigenToString(center_0);
+        yInfo() << log_ID << "- radius_0: "      << eigenToString(radius_0);
+    }
     yInfo() << log_ID << "- cov_x_0: "       << eigenToString(cov_x_0);
     yInfo() << log_ID << "- cov_v_0: "       << eigenToString(cov_v_0);
     yInfo() << log_ID << "- cov_eul_0: "     << eigenToString(cov_eul_0);
@@ -242,7 +275,6 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- q_x_dot:"     << eigenToString(kin_q_x_dot);
     yInfo() << log_ID << "- q_eul:"       << eigenToString(kin_q_eul);
     yInfo() << log_ID << "- q_eul_dot:"   << eigenToString(kin_q_eul_dot);
-
 
     yInfo() << log_ID << "Measurement model:";
     yInfo() << log_ID << "- noise_covariance:" << eigenToString(noise_covariance);
@@ -301,16 +333,10 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- send_mask:" << enable_send_mask;
 
     /**
-     * Prepare pointer to the measurement model.
-     */
-
-
-    /**
      * Initialize point cloud prediction.
      */
     std::unique_ptr<PointCloudPrediction> pc_prediction =
         std::unique_ptr<NanoflannPointCloudPrediction>(new NanoflannPointCloudPrediction(object_mesh_path_ply, pc_pred_num_samples));
-
 
     /**
      * Initialize measurement model.
@@ -434,18 +460,21 @@ int main(int argc, char** argv)
     /**
      * Initial condition.
      */
+
+    /* Used in both UKF and UPF. */
+    VectorXd initial_covariance(12);
+    initial_covariance.head<3>() = cov_x_0;
+    initial_covariance.segment<3>(3) = cov_v_0;
+    initial_covariance.segment<3>(6) = cov_eul_dot_0;
+    initial_covariance.tail<3>() = cov_eul_0;
+
+    /* Used only in the UKF. */
     Gaussian initial_state(dim_linear, dim_circular);
     VectorXd initial_mean(12);
     initial_mean.head<3>() = x_0;
     initial_mean.segment<3>(3) = v_0;
     initial_mean.segment<3>(6) = euler_dot_0;
     initial_mean.tail<3>() = euler_0;
-
-    VectorXd initial_covariance(12);
-    initial_covariance.head<3>() = cov_x_0;
-    initial_covariance.segment<3>(3) = cov_v_0;
-    initial_covariance.segment<3>(6) = cov_eul_dot_0;
-    initial_covariance.tail<3>() = cov_eul_0;
 
     initial_state.mean() =  initial_mean;
     initial_state.covariance() = initial_covariance.asDiagonal();
@@ -472,23 +501,70 @@ int main(int argc, char** argv)
      */
     std::cout << "Initializing filter..." << std::flush;
 
-    std::unique_ptr<GaussianFilter_> filter;
-    if (mode == "simulation")
+    std::unique_ptr<FilteringAlgorithm> filter;
+
+    if (filter_type == "ukf")
     {
-        filter = std::move(std::unique_ptr<SimulatedFilter>(
-                               new SimulatedFilter(initial_state,
-                                                   std::move(prediction),
-                                                   std::move(correction),
-                                                   sim_duration / sim_sample_time)));
+        if (mode == "simulation")
+        {
+            filter = std::move(std::unique_ptr<SimulatedFilter>(
+                                   new SimulatedFilter(initial_state,
+                                                       std::move(prediction),
+                                                       std::move(correction),
+                                                       sim_duration / sim_sample_time)));
+        }
+        else if ((mode == "robot" || mode == "play"))
+        {
+            filter = std::move(std::unique_ptr<Filter>(
+                                   new Filter(port_prefix,
+                                              initial_state,
+                                              std::move(prediction),
+                                              std::move(correction),
+                                              icub_pc_shared_data)));
+        }
     }
-    else if ((mode == "robot" || mode == "play"))
+    else if (filter_type == "upf")
     {
-        filter = std::move(std::unique_ptr<Filter>(
-                               new Filter(port_prefix,
-                                          initial_state,
-                                          std::move(prediction),
-                                          std::move(correction),
-                                          icub_pc_shared_data)));
+        /* Particles initialization. */
+        MatrixXd covariance_0 = initial_covariance.asDiagonal();
+        std::unique_ptr<InitParticles> pf_initialization = std::unique_ptr<InitParticles>(
+            new InitParticles(center_0, radius_0, covariance_0));
+
+        /* Gaussian particle filter perdiction. */
+        std::unique_ptr<GPFPrediction> pf_prediction = std::unique_ptr<GPFPrediction>(
+            new GPFPrediction(std::move(prediction)));
+
+        /* Gaussian particle filter correction. */
+        std::unique_ptr<ParticlesCorrection> pf_correction;
+
+        /* Likelihood. */
+        std::unique_ptr<NanoflannPointCloudPrediction> distances_approximation = std::unique_ptr<NanoflannPointCloudPrediction>(
+            new NanoflannPointCloudPrediction(object_mesh_path_ply, pc_pred_num_samples));
+
+        std::unique_ptr<ProximityLikelihood> proximity_likelihood = std::unique_ptr<ProximityLikelihood>(
+            new ProximityLikelihood(noise_covariance(0), std::move(distances_approximation)));
+
+        pf_correction = std::unique_ptr<ParticlesCorrection>(
+            new ParticlesCorrection(std::move(correction), std::move(proximity_likelihood)));
+
+        /* Resampling. */
+        std::unique_ptr<Resampling> pf_resampling = std::unique_ptr<Resampling>(new Resampling());
+
+        if (mode == "simulation")
+        {
+            // TO BE DONE
+        }
+        else if ((mode == "robot" || mode == "play"))
+        {
+            filter = std::move(std::unique_ptr<PFilter>(
+                                   new PFilter(port_prefix,
+                                               number_particles,
+                                               std::move(pf_initialization),
+                                               std::move(pf_prediction),
+                                               std::move(pf_correction),
+                                               std::move(pf_resampling),
+                                               icub_pc_shared_data)));
+        }
     }
 
     std::cout << "done." << std::endl;

@@ -131,6 +131,13 @@
   </connection>
 
   <connection>
+    <from>/object-tracking-depth/SFM/depth:o</from>
+    <to>/object-tracking/depth:i</to>
+    <protocol>tcp</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
     <from>/object-tracking/estimate:o</from>
     <to>/object-tracking-viewer/estimate:i</to>
     <protocol>tcp</protocol>

@@ -47,6 +47,7 @@ if (USE_OPENMP)
 endif()
 
 set(${EXE_TARGET_NAME}_HDR
+    include/ParticlesCorrection.h
     include/Correction.h
     include/DiscreteKinematicModel.h
     include/DiscretizedKinematicModel.h
@@ -66,6 +67,7 @@ set(${EXE_TARGET_NAME}_HDR
     )
 
 set(${EXE_TARGET_NAME}_SRC
+    src/ParticlesCorrection.cpp
     src/Correction.cpp
     src/DiscreteKinematicModel.cpp
     src/DiscretizedKinematicModel.cpp

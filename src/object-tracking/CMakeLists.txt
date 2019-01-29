@@ -107,10 +107,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       YARP::YARP_OS
                       YARP::YARP_eigen
                       YARP::YARP_cv
-                      # YARP::YARP_init
                       ${OpenCV_LIBS}
-                      SFMLib
-                      stereoVision
                       iCubGazeCtrlLibrary
                       )
 

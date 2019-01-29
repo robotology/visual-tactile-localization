@@ -1,6 +1,7 @@
 #include <iCubPointCloud.h>
 
 #include <yarp/cv/Cv.h>
+#include <yarp/eigen/Eigen.h>
 #include <yarp/os/ResourceFinder.h>
 #include <yarp/sig/Vector.h>
 
@@ -12,40 +13,40 @@
 #include <SuperimposeMesh/SICAD.h>
 
 using namespace bfl;
+using namespace yarp::eigen;
 using namespace yarp::os;
+using namespace yarp::sig;
 using namespace Eigen;
 
 
 iCubPointCloud::iCubPointCloud
 (
-    const string port_prefix,
-    const string SFM_context_name,
-    const string SFM_config_name,
-    const string IOL_object_name,
-    const string obj_mesh_file,
-    const string sicad_shader_path,
-    const string eye_name,
     std::unique_ptr<PointCloudPrediction> prediction,
+    const Ref<const Matrix3d>& noise_covariance_matrix,
+    const std::string IOL_object_name,
+    const std::string port_prefix,
+    const std::string eye_name,
+    const std::string obj_mesh_file,
+    const std::string sicad_shader_path,
+    const std::string depth_fetch_mode,
     const double point_cloud_outlier_threshold,
-    const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
     const bool send_bounding_box,
-    const bool send_mask
+    const bool send_mask,
+    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
 ) :
     iCubPointCloud
     (
+        std::move(prediction),
+        noise_covariance_matrix,
         port_prefix,
-        SFM_context_name,
-        SFM_config_name,
+        eye_name,
         obj_mesh_file,
         sicad_shader_path,
-        eye_name,
-        std::move(prediction),
+        depth_fetch_mode,
         point_cloud_outlier_threshold,
-        noise_covariance_matrix,
-        exogenous_data,
         send_bounding_box,
-        send_mask
+        send_mask,
+        exogenous_data
     )
 {
     IOL_object_name_ = IOL_object_name;
@@ -57,34 +58,33 @@ iCubPointCloud::iCubPointCloud
 
 iCubPointCloud::iCubPointCloud
 (
-    const string port_prefix,
-    const string SFM_context_name,
-    const string SFM_config_name,
-    const string obj_mesh_file,
-    const string sicad_shader_path,
-    const string eye_name,
-    const std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox,
     std::unique_ptr<PointCloudPrediction> prediction,
+    const Ref<const Matrix3d>& noise_covariance_matrix,
+    const std::pair<std::pair<int, int>, std::pair<int, int>> initial_bbox,
+    const std::string port_prefix,
+    const std::string eye_name,
+    const std::string obj_mesh_file,
+    const std::string sicad_shader_path,
+    const std::string depth_fetch_mode,
     const double point_cloud_outlier_threshold,
-    const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
     const bool send_bounding_box,
-    const bool send_mask
+    const bool send_mask,
+    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
+
 ) :
     iCubPointCloud
     (
+        std::move(prediction),
+        noise_covariance_matrix,
         port_prefix,
-        SFM_context_name,
-        SFM_config_name,
+        eye_name,
         obj_mesh_file,
         sicad_shader_path,
-        eye_name,
-        std::move(prediction),
+        depth_fetch_mode,
         point_cloud_outlier_threshold,
-        noise_covariance_matrix,
-        exogenous_data,
         send_bounding_box,
-        send_mask
+        send_mask,
+        exogenous_data
     )
 {
     // Initialize center, width and height
@@ -108,32 +108,37 @@ iCubPointCloud::iCubPointCloud
 
 iCubPointCloud::iCubPointCloud
 (
-    const string port_prefix,
-    const string SFM_context_name,
-    const string SFM_config_name,
-    const string obj_mesh_file,
-    const string sicad_shader_path,
-    const string eye_name,
     std::unique_ptr<PointCloudPrediction> prediction,
-    const double point_cloud_outlier_threshold,
     const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
-    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data,
+    const std::string port_prefix,
+    const std::string eye_name,
+    const std::string obj_mesh_file,
+    const std::string sicad_shader_path,
+    const std::string depth_fetch_mode,
+    const double point_cloud_outlier_threshold,
     const bool send_bounding_box,
-    const bool send_mask
+    const bool send_mask,
+    std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
 ) :
     PointCloudModel(std::move(prediction), noise_covariance_matrix),
-    gaze_(port_prefix),
     eye_name_(eye_name),
-    exogenous_data_(exogenous_data),
-    sfm_(port_prefix),
+    depth_fetch_mode_(depth_fetch_mode),
     pc_outlier_threshold_(point_cloud_outlier_threshold),
     send_bbox_(send_bounding_box),
-    send_mask_(send_mask)
+    send_mask_(send_mask),
+    exogenous_data_(exogenous_data),
+    gaze_(port_prefix)
 {
     // Open ports.
     if (!(opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
     {
         std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot open OPC rpc port.";
+        throw(std::runtime_error(err));
+    }
+
+    if (!(port_depth_in_.open("/" + port_prefix + "/depth:i")))
+    {
+        std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot open depth input port.";
         throw(std::runtime_error(err));
     }
 
@@ -167,29 +172,15 @@ iCubPointCloud::iCubPointCloud
         }
     }
 
-    // Configure SFM library.
-    ResourceFinder rf_sfm;
-    rf_sfm.setVerbose(true);
-    rf_sfm.setDefaultConfigFile(SFM_config_name.c_str());
-    rf_sfm.setDefaultContext(SFM_context_name.c_str());
-    rf_sfm.configure(0, NULL);
-
-    if (!sfm_.configure(rf_sfm))
-    {
-        std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot configure instance of SFM library.";
-        throw(std::runtime_error(err));
-    }
-
     // Get iCub cameras intrinsics parameters
-    double cam_fx;
-    double cam_fy;
-    double cam_cx;
-    double cam_cy;
-    if (!gaze_.getCameraIntrinsics(eye_name, cam_fx, cam_fy, cam_cx, cam_cy))
+    if (!gaze_.getCameraIntrinsics(eye_name, cam_fx_, cam_fy_, cam_cx_, cam_cy_))
     {
         std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot retrieve iCub camera intrinsicse.";
         throw(std::runtime_error(err));
     }
+
+    // Configure the default deprojection matrix
+    setDefaultDeprojectionMatrix();
 
     // Configure superimposition engine
     SICAD::ModelPathContainer mesh_path;
@@ -199,10 +190,10 @@ iCubPointCloud::iCubPointCloud
             new SICAD(mesh_path,
                       cam_width_,
                       cam_height_,
-                      cam_fx,
-                      cam_fy,
-                      cam_cx,
-                      cam_cy,
+                      cam_fx_,
+                      cam_fy_,
+                      cam_cx_,
+                      cam_cy_,
                       1,
                       sicad_shader_path,
                       {1.0, 0.0, 0.0, static_cast<float>(M_PI)})
@@ -226,7 +217,7 @@ iCubPointCloud::~iCubPointCloud()
 }
 
 
-std::tuple<bool, VectorXd> iCubPointCloud::retrieveObjectBoundingBox(const string obj_name)
+std::tuple<bool, VectorXd> iCubPointCloud::retrieveObjectBoundingBox(const std::string obj_name)
 {
     /*
      * Get object bounding box from OPC module given object name.
@@ -309,12 +300,12 @@ std::tuple<bool, VectorXd> iCubPointCloud::retrieveObjectBoundingBox(const strin
 }
 
 
-void iCubPointCloud::sendObjectMask(yarp::sig::ImageOf<PixelRgb>& camera_image)
+void iCubPointCloud::sendObjectMask(ImageOf<PixelRgb>& camera_image)
 {
     if (!(object_mask_.empty()))
     {
         // Prepare output image
-        yarp::sig::ImageOf<PixelRgb>& image_out = port_mask_image_out_.prepare();
+        ImageOf<PixelRgb>& image_out = port_mask_image_out_.prepare();
 
         // Copy input to output and wrap around a cv::Mat
         image_out = camera_image;
@@ -332,10 +323,10 @@ void iCubPointCloud::sendObjectMask(yarp::sig::ImageOf<PixelRgb>& camera_image)
 }
 
 
-void iCubPointCloud::sendObjectBoundingBox(yarp::sig::ImageOf<PixelRgb>& camera_image)
+void iCubPointCloud::sendObjectBoundingBox(ImageOf<PixelRgb>& camera_image)
 {
     // Prepare output image
-    yarp::sig::ImageOf<PixelRgb>& image_out = port_bbox_image_out_.prepare();
+    ImageOf<PixelRgb>& image_out = port_bbox_image_out_.prepare();
 
     // Copy input to output and wrap around a cv::Mat
     image_out = camera_image;
@@ -385,6 +376,127 @@ std::pair<bool, std::vector<std::pair<int, int>>> iCubPointCloud::getObject2DCoo
 
     return std::make_pair(true, coordinates);
 }
+
+
+bool iCubPointCloud::getDepth()
+{
+    std::string mode = depth_fetch_mode_;
+    if (!depth_initialized_)
+    {
+        // in case a depth was never received
+        // it is required to wait at least for the first image in blocking mode
+        mode = "new_image";
+    }
+
+    ImageOf<PixelFloat>* tmp_depth_in;
+
+    tmp_depth_in = port_depth_in_.read(mode == "new_image");
+
+    if (tmp_depth_in != nullptr)
+    {
+        depth_image_ = *tmp_depth_in;
+
+        depth_initialized_ = true;
+    }
+
+    if (mode == "skip")
+        return depth_initialized_ && (tmp_depth_in != nullptr);
+    else
+        return depth_initialized_;
+}
+
+
+void iCubPointCloud::setDefaultDeprojectionMatrix()
+{
+    // Compose default deprojection matrix
+    default_deprojection_matrix_.resize(3, cam_width_ * cam_height_);
+    int i = 0;
+    for (std::size_t u = 0; u < cam_width_; u++)
+    {
+        for (std::size_t v = 0; v < cam_height_; v++)
+        {
+            default_deprojection_matrix_(0, i) = (u - cam_cx_) / cam_fx_;
+            default_deprojection_matrix_(1, i) = (v - cam_cy_) / cam_fy_;
+            default_deprojection_matrix_(2, i) = 1.0;
+
+            i++;
+        }
+    }
+}
+
+
+std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi>
+iCubPointCloud::get3DPoints(std::vector<std::pair<int, int>>& coordinates_2d, const float z_threshold)
+{
+    // Get the camera pose
+    yarp::sig::Vector eye_pos_left;
+    yarp::sig::Vector eye_att_left;
+    yarp::sig::Vector eye_pos_right;
+    yarp::sig::Vector eye_att_right;
+    Eigen::VectorXd eye_pos(3);
+    Eigen::VectorXd eye_att(4);
+    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
+        return std::make_tuple(false, MatrixXd(), VectorXi());
+
+    if (eye_name_ == "left")
+    {
+        eye_pos = toEigen(eye_pos_left);
+        eye_att = toEigen(eye_att_left);
+    }
+    else
+    {
+        eye_pos = toEigen(eye_pos_right);
+        eye_att = toEigen(eye_att_right);
+    }
+    Eigen::AngleAxisd angle_axis(eye_att(3), eye_att.head<3>());
+
+    Eigen::Transform<double, 3, Eigen::Affine> camera_pose;
+
+    // Compose translation
+    camera_pose = Translation<double, 3>(eye_pos);
+
+    // Compose rotation
+    camera_pose.rotate(angle_axis);
+
+    // Valid points mask
+    Eigen::VectorXi valid_points(coordinates_2d.size());
+
+    for (std::size_t i = 0; i < valid_points.size(); i++)
+    {
+        valid_points(i) = 0;
+
+        float depth_u_v = depth_image_(coordinates_2d[i].first, coordinates_2d[i].second);
+        if ((depth_u_v > 0) && (depth_u_v < z_threshold))
+            valid_points(i) = 1;
+    }
+
+    std::size_t num_valids = valid_points.sum();
+    if (num_valids == 0)
+        return std::make_tuple(false, MatrixXd(), VectorXi());
+
+    // Compose 3d points with respect to left camera referece frame
+    Eigen::MatrixXd points(3, num_valids);
+    for (int i = 0, j = 0; i < coordinates_2d.size(); i++)
+    {
+        if(valid_points(i) == 1)
+        {
+            const int& u = coordinates_2d[i].first;
+            const int& v = coordinates_2d[i].second;
+
+            float depth_u_v = depth_image_(u, v);
+
+            points.col(j) = default_deprojection_matrix_.col(u * cam_height_ + v) * depth_u_v;
+
+            j++;
+        }
+    }
+
+    // Points with respect to robot root frame
+    MatrixXd points_robot = camera_pose * points.colwise().homogeneous();
+
+    return std::make_tuple(true, points_robot, valid_points);
+}
+
 
 bool iCubPointCloud::updateObjectMask()
 {
@@ -522,7 +634,7 @@ bool iCubPointCloud::freezeMeasurements()
     updateObjectBoundingBox();
 
     // Send bounding box and mask over the network
-    yarp::sig::ImageOf<PixelRgb>* image_in;
+    ImageOf<PixelRgb>* image_in;
     if (send_bbox_ || send_mask_)
          image_in = port_image_in_.read(false);
 
@@ -546,20 +658,15 @@ bool iCubPointCloud::freezeMeasurements()
     if (!valid_coordinates)
         return false;
 
+    // Get depth image
+    if(!getDepth())
+        return false;
+
     // Get 3D point cloud.
     bool blocking_call = false;
     bool valid_point_cloud;
     MatrixXd point_cloud;
-
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    std::tie(valid_point_cloud, point_cloud, std::ignore) = sfm_.get3DPoints(coordinates, blocking_call);
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-    std::cout << "Got 3D points in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms"
-              << std::endl;
-
+    std::tie(valid_point_cloud, point_cloud, std::ignore) = get3DPoints(coordinates);
     if (!valid_point_cloud)
         return false;
 
@@ -575,7 +682,7 @@ bool iCubPointCloud::freezeMeasurements()
     }
 
     // take only valid points
-    Eigen::MatrixXd points(3, good_points.sum());
+    MatrixXd points(3, good_points.sum());
     for (int i = 0, j = 0; i < point_cloud.cols(); i++)
     {
         if (good_points(i) == 1)
@@ -591,6 +698,7 @@ bool iCubPointCloud::freezeMeasurements()
 
     logger(measurement_.transpose());
 
+    // WARNING: this has to be removed at some point
     steady_state_counter_++;
 
     return true;

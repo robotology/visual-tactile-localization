@@ -96,6 +96,18 @@ bool Filter::skip_step(const std::string& what_step, const bool status)
 }
 
 
+std::vector<std::string> Filter::get_point_estimate_info()
+{
+    return {"This filter uses the conditional expected value as point estimate."};
+}
+
+
+bool Filter::set_point_estimate_method(const std::string& method)
+{
+    return false;
+}
+
+
 bool Filter::quit()
 {
     return teardown();

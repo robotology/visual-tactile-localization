@@ -47,6 +47,8 @@ public:
 
     bool set_point_estimate_method(const std::string& method) override;
 
+    bool set_history_window(const int16_t window);
+
     bool quit() override;
 
 protected:

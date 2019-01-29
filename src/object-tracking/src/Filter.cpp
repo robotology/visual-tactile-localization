@@ -108,6 +108,12 @@ bool Filter::set_point_estimate_method(const std::string& method)
 }
 
 
+bool Filter::set_history_window(const int16_t window)
+{
+    return false;
+}
+
+
 bool Filter::quit()
 {
     return teardown();

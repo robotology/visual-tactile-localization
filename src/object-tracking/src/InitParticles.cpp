@@ -21,7 +21,7 @@ InitParticles::InitParticles
     const Ref<const VectorXd>& center_pos,
     const Ref<const VectorXd>& radius_pos,
     const Ref<const MatrixXd>& initial_covariance
-) : 
+) :
     initial_covariance_(initial_covariance),
     generator_        (std::mt19937_64(seed)),
     uniform_x_        (std::uniform_real_distribution<double>(center_pos(0) - radius_pos(0), center_pos(0) + radius_pos(0))),
@@ -38,7 +38,7 @@ InitParticles::InitParticles
     uniform_gen_roll_ ([&] { return (uniform_roll_)(generator_); })
 { }
 
-
+#include <iostream>
 bool InitParticles::initialize(ParticleSet& particles)
 {
     for (int i = 0; i < particles.state().cols(); ++i)
@@ -52,15 +52,15 @@ bool InitParticles::initialize(ParticleSet& particles)
         random_state(10) = uniform_gen_pitch_();
         random_state(11) = uniform_gen_roll_();
 
-        particles.state(i) = random_state;
+        particles.mean(i) = random_state;
 
         // Initialize state covariance
         particles.covariance(i) = initial_covariance_;
-
-        // Set particles position the same as the mean state
-        // TODO: they should be sampled from the initial gaussian
-        particles.state() = particles.mean();
     }
+
+    // Set particles position the same as the mean state
+    // TODO: they should be sampled from the initial gaussian
+    particles.state() = particles.mean();
 
     // Initialize weights
     particles.weight().fill(-std::log(particles.state().cols()));

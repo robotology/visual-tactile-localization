@@ -30,6 +30,8 @@ iCubPointCloud::iCubPointCloud
     const std::string sicad_shader_path,
     const std::string depth_fetch_mode,
     const double point_cloud_outlier_threshold,
+    const std::size_t point_cloud_u_stride,
+    const std::size_t point_cloud_v_stride,
     const bool send_bounding_box,
     const bool send_mask,
     std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
@@ -44,6 +46,8 @@ iCubPointCloud::iCubPointCloud
         sicad_shader_path,
         depth_fetch_mode,
         point_cloud_outlier_threshold,
+        point_cloud_u_stride,
+        point_cloud_v_stride,
         send_bounding_box,
         send_mask,
         exogenous_data
@@ -67,6 +71,8 @@ iCubPointCloud::iCubPointCloud
     const std::string sicad_shader_path,
     const std::string depth_fetch_mode,
     const double point_cloud_outlier_threshold,
+    const std::size_t point_cloud_u_stride,
+    const std::size_t point_cloud_v_stride,
     const bool send_bounding_box,
     const bool send_mask,
     std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
@@ -82,6 +88,8 @@ iCubPointCloud::iCubPointCloud
         sicad_shader_path,
         depth_fetch_mode,
         point_cloud_outlier_threshold,
+        point_cloud_u_stride,
+        point_cloud_v_stride,
         send_bounding_box,
         send_mask,
         exogenous_data
@@ -116,6 +124,8 @@ iCubPointCloud::iCubPointCloud
     const std::string sicad_shader_path,
     const std::string depth_fetch_mode,
     const double point_cloud_outlier_threshold,
+    const std::size_t point_cloud_u_stride,
+    const std::size_t point_cloud_v_stride,
     const bool send_bounding_box,
     const bool send_mask,
     std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
@@ -127,7 +137,9 @@ iCubPointCloud::iCubPointCloud
     send_bbox_(send_bounding_box),
     send_mask_(send_mask),
     exogenous_data_(exogenous_data),
-    gaze_(port_prefix)
+    gaze_(port_prefix),
+    pc_u_stride_(point_cloud_u_stride),
+    pc_v_stride_(point_cloud_v_stride)
 {
     // Open ports.
     if (!(opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
@@ -647,14 +659,11 @@ bool iCubPointCloud::freezeMeasurements()
             sendObjectMask(*image_in);
     }
 
-    // Get 2D coordinates.
-    std::size_t stride_u = 1;
-    std::size_t stride_v = 1;
-
+    // Get 2d coordinates
     bool valid_coordinates;
     std::vector<std::pair<int, int>> coordinates;
 
-    std::tie(valid_coordinates, coordinates) = getObject2DCoordinates(stride_u, stride_v);
+    std::tie(valid_coordinates, coordinates) = getObject2DCoordinates(pc_u_stride_, pc_v_stride_);
     if (!valid_coordinates)
         return false;
 

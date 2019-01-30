@@ -36,6 +36,8 @@ public:
         const std::string sicad_shader_path,
         const std::string depth_fetch_mode,
         const double point_cloud_outlier_threshold,
+        const std::size_t point_cloud_u_stride,
+        const std::size_t point_cloud_v_stride,
         const bool send_bounding_box,
         const bool send_mask,
         std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
@@ -52,6 +54,8 @@ public:
         const std::string sicad_shader_path,
         const std::string depth_fetch_mode,
         const double point_cloud_outlier_threshold,
+        const std::size_t point_cloud_u_stride,
+        const std::size_t point_cloud_v_stride,
         const bool send_bounding_box,
         const bool send_mask,
         std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
@@ -78,6 +82,8 @@ protected:
         const std::string sicad_shader_path,
         const std::string depth_fetch_mode,
         const double point_cloud_outlier_threshold,
+        const std::size_t point_cloud_u_stride,
+        const std::size_t point_cloud_v_stride,
         const bool send_bounding_box,
         const bool send_mask,
         std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
@@ -170,6 +176,12 @@ protected:
      * Point cloud outlier rejection threshold.
      */
     double pc_outlier_threshold_;
+
+    /**
+     * 2D strides required to subsample the 2d coordinates on the image plane.
+     */
+    std::size_t pc_u_stride_;
+    std::size_t pc_v_stride_;
 
     /**
      * Object bounding box (top-left, bottom-right) of the target object.

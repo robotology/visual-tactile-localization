@@ -35,7 +35,7 @@ PFilter::PFilter
     point_estimate_extraction_(9, 3)
 {
     // Setup point estimates extraction
-    point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::emode);
+    point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::smean);
 
     // Open estimate output port
     if (!port_estimate_out_.open("/" + port_prefix + "/estimate:o"))

@@ -207,6 +207,7 @@ void PFilter::filteringStep()
     double neff = resampling_->neff(cor_particle_.weight());
     if (neff < static_cast<double>(num_particle_)/3.0)
     {
+        std::cout << "Resampling..." << std::endl;
         ParticleSet res_particle(num_particle_, state_size_);
         VectorXi res_parent(num_particle_, 1);
 

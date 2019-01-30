@@ -1,5 +1,7 @@
 #include <PFilter.h>
 
+#include <BayesFilters/utils.h>
+
 #include <yarp/eigen/Eigen.h>
 
 using namespace bfl;
@@ -33,7 +35,7 @@ PFilter::PFilter
     point_estimate_extraction_(9, 3)
 {
     // Setup point estimates extraction
-    point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::mode);
+    point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::emode);
 
     // Open estimate output port
     if (!port_estimate_out_.open("/" + port_prefix + "/estimate:o"))
@@ -192,14 +194,26 @@ void PFilter::filteringStep()
 {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    SIS::filteringStep();
+    if (getFilteringStep() != 0)
+        prediction_->predict(cor_particle_, pred_particle_);
 
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    correction_->correct(pred_particle_, cor_particle_);
 
-    std::cout << "Executed step in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms"
-              << std::endl;
+    /* Normalize weights using LogSumExp. */
+    cor_particle_.weight().array() -= utils::log_sum_exp(cor_particle_.weight());
+
+    log();
+
+    double neff = resampling_->neff(cor_particle_.weight());
+    if (neff < static_cast<double>(num_particle_)/3.0)
+    {
+        ParticleSet res_particle(num_particle_, state_size_);
+        VectorXi res_parent(num_particle_, 1);
+
+        resampling_->resample(cor_particle_, res_particle, res_parent);
+
+        cor_particle_ = res_particle;
+    }
 
     // Update the point estimate extraction
     bool valid_estimate;
@@ -230,6 +244,14 @@ void PFilter::filteringStep()
         toEigen(estimate_yarp) = estimate;
         port_estimate_out_.write();
     }
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    std::cout << "Executed step in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << " ms"
+              << std::endl;
+    std::cout << "Neff is: " << neff<< std::endl << std::endl;
 }
 
 

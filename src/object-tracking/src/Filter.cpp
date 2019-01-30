@@ -59,6 +59,9 @@ bool Filter::initialization()
     corrected_state_ = initial_state_;
     predicted_state_ = Gaussian(initial_state_.dim_linear, initial_state_.dim_circular);
 
+    // Reset the sample time of the prediction
+    prediction_->getStateModel().setProperty("reset_time");
+
     return true;
 }
 
@@ -76,6 +79,9 @@ bool Filter::reset_filter()
     // Reset the correction step
     correction_->reset();
 
+    // Reset the sample time of the prediction
+    prediction_->getStateModel().setProperty("reset_time");
+
     reset();
 
     return true;
@@ -84,6 +90,9 @@ bool Filter::reset_filter()
 
 bool Filter::stop_filter()
 {
+    // Reset the sample time of the prediction
+    prediction_->getStateModel().setProperty("reset_time");
+
     reboot();
 
     return true;
@@ -158,6 +167,9 @@ void Filter::filteringStep()
     estimate_yarp.resize(7);
     toEigen(estimate_yarp) = estimate;
     port_estimate_out_.write();
+
+    // Allow the state model to evaluate the sampling time online
+    prediction_->getStateModel().setProperty("tick");
 }
 
 

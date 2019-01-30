@@ -116,11 +116,16 @@ int main(int argc, char** argv)
     }
 
     std::size_t number_particles;
+    double likelihood_variance;
     if (filter_type == "upf")
     {
         /* Get number of particles. */
         ResourceFinder rf_particles = rf.findNestedResourceFinder("PARTICLES");
         number_particles = rf_particles.check("number",  Value(1)).asInt();
+
+        /* Get likelihood variance */
+        ResourceFinder rf_likelihood = rf.findNestedResourceFinder("LIKELIHOOD");
+        likelihood_variance = rf_likelihood.check("variance",  Value(0.1)).asDouble();
     }
 
     /* Get initial condition. */
@@ -250,7 +255,10 @@ int main(int argc, char** argv)
     if (filter_type == "upf")
     {
         yInfo() << log_ID << "Particles:";
-        yInfo() << log_ID << "- number:" << number_particles;
+        yInfo() << log_ID << "- number:"   << number_particles;
+
+        yInfo() << log_ID << "Likelihood:";
+        yInfo() << log_ID << "- variance:" << likelihood_variance;
     }
 
     yInfo() << log_ID << "Initial conditions:";
@@ -550,7 +558,7 @@ int main(int argc, char** argv)
             new NanoflannPointCloudPrediction(object_mesh_path_ply, pc_pred_num_samples));
 
         std::unique_ptr<ProximityLikelihood> proximity_likelihood = std::unique_ptr<ProximityLikelihood>(
-            new ProximityLikelihood(noise_covariance(0), std::move(distances_approximation)));
+            new ProximityLikelihood(likelihood_variance, std::move(distances_approximation)));
 
         pf_correction = std::unique_ptr<ParticlesCorrection>(
             new ParticlesCorrection(std::move(correction), std::move(proximity_likelihood)));

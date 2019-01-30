@@ -118,6 +118,8 @@ int main(int argc, char** argv)
 
     std::size_t number_particles;
     double likelihood_variance;
+    std::string point_estimate_method;
+    std::size_t point_estimate_window_size;
     if (filter_type == "upf")
     {
         /* Get number of particles. */
@@ -127,6 +129,11 @@ int main(int argc, char** argv)
         /* Get likelihood variance */
         ResourceFinder rf_likelihood = rf.findNestedResourceFinder("LIKELIHOOD");
         likelihood_variance = rf_likelihood.check("variance",  Value(0.1)).asDouble();
+
+        /* Get point estimate extraction method and window size. */
+        ResourceFinder rf_point_estimate = rf.findNestedResourceFinder("POINT_ESTIMATE");
+        point_estimate_method      = rf_point_estimate.check("method", Value("smean")).asString();
+        point_estimate_window_size = rf_point_estimate.check("window_size", Value(10)).asInt();
     }
 
     /* Get initial condition. */
@@ -580,6 +587,8 @@ int main(int argc, char** argv)
             filter = std::move(std::unique_ptr<PFilter>(
                                    new PFilter(port_prefix,
                                                number_particles,
+                                               point_estimate_method,
+                                               point_estimate_window_size,
                                                std::move(pf_initialization),
                                                std::move(pf_prediction),
                                                std::move(pf_correction),

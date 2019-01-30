@@ -83,6 +83,9 @@ bool PFilter::reset_filter()
     // Reset the correction step
     reset_correction();
 
+    // Reset the sample time of the prediction
+    prediction_->getStateModel().setProperty("reset_time");
+
     // Reset the point estimate
     point_estimate_extraction_.clear();
 
@@ -94,6 +97,9 @@ bool PFilter::reset_filter()
 
 bool PFilter::stop_filter()
 {
+    // Reset the sample time of the prediction
+    prediction_->getStateModel().setProperty("reset_time");
+
     reboot();
 
     return true;
@@ -256,6 +262,9 @@ void PFilter::filteringStep()
               << " ms"
               << std::endl;
     std::cout << "Neff is: " << neff<< std::endl << std::endl;
+
+    // Allow the state model to evaluate the sampling time online
+    prediction_->getStateModel().setProperty("tick");
 }
 
 

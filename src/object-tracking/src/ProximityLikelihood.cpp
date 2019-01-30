@@ -5,7 +5,7 @@ using namespace Eigen;
 
 
 ProximityLikelihood::ProximityLikelihood(const double noise_variance, std::unique_ptr<NanoflannPointCloudPrediction> squared_distance_estimator) :
-    gain_(-0.5 * noise_variance),
+    gain_(-0.5 / noise_variance),
     squared_distance_estimator_(std::move(squared_distance_estimator))
 { }
 

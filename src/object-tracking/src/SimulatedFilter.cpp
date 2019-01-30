@@ -50,6 +50,9 @@ void SimulatedFilter::filteringStep()
               << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
               << " ms"
               << std::endl;
+
+    // Allow the state model to evaluate the sampling time online
+    prediction_->getStateModel().setProperty("tick");
 }
 
 

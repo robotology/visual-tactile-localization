@@ -101,7 +101,7 @@ int main(int argc, char** argv)
     ResourceFinder rf_mode_parameters = rf.findNestedResourceFinder("MODE");
     const std::string mode        = rf_mode_parameters.check("mode",  Value("simulation")).asString();
     const std::string robot       = rf_mode_parameters.check("robot", Value("icubSim")).asString();
-    const std::string filter_type = rf_mode_parameters.check("filter", Value("ukf")).asString();
+    const std::string filter_type = rf_mode_parameters.check("filter_type", Value("ukf")).asString();
 
     std::unique_ptr<Network> yarp;
     if (mode != "simulation")

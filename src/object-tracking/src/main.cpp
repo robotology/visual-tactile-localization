@@ -170,6 +170,8 @@ int main(int argc, char** argv)
     /* Depth. */
     ResourceFinder rf_depth = rf.findNestedResourceFinder("DEPTH");
     std::string depth_fetch_mode = rf_depth.check("fetch_mode", Value("new_image")).toString();
+    std::size_t depth_u_stride = rf_depth.check("u_stride", Value(1)).asInt();
+    std::size_t depth_v_stride = rf_depth.check("v_stride", Value(1)).asInt();
 
     /* Simulation parameters. */
     double sim_sample_time;
@@ -292,6 +294,8 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Depth:";
     yInfo() << log_ID << "- fetch_mode:" << depth_fetch_mode;
+    yInfo() << log_ID << "- u_stride:" << depth_u_stride;
+    yInfo() << log_ID << "- v_stride:" << depth_v_stride;
 
     if (mode == "simulation")
     {
@@ -411,6 +415,8 @@ int main(int argc, char** argv)
                                                                          rf.findPath("shader/"),
                                                                          depth_fetch_mode,
                                                                          pc_outlier_threshold,
+                                                                         depth_u_stride,
+                                                                         depth_v_stride,
                                                                          enable_send_bbox,
                                                                          enable_send_mask,
                                                                          icub_pc_shared_data));
@@ -427,6 +433,8 @@ int main(int argc, char** argv)
                                                                          rf.findPath("shader/"),
                                                                          depth_fetch_mode,
                                                                          pc_outlier_threshold,
+                                                                         depth_u_stride,
+                                                                         depth_v_stride,
                                                                          enable_send_bbox,
                                                                          enable_send_mask,
                                                                          icub_pc_shared_data));

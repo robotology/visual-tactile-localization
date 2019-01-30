@@ -5,12 +5,13 @@
 
 #include <Eigen/Dense>
 
+#include <chrono>
+
 class DiscretizedKinematicModel : public bfl::LinearStateModel
 {
 public:
     DiscretizedKinematicModel
     (
-        const double T,
         const double sigma_x,
         const double sigma_y,
         const double sigma_z,
@@ -30,6 +31,10 @@ public:
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 
 protected:
+    void evaluateStateTransitionMatrix(const double T);
+
+    void evaluateNoiseCovarianceMatrix(const double T);
+
     /**
      * State transition matrix.
      */
@@ -39,6 +44,17 @@ protected:
      * Noise covariance matrix.
      */
     Eigen::MatrixXd Q_;
+
+    /**
+     * Squared power spectral densities
+     */
+    Eigen::VectorXd sigma_position_;
+
+    Eigen::VectorXd sigma_orientation_;
+
+    std::chrono::high_resolution_clock::time_point last_time_;
+
+    bool last_time_set_ = false;
 };
 
 #endif /* DISCRETIZEDKINEMATICMODEL_H */

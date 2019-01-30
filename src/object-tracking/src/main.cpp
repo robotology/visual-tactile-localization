@@ -151,7 +151,7 @@ int main(int argc, char** argv)
 
     /* Kinematic model. */
     ResourceFinder rf_kinematic_model = rf.findNestedResourceFinder("KINEMATIC_MODEL");
-    double sample_time     = rf_kinematic_model.check("sample_time", Value("1.0")).asDouble();
+    // double sample_time     = rf_kinematic_model.check("sample_time", Value("1.0")).asDouble();
     VectorXd kin_q_x       = loadVectorDouble(rf_kinematic_model, "q_x", 3);
     VectorXd kin_q_x_dot   = loadVectorDouble(rf_kinematic_model, "q_x_dot", 3);
     VectorXd kin_q_eul     = loadVectorDouble(rf_kinematic_model, "q_eul", 3);
@@ -288,7 +288,7 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- cov_eul_dot_0: " << eigenToString(cov_eul_dot_0);
 
     yInfo() << log_ID << "Kinematic model:";
-    yInfo() << log_ID << "- sample_time:" << sample_time;
+    // yInfo() << log_ID << "- sample_time:" << sample_time;
     yInfo() << log_ID << "- q_x:"         << eigenToString(kin_q_x);
     yInfo() << log_ID << "- q_x_dot:"     << eigenToString(kin_q_x_dot);
     yInfo() << log_ID << "- q_eul:"       << eigenToString(kin_q_eul);
@@ -476,7 +476,7 @@ int main(int argc, char** argv)
     //                                kin_q_eul(0), kin_q_eul(1), kin_q_eul(2),
     //                                kin_q_eul_dot(0), kin_q_eul_dot(1), kin_q_eul_dot(2)));
     std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<DiscretizedKinematicModel>(
-        new DiscretizedKinematicModel(sample_time,
+        new DiscretizedKinematicModel(// sample_time,
                                       kin_q_x(0), kin_q_x(1), kin_q_x(2),
                                       kin_q_eul(0), kin_q_eul(1), kin_q_eul(2)));
 

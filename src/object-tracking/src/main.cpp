@@ -4,6 +4,7 @@
 #include <iCubPointCloud.h>
 #include <InitParticles.h>
 #include <DiscreteKinematicModel.h>
+#include <DiscretizedKinematicModel.h>
 #include <NanoflannPointCloudPrediction.h>
 #include <ParticlesCorrection.h>
 #include <PFilter.h>
@@ -461,12 +462,16 @@ int main(int argc, char** argv)
     /**
      * StateModel
      */
-    std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<DiscreteKinematicModel>(
-        new DiscreteKinematicModel(sample_time,
-                                   kin_q_x(0), kin_q_x(1), kin_q_x(2),
-                                   kin_q_x_dot(0), kin_q_x_dot(1), kin_q_x_dot(2),
-                                   kin_q_eul(0), kin_q_eul(1), kin_q_eul(2),
-                                   kin_q_eul_dot(0), kin_q_eul_dot(1), kin_q_eul_dot(2)));
+    // std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<DiscreteKinematicModel>(
+    //     new DiscreteKinematicModel(sample_time,
+    //                                kin_q_x(0), kin_q_x(1), kin_q_x(2),
+    //                                kin_q_x_dot(0), kin_q_x_dot(1), kin_q_x_dot(2),
+    //                                kin_q_eul(0), kin_q_eul(1), kin_q_eul(2),
+    //                                kin_q_eul_dot(0), kin_q_eul_dot(1), kin_q_eul_dot(2)));
+    std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<DiscretizedKinematicModel>(
+        new DiscretizedKinematicModel(sample_time,
+                                      kin_q_x(0), kin_q_x(1), kin_q_x(2),
+                                      kin_q_eul(0), kin_q_eul(1), kin_q_eul(2)));
 
     std::size_t dim_linear;
     std::size_t dim_circular;

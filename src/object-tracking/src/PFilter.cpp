@@ -14,6 +14,8 @@ PFilter::PFilter
 (
     const std::string port_prefix,
     const std::size_t num_particle,
+    const std::string point_estimate_method,
+    const std::size_t point_estimate_window_size,
     std::unique_ptr<ParticleSetInitialization> initialization,
     std::unique_ptr<PFPrediction> prediction,
     std::unique_ptr<ParticlesCorrection> correction,
@@ -35,7 +37,8 @@ PFilter::PFilter
     point_estimate_extraction_(9, 3)
 {
     // Setup point estimates extraction
-    point_estimate_extraction_.setMethod(EstimatesExtraction::ExtractionMethod::smean);
+    set_point_estimate_method(point_estimate_method);
+    point_estimate_extraction_.setMobileAverageWindowSize(point_estimate_window_size);
 
     // Open estimate output port
     if (!port_estimate_out_.open("/" + port_prefix + "/estimate:o"))

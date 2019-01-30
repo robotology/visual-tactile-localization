@@ -41,6 +41,8 @@ public:
     (
         const std::string port_prefix,
         const std::size_t num_particle,
+        const std::string point_estimate_method,
+        const std::size_t point_estimate_window_size,
         std::unique_ptr<bfl::ParticleSetInitialization> initialization,
         std::unique_ptr<bfl::PFPrediction> prediction,
         std::unique_ptr<ParticlesCorrection> correction,

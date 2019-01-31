@@ -1,7 +1,5 @@
 #include <iCubHandOcclusion.h>
 
-
-
 #include <yarp/eigen/Eigen.h>
 
 using namespace Eigen;

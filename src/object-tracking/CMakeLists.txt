@@ -184,13 +184,43 @@ set(${EXE_TARGET_NAME}_SHADER_FRAG
 set(${EXE_TARGET_NAME}_YCB_MUSTARD     ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard/nontextured.ply ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard/nontextured.obj)
 set(${EXE_TARGET_NAME}_YCB_POWER_DRILL ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_power_drill/nontextured.ply)
 
+set(${EXE_TARGET_NAME}_ICUB_RIGHT_HAND_MESHES
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ail0.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ail1.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ail2.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ail3.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_forearm.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_indexbase.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_lil0.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_lil1.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_lil2.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_lil3.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_littlebase.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ml0.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ml1.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ml2.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ml3.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_palm.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ril0.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ril1.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ril2.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ril3.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_ringbase.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_tl0.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_tl1.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_tl2.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_tl3.obj
+        ${CMAKE_CURRENT_SOURCE_DIR}/mesh/icub_right_arm/r_tl4.obj
+        )
+
 file(GLOB ${EXE_TARGET_NAME}_XML ${CMAKE_CURRENT_SOURCE_DIR}/app/scripts/*.xml)
 
-yarp_install(FILES ${${EXE_TARGET_NAME}_CONF}            DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)
-yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_VERT}     DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
-yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_FRAG}     DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
-yarp_install(FILES ${${EXE_TARGET_NAME}_YCB_MUSTARD}     DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/mesh/ycb_mustard)
-yarp_install(FILES ${${EXE_TARGET_NAME}_YCB_POWER_DRILL} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/mesh/ycb_power_drill)
-yarp_install(FILES ${${EXE_TARGET_NAME}_XML}             DESTINATION ${ICUBCONTRIB_APPLICATIONS_INSTALL_DIR})
+yarp_install(FILES ${${EXE_TARGET_NAME}_CONF}                   DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)
+yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_VERT}            DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
+yarp_install(FILES ${${EXE_TARGET_NAME}_SHADER_FRAG}            DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/shader)
+yarp_install(FILES ${${EXE_TARGET_NAME}_YCB_MUSTARD}            DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/mesh/ycb_mustard)
+yarp_install(FILES ${${EXE_TARGET_NAME}_YCB_POWER_DRILL}        DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/mesh/ycb_power_drill)
+yarp_install(FILES ${${EXE_TARGET_NAME}_ICUB_RIGHT_HAND_MESHES} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking/mesh/icub_right_arm)
+yarp_install(FILES ${${EXE_TARGET_NAME}_XML}                    DESTINATION ${ICUBCONTRIB_APPLICATIONS_INSTALL_DIR})
 
 install(TARGETS ${EXE_TARGET_NAME} DESTINATION bin)

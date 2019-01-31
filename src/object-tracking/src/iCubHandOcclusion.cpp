@@ -49,6 +49,7 @@ iCubHandOcclusion::iCubHandOcclusion
 
     bool valid_shader_path;
     std::string shader_path;
+    std::tie(valid_shader_path, shader_path) = mesh_model_->getShaderPaths();
     if (!valid_shader_path)
     {
         std::string err = "ICUBHANDOCCLUSION::CTOR::ERROR\n\tError: cannot retrieve paths containing the sicad engine shaders.";

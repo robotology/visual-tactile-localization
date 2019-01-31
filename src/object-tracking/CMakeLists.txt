@@ -53,10 +53,14 @@ set(${EXE_TARGET_NAME}_HDR
     include/DiscretizedKinematicModel.h
     include/Filter.h
     include/GaussianFilter_.h
+    include/iCubArmModel.h
+    include/iCubHandOcclusion.h
     include/iCubPointCloud.h
     include/InitParticles.h
     include/MeshImporter.h
+    include/MeshModel.h
     include/NanoflannPointCloudPrediction.h
+    include/ObjectOcclusion.h
     include/PFilter.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
@@ -75,10 +79,13 @@ set(${EXE_TARGET_NAME}_SRC
     src/DiscretizedKinematicModel.cpp
     src/Filter.cpp
     src/GaussianFilter_.cpp
+    src/iCubArmModel.cpp
+    src/iCubHandOcclusion.cpp
     src/iCubPointCloud.cpp
     src/InitParticles.cpp
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
+    src/ObjectOcclusion.cpp
     src/PFilter.cpp
     src/PointCloudModel.cpp
     src/ProximityLikelihood.cpp

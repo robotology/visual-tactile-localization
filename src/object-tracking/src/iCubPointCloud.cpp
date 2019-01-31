@@ -380,10 +380,14 @@ std::pair<bool, std::vector<std::pair<int, int>>> iCubPointCloud::getObject2DCoo
     {
         for (std::size_t v = top_left.second; v < bottom_right.second; v+= stride_v)
         {
-            // TODO
-            // check for undesired object coordinates
             coordinates.push_back(std::make_pair(u, v));
         }
+    }
+
+    for (auto& occlusion : occlusions_)
+    {
+        bool valid;
+        std::tie(valid, coordinates) = occlusion->removeOcclusionCoordinates(coordinates);
     }
 
     return std::make_pair(true, coordinates);
@@ -737,6 +741,11 @@ bool iCubPointCloud::setProperty(const std::string& property)
     }
 
     return set_successful;
+}
+
+void iCubPointCloud::addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_occlusion)
+{
+    occlusions_.push_back(std::move(object_occlusion));
 }
 
 

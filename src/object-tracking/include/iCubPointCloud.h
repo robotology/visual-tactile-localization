@@ -6,7 +6,7 @@
 #include <Eigen/Dense>
 
 #include <GazeController.h>
-
+#include <ObjectOcclusion.h>
 #include <PointCloudModel.h>
 #include <PointCloudPrediction.h>
 
@@ -70,6 +70,8 @@ public:
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 
     bool setProperty(const std::string& property) override;
+
+    void addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_occlusion);
 
 protected:
     iCubPointCloud
@@ -238,6 +240,11 @@ protected:
      * Instance of superimpose cad
      */
     std::unique_ptr<SICAD> object_sicad_;
+
+    /**
+     * Object occlusions.
+     */
+    std::vector<std::unique_ptr<ObjectOcclusion>> occlusions_;
 
     /**
      * Exogenous data used by this class.

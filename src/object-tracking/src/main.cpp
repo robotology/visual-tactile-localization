@@ -540,8 +540,7 @@ int main(int argc, char** argv)
                                  false,
                                  hand_laterality_contacts,
                                  "object-tracking",
-                                 "object-tracking/icub-arm-model/contacts" + hand_laterality_contacts,
-                                 "_cleaned"));
+                                 "object-tracking/icub-arm-model/contacts" + hand_laterality_contacts));
 
             std::unique_ptr<iCubHandContactsModel> icub_contacts = std::unique_ptr<iCubHandContactsModel>(
                 new iCubHandContactsModel(std::move(icub_arm), used_fingers_contacts));

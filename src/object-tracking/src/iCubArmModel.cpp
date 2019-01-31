@@ -72,17 +72,17 @@ iCubArmModel::iCubArmModel(const bool use_thumb,
     if (!file_found(model_path_["index4"]))
         throw std::runtime_error("ERROR::ICUBARMMODEL::CTOR::FILE\nERROR: 3D mesh file r_ail3.obj not found!");
 
-    model_path_["medium0"] = rf.findFileByName("r_ml0.obj");
-    if (!file_found(model_path_["medium0"]))
+    model_path_["middle0"] = rf.findFileByName("r_ml0.obj");
+    if (!file_found(model_path_["middle0"]))
         throw std::runtime_error("ERROR::ICUBARMMODEL::CTOR::FILE\nERROR: 3D mesh file r_ml0.obj not found!");
-    model_path_["medium1"] = rf.findFileByName("r_ml1.obj");
-    if (!file_found(model_path_["medium1"]))
+    model_path_["middle1"] = rf.findFileByName("r_ml1.obj");
+    if (!file_found(model_path_["middle1"]))
         throw std::runtime_error("ERROR::ICUBARMMODEL::CTOR::FILE\nERROR: 3D mesh file r_ml1.obj not found!");
-    model_path_["medium2"] = rf.findFileByName("r_ml2.obj");
-    if (!file_found(model_path_["medium2"]))
+    model_path_["middle2"] = rf.findFileByName("r_ml2.obj");
+    if (!file_found(model_path_["middle2"]))
         throw std::runtime_error("ERROR::ICUBARMMODEL::CTOR::FILE\nERROR: 3D mesh file r_ml2.obj not found!");
-    model_path_["medium3"] = rf.findFileByName("r_ml3.obj");
-    if (!file_found(model_path_["medium3"]))
+    model_path_["middle3"] = rf.findFileByName("r_ml3.obj");
+    if (!file_found(model_path_["middle3"]))
         throw std::runtime_error("ERROR::ICUBARMMODEL::CTOR::FILE\nERROR: 3D mesh file r_ml3.obj not found!");
 
     model_path_["ring0"] = rf.findFileByName("r_ringbase.obj");
@@ -232,7 +232,7 @@ std::tuple<bool, std::vector<Superimpose::ModelPoseContainer>> iCubArmModel::get
                     Vector j_o = dcm2axis(Ha * icub_kin_finger_[fng].getH0());
 
                     if (fng == 1) finger_s = "index0";
-                    else if (fng == 2) finger_s = "medium0";
+                    else if (fng == 2) finger_s = "middle0";
                     else if (fng == 3) finger_s = "ring0";
                     else if (fng == 4) finger_s = "little0";
 
@@ -248,7 +248,7 @@ std::tuple<bool, std::vector<Superimpose::ModelPoseContainer>> iCubArmModel::get
 
                     if (fng == 0) finger_s = "thumb";
                     else if (fng == 1) finger_s = "index";
-                    else if (fng == 2) finger_s = "medium";
+                    else if (fng == 2) finger_s = "middle";
                     else if (fng == 3) finger_s = "ring";
                     else if (fng == 4) finger_s = "little";
                     finger_s += std::to_string(i + 1);

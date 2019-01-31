@@ -2,6 +2,7 @@
 #include <Filter.h>
 #include <GaussianFilter_.h>
 #include <iCubArmModel.h>
+#include <iCubHandContactsModel.h>
 #include <iCubHandOcclusion.h>
 #include <iCubPointCloud.h>
 #include <InitParticles.h>
@@ -76,6 +77,44 @@ VectorXd loadVectorDouble
     }
 
     return vector;
+}
+
+
+std::vector<std::string> loadListString
+(
+    ResourceFinder &rf,
+    const std::string key
+)
+{
+    bool ok = true;
+
+    if (rf.find(key).isNull())
+        ok = false;
+
+    Bottle* b = rf.find(key).asList();
+    if (b == nullptr)
+        ok = false;
+
+    if (!ok)
+    {
+        yError() << "[Main]" << "Unable to load list of strings with key" << key;
+        std::exit(EXIT_FAILURE);
+    }
+
+    std::vector<std::string> list;
+    for (std::size_t i = 0; i < b->size(); i++)
+    {
+        Value item_v = b->get(i);
+        if (item_v.isNull())
+            return std::vector<std::string>();
+
+        if (!item_v.isString())
+            return std::vector<std::string>();
+
+        list.push_back(item_v.asString());
+    }
+
+    return list;
 }
 
 
@@ -192,6 +231,12 @@ int main(int argc, char** argv)
     ResourceFinder rf_hand_occlusion = rf.findNestedResourceFinder("HAND_OCCLUSION");
     bool handle_hand_occlusion            = rf_hand_occlusion.check("handle_occlusion", Value(false)).asBool();
     std::string hand_laterality_occlusion = rf_hand_occlusion.check("laterality", Value("right")).asString();
+
+    /* Hand contacts. */
+    ResourceFinder rf_hand_contacts = rf.findNestedResourceFinder("HAND_CONTACTS");
+    bool handle_hand_contacts                      = rf_hand_contacts.check("handle_contacts", Value(false)).asBool();
+    std::string hand_laterality_contacts           = rf_hand_contacts.check("laterality", Value()).asString();
+    std::vector<std::string> used_fingers_contacts = loadListString(rf_hand_contacts, "used_fingers");
 
     /* Simulation parameters. */
     double sim_sample_time;
@@ -474,7 +519,7 @@ int main(int argc, char** argv)
                                  false,
                                  hand_laterality_occlusion,
                                  "object-tracking",
-                                 "object-tracking/icub-arm-model/" + hand_laterality_occlusion));
+                                 "object-tracking/icub-arm-model/occlusion" + hand_laterality_occlusion));
 
             /* Initialize iCubHandOcclusion that reads the hand palm pose from a port
                and creates an occlusion mask to be used to clean part of the point cloud of the object
@@ -486,6 +531,20 @@ int main(int argc, char** argv)
 
             /* Add the occlusion to the iCubPointCloud. */
             pc_icub->addObjectOcclusion(std::move(hand_occlusion));
+        }
+
+        if (handle_hand_contacts)
+        {
+            std::unique_ptr<iCubArmModel> icub_arm = std::unique_ptr<iCubArmModel>(
+                new iCubArmModel(false,
+                                 false,
+                                 hand_laterality_contacts,
+                                 "object-tracking",
+                                 "object-tracking/icub-arm-model/contacts" + hand_laterality_contacts,
+                                 "_cleaned"));
+
+            std::unique_ptr<iCubHandContactsModel> icub_contacts = std::unique_ptr<iCubHandContactsModel>(
+                new iCubHandContactsModel(std::move(icub_arm), used_fingers_contacts));
         }
 
         measurement_model = std::move(pc_icub);

@@ -1,6 +1,8 @@
 #include <Correction.h>
 #include <Filter.h>
 #include <GaussianFilter_.h>
+#include <iCubArmModel.h>
+#include <iCubHandOcclusion.h>
 #include <iCubPointCloud.h>
 #include <InitParticles.h>
 #include <DiscreteKinematicModel.h>
@@ -186,6 +188,11 @@ int main(int argc, char** argv)
     std::size_t depth_u_stride = rf_depth.check("u_stride", Value(1)).asInt();
     std::size_t depth_v_stride = rf_depth.check("v_stride", Value(1)).asInt();
 
+    /* Hand occlusion. */
+    ResourceFinder rf_hand_occlusion = rf.findNestedResourceFinder("HAND_OCCLUSION");
+    bool handle_hand_occlusion            = rf_hand_occlusion.check("handle_occlusion", Value(false)).asBool();
+    std::string hand_laterality_occlusion = rf_hand_occlusion.check("laterality", Value("right")).asString();
+
     /* Simulation parameters. */
     double sim_sample_time;
     double sim_duration;
@@ -312,6 +319,9 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- fetch_mode:" << depth_fetch_mode;
     yInfo() << log_ID << "- u_stride:" << depth_u_stride;
     yInfo() << log_ID << "- v_stride:" << depth_v_stride;
+
+    yInfo() << log_ID << "Hand occlusion:";
+    yInfo() << log_ID << "- handle_occlusion:" << handle_hand_occlusion;
 
     if (mode == "simulation")
     {
@@ -454,6 +464,28 @@ int main(int argc, char** argv)
                                                                          enable_send_bbox,
                                                                          enable_send_mask,
                                                                          icub_pc_shared_data));
+        }
+
+        if (handle_hand_occlusion)
+        {
+            /* Initialize iCubArmModel providing the 3D pose of the hand parts relative to the hand palm. */
+            std::unique_ptr<iCubArmModel> icub_arm = std::unique_ptr<iCubArmModel>(
+                new iCubArmModel(false,
+                                 false,
+                                 hand_laterality_occlusion,
+                                 "object-tracking",
+                                 "object-tracking/icub-arm-model/" + hand_laterality_occlusion));
+
+            /* Initialize iCubHandOcclusion that reads the hand palm pose from a port
+               and creates an occlusion mask to be used to clean part of the point cloud of the object
+               from undesired parts due to hand occlusion. */
+            std::unique_ptr<iCubHandOcclusion> hand_occlusion = std::unique_ptr<iCubHandOcclusion>(
+                new iCubHandOcclusion(std::move(icub_arm),
+                                      "object-tracking/icub-hand-occlusion/" + hand_laterality_occlusion,
+                                      "left"));
+
+            /* Add the occlusion to the iCubPointCloud. */
+            pc_icub->addObjectOcclusion(std::move(hand_occlusion));
         }
 
         measurement_model = std::move(pc_icub);

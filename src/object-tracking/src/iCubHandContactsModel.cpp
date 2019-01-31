@@ -32,9 +32,30 @@ iCubHandContactsModel::iCubHandContactsModel(std::unique_ptr<iCubArmModel> icub_
         }
     }
 
+    // Load also additional meshes of cleaned fingertips
+    for (auto finger_name : used_fingers)
+    {
+        for (auto path : meshes_paths)
+        {
+            if(path.first.find(getFingerTipName(finger_name)) != string::npos)
+            {
+                // removes .obj and append _cleaned.obj
+                std::string new_path = path.second.substr(0, path.second.size() - 4) + "_cleaned.obj";
+
+                if (!loadMesh(path.first + "cleaned", new_path))
+                {
+                    std::string err = "ICUBHANDCONTACTSMODEL::CTOR::ERROR\n\tError: cannot load iCub hand meshes.";
+                    throw(std::runtime_error(err));
+                }
+
+                yInfo() << log_ID_ << "Mesh of hand part " + path.first + "(cleaned) successfully loaded.";
+            }
+        }
+    }
+
     // Sample clouds on fingertips
     for (auto used_finger : used_fingers)
-        sampleFingerTip(getFingerTipName(used_finger));
+        sampleFingerTip(getFingerTipName(used_finger) + "cleaned");
 }
 
 
@@ -118,7 +139,7 @@ bool iCubHandContactsModel::loadMesh(const std::string hand_part_name, const std
     return true;
 }
 
-#include <fstream>
+
 void iCubHandContactsModel::sampleFingerTip(const std::string fingertip_name)
 {
     simpleTriMesh& mesh = hand_meshes_.at(fingertip_name);

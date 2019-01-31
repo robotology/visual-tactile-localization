@@ -19,8 +19,7 @@ iCubArmModel::iCubArmModel(const bool use_thumb,
                            const bool use_forearm,
                            const std::string& laterality,
                            const std::string& context,
-                           const std::string& port_prefix,
-                           const std::string& mesh_path_postfix) :
+                           const std::string& port_prefix) :
     port_prefix_(port_prefix),
     use_thumb_(use_thumb),
     use_forearm_(use_forearm),
@@ -31,7 +30,7 @@ iCubArmModel::iCubArmModel(const bool use_thumb,
 {
     ResourceFinder rf;
 
-    rf.setDefaultContext(context + "/mesh/icub_" + laterality + "_arm" + mesh_path_postfix);
+    rf.setDefaultContext(context + "/mesh/icub_" + laterality + "_arm");
 
     model_path_["palm"] = rf.findFileByName("r_palm.obj");
     if (!file_found(model_path_["palm"]))

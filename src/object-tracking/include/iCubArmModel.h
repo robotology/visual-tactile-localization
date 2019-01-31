@@ -17,8 +17,7 @@ public:
                  const bool use_forearm,
                  const std::string& laterality,
                  const std::string& context,
-                 const std::string& port_prefix,
-                 const std::string& mesh_path_postfix = "");
+                 const std::string& port_prefix);
 
     virtual ~iCubArmModel() noexcept;
 

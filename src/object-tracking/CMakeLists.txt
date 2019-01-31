@@ -45,6 +45,9 @@ if (USE_OPENMP)
   find_package(OpenMP REQUIRED)
 endif()
 
+# OpenGL
+find_package(OpenGL REQUIRED)
+
 set(${EXE_TARGET_NAME}_HDR
     include/ParticlesCorrection.h
     include/Correction.h
@@ -113,6 +116,7 @@ target_include_directories(${EXE_TARGET_NAME}
                            # http://vcg.isti.cnr.it/vcglib/
                            # https://github.com/cnr-isti-vclab/vcglib
                            ${CMAKE_CURRENT_SOURCE_DIR}/include/vcglib
+                           ${OPENGL_INCLUDE_DIRS}
                            )
 
 target_link_libraries(${EXE_TARGET_NAME}
@@ -125,6 +129,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       YARP::YARP_cv
                       ${OpenCV_LIBS}
                       iCubGazeCtrlLibrary
+                      ${OPENGL_LIBRARIES}
                       )
 
 if (USE_OPENMP)

@@ -30,7 +30,7 @@ iCubArmModel::iCubArmModel(const bool use_thumb,
 {
     ResourceFinder rf;
 
-    rf.setDefaultContext(context + "/mesh/icub");
+    rf.setDefaultContext(context + "/mesh/icub_" + laterality + "_arm");
 
     model_path_["palm"] = rf.findFileByName("r_palm.obj");
     if (!file_found(model_path_["palm"]))

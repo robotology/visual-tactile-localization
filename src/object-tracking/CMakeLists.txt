@@ -54,6 +54,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/Filter.h
     include/GaussianFilter_.h
     include/iCubArmModel.h
+    include/iCubHandContactsModel.h
     include/iCubHandOcclusion.h
     include/iCubPointCloud.h
     include/InitParticles.h
@@ -80,6 +81,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/Filter.cpp
     src/GaussianFilter_.cpp
     src/iCubArmModel.cpp
+    src/iCubHandContactsModel.cpp
     src/iCubHandOcclusion.cpp
     src/iCubPointCloud.cpp
     src/InitParticles.cpp

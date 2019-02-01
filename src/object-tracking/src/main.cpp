@@ -414,8 +414,8 @@ int main(int argc, char** argv)
         yInfo() << log_ID << "- bbox_tl_0:" << eigenToString(bbox_tl_0);
         yInfo() << log_ID << "- bbox_br_0:" << eigenToString(bbox_br_0);
     }
-    yInfo() << log_ID << "-cov_0"             << eigenToString(bbox_cov_0);
-    yInfo() << log_ID << "-Q"                 << eigenToString(bbox_Q);
+    yInfo() << log_ID << "- cov_0"            << eigenToString(bbox_cov_0);
+    yInfo() << log_ID << "- Q"                << eigenToString(bbox_Q);
     yInfo() << log_ID << "-R"                 << eigenToString(bbox_R);
 
     yInfo() << log_ID << "Logging:";

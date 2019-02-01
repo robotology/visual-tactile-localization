@@ -21,7 +21,7 @@ bool ObjectOcclusion::findOcclusionArea()
 {
     // Get occlusion pose
     bool valid_pose;
-    VectorXd pose;
+    MatrixXd pose;
     std::tie(valid_pose, pose) = getOcclusionPose();
 
     if (!valid_pose)

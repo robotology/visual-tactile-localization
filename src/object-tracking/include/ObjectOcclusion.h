@@ -18,7 +18,7 @@ public:
 
     std::pair<bool, Object2DCoordinates> removeOcclusionCoordinates(const Object2DCoordinates& object_coordinates);
 
-    virtual std::pair<bool, Eigen::VectorXd> getOcclusionPose() = 0;
+    virtual std::pair<bool, Eigen::MatrixXd> getOcclusionPose() = 0;
 
     virtual std::tuple<bool, Eigen::VectorXd, Eigen::VectorXd> getCameraPose() = 0;
 

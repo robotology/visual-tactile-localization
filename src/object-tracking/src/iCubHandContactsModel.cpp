@@ -1,11 +1,26 @@
 #include <iCubHandContactsModel.h>
 
-using namespace Eigen;
+#include <yarp/eigen/Eigen.h>
 
-iCubHandContactsModel::iCubHandContactsModel(std::unique_ptr<iCubArmModel> icub_arm, std::vector<std::string> used_fingers) :
+using namespace Eigen;
+using namespace yarp::eigen;
+
+iCubHandContactsModel::iCubHandContactsModel
+(
+    std::unique_ptr<iCubArmModel> icub_arm,
+    std::vector<std::string> used_fingers,
+    const std::string port_prefix
+) :
     icub_arm_(std::move(icub_arm)),
     used_fingers_(used_fingers)
 {
+    // Try to open the hand pose input port
+    if (!(hand_pose_port_in.open("/" + port_prefix + "/hand_pose:i")))
+    {
+        std::string err = "ICUBHANDCONTACTSMODEL::CTOR::ERROR\n\tError: cannot open hand pose input port.";
+        throw(std::runtime_error(err));
+    }
+
     // Retrieve icub hand mesh paths
     bool valid_paths;
     SICAD::ModelPathContainer meshes_paths;
@@ -56,6 +71,84 @@ iCubHandContactsModel::iCubHandContactsModel(std::unique_ptr<iCubArmModel> icub_
     // Sample clouds on fingertips
     for (auto used_finger : used_fingers)
         sampleFingerTip(getFingerTipName(used_finger) + "cleaned");
+
+    // Resize the output measurement vector
+    std::size_t number_samples = 0;
+    for (auto used_finger : used_fingers_)
+        number_samples += sampled_fingertips_[getFingerTipName(used_finger)].cols();
+    measurements_.resize(3 * number_samples);
+
+    // Evaluate accessors to subvector of the measurement vector
+    for (std::size_t i = 0, total_size = 0; i < used_fingers_.size(); i++)
+    {
+        std::string fingertip_name = getFingerTipName(used_fingers_[i]);
+
+        int sample_size = sampled_fingertips_.at(fingertip_name).cols();
+
+        measurements_accessor_.emplace(std::make_pair(fingertip_name, Map<MatrixXd>(measurements_.segment(total_size, sample_size).data(), 3, sample_size)));
+
+        total_size += sample_size;
+    }
+}
+
+
+iCubHandContactsModel::~iCubHandContactsModel()
+{
+    hand_pose_port_in.close();
+}
+
+
+bool iCubHandContactsModel::freezeMeasurements()
+{
+    // TODO: maybe it is better to store the previous pose
+    // and return this in case of missing read
+
+    // Get the hand of the pose
+    yarp::sig::Vector* hand_pose_yarp = hand_pose_port_in.read(false);
+
+    if (hand_pose_yarp == nullptr)
+        return false;
+
+    MatrixXd hand_pose = toEigen(*hand_pose_yarp);
+
+    // Get the pose of all part of the hand according to finger forward kinematics
+    bool valid_hand_model_pose;
+    std::vector<Superimpose::ModelPoseContainer> vector_poses;
+    std::tie(valid_hand_model_pose, vector_poses) = icub_arm_->getModelPose(hand_pose);
+
+    if (!valid_hand_model_pose)
+        return false;
+
+    Superimpose::ModelPoseContainer& poses = vector_poses[0];
+
+    // Transform points sampled on the fingertips
+    // to the root reference frame of the robot
+    for (auto used_finger : used_fingers_)
+    {
+        std::string fingertip_name = getFingerTipName(used_finger);
+
+        const Superimpose::ModelPose& fingertip_pose = poses.find(fingertip_name)->second;
+        Map<const VectorXd> pose_eigen(fingertip_pose.data(), 7);
+
+        // Compose the transformation
+        // pose_eigen is expressed as (cartesian, axis, angle)
+        Transform<double, 3, Eigen::Affine> finger_to_root;
+        finger_to_root = Translation<double, 3>(pose_eigen.segment(0, 3));
+        finger_to_root.rotate(AngleAxisd(pose_eigen(6), pose_eigen.segment(3, 3)));
+
+        // Transform sampled points
+        measurements_accessor_.at(fingertip_name) = finger_to_root * sampled_fingertips_.at(fingertip_name).colwise().homogeneous();
+
+        // Accessors write directly inside the variable measurement_
+    }
+
+    return true;
+}
+
+
+Eigen::VectorXd iCubHandContactsModel::measure() const
+{
+    return measurements_;
 }
 
 
@@ -209,7 +302,7 @@ void iCubHandContactsModel::sampleFingerTip(const std::string fingertip_name)
 
     // Store the cloud
     std::size_t number_points = std::distance(poiss_mesh.vert.begin(), poiss_mesh.vert.end());
-    VectorXd cloud(3 * number_points);
+    MatrixXd cloud(3, number_points);
     std::size_t i = 0;
     for (VertexIterator vi = poiss_mesh.vert.begin(); vi != poiss_mesh.vert.end(); vi++)
     {
@@ -217,7 +310,7 @@ void iCubHandContactsModel::sampleFingerTip(const std::string fingertip_name)
 	const auto p = vi->cP();
 
         // Add to the cloud
-        cloud.segment(i * 3, 3) << p[0], p[1], p[2];
+        cloud.col(i) << p[0], p[1], p[2];
 
         i++;
     }

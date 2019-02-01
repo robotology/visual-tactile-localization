@@ -1,6 +1,7 @@
 #ifndef FILTER_H
 #define FILTER_H
 
+#include <BoundingBoxEstimator.h>
 #include <Correction.h>
 #include <GaussianFilter_.h>
 
@@ -28,6 +29,7 @@ public:
         bfl::Gaussian& initial_state,
         std::unique_ptr<bfl::GaussianPrediction> prediction,
         std::unique_ptr<Correction> correction,
+        std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
         std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
     );
 
@@ -61,6 +63,8 @@ protected:
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_out_;
 
     yarp::os::Port port_rpc_command_;
+
+    std::unique_ptr<BoundingBoxEstimator> bbox_estimator_;
 
     std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share_;
 

@@ -1,3 +1,4 @@
+#include <BoundingBoxEstimator.h>
 #include <Correction.h>
 #include <Filter.h>
 #include <GaussianFilter_.h>
@@ -274,17 +275,30 @@ int main(int argc, char** argv)
     /* Mesh parameters. */
     ResourceFinder rf_object = rf.findNestedResourceFinder("OBJECT");
     const std::string object_name          = rf_object.check("object_name", Value("ycb_mustard")).asString();
-    const std::string iol_object_name      = rf_object.check("iol_object_name", Value("mustard")).asString();
     const std::string object_mesh_path_obj = rf.findPath("mesh/" + object_name) + "/nontextured.obj";
     const std::string object_mesh_path_ply = rf.findPath("mesh/" + object_name) + "/nontextured.ply";
-    bool use_bbox_0                        = rf_object.check("use_bbox_0", Value(false)).asBool();
+
+    /* Bounding box estimator. */
+    VectorXd bbox_cov_0;
+    VectorXd bbox_Q;
+    VectorXd bbox_R;
     VectorXd bbox_tl_0;
     VectorXd bbox_br_0;
+
+    ResourceFinder rf_bbox = rf.findNestedResourceFinder("BBOX_ESTIMATOR");
+    const std::string iol_object_name = rf_bbox.check("iol_object_name", Value("Bottle")).asString();
+    bbox_cov_0                        = loadVectorDouble(rf_bbox, "cov_0", 4);
+    bbox_Q                            = loadVectorDouble(rf_bbox, "Q", 4);
+    bbox_R                            = loadVectorDouble(rf_bbox, "R", 4);
+    bool use_bbox_0                   = rf_bbox.check("use_bbox_0", Value(false)).asBool();
     if (use_bbox_0)
     {
-        bbox_tl_0 = loadVectorDouble(rf_object, "bbox_tl_0", 2);
-        bbox_br_0 = loadVectorDouble(rf_object, "bbox_br_0", 2);
+        bbox_tl_0 = loadVectorDouble(rf_bbox, "bbox_tl_0", 2);
+        bbox_br_0 = loadVectorDouble(rf_bbox, "bbox_br_0", 2);
     }
+    MatrixXd bbox_cov_0_diagonal = bbox_cov_0.asDiagonal();
+    MatrixXd bbox_Q_diagonal = bbox_Q.asDiagonal();
+    MatrixXd bbox_R_diagonal = bbox_R.asDiagonal();
 
     /* Logging parameters. */
     ResourceFinder rf_logging = rf.findNestedResourceFinder("LOG");
@@ -297,12 +311,12 @@ int main(int argc, char** argv)
     }
 
     /* Miscellaneous. */
-    bool enable_send_bbox;
+    bool enable_send_hull;
     bool enable_send_mask;
     if (mode != "SIMULATION")
     {
         ResourceFinder rf_misc = rf.findNestedResourceFinder("MISC");
-        enable_send_bbox = rf_misc.check("send_bbox", Value(false)).asBool();
+        enable_send_hull = rf_misc.check("send_hull", Value(false)).asBool();
         enable_send_mask = rf_misc.check("send_mask", Value(false)).asBool();
     }
 
@@ -391,20 +405,25 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- object_name:"        << object_name;
     yInfo() << log_ID << "- mesh path is (obj):" << object_mesh_path_obj;
     yInfo() << log_ID << "- mesh path is (ply):" << object_mesh_path_ply;
-    yInfo() << log_ID << "- iol_object_name:"    << iol_object_name;
-    yInfo() << log_ID << "- use_bbox_0:"         << use_bbox_0;
+
+    yInfo() << log_ID << "Bounding box estimator:";
+    yInfo() << log_ID << "- iol_object_name:" << iol_object_name;
+    yInfo() << log_ID << "- use_bbox_0:"      << use_bbox_0;
     if (use_bbox_0)
     {
         yInfo() << log_ID << "- bbox_tl_0:" << eigenToString(bbox_tl_0);
         yInfo() << log_ID << "- bbox_br_0:" << eigenToString(bbox_br_0);
     }
+    yInfo() << log_ID << "-cov_0"             << eigenToString(bbox_cov_0);
+    yInfo() << log_ID << "-Q"                 << eigenToString(bbox_Q);
+    yInfo() << log_ID << "-R"                 << eigenToString(bbox_R);
 
     yInfo() << log_ID << "Logging:";
     yInfo() << log_ID << "- enable_log:"        << enable_log;
     yInfo() << log_ID << "- absolute_log_path:" << log_path;
 
     yInfo() << log_ID << "Miscellaneous:";
-    yInfo() << log_ID << "- send_bbox:" << enable_send_bbox;
+    yInfo() << log_ID << "- send_hull:" << enable_send_hull;
     yInfo() << log_ID << "- send_mask:" << enable_send_mask;
 
     /**
@@ -471,45 +490,17 @@ int main(int argc, char** argv)
     }
     else
     {
-        std::unique_ptr<iCubPointCloud> pc_icub;
-        if (use_bbox_0)
-        {
-            std::pair<int, int> top_left = std::make_pair(static_cast<int>(bbox_tl_0(0)), static_cast<int>(bbox_tl_0(1)));
-            std::pair<int, int> bottom_right = std::make_pair(static_cast<int>(bbox_br_0(0)), static_cast<int>(bbox_br_0(1)));
-            // Giving the initial bounding box of the object from outside
-            pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(std::move(pc_prediction),
-                                                                         noise_covariance_diagonal,
-                                                                         std::make_pair(top_left, bottom_right),
-                                                                         port_prefix,
-                                                                         "left",
-                                                                         object_mesh_path_obj,
-                                                                         rf.findPath("shader/"),
-                                                                         depth_fetch_mode,
-                                                                         pc_outlier_threshold,
-                                                                         depth_u_stride,
-                                                                         depth_v_stride,
-                                                                         enable_send_bbox,
-                                                                         enable_send_mask,
-                                                                         icub_pc_shared_data));
-        }
-        else
-        {
-            // Using OPC/IOL to take the initial bounding box of the object
-            pc_icub = std::unique_ptr<iCubPointCloud>(new iCubPointCloud(std::move(pc_prediction),
-                                                                         noise_covariance_diagonal,
-                                                                         iol_object_name,
-                                                                         port_prefix,
-                                                                         "left",
-                                                                         object_mesh_path_obj,
-                                                                         rf.findPath("shader/"),
-                                                                         depth_fetch_mode,
-                                                                         pc_outlier_threshold,
-                                                                         depth_u_stride,
-                                                                         depth_v_stride,
-                                                                         enable_send_bbox,
-                                                                         enable_send_mask,
-                                                                         icub_pc_shared_data));
-        }
+        std::unique_ptr<iCubPointCloud> pc_icub = std::unique_ptr<iCubPointCloud>(
+            new iCubPointCloud(std::move(pc_prediction),
+                               noise_covariance_diagonal,
+                               port_prefix,
+                               "left",
+                               depth_fetch_mode,
+                               pc_outlier_threshold,
+                               depth_u_stride,
+                               depth_v_stride,
+                               enable_send_hull,
+                               icub_pc_shared_data));
 
         if (handle_hand_occlusion)
         {
@@ -614,6 +605,42 @@ int main(int argc, char** argv)
                                                    state_size,
                                                    ut_alpha, ut_beta, ut_kappa,
                                                    measurement_sub_size));
+
+    /**
+     * BoundingBoxEstimator initialization.
+     */
+    std::unique_ptr<BoundingBoxEstimator> bbox_estimator;
+    if (use_bbox_0)
+    {
+        // Giving the initial bounding box of the object from outside
+        std::pair<int, int> top_left = std::make_pair(static_cast<int>(bbox_tl_0(0)), static_cast<int>(bbox_tl_0(1)));
+        std::pair<int, int> bottom_right = std::make_pair(static_cast<int>(bbox_br_0(0)), static_cast<int>(bbox_br_0(1)));
+        bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
+            new BoundingBoxEstimator(std::make_pair(top_left, bottom_right),
+                                     "object-tracking/bbox-estimator",
+                                     "left",
+                                     object_mesh_path_obj,
+                                     rf.findPath("shader/"),
+                                     iol_object_name,
+                                     enable_send_mask,
+                                     bbox_cov_0_diagonal,
+                                     bbox_Q_diagonal,
+                                     bbox_R_diagonal));
+    }
+    else
+    {
+        bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
+            new BoundingBoxEstimator("object-tracking/bbox-estimator",
+                                     "left",
+                                     object_mesh_path_obj,
+                                     rf.findPath("shader/"),
+                                     iol_object_name,
+                                     enable_send_mask,
+                                     bbox_cov_0_diagonal,
+                                     bbox_Q_diagonal,
+                                     bbox_R_diagonal));
+    }
+
     /**
      * Filter.
      */
@@ -638,6 +665,7 @@ int main(int argc, char** argv)
                                               initial_state,
                                               std::move(prediction),
                                               std::move(correction),
+                                              std::move(bbox_estimator),
                                               icub_pc_shared_data)));
         }
     }
@@ -683,6 +711,7 @@ int main(int argc, char** argv)
                                                std::move(pf_prediction),
                                                std::move(pf_correction),
                                                std::move(pf_resampling),
+                                               std::move(bbox_estimator),
                                                icub_pc_shared_data)));
         }
     }

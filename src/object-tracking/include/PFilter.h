@@ -7,6 +7,7 @@
 #include <BayesFilters/Resampling.h>
 #include <BayesFilters/SIS.h>
 
+#include <BoundingBoxEstimator.h>
 #include <iCubPointCloud.h>
 #include <ParticlesCorrection.h>
 
@@ -47,6 +48,7 @@ public:
         std::unique_ptr<bfl::PFPrediction> prediction,
         std::unique_ptr<ParticlesCorrection> correction,
         std::unique_ptr<bfl::Resampling> resampling,
+        std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
         std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
     );
 
@@ -78,6 +80,8 @@ protected:
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_out_;
 
     yarp::os::Port port_rpc_command_;
+
+    std::unique_ptr<BoundingBoxEstimator> bbox_estimator_;
 
     std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share_;
 

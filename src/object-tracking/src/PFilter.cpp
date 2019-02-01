@@ -20,6 +20,7 @@ PFilter::PFilter
     std::unique_ptr<PFPrediction> prediction,
     std::unique_ptr<ParticlesCorrection> correction,
     std::unique_ptr<Resampling> resampling,
+    std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
     std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
 ) :
     ParticleCorrectionReset(correction.get()),
@@ -33,6 +34,7 @@ PFilter::PFilter
         std::move(correction),
         std::move(resampling)
     ),
+    bbox_estimator_(std::move(bbox_estimator)),
     icub_point_cloud_share_(icub_point_cloud_share),
     point_estimate_extraction_(9, 3)
 {
@@ -80,6 +82,9 @@ bool PFilter::run_filter()
 
 bool PFilter::reset_filter()
 {
+    // Reset the bounding box estimator
+    bbox_estimator_->reset();
+
     // Reset the correction step
     reset_correction();
 
@@ -203,6 +208,9 @@ void PFilter::filteringStep()
 {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
+    bbox_estimator_->step();
+    icub_point_cloud_share_->setBoundingBox(bbox_estimator_->getEstimate());
+
     if (getFilteringStep() != 0)
         prediction_->predict(cor_particle_, pred_particle_);
 
@@ -237,8 +245,8 @@ void PFilter::filteringStep()
         // Log
         logger(point_estimate_.transpose());
 
-        // Update shared data with iCubPointCloudData
-        icub_point_cloud_share_->setObjectEstimate(point_estimate);
+        // Use estimate as hint for the bounding box estimator
+        bbox_estimator_->setObjectPose(point_estimate);
 
         // Send estimate over the port using axis/angle representation
         VectorXd estimate(7);

@@ -109,6 +109,9 @@ protected:
     bool is_initialized_;
     bool is_exogenous_initialized_;
 
+    std::size_t steady_state_counter_;
+    std::size_t steady_state_threshold_;
+
     /**
      * Noise covariances (process and measurement noise)
      */

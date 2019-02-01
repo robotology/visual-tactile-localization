@@ -3,6 +3,8 @@
 #include <yarp/cv/Cv.h>
 #include <yarp/sig/Vector.h>
 
+#include <iostream>
+
 using namespace Eigen;
 using namespace yarp::os;
 using namespace yarp::sig;
@@ -65,6 +67,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
 ) :
     pred_bbox_(4),
     corr_bbox_(4),
+    eye_name_(eye_name),
     IOL_object_name_(IOL_object_name),
     send_mask_(send_mask),
     user_provided_mean_0_(false),
@@ -127,6 +130,9 @@ BoundingBoxEstimator::BoundingBoxEstimator
 
     // Initialize state covariance
     corr_bbox_.covariance() = cov_0_;
+
+    steady_state_counter_ = 0;
+    steady_state_threshold_ = 200;
 }
 
 
@@ -185,6 +191,8 @@ void BoundingBoxEstimator::reset()
     }
 
     corr_bbox_.covariance() = cov_0_;
+
+    steady_state_counter_ = 0;
 }
 
 
@@ -215,7 +223,11 @@ void BoundingBoxEstimator::correct()
     std::tie(valid_measure, measured_bbox) = measure();
 
     if (!valid_measure)
+    {
         corr_bbox_ = pred_bbox_;
+
+        return;
+    }
 
     MatrixXd Py = pred_bbox_.covariance() + R_;
 
@@ -226,7 +238,7 @@ void BoundingBoxEstimator::correct()
     corr_bbox_.covariance() = pred_bbox_.covariance() - K * Py * K.transpose();
 }
 
-#include <iostream>
+
 VectorXd BoundingBoxEstimator::evalExogenousInput()
 {
     if (!updateObjectMask())
@@ -244,18 +256,16 @@ VectorXd BoundingBoxEstimator::evalExogenousInput()
     curr_bbox(2) = bbox_rect.width;
     curr_bbox(3) = bbox_rect.height;
 
-    VectorXd delta = VectorXd::Zero(4);
+    VectorXd exog_input = VectorXd::Zero(4);
 
     if (is_proj_bbox_initialized_)
     {
         // Evaluate finite differences
-        delta = curr_bbox - proj_bbox_;
+        VectorXd delta = curr_bbox - proj_bbox_;
 
         if (!is_exogenous_initialized_)
         {
-            std::cout << delta.segment(0, 2).norm() << std::endl;
-
-            if (delta.segment(0, 2).norm() < 5)
+            if (steady_state_counter_ > steady_state_threshold_)
             {
                 is_exogenous_initialized_ = true;
 
@@ -263,13 +273,13 @@ VectorXd BoundingBoxEstimator::evalExogenousInput()
                 bbox_width_ratio_ = corr_bbox_.mean(2) / bbox_rect.width;
                 bbox_height_ratio_ = corr_bbox_.mean(3) / bbox_rect.height;
             }
-            else
-                delta = VectorXd::Zero(4);
+
         }
         else
         {
-            delta(2) *= bbox_width_ratio_;
-            delta(3) *= bbox_height_ratio_;
+            exog_input = delta;
+            exog_input(2) *= bbox_width_ratio_;
+            exog_input(3) *= bbox_height_ratio_;
         }
     }
 
@@ -277,7 +287,10 @@ VectorXd BoundingBoxEstimator::evalExogenousInput()
     proj_bbox_ = curr_bbox;
     is_proj_bbox_initialized_ = true;
 
-    return delta;
+    // Increment counter
+    steady_state_counter_++;
+
+    return exog_input;
 }
 
 
@@ -427,10 +440,17 @@ bool BoundingBoxEstimator::updateObjectMask()
 
     // Project mesh onto the camera plane
     // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
+    bool valid_superimpose = false;
     if (eye_name_ == "left")
-        object_sicad_->superimpose(object_pose_container, eye_pos_left.data(), eye_att_left.data(), object_mask_);
+        valid_superimpose = object_sicad_->superimpose(object_pose_container, eye_pos_left.data(), eye_att_left.data(), object_mask_);
     else if (eye_name_ == "right")
-        object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), object_mask_);
+        valid_superimpose = object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), object_mask_);
+
+    if (!valid_superimpose)
+    {
+        std::string err = "BOUNDINGBOXESTIMATOR::UPDATEOBJECTMASK::ERROR\n\tError: cannot superimpose mesh onto the camera plane.";
+        throw(std::runtime_error(err));
+    }
 
     // Convert to gray scale
     cv::cvtColor(object_mask_, object_mask_, CV_BGR2GRAY);

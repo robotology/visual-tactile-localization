@@ -49,7 +49,7 @@ endif()
 find_package(OpenGL REQUIRED)
 
 set(${EXE_TARGET_NAME}_HDR
-    include/ParticlesCorrection.h
+    include/BoundingBoxEstimator.h
     include/Correction.h
     include/DiscreteKinematicModel.h
     include/DiscretizedKinematicModel.h
@@ -64,6 +64,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/MeshModel.h
     include/NanoflannPointCloudPrediction.h
     include/ObjectOcclusion.h
+    include/ParticlesCorrection.h
     include/PFilter.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
@@ -76,7 +77,7 @@ set(${EXE_TARGET_NAME}_HDR
     )
 
 set(${EXE_TARGET_NAME}_SRC
-    src/ParticlesCorrection.cpp
+    src/BoundingBoxEstimator.cpp
     src/Correction.cpp
     src/DiscreteKinematicModel.cpp
     src/DiscretizedKinematicModel.cpp
@@ -90,6 +91,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
     src/ObjectOcclusion.cpp
+    src/ParticlesCorrection.cpp
     src/PFilter.cpp
     src/PointCloudModel.cpp
     src/ProximityLikelihood.cpp

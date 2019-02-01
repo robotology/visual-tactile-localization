@@ -17,7 +17,7 @@ iCubHandOcclusion::iCubHandOcclusion
     eye_name_(eye_name)
 {
     // Try to open the hand pose input port
-    if (!(hand_pose_port_in.open("/" + port_prefix + "/opc/rpc:o")))
+    if (!(hand_pose_port_in.open("/" + port_prefix + "/hand_pose:i")))
     {
         std::string err = "ICUBHANDOCCLUSION::CTOR::ERROR\n\tError: cannot open hand pose input port.";
         throw(std::runtime_error(err));
@@ -70,18 +70,25 @@ iCubHandOcclusion::iCubHandOcclusion
 }
 
 
-iCubHandOcclusion:: ~iCubHandOcclusion()
-{ }
-
-
-std::pair<bool, VectorXd> iCubHandOcclusion::getOcclusionPose()
+iCubHandOcclusion::~iCubHandOcclusion()
 {
+    hand_pose_port_in.close();
+}
+
+
+std::pair<bool, MatrixXd> iCubHandOcclusion::getOcclusionPose()
+{
+    // TODO: maybe it is better to store the previous pose
+    // and return this in case of missing read
+
     yarp::sig::Vector* hand_pose = hand_pose_port_in.read(false);
 
     if (hand_pose == nullptr)
-        return std::make_pair(false, VectorXd());
+        return std::make_pair(false, MatrixXd());
 
-    return std::make_pair(true, toEigen(*hand_pose));
+    MatrixXd pose = toEigen(*hand_pose);
+
+    return std::make_pair(true, pose);
 }
 
 std::tuple<bool, VectorXd, VectorXd> iCubHandOcclusion::getCameraPose()

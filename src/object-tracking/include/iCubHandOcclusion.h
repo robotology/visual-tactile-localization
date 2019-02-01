@@ -17,7 +17,7 @@ public:
 
     virtual ~iCubHandOcclusion();
 
-    std::pair<bool, Eigen::VectorXd> getOcclusionPose() override;
+    std::pair<bool, Eigen::MatrixXd> getOcclusionPose() override;
 
     std::tuple<bool, Eigen::VectorXd, Eigen::VectorXd> getCameraPose() override;
 

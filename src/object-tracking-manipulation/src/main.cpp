@@ -1,0 +1,1103 @@
+#include <ArmController.h>
+#include <thrift/ObjectTrackingManipulationIDL.h>
+
+#include <yarp/math/Math.h>
+#include <yarp/os/BufferedPort.h>
+#include <yarp/os/ResourceFinder.h>
+#include <yarp/os/RFModule.h>
+#include <yarp/os/LogStream.h>
+#include <yarp/sig/Vector.h>
+
+#include <cstdlib>
+#include <string>
+
+using namespace yarp::math;
+using namespace yarp::os;
+using namespace yarp::sig;
+
+enum class Status { Idle,
+                    MoveUp, MoveDown, MoveLeft, MoveRight, MoveIn, MoveOut, WaitHandMove,
+                    MoveRest, WaitArmRest,
+                    MoveHome, WaitArmHome,
+                    Stop };
+
+
+Vector loadVectorDouble
+(
+    ResourceFinder &rf,
+    const std::string key,
+    const std::size_t size
+)
+{
+    bool ok = true;
+
+    if (rf.find(key).isNull())
+        ok = false;
+
+    Bottle* b = rf.find(key).asList();
+    if (b == nullptr)
+        ok = false;
+
+    if (b->size() != size)
+        ok = false;
+
+    if (!ok)
+    {
+        yError() << "[Main]" << "Unable to load vector" << key;
+        std::exit(EXIT_FAILURE);
+    }
+
+    Vector vector(size);
+    for (std::size_t i = 0; i < b->size(); i++)
+    {
+        Value item_v = b->get(i);
+        if (item_v.isNull())
+            return Vector(0);
+
+        if (!item_v.isDouble())
+            return Vector(0);
+
+        vector(i) = item_v.asDouble();
+    }
+
+    return vector;
+}
+
+
+class ObjectTrackingManipulation: public yarp::os::RFModule,
+                                  public ObjectTrackingManipulationIDL
+{
+protected:
+    /*
+     * Period.
+     */
+    double period_;
+
+    /*
+     * Controllers.
+     */
+
+    // arm controllers
+    ArmController right_arm_;
+    ArmController left_arm_;
+
+    // cartesian controller trajectory times
+    double default_traj_time_;
+    double default_shift_time_;
+
+    // max_torso_pitch
+    bool limit_torso_pitch_;
+    double max_torso_pitch_;
+
+    // max_torso_yaw
+    bool limit_torso_yaw_;
+    double max_torso_yaw_;
+
+    // hand shift for movements
+    double hand_shift_;
+
+    // pitch and roll angle used during
+    // approaching phase
+    double hand_default_pitch_;
+    double hand_default_roll_left_;
+    double hand_default_roll_right_;
+
+    // left and right arm rest positions
+    yarp::sig::Vector left_arm_home_pos_;
+    yarp::sig::Vector left_arm_home_att_;
+    yarp::sig::Vector right_arm_home_pos_;
+    yarp::sig::Vector right_arm_home_att_;
+
+    yarp::sig::Vector left_arm_rest_pos_;
+    yarp::sig::Vector left_arm_rest_att_;
+    yarp::sig::Vector right_arm_rest_pos_;
+    yarp::sig::Vector right_arm_rest_att_;
+
+    /*
+     * Rpc server.
+     */
+
+    // rpc server
+    yarp::os::RpcServer rpc_port_;
+
+    // mutexes required to share data between
+    // the RFModule thread and the rpc server thread
+    yarp::os::Mutex mutex_;
+
+    /*
+     * Status, booleans, defaults and names.
+     */
+
+    // status of the module
+    Status status_;
+    Status previous_status_;
+
+    // cartesian context
+    bool home_move_context_restored_;
+
+    // name of the robot
+    std::string robot_;
+
+    // name of arm to be used
+    std::string enable_torso_;
+    std::string hand_under_use_;
+    std::string hand_rest_;
+    std::string hand_home_;
+
+    // required to implement counters
+    // and timeouts
+    bool is_timer_started_;
+    double last_time_;
+    double hand_move_timeout_;
+    double hand_home_timeout_;
+    double hand_rest_timeout_;
+
+    /*
+     * Thrift
+     */
+
+    std::string set_hand(const std::string& laterality)
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        if ((laterality != "right") && (laterality != "left"))
+            reply = "[FAILED] You should specify a valid hand name.";
+        else
+        {
+            hand_under_use_ = laterality;
+            reply = "[OK] Set hand " + hand_under_use_ +  ".";
+        }
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string unset_hand()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        hand_under_use_.clear();
+
+        reply = "[OK] Current hand is now:" + hand_under_use_ + ".";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string move_up()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveUp;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string move_down()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveDown;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string move_left()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveLeft;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string move_right()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveRight;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string move_in()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveIn;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string move_out()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveOut;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string move_rest(const std::string& laterality)
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((laterality != "right") && (laterality != "left"))
+            return "[FAILED] You should specify a valid hand name.";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveRest;
+        hand_rest_ = laterality;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string move_home(const std::string& laterality)
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((laterality != "right") && (laterality != "left"))
+            return "[FAILED] You should specify a valid hand name.";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveHome;
+        hand_home_ = laterality;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+
+    std::string stop()
+    {
+        mutex_.lock();
+
+        std::string reply;
+
+        // change status
+        previous_status_ = status_;
+        status_ = Status::Stop;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string quit()
+    {
+        // stop the module
+        stopModule();
+
+        return "[OK] Closing...";
+    }
+
+    /*
+     * Implementation
+     */
+
+    /*
+     * Get an arm controller.
+     */
+    ArmController* getArmController(const std::string laterality)
+    {
+        if (laterality == "right")
+            return &right_arm_;
+        else if (laterality == "left")
+            return &left_arm_;
+        else
+            return nullptr;
+    }
+
+    /*
+     * Check if arm motion is done.
+     */
+    bool checkArmMotionDone(const std::string laterality, bool& is_done)
+    {
+        ArmController *arm = getArmController(laterality);
+
+        if (arm != nullptr)
+            return arm->cartesian()->checkMotionDone(&is_done);
+        else
+            return false;
+    }
+
+    /*
+     * Restore context.
+     */
+    bool restoreArmContext(const std::string laterality)
+    {
+        ArmController *arm = getArmController(laterality);
+
+        if (arm != nullptr)
+        {
+            arm->restoreContext();
+            return true;
+        }
+        else
+            return false;
+    }
+
+    /*
+     * Move the hand in the requested direction.
+     */
+    bool moveHand(const std::string laterality, const std::string direction)
+    {
+        // check if the hand name is valid
+        if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
+            return false;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return false;
+
+        // get the current position of the palm of the hand
+        yarp::sig::Vector pos;
+        yarp::sig::Vector att;
+        if (!arm->cartesian()->getPose(pos, att))
+            return false;
+
+        // shift position as required
+        if (direction == "up")
+            pos[2] += hand_shift_;
+        else if (direction == "down")
+            pos[2] -= hand_shift_;
+        else if (direction == "left")
+            pos[1] -= hand_shift_;
+        else if (direction == "right")
+            pos[1] += hand_shift_;
+        else if (direction == "in")
+            pos[0] -= hand_shift_;
+        else if (direction == "out")
+            pos[0] += hand_shift_;
+
+        // set trajectory time
+        if (default_shift_time_ < 1.0)
+        {
+            yError() << "You are requesting a shift time" << default_shift_time_ << "less than 1 seconds!";
+            return false;
+        }
+        if(!(arm->cartesian()->setTrajTime(default_shift_time_)))
+            return false;
+
+        // issue command
+        return arm->cartesian()->goToPoseSync(pos, att);
+    }
+
+    /*
+     * Move the arm in the default rest position.
+     */
+    bool moveArmRest(const std::string laterality)
+    {
+        // check if the hand name is valid
+        if ((laterality.empty()) || ((laterality != "right") && (laterality != "left")))
+            return false;
+
+        hand_rest_ = laterality;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_rest_);
+        if (arm == nullptr)
+            return false;
+
+        // set trajectory time
+        if (default_traj_time_ < 1.0)
+        {
+            yError() << "You are requesting a trajectory time" << default_traj_time_ << "less than 1 seconds!";
+            return false;
+        }
+        if (!(arm->cartesian()->setTrajTime(default_traj_time_)))
+            return false;
+
+        // issue command
+        bool ok;
+        if (hand_rest_ == "left")
+            ok = left_arm_.cartesian()->goToPoseSync(left_arm_rest_pos_, left_arm_rest_att_);
+        else if (hand_rest_ == "right")
+            ok = right_arm_.cartesian()->goToPoseSync(right_arm_rest_pos_, right_arm_rest_att_);
+        return ok;
+    }
+
+    bool moveArmHome(const std::string laterality)
+    {
+        // check if the hand name is valid
+        if ((laterality.empty()) || ((laterality != "right") && (laterality != "left")))
+            return false;
+
+        hand_home_ = laterality;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_home_);
+        if (arm == nullptr)
+            return false;
+
+        bool ok_torso_0;
+        arm->storeContext();
+        ok_torso_0 = arm->cartesian()->setLimits(0,0.0,0.0);
+        ok_torso_0 &= arm->cartesian()->setLimits(1,0.0,0.0);
+        ok_torso_0 &= arm->cartesian()->setLimits(2,0.0,0.0);
+        if (!ok_torso_0)
+        {
+            yError() << "Unable to force home torso sulution to 0. Resetting context.";
+            arm->restoreContext();
+            return false;
+        }
+
+        // set trajectory time
+        if (default_traj_time_ < 1.0)
+        {
+            yError() << "You are requesting a trajectory time" << default_traj_time_ << "less than 1 seconds!";
+            arm->restoreContext();
+            return false;
+        }
+        if (!(arm->cartesian()->setTrajTime(default_traj_time_)))
+        {
+            arm->restoreContext();
+            return false;
+        }
+
+        // issue command
+        bool ok_cmd;
+        if (hand_home_ == "left")
+            ok_cmd = left_arm_.cartesian()->goToPoseSync(left_arm_home_pos_, left_arm_home_att_);
+        else if (hand_home_ == "right")
+            ok_cmd = right_arm_.cartesian()->goToPoseSync(right_arm_home_pos_, right_arm_home_att_);
+        if (!ok_cmd)
+        {
+            arm->restoreContext();
+
+            return false;
+        }
+
+        home_move_context_restored_ = false;
+
+        return true;
+    }
+
+    /*
+     * Stop control of the specified arm.
+     */
+    bool stopArm(const std::string& laterality)
+    {
+        // check if the hand name is valid
+        if ((laterality.empty()) || ((laterality != "right") && (laterality != "left")))
+            return false;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(laterality);
+        if (arm == nullptr)
+            return false;
+
+        return arm->cartesian()->stopControl();
+    }
+
+public:
+    bool configure(yarp::os::ResourceFinder &rf)
+    {
+        // open the rpc server
+        if (!rpc_port_.open("/object-tracking-manipulation/cmd:i"))
+        {
+            yError() << "ObjectManipulationDemo: unable to open the RPC command port.";
+
+            return false;
+        }
+
+        if (!(this->yarp().attachAsServer(rpc_port_)))
+        {
+            yError() << "ObjectManipulationDemo: unable to attach the RPC command port to the RPC server.";
+
+            return false;
+        }
+
+        /*
+         * Parameters from configuration
+         */
+
+        robot_ = rf.check("robot", Value("icub")).asString();
+        yInfo() << "- robot" << robot_;
+
+        period_ = rf.check("period", Value(0.02)).asDouble();
+        yInfo() << "- period" << period_;
+
+        enable_torso_ = rf.check("enable_torso", Value("right")).asString();
+        yInfo() << "- enable_torso" << enable_torso_;
+
+        limit_torso_pitch_ = rf.check("limit_torso_pitch", Value(true)).asBool();
+        max_torso_pitch_ = rf.check("max_torso_pitch", Value(10.0)).asDouble();
+        yInfo() << "limit_torso_pitch" << limit_torso_pitch_;
+        yInfo() << "max_torso_pitch" << max_torso_pitch_;
+
+        limit_torso_yaw_ = rf.check("limit_torso_yaw", Value(true)).asBool();
+        max_torso_yaw_ = rf.check("max_torso_yaw", Value(10.0)).asDouble();
+        yInfo() << "limit_torso_yaw" << limit_torso_yaw_;
+        yInfo() << "max_torso_yaw" << max_torso_yaw_;
+
+        default_traj_time_ = rf.check("default_traj_time", Value(5.0)).asDouble();
+        yInfo() << "default_traj_time" << default_traj_time_;
+
+        default_shift_time_ = rf.check("default_shift_time", Value(5.0)).asDouble();
+        yInfo() << "default_shift_time" << default_shift_time_;
+
+        hand_shift_ = rf.check("hand_shift", Value(0.01)).asDouble();
+        yInfo() << "hand_shift" << hand_shift_;
+
+        hand_move_timeout_ = rf.check("hand_move_timeout", Value(10.0)).asDouble();
+        hand_home_timeout_ = rf.check("hand_home_timeout", Value(10.0)).asDouble();
+        hand_rest_timeout_ = rf.check("hand_rest_timeout", Value(10.0)).asDouble();
+        yInfo() << "hand_move_timeout" << hand_move_timeout_;
+        yInfo() << "hand_home_timeout" << hand_home_timeout_;
+        yInfo() << "hand_rest_timeout" << hand_rest_timeout_;
+
+        hand_default_pitch_      = rf.check("hand_default_pitch", Value(0.0)).asDouble();
+        hand_default_roll_left_  = rf.check("hand_default_roll_left", Value(0.0)).asDouble();
+        hand_default_roll_right_ = rf.check("hand_default_roll_right", Value(0.0)).asDouble();
+        yInfo() << "hand_default_pitch" << hand_default_pitch_;
+        yInfo() << "hand_default_roll_left" << hand_default_roll_left_;
+        yInfo() << "hand_default_roll_right" << hand_default_roll_right_;
+
+        Vector left_arm_home_pose = loadVectorDouble(rf, "left_arm_home_pose", 7);
+        left_arm_home_pos_ = left_arm_home_pose.subVector(0, 2);
+        left_arm_home_att_ = left_arm_home_pose.subVector(3, 6);
+        yInfo() << "left_arm_home_pos" << left_arm_home_pos_.toString();
+        yInfo() << "left_arm_home_att" << left_arm_home_att_.toString();
+
+        Vector left_arm_rest_pose = loadVectorDouble(rf, "left_arm_rest_pose", 7);
+        left_arm_rest_pos_ = left_arm_rest_pose.subVector(0, 2);
+        left_arm_rest_att_ = left_arm_rest_pose.subVector(3, 6);
+        yInfo() << "left_arm_rest_pos" << left_arm_rest_pos_.toString();
+        yInfo() << "left_arm_rest_att" << left_arm_rest_att_.toString();
+
+        Vector right_arm_home_pose = loadVectorDouble(rf, "right_arm_home_pose", 7);
+        right_arm_home_pos_ = right_arm_home_pose.subVector(0, 2);
+        right_arm_home_att_ = right_arm_home_pose.subVector(3, 6);
+        yInfo() << "right_arm_home_pos" << right_arm_home_pos_.toString();
+        yInfo() << "right_arm_home_att" << right_arm_home_att_.toString();
+
+        Vector right_arm_rest_pose = loadVectorDouble(rf, "right_arm_rest_pose", 7);
+        right_arm_rest_pos_ = right_arm_rest_pose.subVector(0, 2);
+        right_arm_rest_att_ = right_arm_rest_pose.subVector(3, 6);
+        yInfo() << "right_arm_rest_pos" << right_arm_rest_pos_.toString();
+        yInfo() << "right_arm_rest_att" << right_arm_rest_att_.toString();
+
+        /*
+         * Arm Controllers
+         */
+
+        // configure arm controllers
+        bool ok_right_ctl = right_arm_.configure("object-tracking-manipulation", robot_, "right");
+        if (!ok_right_ctl)
+        {
+            yError() << "ObjectManipulationDemo: unable to configure the right arm controller";
+            return false;
+        }
+
+        bool ok_left_ctl = left_arm_.configure("object-tracking-manipulation", robot_, "left");
+        if (!ok_left_ctl)
+        {
+            yError() << "ObjectManipulationDemo: unable to configure the left arm controller";
+            return false;
+        }
+
+        // enable torso on one arm only
+        ArmController& arm_ctl = (enable_torso_ == "left" ? left_arm_ : right_arm_);
+        arm_ctl.enableTorso();
+        if (limit_torso_pitch_)
+            arm_ctl.limitTorsoPitch(max_torso_pitch_);
+        if (limit_torso_yaw_)
+            arm_ctl.limitTorsoYaw(max_torso_yaw_);
+
+        /*
+         * Defaults
+         */
+
+        is_timer_started_ = false;
+
+        // set default status
+        status_ = Status::Idle;
+        previous_status_ = Status::Idle;
+
+        // clear arm names
+        hand_under_use_.clear();
+        hand_rest_.clear();
+        hand_home_.clear();
+
+        home_move_context_restored_ = true;
+
+        return true;
+    }
+
+    bool close()
+    {
+        // stop control of arms
+        stopArm("left");
+        stopArm("right");
+
+        // close arm controllers
+        right_arm_.close();
+        left_arm_.close();
+
+        // close ports
+        rpc_port_.close();
+    }
+
+    double getPeriod()
+    {
+        return period_;
+    }
+
+    bool updateModule()
+    {
+        if(isStopping())
+            return false;
+
+        mutex_.lock();
+
+        // get the current and previous status
+        const Status curr_status = status_;
+        const Status prev_status = previous_status_;
+
+        // get the current hand names
+        const std::string hand_under_use_l = hand_under_use_;
+        const std::string hand_home_l = hand_home_;
+        const std::string hand_rest_l = hand_rest_;
+
+        mutex_.unlock();
+
+        switch(curr_status)
+        {
+        case Status::Idle:
+        {
+            // nothing to do here
+            break;
+        }
+
+        case Status::MoveUp:
+        case Status::MoveDown:
+        case Status::MoveLeft:
+        case Status::MoveRight:
+        case Status::MoveIn:
+        case Status::MoveOut:
+        {
+            std::string direction;
+            if (curr_status == Status::MoveUp)
+                direction = "up";
+            else if (curr_status == Status::MoveDown)
+                direction = "down";
+            else if (curr_status == Status::MoveLeft)
+                direction = "left";
+            else if (curr_status == Status::MoveRight)
+                direction = "right";
+            else if (curr_status == Status::MoveIn)
+                direction = "in";
+            else if (curr_status == Status::MoveOut)
+                direction = "out";
+
+            if (!moveHand(hand_under_use_l, direction))
+            {
+                yError() << "[MOVE HAND] error while trying to move hand" << direction +  ".";
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to WaitHandMove
+            status_ = Status::WaitHandMove;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
+
+            break;
+        }
+
+        case Status::WaitHandMove:
+        {
+            // check status
+            bool is_done = false;
+            bool ok = checkArmMotionDone(hand_under_use_l, is_done);
+
+            // handle failure and timeout
+            if (!ok || ((yarp::os::Time::now() - last_time_ > hand_move_timeout_)))
+            {
+                yError() << "[WAIT HAND MOVE] check motion done failed or timeout reached.";
+
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
+                // go back to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            if (is_done)
+            {
+                // move completed
+                yInfo() << "[WAIT HAND MOVE] done.";
+
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+            }
+
+            break;
+        }
+
+        case Status::MoveRest:
+        {
+            if (!moveArmRest(hand_rest_l))
+            {
+                yError() << "[MOVE REST] error while trying to move arm to rest position.";
+
+                // stop control
+                stopArm(hand_rest_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                // reset arm name
+                hand_rest_.clear();
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to WaitArmRest
+            status_ = Status::WaitArmRest;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
+
+            break;
+        }
+
+        case Status::WaitArmRest:
+        {
+            // check status
+            bool is_done = false;
+            bool ok = checkArmMotionDone(hand_rest_l, is_done);
+
+            // handle failure and timeout
+            if (!ok || ((yarp::os::Time::now() - last_time_ > hand_rest_timeout_)))
+            {
+                yError() << "[WAIT MOVE REST] check motion done failed or timeout reached.";
+                // stop control
+                stopArm(hand_rest_l);
+
+                mutex_.lock();
+
+                // go back to Idle
+                status_ = Status::Idle;
+
+                // reset arm name
+                hand_rest_.clear();
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            if (is_done)
+            {
+                // approach completed
+                yInfo() << "[WAIT ARM REST] done";
+
+                // stop control
+                stopArm(hand_rest_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                // clear name
+                hand_rest_.clear();
+
+                mutex_.unlock();
+            }
+
+            break;
+        }
+
+        case Status::MoveHome:
+        {
+            if (!moveArmHome(hand_home_l))
+            {
+                yError() << "[MOVE REST] error while trying to move arm to home position.";
+
+                // stop control
+                stopArm(hand_home_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                // reset arm name
+                hand_home_.clear();
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to WaitArmHome
+            status_ = Status::WaitArmHome;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
+
+            break;
+        }
+
+        case Status::WaitArmHome:
+        {
+            // check status
+            bool is_done = false;
+            bool ok = checkArmMotionDone(hand_home_l, is_done);
+
+            // handle failure and timeout
+            if (!ok || ((yarp::os::Time::now() - last_time_ > hand_home_timeout_)))
+            {
+                yError() << "[WAIT MOVE HOME] check motion done failed or timeout reached.";
+                // stop control
+                stopArm(hand_home_l);
+
+                restoreArmContext(hand_home_l);
+                home_move_context_restored_ = true;
+
+                mutex_.lock();
+
+                // go back to Idle
+                status_ = Status::Idle;
+
+                // reset arm name
+                hand_home_.clear();
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            if (is_done)
+            {
+                // approach completed
+                yInfo() << "[WAIT ARM HOME] done";
+
+                // stop control
+                stopArm(hand_home_l);
+
+                restoreArmContext(hand_home_l);
+                home_move_context_restored_ = true;
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                // clear name
+                hand_home_.clear();
+
+                mutex_.unlock();
+            }
+
+            break;
+        }
+
+        case Status::Stop:
+        {
+            mutex_.lock();
+
+            // stop control
+            stopArm("right");
+            stopArm("left");
+
+            if ((previous_status_ == Status::MoveHome) || (previous_status_ == Status::WaitArmHome))
+            {
+                yInfo() << "Note: stopping while previous was MoveHome or WaitArmHome.";
+                yInfo() << "Note: hand_home_ = "  + hand_home_;
+
+                if ((!home_move_context_restored_) && ((hand_home_ == "left") || (hand_home_ == "right")))
+                {
+                    yInfo() << "Note: restore context previous to going in MoveHome.";
+
+                    restoreArmContext(hand_home_);
+
+                    home_move_context_restored_ = true;
+                }
+
+            }
+
+            // go back to Idle
+            status_ = Status::Idle;
+
+            mutex_.unlock();
+
+            break;
+        }
+        }
+
+        return true;
+    }
+};
+
+int main(int argc, char** argv)
+{
+    yarp::os::Network yarp;
+    if (!yarp.checkNetwork())
+    {
+        yError() << "YARP doesn't seem to be available";
+
+        return EXIT_FAILURE;
+    }
+
+    ObjectTrackingManipulation module;
+    yarp::os::ResourceFinder rf;
+    rf.setVerbose(true);
+    rf.setDefaultContext("object-tracking");
+    rf.setDefaultConfigFile("manipulation_config.ini");
+    rf.configure(argc,argv);
+
+    return module.runModule(rf);
+}

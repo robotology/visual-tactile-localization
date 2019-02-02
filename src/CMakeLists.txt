@@ -3,6 +3,11 @@ add_subdirectory(sfm-library)
 add_subdirectory(object-tracking-depth)
 add_subdirectory(object-tracking)
 
+option(BUILD_OBJECT_TRACKING_MANIPULATION "Build object-tracking-manipulation" OFF)
+if (BUILD_OBJECT_TRACKING_MANIPULATION)
+  add_subdirectory(object-tracking-manipulation)
+endif()
+
 option(BUILD_OBJECT_TRACKING_PLAYBACK "Build object-tracking-playback" OFF)
 if (BUILD_OBJECT_TRACKING_PLAYBACK)
   add_subdirectory(object-tracking-playback)

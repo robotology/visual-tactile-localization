@@ -642,60 +642,60 @@ public:
 
         limit_torso_pitch_ = rf.check("limit_torso_pitch", Value(true)).asBool();
         max_torso_pitch_ = rf.check("max_torso_pitch", Value(10.0)).asDouble();
-        yInfo() << "limit_torso_pitch" << limit_torso_pitch_;
-        yInfo() << "max_torso_pitch" << max_torso_pitch_;
+        yInfo() << "- limit_torso_pitch" << limit_torso_pitch_;
+        yInfo() << "- max_torso_pitch" << max_torso_pitch_;
 
         limit_torso_yaw_ = rf.check("limit_torso_yaw", Value(true)).asBool();
         max_torso_yaw_ = rf.check("max_torso_yaw", Value(10.0)).asDouble();
-        yInfo() << "limit_torso_yaw" << limit_torso_yaw_;
-        yInfo() << "max_torso_yaw" << max_torso_yaw_;
+        yInfo() << "- limit_torso_yaw" << limit_torso_yaw_;
+        yInfo() << "- max_torso_yaw" << max_torso_yaw_;
 
         default_traj_time_ = rf.check("default_traj_time", Value(5.0)).asDouble();
-        yInfo() << "default_traj_time" << default_traj_time_;
+        yInfo() << "- default_traj_time" << default_traj_time_;
 
         default_shift_time_ = rf.check("default_shift_time", Value(5.0)).asDouble();
-        yInfo() << "default_shift_time" << default_shift_time_;
+        yInfo() << "- default_shift_time" << default_shift_time_;
 
         hand_shift_ = rf.check("hand_shift", Value(0.01)).asDouble();
-        yInfo() << "hand_shift" << hand_shift_;
+        yInfo() << "- hand_shift" << hand_shift_;
 
         hand_move_timeout_ = rf.check("hand_move_timeout", Value(10.0)).asDouble();
         hand_home_timeout_ = rf.check("hand_home_timeout", Value(10.0)).asDouble();
         hand_rest_timeout_ = rf.check("hand_rest_timeout", Value(10.0)).asDouble();
-        yInfo() << "hand_move_timeout" << hand_move_timeout_;
-        yInfo() << "hand_home_timeout" << hand_home_timeout_;
-        yInfo() << "hand_rest_timeout" << hand_rest_timeout_;
+        yInfo() << "- hand_move_timeout" << hand_move_timeout_;
+        yInfo() << "- hand_home_timeout" << hand_home_timeout_;
+        yInfo() << "- hand_rest_timeout" << hand_rest_timeout_;
 
         hand_default_pitch_      = rf.check("hand_default_pitch", Value(0.0)).asDouble();
         hand_default_roll_left_  = rf.check("hand_default_roll_left", Value(0.0)).asDouble();
         hand_default_roll_right_ = rf.check("hand_default_roll_right", Value(0.0)).asDouble();
-        yInfo() << "hand_default_pitch" << hand_default_pitch_;
-        yInfo() << "hand_default_roll_left" << hand_default_roll_left_;
-        yInfo() << "hand_default_roll_right" << hand_default_roll_right_;
+        yInfo() << "- hand_default_pitch" << hand_default_pitch_;
+        yInfo() << "- hand_default_roll_left" << hand_default_roll_left_;
+        yInfo() << "- hand_default_roll_right" << hand_default_roll_right_;
 
         Vector left_arm_home_pose = loadVectorDouble(rf, "left_arm_home_pose", 7);
         left_arm_home_pos_ = left_arm_home_pose.subVector(0, 2);
         left_arm_home_att_ = left_arm_home_pose.subVector(3, 6);
-        yInfo() << "left_arm_home_pos" << left_arm_home_pos_.toString();
-        yInfo() << "left_arm_home_att" << left_arm_home_att_.toString();
+        yInfo() << "- left_arm_home_pos" << left_arm_home_pos_.toString();
+        yInfo() << "- left_arm_home_att" << left_arm_home_att_.toString();
 
         Vector left_arm_rest_pose = loadVectorDouble(rf, "left_arm_rest_pose", 7);
         left_arm_rest_pos_ = left_arm_rest_pose.subVector(0, 2);
         left_arm_rest_att_ = left_arm_rest_pose.subVector(3, 6);
-        yInfo() << "left_arm_rest_pos" << left_arm_rest_pos_.toString();
-        yInfo() << "left_arm_rest_att" << left_arm_rest_att_.toString();
+        yInfo() << "- left_arm_rest_pos" << left_arm_rest_pos_.toString();
+        yInfo() << "- left_arm_rest_att" << left_arm_rest_att_.toString();
 
         Vector right_arm_home_pose = loadVectorDouble(rf, "right_arm_home_pose", 7);
         right_arm_home_pos_ = right_arm_home_pose.subVector(0, 2);
         right_arm_home_att_ = right_arm_home_pose.subVector(3, 6);
-        yInfo() << "right_arm_home_pos" << right_arm_home_pos_.toString();
-        yInfo() << "right_arm_home_att" << right_arm_home_att_.toString();
+        yInfo() << "- right_arm_home_pos" << right_arm_home_pos_.toString();
+        yInfo() << "- right_arm_home_att" << right_arm_home_att_.toString();
 
         Vector right_arm_rest_pose = loadVectorDouble(rf, "right_arm_rest_pose", 7);
         right_arm_rest_pos_ = right_arm_rest_pose.subVector(0, 2);
         right_arm_rest_att_ = right_arm_rest_pose.subVector(3, 6);
-        yInfo() << "right_arm_rest_pos" << right_arm_rest_pos_.toString();
-        yInfo() << "right_arm_rest_att" << right_arm_rest_att_.toString();
+        yInfo() << "- right_arm_rest_pos" << right_arm_rest_pos_.toString();
+        yInfo() << "- right_arm_rest_att" << right_arm_rest_att_.toString();
 
         /*
          * Arm Controllers

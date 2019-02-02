@@ -2,6 +2,8 @@ service ObjectTrackingManipulationIDL
 {
     string set_hand(1:string laterality);
     string unset_hand();
+    string gaze_track_on();
+    string gaze_track_off();
     string move_up();
     string move_down();
     string move_left();

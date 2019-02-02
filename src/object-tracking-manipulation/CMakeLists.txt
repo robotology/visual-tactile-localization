@@ -48,6 +48,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       YARP::YARP_eigen
                       ${ICUB_LIBRARIES}
                       iKin
+                      iCubGazeCtrlLibrary
                       )
 
 if(NOT TARGET Eigen3)

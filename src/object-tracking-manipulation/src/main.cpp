@@ -1,4 +1,5 @@
 #include <ArmController.h>
+#include <GazeController.h>
 #include <thrift/ObjectTrackingManipulationIDL.h>
 
 #include <yarp/math/Math.h>
@@ -76,6 +77,9 @@ protected:
     /*
      * Controllers.
      */
+
+    // gaze controller
+    GazeController gaze_;
 
     // arm controllers
     ArmController right_arm_;
@@ -191,6 +195,44 @@ protected:
         hand_under_use_.clear();
 
         reply = "[OK] Current hand is now:" + hand_under_use_ + ".";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string gaze_track_on()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        if (!gaze_.getGazeInterface().setTrackingMode(true))
+            reply = "[FAILED] Unable to set gaze tracking.";
+        else
+            reply = "[OK] Set gaze tracking on.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string gaze_track_off()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        if (!gaze_.getGazeInterface().setTrackingMode(false))
+            reply = "[FAILED] Unable to stop gaze tracking.";
+        else
+            reply = "[OK] Stopped gaze tracking.";
 
         mutex_.unlock();
 
@@ -608,6 +650,10 @@ protected:
     }
 
 public:
+    ObjectTrackingManipulation() :
+        gaze_("object-tracking-manipulation")
+    { }
+
     bool configure(yarp::os::ResourceFinder &rf)
     {
         // open the rpc server
@@ -1070,6 +1116,9 @@ public:
             // stop control
             stopArm("right");
             stopArm("left");
+
+            // stop gaze tracking
+            gaze_.getGazeInterface().setTrackingMode(false);
 
             if (enable_torso_)
             {

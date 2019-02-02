@@ -139,7 +139,8 @@ protected:
     std::string robot_;
 
     // name of arm to be used
-    std::string enable_torso_;
+    bool enable_torso_;
+    std::string torso_laterality_;
     std::string hand_under_use_;
     std::string hand_rest_;
     std::string hand_home_;
@@ -540,16 +541,19 @@ protected:
         if (arm == nullptr)
             return false;
 
-        bool ok_torso_0;
-        arm->storeContext();
-        ok_torso_0 = arm->cartesian()->setLimits(0,0.0,0.0);
-        ok_torso_0 &= arm->cartesian()->setLimits(1,0.0,0.0);
-        ok_torso_0 &= arm->cartesian()->setLimits(2,0.0,0.0);
-        if (!ok_torso_0)
+        if (enable_torso_)
         {
-            yError() << "Unable to force home torso sulution to 0. Resetting context.";
-            arm->restoreContext();
-            return false;
+            bool ok_torso_0;
+            arm->storeContext();
+            ok_torso_0 = arm->cartesian()->setLimits(0,0.0,0.0);
+            ok_torso_0 &= arm->cartesian()->setLimits(1,0.0,0.0);
+            ok_torso_0 &= arm->cartesian()->setLimits(2,0.0,0.0);
+            if (!ok_torso_0)
+            {
+                yError() << "Unable to force home torso sulution to 0. Resetting context.";
+                arm->restoreContext();
+                return false;
+            }
         }
 
         // set trajectory time
@@ -578,7 +582,10 @@ protected:
             return false;
         }
 
-        home_move_context_restored_ = false;
+        if (enable_torso_)
+        {
+            home_move_context_restored_ = false;
+        }
 
         return true;
     }
@@ -628,8 +635,10 @@ public:
         period_ = rf.check("period", Value(0.02)).asDouble();
         yInfo() << "- period" << period_;
 
-        enable_torso_ = rf.check("enable_torso", Value("right")).asString();
+        enable_torso_ = rf.check("enable_torso", Value(false)).asBool();
+        torso_laterality_ = rf.check("torso_laterality", Value("right")).asString();
         yInfo() << "- enable_torso" << enable_torso_;
+        yInfo() << "- torso_laterality" << torso_laterality_;
 
         limit_torso_pitch_ = rf.check("limit_torso_pitch", Value(true)).asBool();
         max_torso_pitch_ = rf.check("max_torso_pitch", Value(10.0)).asDouble();
@@ -708,12 +717,15 @@ public:
         }
 
         // enable torso on one arm only
-        ArmController& arm_ctl = (enable_torso_ == "left" ? left_arm_ : right_arm_);
-        arm_ctl.enableTorso();
-        if (limit_torso_pitch_)
-            arm_ctl.limitTorsoPitch(max_torso_pitch_);
-        if (limit_torso_yaw_)
-            arm_ctl.limitTorsoYaw(max_torso_yaw_);
+        if (enable_torso_)
+        {
+            ArmController& arm_ctl = (torso_laterality_ == "left" ? left_arm_ : right_arm_);
+            arm_ctl.enableTorso();
+            if (limit_torso_pitch_)
+                arm_ctl.limitTorsoPitch(max_torso_pitch_);
+            if (limit_torso_yaw_)
+                arm_ctl.limitTorsoYaw(max_torso_yaw_);
+        }
 
         /*
          * Defaults
@@ -1004,8 +1016,11 @@ public:
                 // stop control
                 stopArm(hand_home_l);
 
-                restoreArmContext(hand_home_l);
-                home_move_context_restored_ = true;
+                if (enable_torso_)
+                {
+                    restoreArmContext(hand_home_l);
+                    home_move_context_restored_ = true;
+                }
 
                 mutex_.lock();
 
@@ -1028,8 +1043,11 @@ public:
                 // stop control
                 stopArm(hand_home_l);
 
-                restoreArmContext(hand_home_l);
-                home_move_context_restored_ = true;
+                if (enable_torso_)
+                {
+                    restoreArmContext(hand_home_l);
+                    home_move_context_restored_ = true;
+                }
 
                 mutex_.lock();
 
@@ -1053,22 +1071,24 @@ public:
             stopArm("right");
             stopArm("left");
 
-            if ((previous_status_ == Status::MoveHome) || (previous_status_ == Status::WaitArmHome))
+            if (enable_torso_)
             {
-                yInfo() << "Note: stopping while previous was MoveHome or WaitArmHome.";
-                yInfo() << "Note: hand_home_ = "  + hand_home_;
-
-                if ((!home_move_context_restored_) && ((hand_home_ == "left") || (hand_home_ == "right")))
+                if ((previous_status_ == Status::MoveHome) || (previous_status_ == Status::WaitArmHome))
                 {
-                    yInfo() << "Note: restore context previous to going in MoveHome.";
+                    yInfo() << "Note: stopping while previous was MoveHome or WaitArmHome.";
+                    yInfo() << "Note: hand_home_ = "  + hand_home_;
 
-                    restoreArmContext(hand_home_);
+                    if ((!home_move_context_restored_) && ((hand_home_ == "left") || (hand_home_ == "right")))
+                    {
+                        yInfo() << "Note: restore context previous to going in MoveHome.";
 
-                    home_move_context_restored_ = true;
+                        restoreArmContext(hand_home_);
+
+                        home_move_context_restored_ = true;
+                    }
+
                 }
-
             }
-
             // go back to Idle
             status_ = Status::Idle;
 

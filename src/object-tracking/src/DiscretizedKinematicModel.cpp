@@ -96,6 +96,12 @@ bool DiscretizedKinematicModel::setProperty(const std::string& property)
         {
             std::chrono::duration<double, std::milli> delta_chrono = now - last_time_;
             double delta = delta_chrono.count() / 1000.0;
+
+            // Avoid too large delta during playback
+            // if the user stops streaming of data
+            if (delta > 100.0)
+                delta = 10.0;
+
             evaluateStateTransitionMatrix(delta);
             evaluateNoiseCovarianceMatrix(delta);
         }

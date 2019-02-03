@@ -524,18 +524,18 @@ int main(int argc, char** argv)
             pc_icub->addObjectOcclusion(std::move(hand_occlusion));
         }
 
-        if (handle_hand_contacts)
-        {
-            std::unique_ptr<iCubArmModel> icub_arm = std::unique_ptr<iCubArmModel>(
-                new iCubArmModel(false,
-                                 false,
-                                 hand_laterality_contacts,
-                                 "object-tracking",
-                                 "object-tracking/icub-arm-model/contacts" + hand_laterality_contacts));
+        // if (handle_hand_contacts)
+        // {
+        //     std::unique_ptr<iCubArmModel> icub_arm = std::unique_ptr<iCubArmModel>(
+        //         new iCubArmModel(false,
+        //                          false,
+        //                          hand_laterality_contacts,
+        //                          "object-tracking",
+        //                          "object-tracking/icub-arm-model/contacts" + hand_laterality_contacts));
 
-            std::unique_ptr<iCubHandContactsModel> icub_contacts = std::unique_ptr<iCubHandContactsModel>(
-                new iCubHandContactsModel(std::move(icub_arm), used_fingers_contacts, "object-trackin/icub-hand-contacts"));
-        }
+        //     std::unique_ptr<iCubHandContactsModel> icub_contacts = std::unique_ptr<iCubHandContactsModel>(
+        //         new iCubHandContactsModel(std::move(icub_arm), used_fingers_contacts, "object-trackin/icub-hand-contacts"));
+        // }
 
         measurement_model = std::move(pc_icub);
     }

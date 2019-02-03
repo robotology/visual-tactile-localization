@@ -134,8 +134,8 @@ bool iCubPointCloud::freezeMeasurements()
             for (auto& occlusion : occlusions_)
                 occlusion->drawOcclusionArea(image);
 
-            // Draw hull due to object
-            drawObjectConvexHull(image, coordinates);
+            // Draw object ROI
+            drawObjectROI(image);
 
             // Send the image
             port_hull_image_out_.write();
@@ -214,28 +214,37 @@ void iCubPointCloud::addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_
 
 std::vector<std::pair<int, int>> iCubPointCloud::getObject2DCoordinates(const Ref<const VectorXd>& bbox, std::size_t stride_u, std::size_t stride_v)
 {
-    std::vector<std::pair<int, int>> coordinates;
+    // Create white mask using the current bounding box
+    cv::Mat bbox_mask(cam_height_, cam_width_, CV_8UC1, cv::Scalar(0));
+    cv::Point tl(int(bbox(0) - bbox(2) / 2.0), int(bbox(1) - bbox(3) / 2.0));
+    cv::Point br(int(bbox(0) + bbox(2) / 2.0), int(bbox(1) + bbox(3) / 2.0));
+    cv::rectangle(bbox_mask, tl, br, cv::Scalar(255), CV_FILLED);
 
-    std::pair<int, int> top_left;
-    top_left.first = int(bbox(0) - bbox(2) / 2.0);
-    top_left.second = int(bbox(1) - bbox(3) / 2.0);
-
-    std::pair<int, int> bottom_right;
-    bottom_right.first = int(bbox(0) + bbox(2) / 2.0);
-    bottom_right.second = int(bbox(1) + bbox(3) / 2.0);
-
-    for (std::size_t u = top_left.first; u < bottom_right.first; u += stride_u)
-    {
-        for (std::size_t v = top_left.second; v < bottom_right.second; v+= stride_v)
-        {
-            coordinates.push_back(std::make_pair(u, v));
-        }
-    }
-
+    // Filter mask taking into account occlusions
     for (auto& occlusion : occlusions_)
     {
+        cv::Mat mask;
         bool valid;
-        std::tie(valid, coordinates) = occlusion->removeOcclusionCoordinates(coordinates);
+        std::tie(valid, mask) = occlusion->removeOcclusion(bbox_mask);
+
+        if (valid)
+            bbox_mask = mask.clone();
+    }
+
+    // Store a copy of the region of the obtained region of interset
+    object_ROI_ = bbox_mask.clone();
+
+    // Find non zero coordinates
+    cv::Mat non_zero_coordinates;
+    cv::findNonZero(bbox_mask, non_zero_coordinates);
+
+    // Fill coordinates vector
+    std::vector<std::pair<int, int>> coordinates;
+
+    for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= (stride_u * stride_v))
+    {
+        cv::Point& p = non_zero_coordinates.at<cv::Point>(i);
+        coordinates.push_back(std::make_pair(p.x, p.y));
     }
 
     return coordinates;
@@ -362,20 +371,14 @@ iCubPointCloud::get3DPoints(std::vector<std::pair<int, int>>& coordinates_2d, co
 }
 
 
-void iCubPointCloud::drawObjectConvexHull(cv::Mat& image, const std::vector<std::pair<int, int>>& coordinates)
+void iCubPointCloud::drawObjectROI(cv::Mat& image)
 {
-    // Convert coordinates to cv points
-    std::vector<cv::Point> cv_points;
-    for (auto point : coordinates)
-        cv_points.push_back(cv::Point(point.first, point.second));
+    // Find contours
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(object_ROI_, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-    // Evaluate the convex hull
-    std::vector<std::vector<cv::Point>> hulls;
-    hulls.push_back(std::vector<cv::Point>());
-    cv::convexHull(cv_points, hulls[0]);
-
-    // Draw the convex hull
-    cv::drawContours(image, hulls, 0, cv::Scalar(0, 255, 0));
+    // Draw the contours
+    cv::drawContours(image, contours, 0, cv::Scalar(0, 255, 0));
 }
 
 

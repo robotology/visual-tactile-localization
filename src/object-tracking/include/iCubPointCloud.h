@@ -74,9 +74,9 @@ protected:
     std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> get3DPoints(std::vector<std::pair<int, int>>& coordinates_2d, const float z_threshold = 1.0);
 
     /**
-     * Draw the convex hull given the 2d coordinates that are used to extract the point cloud.
+     * Draw the region of interest used to obtain the 3D point cloud.
      */
-    void drawObjectConvexHull(cv::Mat& image, const std::vector<std::pair<int, int>>& coordinates);
+    void drawObjectROI(cv::Mat& image);
 
     /**
      * Default deprojection matrix.
@@ -129,6 +129,11 @@ protected:
     std::vector<std::unique_ptr<ObjectOcclusion>> occlusions_;
 
     /**
+     * Object occlusions.
+     */
+    cv::Mat object_ROI_;
+
+    /**
      * Image input/output.
      */
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat>> port_depth_in_;
@@ -152,13 +157,16 @@ public:
     /**
      * Set the bounding box.
      */
-    virtual void setBoundingBox(const Eigen::Ref<const Eigen::VectorXd>& bounding_box);
+    void setBoundingBox(const Eigen::Ref<const Eigen::VectorXd>& bounding_box);
 
     /**
      * Get the bounding box.
      */
     std::pair<bool, Eigen::VectorXd> getBoundingBox();
 
+    /**
+     * Reset
+     */
     void reset();
 
 protected:

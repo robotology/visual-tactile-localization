@@ -80,17 +80,19 @@ void ObjectOcclusion::drawOcclusionArea(cv::Mat& image)
 }
 
 
-std::pair<bool, Object2DCoordinates> ObjectOcclusion::removeOcclusionCoordinates(const Object2DCoordinates& object_coordinates)
+std::tuple<bool, cv::Mat> ObjectOcclusion::removeOcclusion(const cv::Mat& mask_in)
 {
     if (!occlusion_area_set_)
-        return std::make_pair(false, object_coordinates);
+        return std::make_tuple(false, mask_in);
 
-    Object2DCoordinates output_coordinates;
-    for (auto coord : object_coordinates)
-    {
-        if (cv::pointPolygonTest(occlusion_area_, cv::Point(coord.first, coord.second), false) < 0)
-            output_coordinates.push_back(coord);
-    }
+    // Create a black mask on white background
+    cv::Mat mask_out(mask_in.rows, mask_in.cols, CV_8UC1, cv::Scalar(255));
+    std::vector<std::vector<cv::Point>> contours;
+    contours.push_back(occlusion_area_);
+    drawContours(mask_out, contours, 0, cv::Scalar(0), CV_FILLED);
 
-    return std::make_pair(true, output_coordinates);
+    // Filter out occlusion from input mask
+    cv::bitwise_and(mask_out, mask_in, mask_out);
+
+    return std::make_tuple(true, mask_out);
 }

@@ -9,8 +9,6 @@
 
 #include <opencv2/opencv.hpp>
 
-using Object2DCoordinates = std::vector<std::pair<int, int>>;
-
 class ObjectOcclusion
 {
 public:
@@ -20,7 +18,7 @@ public:
 
     void drawOcclusionArea(cv::Mat& image);
 
-    std::pair<bool, Object2DCoordinates> removeOcclusionCoordinates(const Object2DCoordinates& object_coordinates);
+    std::tuple<bool, cv::Mat> removeOcclusion(const cv::Mat& mask_in);
 
     virtual std::pair<bool, Eigen::MatrixXd> getOcclusionPose() = 0;
 

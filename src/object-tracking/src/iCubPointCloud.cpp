@@ -105,6 +105,10 @@ bool iCubPointCloud::freezeMeasurements()
     if (!valid_bbox)
         return false;
 
+    // Update all the occlusions
+    for (auto& occlusion : occlusions_)
+        occlusion->findOcclusionArea();
+
     // Get 2d coordinates
     std::vector<std::pair<int, int>> coordinates;
     coordinates = getObject2DCoordinates(bbox, pc_u_stride_, pc_v_stride_);
@@ -112,11 +116,30 @@ bool iCubPointCloud::freezeMeasurements()
     // Send hull over the network
     if (send_hull_)
     {
+        // Get input image
         ImageOf<PixelRgb>* image_in;
         image_in = port_image_in_.read(false);
 
         if (image_in != nullptr)
-            sendObjectConvexHull(*image_in, coordinates);
+        {
+            // Prepare output image
+            ImageOf<PixelRgb>& image_out = port_hull_image_out_.prepare();
+
+            // Copy input to output and wrap around a cv::Mat
+            image_out = *image_in;
+            cv::Mat image = yarp::cv::toCvMat(image_out);
+            cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+
+            // Draw hulls due to occlusions
+            for (auto& occlusion : occlusions_)
+                occlusion->drawOcclusionArea(image);
+
+            // Draw hull due to object
+            drawObjectConvexHull(image, coordinates);
+
+            // Send the image
+            port_hull_image_out_.write();
+        }
     }
 
     // Get depth image
@@ -339,16 +362,8 @@ iCubPointCloud::get3DPoints(std::vector<std::pair<int, int>>& coordinates_2d, co
 }
 
 
-void iCubPointCloud::sendObjectConvexHull(ImageOf<PixelRgb>& camera_image, const std::vector<std::pair<int, int>>& coordinates)
+void iCubPointCloud::drawObjectConvexHull(cv::Mat& image, const std::vector<std::pair<int, int>>& coordinates)
 {
-    // Prepare output image
-    ImageOf<PixelRgb>& image_out = port_hull_image_out_.prepare();
-
-    // Copy input to output and wrap around a cv::Mat
-    image_out = camera_image;
-    cv::Mat image = yarp::cv::toCvMat(image_out);
-    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
-
     // Convert coordinates to cv points
     std::vector<cv::Point> cv_points;
     for (auto point : coordinates)
@@ -360,10 +375,7 @@ void iCubPointCloud::sendObjectConvexHull(ImageOf<PixelRgb>& camera_image, const
     cv::convexHull(cv_points, hulls[0]);
 
     // Draw the convex hull
-    cv::drawContours(image, hulls, 0, cv::Scalar(255, 0, 0));
-
-    // Send the image
-    port_hull_image_out_.write();
+    cv::drawContours(image, hulls, 0, cv::Scalar(0, 255, 0));
 }
 
 

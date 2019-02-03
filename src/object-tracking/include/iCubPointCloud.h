@@ -10,6 +10,8 @@
 #include <PointCloudModel.h>
 #include <PointCloudPrediction.h>
 
+#include <opencv2/opencv.hpp>
+
 #include <yarp/sig/Image.h>
 
 #include <string>
@@ -74,7 +76,7 @@ protected:
     /**
      * Draw the convex hull given the 2d coordinates that are used to extract the point cloud.
      */
-    void sendObjectConvexHull(yarp::sig::ImageOf<yarp::sig::PixelRgb>& camera_image, const std::vector<std::pair<int, int>>& coordinates);
+    void drawObjectConvexHull(cv::Mat& image, const std::vector<std::pair<int, int>>& coordinates);
 
     /**
      * Default deprojection matrix.

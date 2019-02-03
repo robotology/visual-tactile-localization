@@ -42,14 +42,14 @@
 
   <connection>
     <from>/icub/camcalib/right/out</from>
-    <to>/object-tracking/SFM/right:i</to>
+    <to>/object-tracking-depth/SFM/right:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking/SFM/left:i</to>
+    <to>/object-tracking-depth/SFM/left:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
@@ -108,6 +108,12 @@
     <to>/object-tracking-viewer/cam/left:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/handTracking/VisualSIS/left/estimates:o</from>
+    <to>/object-tracking/icub-hand-occlusion/right/hand_pose:i</to>
+    <protocol>tcp</protocol>
   </connection>
 
 </application>

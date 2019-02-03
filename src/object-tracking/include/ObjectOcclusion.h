@@ -16,6 +16,10 @@ class ObjectOcclusion
 public:
     ObjectOcclusion(std::unique_ptr<MeshModel> mesh_model, const std::string cut_method);
 
+    void findOcclusionArea();
+
+    void drawOcclusionArea(cv::Mat& image);
+
     std::pair<bool, Object2DCoordinates> removeOcclusionCoordinates(const Object2DCoordinates& object_coordinates);
 
     virtual std::pair<bool, Eigen::MatrixXd> getOcclusionPose() = 0;
@@ -25,8 +29,6 @@ public:
     void reset();
 
 protected:
-    bool findOcclusionArea();
-
     std::unique_ptr<MeshModel> mesh_model_;
 
     std::unique_ptr<SICAD> object_sicad_;

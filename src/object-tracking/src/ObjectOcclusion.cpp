@@ -17,7 +17,7 @@ void ObjectOcclusion::reset()
 }
 
 
-bool ObjectOcclusion::findOcclusionArea()
+void ObjectOcclusion::findOcclusionArea()
 {
     // Get occlusion pose
     bool valid_pose;
@@ -25,7 +25,7 @@ bool ObjectOcclusion::findOcclusionArea()
     std::tie(valid_pose, pose) = getOcclusionPose();
 
     if (!valid_pose)
-        return occlusion_area_set_;
+        return;
 
     // Get camera pose
     bool valid_camera_pose;
@@ -34,7 +34,7 @@ bool ObjectOcclusion::findOcclusionArea()
     std::tie(valid_camera_pose, camera_origin, camera_orientation) = getCameraPose();
 
     if (!valid_camera_pose)
-        return occlusion_area_set_;
+        return;
 
     // Get the sicad model pose
     bool valid_sicad_pose;
@@ -42,7 +42,7 @@ bool ObjectOcclusion::findOcclusionArea()
     std::tie(valid_sicad_pose, sicad_poses) = mesh_model_->getModelPose(pose);
 
     if (!valid_sicad_pose)
-        return occlusion_area_set_;
+        return;
 
     // Render the occlusion mask
     cv::Mat occlusion_mask;
@@ -51,30 +51,38 @@ bool ObjectOcclusion::findOcclusionArea()
     // Convert to gray scale
     cv::cvtColor(occlusion_mask, occlusion_mask, CV_BGR2GRAY);
 
-
     if (cut_method_ == "convex_hull")
     {
         // Find contours
         std::vector<std::vector<cv::Point>> contours;
         cv::findContours(occlusion_mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-        // Only one contour has to be found
-        if (contours.size() != 1)
-            return occlusion_area_set_;
+        // Consider only the first contour found
+        if (contours.size() != 0)
+        {
+            // Find the convex hull
+            cv::convexHull(contours[0], occlusion_area_);
 
-        // Find the convex hull
-        cv::convexHull(contours[0], occlusion_area_);
+            occlusion_area_set_ = true;
+        }
     }
+}
 
-    occlusion_area_set_ = true;
 
-    return true;
+void ObjectOcclusion::drawOcclusionArea(cv::Mat& image)
+{
+    if (occlusion_area_set_)
+    {
+        std::vector<std::vector<cv::Point>> contours;
+        contours.push_back(occlusion_area_);
+        drawContours(image, contours, 0, cv::Scalar(255, 0, 0));
+    }
 }
 
 
 std::pair<bool, Object2DCoordinates> ObjectOcclusion::removeOcclusionCoordinates(const Object2DCoordinates& object_coordinates)
 {
-    if (!findOcclusionArea())
+    if (!occlusion_area_set_)
         return std::make_pair(false, object_coordinates);
 
     Object2DCoordinates output_coordinates;

@@ -48,6 +48,12 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     // Load point cloud z threshold
     pc_left_z_threshold_  = rf.check("pc_left_z_thr", Value(1.0)).asDouble();
 
+    // Load hand visualization boolean
+    show_hand_ = rf.check("show_hand", Value(false)).asBool();
+
+    // Load hand laterality
+    std::string hand_laterality = rf.check("hand_laterality", Value("right")).asString();
+
     // Load mesh
     const std::string object_name = rf.check("object_name", Value("ycb_mustard")).asString();
 
@@ -80,6 +86,10 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     int points_size = 2;
     vtk_measurements_ = std::unique_ptr<Points>(new Points(points_size));
 
+    // Configure vtk hand actors
+    if (show_hand_)
+        vtk_icub_hand_ = std::unique_ptr<VtkiCubHand>(new VtkiCubHand(port_prefix + "/hand/" + hand_laterality, hand_laterality));
+
     // Configure axes
     axes_ = vtkSmartPointer<vtkAxesActor>::New();
     orientation_widget_ = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
@@ -102,8 +112,13 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     render_window_->AddRenderer(renderer_);
     render_window_->SetSize(600,600);
     render_window_interactor_->SetRenderWindow(render_window_);
+
+    // Add actors to renderer
     renderer_->AddActor(mesh_actor_);
     renderer_->AddActor(vtk_measurements_->get_actor());
+    if (show_hand_)
+        vtk_icub_hand_->addToRenderer(*renderer_);
+
     renderer_->SetBackground(0.8, 0.8, 0.8);
 
     // Activate camera
@@ -190,6 +205,12 @@ void Viewer::updateView()
         vtk_measurements_->set_points(point_cloud);
         // Extract corresponding colors from the rgb image
         vtk_measurements_->set_colors(coordinates_2d_, valid_coordinates, *image_in);
+    }
+
+    // Update hand of the robot
+    if (show_hand_)
+    {
+        vtk_icub_hand_->updateHandPose();
     }
 }
 

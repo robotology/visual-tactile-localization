@@ -21,6 +21,8 @@
 
 #include <GazeController.h>
 
+#include <VtkiCubHand.h>
+
 #include <yarp/os/ResourceFinder.h>
 #include <yarp/os/BufferedPort.h>
 #include <yarp/sig/Image.h>
@@ -192,6 +194,10 @@ private:
     Eigen::MatrixXd default_deprojection_matrix_;
 
     float pc_left_z_threshold_;
+
+    bool show_hand_;
+
+    std::unique_ptr<VtkiCubHand> vtk_icub_hand_;
 };
 
 

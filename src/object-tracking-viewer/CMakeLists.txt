@@ -14,17 +14,34 @@ find_package(YARP CONFIG REQUIRED
              sig
              eigen
              )
+
+# ICUB
+find_package(ICUB REQUIRED)
+
 # VTK
 find_package(VTK             REQUIRED)
 include(${VTK_USE_FILE})
 
+# Superimpose Mesh
+find_package(SuperimposeMesh 0.9.4.0 QUIET)
+if(NOT SuperimposeMesh_FOUND)
+    message(STATUS "Did not found required master release of SuperimposeMesh. Looking for devel version.")
+    find_package(SuperimposeMesh 0.10.100.0 REQUIRED)
+endif()
+
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR
+    include/iCubArmModel.h
     include/Viewer.h
+    include/VtkiCubHand.h
+    include/VtkMesh.h
     )
 
 set(${EXE_TARGET_NAME}_SRC
+    src/iCubArmModel.cpp
     src/Viewer.cpp
+    src/VtkiCubHand.cpp
+    src/VtkMesh.cpp
     src/main.cpp
     )
 
@@ -47,6 +64,8 @@ target_link_libraries(${EXE_TARGET_NAME} PRIVATE
                                          YARP::YARP_sig
                                          YARP::YARP_eigen
                                          iCubGazeCtrlLibrary
+                                         SuperimposeMesh::SuperimposeMesh
+                                         ${ICUB_LIBRARIES}
                                          )
 
 set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini)

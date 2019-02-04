@@ -232,14 +232,32 @@
   </connection>
 
   <connection>
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking-viewer/hand/right/torso:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
     <from>/handTracking/VisualSIS/left/estimates:o</from>
     <to>/object-tracking/icub-hand-occlusion/right/hand_pose:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
+    <from>/handTracking/VisualSIS/left/estimates:o</from>
+    <to>/object-tracking-viewer/hand/right/hand_pose:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
     <from>/icub/right_arm/state:o</from>
     <to>/object-tracking/icub-arm-model/occlusionright/right_arm:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/icub/right_arm/state:o</from>
+    <to>/object-tracking-viewer/hand/right/right_arm:i</to>
     <protocol>tcp</protocol>
   </connection>
 

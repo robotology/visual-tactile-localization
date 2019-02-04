@@ -90,7 +90,7 @@
   </connection>
 
   <connection>
-    <from>/object-tracking/mask:o</from>
+    <from>/object-tracking/bbox-estimator/mask:o</from>
     <to>/object-tracking/viewer/mask:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
@@ -106,6 +106,13 @@
   <connection>
     <from>/icub/camcalib/left/out</from>
     <to>/object-tracking-viewer/cam/left:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking/bbox-estimator/cam/left:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>

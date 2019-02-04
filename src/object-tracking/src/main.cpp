@@ -636,7 +636,7 @@ int main(int argc, char** argv)
     {
         bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
             new BoundingBoxEstimator(number_particles,
-                                     "object-trackinng/bbox-estimator",
+                                     "object-tracking/bbox-estimator",
                                      "left",
                                      object_mesh_path_obj,
                                      rf.findPath("shader/"),

@@ -159,6 +159,7 @@ int main(int argc, char** argv)
     }
 
     std::size_t number_particles;
+    std::size_t eff_number_particles;
     double likelihood_variance;
     std::string point_estimate_method;
     std::size_t point_estimate_window_size;
@@ -177,6 +178,8 @@ int main(int argc, char** argv)
         point_estimate_method      = rf_point_estimate.check("method", Value("smean")).asString();
         point_estimate_window_size = rf_point_estimate.check("window_size", Value(10)).asInt();
     }
+    else
+        number_particles = 1;
 
     /* Get initial condition. */
     ResourceFinder rf_initial_conditions = rf.findNestedResourceFinder("INITIAL_CONDITION");
@@ -611,10 +614,6 @@ int main(int argc, char** argv)
      */
     std::unique_ptr<BoundingBoxEstimator> bbox_estimator;
 
-    int components = number_particles;
-    if (filter_type != "upf")
-        components = 1;
-
     if (use_bbox_0)
     {
         // Giving the initial bounding box of the object from outside
@@ -622,7 +621,7 @@ int main(int argc, char** argv)
         std::pair<int, int> bottom_right = std::make_pair(static_cast<int>(bbox_br_0(0)), static_cast<int>(bbox_br_0(1)));
         bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
             new BoundingBoxEstimator(std::make_pair(top_left, bottom_right),
-                                     components,
+                                     number_particles,
                                      "object-tracking/bbox-estimator",
                                      "left",
                                      object_mesh_path_obj,
@@ -636,7 +635,7 @@ int main(int argc, char** argv)
     else
     {
         bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
-            new BoundingBoxEstimator(components,
+            new BoundingBoxEstimator(number_particles,
                                      "object-trackinng/bbox-estimator",
                                      "left",
                                      object_mesh_path_obj,
@@ -647,6 +646,12 @@ int main(int argc, char** argv)
                                      bbox_Q_diagonal,
                                      bbox_R_diagonal));
     }
+
+    /**
+     * The maximum allowed number of particles depend on the sicad engine within the BoundingBoxEstimator
+     */
+    eff_number_particles = bbox_estimator->getNumberComponents();
+    yInfo() << log_ID << "Requested" << number_particles << "particles, allowed" << eff_number_particles << "particles.";
 
     /**
      * Filter.
@@ -711,7 +716,7 @@ int main(int argc, char** argv)
         {
             filter = std::move(std::unique_ptr<PFilter>(
                                    new PFilter(port_prefix,
-                                               number_particles,
+                                               eff_number_particles,
                                                point_estimate_method,
                                                point_estimate_window_size,
                                                std::move(pf_initialization),

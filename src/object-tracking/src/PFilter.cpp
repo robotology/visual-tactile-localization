@@ -209,7 +209,12 @@ void PFilter::filteringStep()
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     bbox_estimator_->step();
-    icub_point_cloud_share_->setBoundingBox(bbox_estimator_->getEstimate());
+    Vector4d bounding_box;
+    if (getFilteringStep() == 0)
+        bounding_box = bbox_estimator_->getEstimate(pred_particle_.weight());
+    else
+        bounding_box = bbox_estimator_->getEstimate(cor_particle_.weight());
+    icub_point_cloud_share_->setBoundingBox(bounding_box);
 
     if (getFilteringStep() != 0)
         prediction_->predict(cor_particle_, pred_particle_);
@@ -233,6 +238,9 @@ void PFilter::filteringStep()
         cor_particle_ = res_particle;
     }
 
+    // Use estimate as hint for the bounding box estimator
+    bbox_estimator_->setObjectPose(cor_particle_.state());
+
     // Update the point estimate extraction
     bool valid_estimate;
     VectorXd point_estimate;
@@ -244,9 +252,6 @@ void PFilter::filteringStep()
     {
         // Log
         logger(point_estimate_.transpose());
-
-        // Use estimate as hint for the bounding box estimator
-        bbox_estimator_->setObjectPose(point_estimate);
 
         // Send estimate over the port using axis/angle representation
         VectorXd estimate(7);

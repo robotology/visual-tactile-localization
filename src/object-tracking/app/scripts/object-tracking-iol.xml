@@ -2,6 +2,7 @@
   <name>Interactive Objects Learning for Object Tracking</name>
   <module>
     <name>lbpExtract</name>
+    <parameters> --neighbours 10 --maxArcLength 20000 --maxArea 12000</parameters>
     <node>icub21</node>
   </module>
   <module>

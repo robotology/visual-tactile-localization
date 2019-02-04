@@ -5,6 +5,7 @@
 
 #include <iostream>
 
+using namespace bfl;
 using namespace Eigen;
 using namespace yarp::os;
 using namespace yarp::sig;
@@ -75,6 +76,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     IOL_object_name_(IOL_object_name),
     send_mask_(send_mask),
     user_provided_mean_0_(false),
+    extractor_(4),
     is_initialized_(false),
     is_exogenous_initialized_(false),
     is_proj_bbox_initialized_(false),
@@ -129,17 +131,26 @@ BoundingBoxEstimator::BoundingBoxEstimator
                       cam_fy_,
                       cam_cx_,
                       cam_cy_,
-                      1,
+                      number_components,
                       sicad_shader_path,
                       {1.0, 0.0, 0.0, static_cast<float>(M_PI)})
         );
+
+    // The sicad engine may be able to render less images than the requested number of particles
+    number_components_ = object_sicad_->getTilesNumber();
+    pred_bbox_.components = number_components_;
+    corr_bbox_.components = number_components_;
 
     // Initialize state covariance
     for (std::size_t i = 0; i < corr_bbox_.components; i++)
         corr_bbox_.covariance() = cov_0_;
 
     steady_state_counter_ = 0;
-    steady_state_threshold_ = 200;
+    steady_state_threshold_ = 75;
+
+    // Initialize estimate extractor
+    extractor_.setMethod(EstimatesExtraction::ExtractionMethod::smode);
+    // extractor_.setMobileAverageWindowSize(6);
 }
 
 
@@ -186,11 +197,10 @@ Eigen::VectorXd BoundingBoxEstimator::getEstimate()
 
 Eigen::VectorXd BoundingBoxEstimator::getEstimate(const Ref<const VectorXd>& weights)
 {
-    // Find index corresponding to maximum weight
-    int max_index;
-    weights.maxCoeff(&max_index);
+    VectorXd estimate;
+    std::tie(std::ignore, estimate) = extractor_.extract(corr_bbox_.mean(), weights);
 
-    return corr_bbox_.mean(max_index);
+    return estimate;
 }
 
 
@@ -222,6 +232,12 @@ void BoundingBoxEstimator::setObjectPose(const Eigen::Ref<const Eigen::MatrixXd>
     object_3d_pose_ = pose;
 
     is_object_pose_initialized_ = true;
+}
+
+
+std::size_t BoundingBoxEstimator::getNumberComponents()
+{
+    return number_components_;
 }
 
 
@@ -265,24 +281,34 @@ void BoundingBoxEstimator::correct()
 MatrixXd BoundingBoxEstimator::evalExogenousInput()
 {
     if (!updateObjectMask())
-        return MatrixXd(4, pred_bbox_.components);
+        return MatrixXd::Zero(4, pred_bbox_.components);
 
-    MatrixXd exog_input(4, pred_bbox_.components);
+    MatrixXd exog_input = MatrixXd::Zero(4, pred_bbox_.components);
     MatrixXd curr_bbox(4, pred_bbox_.components);
     std::vector<cv::Rect> bbox_rects(pred_bbox_.components);
 
     for (std::size_t i = 0; i < pred_bbox_.components; i++)
     {
+        // Extract the tile relative to the i-th component
+        int index_u = i % object_sicad_->getTilesCols();
+        int index_v = i / object_sicad_->getTilesCols();
+
+        cv::Rect crop(cv::Point(index_u * cam_width_, index_v * cam_height_),
+                      cv::Point((index_u + 1) * cam_width_, (index_v + 1) * cam_height_));
+        cv::Mat object_mask_i = object_mask_(crop);
+
         // Find projected bounding box
         cv::Mat points;
-        cv::findNonZero(object_mask_.at<cv::Mat>(i), points);
-        bbox_rects.at(i) = cv::boundingRect(points);
+        cv::findNonZero(object_mask_i, points);
+        cv::Rect rect = cv::boundingRect(points);
 
         // Form vector containing center, width and height of projected bounding box
-        curr_bbox(0, i) = bbox_rects.at(i).x + bbox_rects.at(i).width / 2.0;
-        curr_bbox(1, i) = bbox_rects.at(i).y + bbox_rects.at(i).height / 2.0;
-        curr_bbox(2, i) = bbox_rects.at(i).width;
-        curr_bbox(3, i) = bbox_rects.at(i).height;
+        curr_bbox(0, i) = rect.x + rect.width / 2.0;
+        curr_bbox(1, i) = rect.y + rect.height / 2.0;
+        curr_bbox(2, i) = rect.width;
+        curr_bbox(3, i) = rect.height;
+
+        bbox_rects.at(i) = rect;
     }
 
     if (is_proj_bbox_initialized_)
@@ -303,14 +329,14 @@ MatrixXd BoundingBoxEstimator::evalExogenousInput()
                     bbox_height_ratio_(i) = corr_bbox_.mean(i, 3) / bbox_rects.at(i).height;
                 }
             }
-            else
+        }
+        else
+        {
+            exog_input = delta;
+            for (std::size_t i = 0; i < pred_bbox_.components; i++)
             {
-                exog_input = delta;
-                for (std::size_t i = 0; i < pred_bbox_.components; i++)
-                {
-                    exog_input(2, i) *= bbox_width_ratio_(i);
-                    exog_input(3, i) *= bbox_height_ratio_(i);
-                }
+                exog_input(2, i) *= bbox_width_ratio_(i);
+                exog_input(3, i) *= bbox_height_ratio_(i);
             }
         }
     }
@@ -411,26 +437,18 @@ std::pair<bool, VectorXd> BoundingBoxEstimator::measure()
 }
 
 
-void BoundingBoxEstimator::sendObjectMask(ImageOf<PixelRgb>& camera_image)
+void BoundingBoxEstimator::sendObjectMask()
 {
-    if (!(object_mask_.empty()))
-    {
-        // Prepare output image
-        ImageOf<PixelRgb>& image_out = port_mask_image_out_.prepare();
+    // Prepare output image
+    ImageOf<PixelRgb>& image_out_yarp = port_mask_image_out_.prepare();
+    image_out_yarp.resize(object_mask_.cols, object_mask_.rows);
+    cv::Mat image_out = yarp::cv::toCvMat(image_out_yarp);
 
-        // Copy input to output and wrap around a cv::Mat
-        image_out = camera_image;
-        cv::Mat image = yarp::cv::toCvMat(image_out);
-        cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+    // Copy mask to the output image
+    cv::cvtColor(object_mask_, image_out, CV_GRAY2RGB);
 
-        // Draw mask on top of image
-        cv::Mat mask = object_mask_.clone();
-
-        cv::cvtColor(mask, mask, cv::COLOR_GRAY2RGB);
-        cv::bitwise_or(image, mask, image);
-
-        port_mask_image_out_.write();
-    }
+    // Send the image
+    port_mask_image_out_.write();
 }
 
 
@@ -491,6 +509,9 @@ bool BoundingBoxEstimator::updateObjectMask()
 
     // Convert to gray scale
     cv::cvtColor(object_mask_, object_mask_, CV_BGR2GRAY);
+
+    if (send_mask_)
+        sendObjectMask();
 
     return true;
 }

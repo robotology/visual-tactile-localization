@@ -2,6 +2,7 @@
 #define BOUNDINGBOXESTIMATOR_H
 
 #include <BayesFilters/GaussianMixture.h>
+#include <BayesFilters/EstimatesExtraction.h>
 
 #include <Eigen/Dense>
 
@@ -72,6 +73,11 @@ public:
      */
     void setObjectPose(const Eigen::Ref<const Eigen::MatrixXd>& pose);
 
+    /**
+     * Get the number of components.
+     */
+    std::size_t getNumberComponents();
+
 protected:
     /**
      * Perform prediction.
@@ -97,12 +103,18 @@ protected:
     /**
      * Draw the current object mask on the camera image and send the rendered image on the network.
      */
-    void sendObjectMask(yarp::sig::ImageOf<yarp::sig::PixelRgb>& camera_image);
+    void sendObjectMask();
 
     /**
      * Update the object mask by projecting the object mesh, according to the last estimate available on the camera plane.
      */
     bool updateObjectMask();
+
+
+    /**
+     * Number of particles used.
+     */
+    std::size_t number_components_;
 
     /**
      * Gaussian belief (predicted and corrected).
@@ -127,6 +139,11 @@ protected:
     Eigen::VectorXd mean_0_;
     Eigen::MatrixXd cov_0_;
     bool user_provided_mean_0_;
+
+    /**
+     * Estimates extraction.
+     */
+    bfl::EstimatesExtraction extractor_;
 
     /**
      * Interface to iCub cameras.

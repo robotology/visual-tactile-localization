@@ -610,6 +610,11 @@ int main(int argc, char** argv)
      * BoundingBoxEstimator initialization.
      */
     std::unique_ptr<BoundingBoxEstimator> bbox_estimator;
+
+    int components = number_particles;
+    if (filter_type != "upf")
+        components = 1;
+
     if (use_bbox_0)
     {
         // Giving the initial bounding box of the object from outside
@@ -617,6 +622,7 @@ int main(int argc, char** argv)
         std::pair<int, int> bottom_right = std::make_pair(static_cast<int>(bbox_br_0(0)), static_cast<int>(bbox_br_0(1)));
         bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
             new BoundingBoxEstimator(std::make_pair(top_left, bottom_right),
+                                     components,
                                      "object-tracking/bbox-estimator",
                                      "left",
                                      object_mesh_path_obj,
@@ -630,7 +636,8 @@ int main(int argc, char** argv)
     else
     {
         bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
-            new BoundingBoxEstimator("object-tracking/bbox-estimator",
+            new BoundingBoxEstimator(components,
+                                     "object-trackinng/bbox-estimator",
                                      "left",
                                      object_mesh_path_obj,
                                      rf.findPath("shader/"),

@@ -12,6 +12,7 @@ using namespace yarp::sig;
 BoundingBoxEstimator::BoundingBoxEstimator
 (
     const BoundingBoxEstimator::BBox initial_bbox,
+    const std::size_t number_components,
     const std::string port_prefix,
     const std::string eye_name,
     const std::string obj_mesh_file,
@@ -24,6 +25,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
 ) :
     BoundingBoxEstimator
     (
+        number_components,
         port_prefix,
         eye_name,
         obj_mesh_file,
@@ -49,12 +51,14 @@ BoundingBoxEstimator::BoundingBoxEstimator
     is_initialized_ = true;
 
     // Initialize bounding box
-    corr_bbox_.mean() = mean_0_;
+    for (std::size_t i = 0; i < corr_bbox_.components; i++)
+        corr_bbox_.mean(i) = mean_0_;
 }
 
 
 BoundingBoxEstimator::BoundingBoxEstimator
 (
+    const std::size_t number_components,
     const std::string port_prefix,
     const std::string eye_name,
     const std::string obj_mesh_file,
@@ -65,8 +69,8 @@ BoundingBoxEstimator::BoundingBoxEstimator
     const Eigen::Ref<const Eigen::MatrixXd>& process_noise_covariance,
     const Eigen::Ref<const Eigen::MatrixXd>& measurement_noise_covariance
 ) :
-    pred_bbox_(4),
-    corr_bbox_(4),
+    pred_bbox_(number_components, 4),
+    corr_bbox_(number_components, 4),
     eye_name_(eye_name),
     IOL_object_name_(IOL_object_name),
     send_mask_(send_mask),
@@ -78,7 +82,9 @@ BoundingBoxEstimator::BoundingBoxEstimator
     gaze_(port_prefix),
     cov_0_(initial_covariance),
     Q_(process_noise_covariance),
-    R_(measurement_noise_covariance)
+    R_(measurement_noise_covariance),
+    bbox_width_ratio_(number_components),
+    bbox_height_ratio_(number_components)
 {
     // Open RPC port to OPC required to get "measurements" of the bounding box
     if (!(opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
@@ -129,7 +135,8 @@ BoundingBoxEstimator::BoundingBoxEstimator
         );
 
     // Initialize state covariance
-    corr_bbox_.covariance() = cov_0_;
+    for (std::size_t i = 0; i < corr_bbox_.components; i++)
+        corr_bbox_.covariance() = cov_0_;
 
     steady_state_counter_ = 0;
     steady_state_threshold_ = 200;
@@ -159,8 +166,10 @@ void BoundingBoxEstimator::step()
 
         if (valid_measure)
         {
+            for (std::size_t i = 0; i < corr_bbox_.components; i++)
+                corr_bbox_.mean(i) = mean_0;
+
             is_initialized_ = true;
-            corr_bbox_.mean() = mean_0;
         }
     }
 
@@ -171,7 +180,17 @@ void BoundingBoxEstimator::step()
 
 Eigen::VectorXd BoundingBoxEstimator::getEstimate()
 {
-    return corr_bbox_.mean();
+    return corr_bbox_.mean(0);
+}
+
+
+Eigen::VectorXd BoundingBoxEstimator::getEstimate(const Ref<const VectorXd>& weights)
+{
+    // Find index corresponding to maximum weight
+    int max_index;
+    weights.maxCoeff(&max_index);
+
+    return corr_bbox_.mean(max_index);
 }
 
 
@@ -185,18 +204,20 @@ void BoundingBoxEstimator::reset()
     // If user provided a initial mean
     if (user_provided_mean_0_)
     {
-        corr_bbox_.mean() = mean_0_;
+        for (std::size_t i = 0; i < corr_bbox_.components; i++)
+            corr_bbox_.mean(i) = mean_0_;
 
         is_initialized_ = true;
     }
 
-    corr_bbox_.covariance() = cov_0_;
+    for (std::size_t i = 0; i < corr_bbox_.components; i++)
+        corr_bbox_.covariance() = cov_0_;
 
     steady_state_counter_ = 0;
 }
 
 
-void BoundingBoxEstimator::setObjectPose(const Eigen::Ref<const Eigen::VectorXd>& pose)
+void BoundingBoxEstimator::setObjectPose(const Eigen::Ref<const Eigen::MatrixXd>& pose)
 {
     object_3d_pose_ = pose;
 
@@ -206,13 +227,12 @@ void BoundingBoxEstimator::setObjectPose(const Eigen::Ref<const Eigen::VectorXd>
 
 void BoundingBoxEstimator::predict()
 {
-    VectorXd input = evalExogenousInput();
-
     // state transition
-    pred_bbox_.mean() = corr_bbox_.mean() + input;
+    pred_bbox_.mean() = corr_bbox_.mean() + evalExogenousInput();
 
     // covariance transition
-    pred_bbox_.covariance() += Q_;
+    for (std::size_t i = 0; i < pred_bbox_.components; i++)
+        pred_bbox_.covariance(i) += Q_;
 }
 
 
@@ -229,39 +249,46 @@ void BoundingBoxEstimator::correct()
         return;
     }
 
-    MatrixXd Py = pred_bbox_.covariance() + R_;
+    for (std::size_t i = 0; i < pred_bbox_.components; i++)
+    {
+        MatrixXd Py = pred_bbox_.covariance(i) + R_;
 
-    MatrixXd K = pred_bbox_.covariance() * Py.inverse();
+        MatrixXd K = pred_bbox_.covariance(i) * Py.inverse();
 
-    corr_bbox_.mean() = pred_bbox_.mean() + K * (measured_bbox - pred_bbox_.mean());
+        corr_bbox_.mean(i) = pred_bbox_.mean(i) + K * (measured_bbox - pred_bbox_.mean(i));
 
-    corr_bbox_.covariance() = pred_bbox_.covariance() - K * Py * K.transpose();
+        corr_bbox_.covariance(i) = pred_bbox_.covariance(i) - K * Py * K.transpose();
+    }
 }
 
 
-VectorXd BoundingBoxEstimator::evalExogenousInput()
+MatrixXd BoundingBoxEstimator::evalExogenousInput()
 {
     if (!updateObjectMask())
-        return VectorXd::Zero(4);
+        return MatrixXd(4, pred_bbox_.components);
 
-    // Find projected bounding box
-    cv::Mat points;
-    cv::findNonZero(object_mask_, points);
-    cv::Rect bbox_rect = cv::boundingRect(points);
+    MatrixXd exog_input(4, pred_bbox_.components);
+    MatrixXd curr_bbox(4, pred_bbox_.components);
+    std::vector<cv::Rect> bbox_rects(pred_bbox_.components);
 
-    // Form vector containing center, width and height of projected bounding box
-    VectorXd curr_bbox(4);
-    curr_bbox(0) = bbox_rect.x + bbox_rect.width / 2.0;
-    curr_bbox(1) = bbox_rect.y + bbox_rect.height / 2.0;
-    curr_bbox(2) = bbox_rect.width;
-    curr_bbox(3) = bbox_rect.height;
+    for (std::size_t i = 0; i < pred_bbox_.components; i++)
+    {
+        // Find projected bounding box
+        cv::Mat points;
+        cv::findNonZero(object_mask_.at<cv::Mat>(i), points);
+        bbox_rects.at(i) = cv::boundingRect(points);
 
-    VectorXd exog_input = VectorXd::Zero(4);
+        // Form vector containing center, width and height of projected bounding box
+        curr_bbox(0, i) = bbox_rects.at(i).x + bbox_rects.at(i).width / 2.0;
+        curr_bbox(1, i) = bbox_rects.at(i).y + bbox_rects.at(i).height / 2.0;
+        curr_bbox(2, i) = bbox_rects.at(i).width;
+        curr_bbox(3, i) = bbox_rects.at(i).height;
+    }
 
     if (is_proj_bbox_initialized_)
     {
         // Evaluate finite differences
-        VectorXd delta = curr_bbox - proj_bbox_;
+        MatrixXd delta = curr_bbox - proj_bbox_;
 
         if (!is_exogenous_initialized_)
         {
@@ -270,21 +297,27 @@ VectorXd BoundingBoxEstimator::evalExogenousInput()
                 is_exogenous_initialized_ = true;
 
                 // Evaluate width and height ratio
-                bbox_width_ratio_ = corr_bbox_.mean(2) / bbox_rect.width;
-                bbox_height_ratio_ = corr_bbox_.mean(3) / bbox_rect.height;
+                for (std::size_t i = 0; i < pred_bbox_.components; i++)
+                {
+                    bbox_width_ratio_(i) = corr_bbox_.mean(i, 2) / bbox_rects.at(i).width;
+                    bbox_height_ratio_(i) = corr_bbox_.mean(i, 3) / bbox_rects.at(i).height;
+                }
             }
-
-        }
-        else
-        {
-            exog_input = delta;
-            exog_input(2) *= bbox_width_ratio_;
-            exog_input(3) *= bbox_height_ratio_;
+            else
+            {
+                exog_input = delta;
+                for (std::size_t i = 0; i < pred_bbox_.components; i++)
+                {
+                    exog_input(2, i) *= bbox_width_ratio_(i);
+                    exog_input(3, i) *= bbox_height_ratio_(i);
+                }
+            }
         }
     }
 
     // Store projected bounding box for next iteration
     proj_bbox_ = curr_bbox;
+
     is_proj_bbox_initialized_ = true;
 
     // Increment counter
@@ -406,27 +439,31 @@ bool BoundingBoxEstimator::updateObjectMask()
     if (!is_object_pose_initialized_)
         return false;
 
-    // Convert state to Superimpose::ModelPose format
-    Superimpose::ModelPose si_object_pose;
-    si_object_pose.resize(7);
+    std::vector<Superimpose::ModelPoseContainer> si_object_poses(pred_bbox_.components);
+    for (std::size_t i = 0; i < pred_bbox_.components; i++)
+    {
+        // Convert state to Superimpose::ModelPose format
+        Superimpose::ModelPose si_object_pose;
+        si_object_pose.resize(7);
 
-    // Cartesian coordinates
-    si_object_pose[0] = object_3d_pose_(0);
-    si_object_pose[1] = object_3d_pose_(1);
-    si_object_pose[2] = object_3d_pose_(2);
+        // Cartesian coordinates
+        si_object_pose[0] = object_3d_pose_(0, i);
+        si_object_pose[1] = object_3d_pose_(1, i);
+        si_object_pose[2] = object_3d_pose_(2, i);
 
-    // Convert from Euler ZYX to axis/angle
-    AngleAxisd angle_axis(AngleAxisd(object_3d_pose_(9), Vector3d::UnitZ()) *
-                          AngleAxisd(object_3d_pose_(10), Vector3d::UnitY()) *
-                          AngleAxisd(object_3d_pose_(11), Vector3d::UnitX()));
-    si_object_pose[3] = angle_axis.axis()(0);
-    si_object_pose[4] = angle_axis.axis()(1);
-    si_object_pose[5] = angle_axis.axis()(2);
-    si_object_pose[6] = angle_axis.angle();
+        // Convert from Euler ZYX to axis/angle
+        AngleAxisd angle_axis(AngleAxisd(object_3d_pose_(9, i), Vector3d::UnitZ()) *
+                              AngleAxisd(object_3d_pose_(10, i), Vector3d::UnitY()) *
+                              AngleAxisd(object_3d_pose_(11, i), Vector3d::UnitX()));
+        si_object_pose[3] = angle_axis.axis()(0);
+        si_object_pose[4] = angle_axis.axis()(1);
+        si_object_pose[5] = angle_axis.axis()(2);
+        si_object_pose[6] = angle_axis.angle();
 
-    // Set pose
-    Superimpose::ModelPoseContainer object_pose_container;
-    object_pose_container.emplace("object", si_object_pose);
+        // Set pose
+        Superimpose::ModelPoseContainer& object_pose_container = si_object_poses.at(i);
+        object_pose_container.emplace("object", si_object_pose);
+    }
 
     yarp::sig::Vector eye_pos_left;
     yarp::sig::Vector eye_att_left;
@@ -442,9 +479,9 @@ bool BoundingBoxEstimator::updateObjectMask()
     // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
     bool valid_superimpose = false;
     if (eye_name_ == "left")
-        valid_superimpose = object_sicad_->superimpose(object_pose_container, eye_pos_left.data(), eye_att_left.data(), object_mask_);
+        valid_superimpose = object_sicad_->superimpose(si_object_poses, eye_pos_left.data(), eye_att_left.data(), object_mask_);
     else if (eye_name_ == "right")
-        valid_superimpose = object_sicad_->superimpose(object_pose_container, eye_pos_right.data(), eye_att_right.data(), object_mask_);
+        valid_superimpose = object_sicad_->superimpose(si_object_poses, eye_pos_right.data(), eye_att_right.data(), object_mask_);
 
     if (!valid_superimpose)
     {

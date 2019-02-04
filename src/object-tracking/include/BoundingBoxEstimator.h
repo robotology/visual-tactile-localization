@@ -1,7 +1,7 @@
 #ifndef BOUNDINGBOXESTIMATOR_H
 #define BOUNDINGBOXESTIMATOR_H
 
-#include <BayesFilters/Gaussian.h>
+#include <BayesFilters/GaussianMixture.h>
 
 #include <Eigen/Dense>
 
@@ -23,6 +23,7 @@ public:
     BoundingBoxEstimator
     (
         const BBox initial_bbox,
+        const std::size_t number_components,
         const std::string port_prefix,
         const std::string eye_name,
         const std::string obj_mesh_file,
@@ -36,6 +37,7 @@ public:
 
     BoundingBoxEstimator
     (
+        const std::size_t number_components,
         const std::string port_prefix,
         const std::string eye_name,
         const std::string obj_mesh_file,
@@ -58,6 +60,7 @@ public:
      * Get the current estimate
      */
     Eigen::VectorXd getEstimate();
+    Eigen::VectorXd getEstimate(const Eigen::Ref<const Eigen::VectorXd>& weights);
 
     /**
      * Reset the estimator
@@ -67,7 +70,7 @@ public:
     /**
      * Set the current object 3D estimate to be used as an hint by the bounding box estimator.
      */
-    void setObjectPose(const Eigen::Ref<const Eigen::VectorXd>& pose);
+    void setObjectPose(const Eigen::Ref<const Eigen::MatrixXd>& pose);
 
 protected:
     /**
@@ -83,7 +86,7 @@ protected:
     /**
      * Evaluate exogenous input.
      */
-    Eigen::VectorXd evalExogenousInput();
+    Eigen::MatrixXd evalExogenousInput();
 
     /**
      * Retrieve the object bounding box according to iCub OPC (objects property collector).
@@ -104,8 +107,8 @@ protected:
     /**
      * Gaussian belief (predicted and corrected).
      */
-    bfl::Gaussian pred_bbox_;
-    bfl::Gaussian corr_bbox_;
+    bfl::GaussianMixture pred_bbox_;
+    bfl::GaussianMixture corr_bbox_;
     bool is_initialized_;
     bool is_exogenous_initialized_;
 
@@ -154,20 +157,20 @@ protected:
     /**
      * Object projected bounding box (center, width, height)
      */
-    Eigen::VectorXd proj_bbox_;
+    Eigen::MatrixXd proj_bbox_;
     bool is_proj_bbox_initialized_;
 
     /**
      * Width and height ratio between initial bounding box and predicted bounding box
      * (required to take into account bad scaling of the point cloud).
      */
-    double bbox_width_ratio_;
-    double bbox_height_ratio_;
+    Eigen::VectorXd bbox_width_ratio_;
+    Eigen::VectorXd bbox_height_ratio_;
 
     /*
      * Object 3D pose.
      */
-    Eigen::VectorXd object_3d_pose_;
+    Eigen::MatrixXd object_3d_pose_;
     bool is_object_pose_initialized_;
 
     /**

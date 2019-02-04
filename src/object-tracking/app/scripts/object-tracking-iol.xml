@@ -34,13 +34,8 @@
   </module>
   <module>
     <name>yarpview</name>
-    <parameters>--name /iolViewer/manager/histogram --x 680 --y 220 --w 600 --h 600 --p 50 --compact</parameters>
-    <node>icub22</node>
-  </module>
-  <module>
-    <name>yarpview</name>
-    <parameters>--name /iolViewer/manager/localizer --x 370 --y 370 --out /iolViewer/manager/localizer/out --p 50 --compact</parameters>
-    <node>icub22</node>
+    <parameters>--name /object-tracking/lbp/segmented</parameters>
+    <node>localhost</node>
   </module>
   <connection>
     <from>/icub/camcalib/left/out</from>
@@ -68,8 +63,8 @@
     <protocol>tcp</protocol>
   </connection>
   <connection>
-    <from>/iolStateMachineHandler/imgHistogram:o</from>
-    <to>/iolViewer/manager/histogram</to>
+    <from>/lbpExtract/segmentedlbp:o</from>
+    <to>/object-tracking/lbp/segmented</to>
     <protocol>tcp</protocol>
   </connection>
   <connection>

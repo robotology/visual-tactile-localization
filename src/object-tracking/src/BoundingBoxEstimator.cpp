@@ -438,8 +438,8 @@ std::pair<bool, VectorXd> BoundingBoxEstimator::measure()
                                 // initialize center, width and height
                                 bbox(0) = (top_left.first + bottom_right.first) / 2.0;
                                 bbox(1) = (top_left.second + bottom_right.second) / 2.0;
-                                bbox(2) = (bottom_right.first - top_left.first);
-                                bbox(3) = (bottom_right.second - top_left.second);
+                                bbox(2) = (bottom_right.first - top_left.first) * 1.2;
+                                bbox(3) = (bottom_right.second - top_left.second) * 1.2;
 
                                 return std::make_pair(true, bbox);
                             }

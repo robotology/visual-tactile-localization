@@ -149,8 +149,8 @@ BoundingBoxEstimator::BoundingBoxEstimator
     steady_state_threshold_ = 75;
 
     // Initialize estimate extractor
-    extractor_.setMethod(EstimatesExtraction::ExtractionMethod::smode);
-    // extractor_.setMobileAverageWindowSize(6);
+    extractor_.setMethod(EstimatesExtraction::ExtractionMethod::emode);
+    extractor_.setMobileAverageWindowSize(10);
 }
 
 
@@ -223,6 +223,7 @@ void BoundingBoxEstimator::reset()
     for (std::size_t i = 0; i < corr_bbox_.components; i++)
         corr_bbox_.covariance() = cov_0_;
 
+
     steady_state_counter_ = 0;
 }
 
@@ -244,7 +245,8 @@ std::size_t BoundingBoxEstimator::getNumberComponents()
 void BoundingBoxEstimator::predict()
 {
     // state transition
-    pred_bbox_.mean() = corr_bbox_.mean() + evalExogenousInput();
+    pred_bbox_.mean() = corr_bbox_.mean();
+    pred_bbox_.mean().topRows<2>() += evalExogenousInput().topRows<2>();
 
     // covariance transition
     for (std::size_t i = 0; i < pred_bbox_.components; i++)

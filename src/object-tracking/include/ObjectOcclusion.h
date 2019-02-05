@@ -18,7 +18,7 @@ public:
 
     void drawOcclusionArea(cv::Mat& image);
 
-    std::tuple<bool, cv::Mat> removeOcclusion(const cv::Mat& mask_in);
+    std::tuple<bool, bool, cv::Mat> removeOcclusion(const cv::Mat& mask_in);
 
     virtual std::pair<bool, Eigen::MatrixXd> getOcclusionPose() = 0;
 

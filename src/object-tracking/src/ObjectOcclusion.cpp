@@ -80,19 +80,28 @@ void ObjectOcclusion::drawOcclusionArea(cv::Mat& image)
 }
 
 
-std::tuple<bool, cv::Mat> ObjectOcclusion::removeOcclusion(const cv::Mat& mask_in)
+std::tuple<bool, bool, cv::Mat> ObjectOcclusion::removeOcclusion(const cv::Mat& mask_in)
 {
     if (!occlusion_area_set_)
-        return std::make_tuple(false, mask_in);
+        return std::make_tuple(false, false, mask_in);
 
-    // Create a black mask on white background
-    cv::Mat mask_out(mask_in.rows, mask_in.cols, CV_8UC1, cv::Scalar(255));
+    // Create a white mask on black background in order to identify if there is occlusion
+    cv::Mat mask(mask_in.rows, mask_in.cols, CV_8UC1, cv::Scalar(0));
     std::vector<std::vector<cv::Point>> contours;
     contours.push_back(occlusion_area_);
-    drawContours(mask_out, contours, 0, cv::Scalar(0), CV_FILLED);
+    drawContours(mask, occlusion_area_, 0, cv::Scalar(255), CV_FILLED);
 
-    // Filter out occlusion from input mask
-    cv::bitwise_and(mask_out, mask_in, mask_out);
+    // Verifiy if there is occlusion
+    cv::Mat intersection;
+    cv::bitwise_and(mask_in, mask, intersection);
+    if (cv::countNonZero(intersection) == 0)
+        return std::make_tuple(true, false, mask_in);
 
-    return std::make_tuple(true, mask_out);
+    // Filter out occlusion from the input mask
+    cv::Mat inverted_mask;
+    cv::Mat filtered_mask;
+    cv::bitwise_not(mask, inverted_mask);
+    cv::bitwise_and(mask_in, inverted_mask, filtered_mask);
+
+    return std::make_tuple(true, true, filtered_mask);
 }

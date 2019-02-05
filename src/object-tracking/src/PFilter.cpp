@@ -240,6 +240,8 @@ void PFilter::filteringStep()
 
     // Use estimate as hint for the bounding box estimator
     bbox_estimator_->setObjectPose(cor_particle_.state());
+    // Enable disable bounding box feedforward according to the current state of occlusion
+    bbox_estimator_->enableFeedforward(!(icub_point_cloud_share_->getOcclusion()));
 
     // Update the point estimate extraction
     bool valid_estimate;

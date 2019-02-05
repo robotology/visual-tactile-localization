@@ -89,7 +89,7 @@ std::tuple<bool, bool, cv::Mat> ObjectOcclusion::removeOcclusion(const cv::Mat& 
     cv::Mat mask(mask_in.rows, mask_in.cols, CV_8UC1, cv::Scalar(0));
     std::vector<std::vector<cv::Point>> contours;
     contours.push_back(occlusion_area_);
-    drawContours(mask, occlusion_area_, 0, cv::Scalar(255), CV_FILLED);
+    drawContours(mask, contours, 0, cv::Scalar(255), CV_FILLED);
 
     // Verifiy if there is occlusion
     cv::Mat intersection;

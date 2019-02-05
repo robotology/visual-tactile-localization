@@ -223,6 +223,7 @@ void BoundingBoxEstimator::reset()
     for (std::size_t i = 0; i < corr_bbox_.components; i++)
         corr_bbox_.covariance() = cov_0_;
 
+    extractor_.clear();
 
     steady_state_counter_ = 0;
 }

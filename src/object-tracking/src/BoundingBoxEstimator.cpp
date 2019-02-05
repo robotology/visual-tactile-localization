@@ -143,7 +143,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
 
     // Initialize state covariance
     for (std::size_t i = 0; i < corr_bbox_.components; i++)
-        corr_bbox_.covariance() = cov_0_;
+        corr_bbox_.covariance(i) = cov_0_;
 
     steady_state_counter_ = 0;
     steady_state_threshold_ = 75;

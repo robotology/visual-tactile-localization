@@ -30,6 +30,7 @@ public:
         const std::string obj_mesh_file,
         const std::string sicad_shader_path,
         const std::string IOL_object_name,
+        const double IOL_bbox_scale,
         const bool send_mask,
         const Eigen::Ref<const Eigen::MatrixXd>& initial_covariance,
         const Eigen::Ref<const Eigen::MatrixXd>& process_noise_covariance,
@@ -44,6 +45,7 @@ public:
         const std::string obj_mesh_file,
         const std::string sicad_shader_path,
         const std::string IOL_object_name,
+        const double IOL_bbox_scale,
         const bool send_mask,
         const Eigen::Ref<const Eigen::MatrixXd>& initial_covariance,
         const Eigen::Ref<const Eigen::MatrixXd>& process_noise_covariance,
@@ -204,6 +206,11 @@ protected:
      * IOL object category name (required to initialize the bounding box of the object).
      */
     std::string IOL_object_name_;
+
+    /**
+     * Scale factor used to enlarge/reduce the area of the bounding box provided by IOL.
+     */
+    double IOL_bbox_scale_;
 
     /**
      * RPC clients.

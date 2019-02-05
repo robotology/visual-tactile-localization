@@ -19,6 +19,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     const std::string obj_mesh_file,
     const std::string sicad_shader_path,
     const std::string IOL_object_name,
+    const double IOL_bbox_scale,
     const bool send_mask,
     const Eigen::Ref<const Eigen::MatrixXd>& initial_covariance,
     const Eigen::Ref<const Eigen::MatrixXd>& process_noise_covariance,
@@ -32,6 +33,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
         obj_mesh_file,
         sicad_shader_path,
         IOL_object_name,
+        IOL_bbox_scale,
         send_mask,
         initial_covariance,
         process_noise_covariance,
@@ -65,6 +67,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     const std::string obj_mesh_file,
     const std::string sicad_shader_path,
     const std::string IOL_object_name,
+    const double IOL_bbox_scale,
     const bool send_mask,
     const Eigen::Ref<const Eigen::MatrixXd>& initial_covariance,
     const Eigen::Ref<const Eigen::MatrixXd>& process_noise_covariance,
@@ -74,6 +77,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     corr_bbox_(number_components, 4),
     eye_name_(eye_name),
     IOL_object_name_(IOL_object_name),
+    IOL_bbox_scale_(IOL_bbox_scale),
     send_mask_(send_mask),
     user_provided_mean_0_(false),
     extractor_(4),
@@ -438,8 +442,8 @@ std::pair<bool, VectorXd> BoundingBoxEstimator::measure()
                                 // initialize center, width and height
                                 bbox(0) = (top_left.first + bottom_right.first) / 2.0;
                                 bbox(1) = (top_left.second + bottom_right.second) / 2.0;
-                                bbox(2) = (bottom_right.first - top_left.first) * 1.2;
-                                bbox(3) = (bottom_right.second - top_left.second) * 1.2;
+                                bbox(2) = (bottom_right.first - top_left.first) * IOL_bbox_scale_;
+                                bbox(3) = (bottom_right.second - top_left.second) * IOL_bbox_scale_;
 
                                 return std::make_pair(true, bbox);
                             }

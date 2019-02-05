@@ -201,7 +201,7 @@ Eigen::VectorXd BoundingBoxEstimator::getEstimate()
 Eigen::VectorXd BoundingBoxEstimator::getEstimate(const Ref<const VectorXd>& weights)
 {
     VectorXd estimate;
-    std::tie(std::ignore, estimate) = extractor_.extract(corr_bbox_.mean(), weights);
+    std::tie(std::ignore, estimate) = extractor_.extract(corr_bbox_.mean().leftCols(corr_bbox_.components), weights);
 
     return estimate;
 }
@@ -260,7 +260,7 @@ void BoundingBoxEstimator::predict()
 
     if (enable_feedforward_)
     {
-        pred_bbox_.mean().topRows<2>() += evalExogenousInput().topRows<2>();
+	pred_bbox_.mean().leftCols(pred_bbox_.components).topRows<2>() += evalExogenousInput().topRows<2>();
     }
 
     // covariance transition

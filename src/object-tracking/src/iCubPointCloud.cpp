@@ -221,15 +221,22 @@ std::vector<std::pair<int, int>> iCubPointCloud::getObject2DCoordinates(const Re
     cv::rectangle(bbox_mask, tl, br, cv::Scalar(255), CV_FILLED);
 
     // Filter mask taking into account occlusions
+    bool is_occlusion_all = false;
     for (auto& occlusion : occlusions_)
     {
         cv::Mat mask;
         bool valid;
-        std::tie(valid, mask) = occlusion->removeOcclusion(bbox_mask);
+        bool is_occlusion;
+        std::tie(valid, is_occlusion, mask) = occlusion->removeOcclusion(bbox_mask);
 
         if (valid)
+        {
             bbox_mask = mask.clone();
+            is_occlusion_all |= is_occlusion;
+        }
     }
+
+    exogenous_data_->setOcclusion(is_occlusion_all);
 
     // Store a copy of the region of the obtained region of interset
     object_ROI_ = bbox_mask.clone();
@@ -405,7 +412,21 @@ std::pair<bool, VectorXd> iCubPointCloudExogenousData::getBoundingBox()
 }
 
 
+void iCubPointCloudExogenousData::setOcclusion(const bool& status)
+{
+    is_occlusion_ = status;
+}
+
+
+bool iCubPointCloudExogenousData::getOcclusion()
+{
+    return is_occlusion_;
+}
+
+
 void iCubPointCloudExogenousData::reset()
 {
     bbox_set_ = false;
+
+    is_occlusion_ = false;
 }

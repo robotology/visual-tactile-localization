@@ -165,6 +165,16 @@ public:
     std::pair<bool, Eigen::VectorXd> getBoundingBox();
 
     /**
+     * Set the current occlusion status.
+     */
+    void setOcclusion(const bool& status);
+
+    /**
+     * Get the current occlusion status.
+     */
+    bool getOcclusion();
+
+    /**
      * Reset
      */
     void reset();
@@ -173,6 +183,8 @@ protected:
     Eigen::VectorXd bbox_;
 
     bool bbox_set_;
+
+    bool is_occlusion_;
 };
 
 #endif /* ICUBPOINTCLOUD_H */

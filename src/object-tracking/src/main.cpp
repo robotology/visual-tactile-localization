@@ -287,6 +287,7 @@ int main(int argc, char** argv)
     VectorXd bbox_R;
     VectorXd bbox_tl_0;
     VectorXd bbox_br_0;
+    double IOL_bbox_scale;
 
     ResourceFinder rf_bbox = rf.findNestedResourceFinder("BBOX_ESTIMATOR");
     const std::string iol_object_name = rf_bbox.check("iol_object_name", Value("Bottle")).asString();
@@ -302,6 +303,7 @@ int main(int argc, char** argv)
     MatrixXd bbox_cov_0_diagonal = bbox_cov_0.asDiagonal();
     MatrixXd bbox_Q_diagonal = bbox_Q.asDiagonal();
     MatrixXd bbox_R_diagonal = bbox_R.asDiagonal();
+    double iol_bbox_scale = rf.check("iol_bbox_scale", Value(1.0)).asDouble();
 
     /* Logging parameters. */
     ResourceFinder rf_logging = rf.findNestedResourceFinder("LOG");
@@ -411,6 +413,7 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Bounding box estimator:";
     yInfo() << log_ID << "- iol_object_name:" << iol_object_name;
+    yInfo() << log_ID << "- iol_bbox_scale:"  << iol_bbox_scale;
     yInfo() << log_ID << "- use_bbox_0:"      << use_bbox_0;
     if (use_bbox_0)
     {
@@ -627,6 +630,7 @@ int main(int argc, char** argv)
                                      object_mesh_path_obj,
                                      rf.findPath("shader/"),
                                      iol_object_name,
+                                     iol_bbox_scale,
                                      enable_send_mask,
                                      bbox_cov_0_diagonal,
                                      bbox_Q_diagonal,
@@ -641,6 +645,7 @@ int main(int argc, char** argv)
                                      object_mesh_path_obj,
                                      rf.findPath("shader/"),
                                      iol_object_name,
+                                     iol_bbox_scale,
                                      enable_send_mask,
                                      bbox_cov_0_diagonal,
                                      bbox_Q_diagonal,

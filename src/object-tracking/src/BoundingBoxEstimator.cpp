@@ -151,6 +151,9 @@ BoundingBoxEstimator::BoundingBoxEstimator
     // Initialize estimate extractor
     extractor_.setMethod(EstimatesExtraction::ExtractionMethod::emode);
     extractor_.setMobileAverageWindowSize(10);
+
+    // Reset flag
+    enable_feedforward_ = true;
 }
 
 
@@ -210,6 +213,7 @@ void BoundingBoxEstimator::reset()
     is_exogenous_initialized_ = false;
     is_proj_bbox_initialized_ = false;
     is_object_pose_initialized_ = false;
+    enable_feedforward_= true;
 
     // If user provided a initial mean
     if (user_provided_mean_0_)
@@ -240,6 +244,12 @@ void BoundingBoxEstimator::setObjectPose(const Eigen::Ref<const Eigen::MatrixXd>
 std::size_t BoundingBoxEstimator::getNumberComponents()
 {
     return number_components_;
+}
+
+
+std::size_t BoundingBoxEstimator::enableFeedforward(const bool& enable)
+{
+    enable_feedforward_ = enable;
 }
 
 

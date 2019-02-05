@@ -78,6 +78,11 @@ public:
      */
     std::size_t getNumberComponents();
 
+    /**
+     * Enable/disable feedforward term.
+     */
+    std::size_t enableFeedforward(const bool& enable);
+
 protected:
     /**
      * Perform prediction.
@@ -139,6 +144,11 @@ protected:
     Eigen::VectorXd mean_0_;
     Eigen::MatrixXd cov_0_;
     bool user_provided_mean_0_;
+
+    /**
+     * Enable/disable feedforward termn.
+     */
+    bool enable_feedforward_;
 
     /**
      * Estimates extraction.

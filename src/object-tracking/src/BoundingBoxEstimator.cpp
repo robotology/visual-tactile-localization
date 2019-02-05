@@ -257,7 +257,11 @@ void BoundingBoxEstimator::predict()
 {
     // state transition
     pred_bbox_.mean() = corr_bbox_.mean();
-    pred_bbox_.mean().topRows<2>() += evalExogenousInput().topRows<2>();
+
+    if (enable_feedforward_)
+    {
+        pred_bbox_.mean().topRows<2>() += evalExogenousInput().topRows<2>();
+    }
 
     // covariance transition
     for (std::size_t i = 0; i < pred_bbox_.components; i++)

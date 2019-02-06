@@ -142,6 +142,8 @@ iCubArmModel::iCubArmModel(const bool use_thumb,
     icub_kin_finger_[0].setAllConstraints(false);
     icub_kin_finger_[1].setAllConstraints(false);
     icub_kin_finger_[2].setAllConstraints(false);
+    icub_kin_finger_[3].setAllConstraints(false);
+    icub_kin_finger_[4].setAllConstraints(false);
 
     icub_arm_.setAllConstraints(false);
     icub_arm_.releaseLink(0);
@@ -186,16 +188,6 @@ std::tuple<bool, std::vector<Superimpose::ModelPoseContainer>> iCubArmModel::get
 
     if (success)
     {
-        //q(10) = 32.0;
-        //q(11) = 30.0;
-        //q(12) = 0.0;
-        //q(13) = 0.0;
-        //q(14) = 0.0;
-        //q(15) = 0.0;
-        //q(16) = 0.0;
-        //q(17) = 0.0;
-
-
         setArmJoints(q);
 
         for (int i = 0; i < cur_states.cols(); ++i)
@@ -348,7 +340,7 @@ bool iCubArmModel::setArmJoints(const Vector& q)
     icub_arm_.setAng(q.subVector(0, 9) * CTRL_DEG2RAD);
 
     Vector chainjoints;
-    for (size_t i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 5; ++i)
     {
         if (!icub_kin_finger_[i].getChainJoints(q.subVector(3, 18), chainjoints))
             return false;

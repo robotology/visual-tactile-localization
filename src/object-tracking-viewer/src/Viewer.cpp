@@ -63,6 +63,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     rf_object_tracking.setVerbose(true);
     rf_object_tracking.setDefaultContext("object-tracking");
     rf_object_tracking.setDefaultConfigFile("config.ini");
+    rf_object_tracking.configure(0, NULL);
 
     ResourceFinder rf_object = rf_object_tracking.findNestedResourceFinder("OBJECT");
     const std::string object_name = rf_object.check("object_name", Value("ycb_mustard")).asString();

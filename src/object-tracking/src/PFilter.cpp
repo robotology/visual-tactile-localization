@@ -14,6 +14,7 @@ PFilter::PFilter
 (
     const std::string port_prefix,
     const std::size_t num_particle,
+    const double resampling_threshold,
     const std::string point_estimate_method,
     const std::size_t point_estimate_window_size,
     std::unique_ptr<ParticleSetInitialization> initialization,
@@ -34,6 +35,7 @@ PFilter::PFilter
         std::move(correction),
         std::move(resampling)
     ),
+    resampling_threshold_(resampling_threshold),
     bbox_estimator_(std::move(bbox_estimator)),
     icub_point_cloud_share_(icub_point_cloud_share),
     point_estimate_extraction_(9, 3)
@@ -227,7 +229,7 @@ void PFilter::filteringStep()
     log();
 
     double neff = resampling_->neff(cor_particle_.weight());
-    if (neff < static_cast<double>(num_particle_)/3.0)
+    if (neff < static_cast<double>(num_particle_) * resampling_threshold_)
     {
         std::cout << "Resampling..." << std::endl;
         ParticleSet res_particle(num_particle_, state_size_);

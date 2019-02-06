@@ -42,6 +42,7 @@ public:
     (
         const std::string port_prefix,
         const std::size_t num_particle,
+        const double resampling_threshold,
         const std::string point_estimate_method,
         const std::size_t point_estimate_window_size,
         std::unique_ptr<bfl::ParticleSetInitialization> initialization,
@@ -88,6 +89,8 @@ protected:
     bfl::EstimatesExtraction point_estimate_extraction_;
 
     Eigen::VectorXd point_estimate_;
+
+    double resampling_threshold_;
 
 private:
     const std::string log_ID_ = "[PFilter]";

@@ -198,6 +198,8 @@ private:
     bool show_hand_;
 
     std::unique_ptr<VtkiCubHand> vtk_icub_hand_;
+
+    const std::string log_ID_ = "[VIEWER]";
 };
 
 

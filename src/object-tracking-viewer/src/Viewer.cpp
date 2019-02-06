@@ -44,15 +44,19 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
 
     // Load period
     const int period = static_cast<int>(rf.check("period", Value(1.0)).asDouble() * 1000);
+    yInfo() << log_ID_ << "- period:" << period << "ms";
 
     // Load point cloud z threshold
     pc_left_z_threshold_  = rf.check("pc_left_z_thr", Value(1.0)).asDouble();
+    yInfo() << log_ID_ << "- pc_left_z_thr:" << pc_left_z_threshold_;
 
     // Load hand visualization boolean
     show_hand_ = rf.check("show_hand", Value(false)).asBool();
+    yInfo() << log_ID_ << "- show_hand:" << show_hand_;
 
     // Load hand laterality
     std::string hand_laterality = rf.check("hand_laterality", Value("right")).asString();
+    yInfo() << log_ID_ << "- hand_laterality:" << hand_laterality;
 
     // Load mesh from the default configuration file of module object-tracking
     ResourceFinder rf_object_tracking;
@@ -62,8 +66,10 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
 
     ResourceFinder rf_object = rf_object_tracking.findNestedResourceFinder("OBJECT");
     const std::string object_name = rf_object.check("object_name", Value("ycb_mustard")).asString();
+    yInfo() << log_ID_ << "- object_name:" << object_name;
 
     const std::string mesh_path = rf_object_tracking.findPath("mesh/" + object_name) + "/nontextured.ply";
+    yInfo() << log_ID_ << "- mesh_path:" << mesh_path;
 
     reader_ = vtkSmartPointer<vtkPLYReader>::New();
     reader_->SetFileName(mesh_path.c_str());

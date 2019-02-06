@@ -54,12 +54,15 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     // Load hand laterality
     std::string hand_laterality = rf.check("hand_laterality", Value("right")).asString();
 
-    // Load mesh
-    const std::string object_name = rf.check("object_name", Value("ycb_mustard")).asString();
-
+    // Load mesh from the default configuration file of module object-tracking
     ResourceFinder rf_object_tracking;
     rf_object_tracking.setVerbose(true);
     rf_object_tracking.setDefaultContext("object-tracking");
+    rf_object_tracking.setDefaultConfigFile("config.ini");
+
+    ResourceFinder rf_object = rf_object_tracking.findNestedResourceFinder("OBJECT");
+    const std::string object_name = rf_object.check("object_name", Value("ycb_mustard")).asString();
+
     const std::string mesh_path = rf_object_tracking.findPath("mesh/" + object_name) + "/nontextured.ply";
 
     reader_ = vtkSmartPointer<vtkPLYReader>::New();

@@ -237,6 +237,9 @@ void PFilter::filteringStep()
 
         resampling_->resample(cor_particle_, res_particle, res_parent);
 
+        // resample also bounding box particles
+        bbox_estimator_->resampleParticles(res_parent);
+
         cor_particle_ = res_particle;
     }
 

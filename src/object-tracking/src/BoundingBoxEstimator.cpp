@@ -257,6 +257,25 @@ void BoundingBoxEstimator::enableFeedforward(const bool& enable)
 }
 
 
+void BoundingBoxEstimator::resampleParticles(const VectorXi& parents)
+{
+    GaussianMixture resampled_pred(pred_bbox_.components, 4);
+    GaussianMixture resampled_corr(pred_bbox_.components, 4);
+
+    for (std::size_t i = 0; i < pred_bbox_.components; i++)
+    {
+        resampled_pred.mean(i) = pred_bbox_.mean(parents(i));
+        resampled_pred.covariance(i) = pred_bbox_.covariance(parents(i));
+
+        resampled_corr.mean(i) = corr_bbox_.mean(parents(i));
+        resampled_corr.covariance(i) = corr_bbox_.covariance(parents(i));
+    }
+
+    pred_bbox_ = resampled_pred;
+    corr_bbox_ = resampled_corr;
+}
+
+
 void BoundingBoxEstimator::predict()
 {
     // state transition

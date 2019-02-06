@@ -85,6 +85,11 @@ public:
      */
     void enableFeedforward(const bool& enable);
 
+    /**
+     * Resample particles.
+     */
+    void resampleParticles(const Eigen::VectorXi& parents);
+
 protected:
     /**
      * Perform prediction.

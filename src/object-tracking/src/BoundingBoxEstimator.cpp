@@ -251,7 +251,7 @@ std::size_t BoundingBoxEstimator::getNumberComponents()
 }
 
 
-std::size_t BoundingBoxEstimator::enableFeedforward(const bool& enable)
+void BoundingBoxEstimator::enableFeedforward(const bool& enable)
 {
     enable_feedforward_ = enable;
 }

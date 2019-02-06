@@ -83,7 +83,7 @@ public:
     /**
      * Enable/disable feedforward term.
      */
-    std::size_t enableFeedforward(const bool& enable);
+    void enableFeedforward(const bool& enable);
 
 protected:
     /**

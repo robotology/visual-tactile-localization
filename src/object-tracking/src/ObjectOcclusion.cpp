@@ -61,7 +61,11 @@ void ObjectOcclusion::findOcclusionArea()
         if (contours.size() != 0)
         {
             // Find the convex hull
-            cv::convexHull(contours[0], occlusion_area_);
+            std::vector<cv::Point> occlusion_area_not_scaled;
+            cv::convexHull(contours[0], occlusion_area_not_scaled);
+
+            // Enlarge the convex hull a bit
+            occlusion_area_ = enlargeConvexHull(occlusion_area_not_scaled, 1.2);
 
             occlusion_area_set_ = true;
         }
@@ -104,4 +108,33 @@ std::tuple<bool, bool, cv::Mat> ObjectOcclusion::removeOcclusion(const cv::Mat& 
     cv::bitwise_and(mask_in, inverted_mask, filtered_mask);
 
     return std::make_tuple(true, true, filtered_mask);
+}
+
+
+std::vector<cv::Point> ObjectOcclusion::enlargeConvexHull(const std::vector<cv::Point>& contour, const double& scale_factor)
+{
+    // Evaluate the centroid
+    double c_x = 0.0;
+    double c_y = 0.0;
+
+    for (const cv::Point& point : contour)
+    {
+        c_x += point.x;
+        c_y += point.y;
+    }
+
+    c_x /= contour.size();
+    c_y /= contour.size();
+
+    // Scale each point in the contour
+    std::vector<cv::Point> scaled_points;
+    for (const cv::Point& point : contour)
+    {
+        // Evaluate scaled point
+        cv::Point scaled_point (c_x + (point.x - c_x) * scale_factor, c_y + (point.y - c_y) * scale_factor);
+
+        scaled_points.push_back(scaled_point);
+    }
+
+    return scaled_points;
 }

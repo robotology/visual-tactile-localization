@@ -27,6 +27,8 @@ public:
     void reset();
 
 protected:
+    std::vector<cv::Point> enlargeConvexHull(const std::vector<cv::Point>& contour, const double& scaling_factor);
+
     std::unique_ptr<MeshModel> mesh_model_;
 
     std::unique_ptr<SICAD> object_sicad_;

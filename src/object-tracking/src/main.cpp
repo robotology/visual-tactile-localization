@@ -163,11 +163,13 @@ int main(int argc, char** argv)
     double likelihood_variance;
     std::string point_estimate_method;
     std::size_t point_estimate_window_size;
+    double resampling_threshold;
     if (filter_type == "upf")
     {
         /* Get number of particles. */
         ResourceFinder rf_particles = rf.findNestedResourceFinder("PARTICLES");
-        number_particles = rf_particles.check("number",  Value(1)).asInt();
+        number_particles     = rf_particles.check("number",  Value(1)).asInt();
+        resampling_threshold = rf_particles.check("resample_threshold", Value(0.5)).asDouble();
 
         /* Get likelihood variance */
         ResourceFinder rf_likelihood = rf.findNestedResourceFinder("LIKELIHOOD");
@@ -334,7 +336,8 @@ int main(int argc, char** argv)
     if (filter_type == "upf")
     {
         yInfo() << log_ID << "Particles:";
-        yInfo() << log_ID << "- number:"   << number_particles;
+        yInfo() << log_ID << "- number:"             << number_particles;
+        yInfo() << log_ID << "- resample_threshold:" << resampling_threshold;
 
         yInfo() << log_ID << "Likelihood:";
         yInfo() << log_ID << "- variance:" << likelihood_variance;
@@ -722,6 +725,7 @@ int main(int argc, char** argv)
             filter = std::move(std::unique_ptr<PFilter>(
                                    new PFilter(port_prefix,
                                                eff_number_particles,
+                                               resampling_threshold,
                                                point_estimate_method,
                                                point_estimate_window_size,
                                                std::move(pf_initialization),

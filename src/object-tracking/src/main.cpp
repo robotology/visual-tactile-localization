@@ -289,7 +289,6 @@ int main(int argc, char** argv)
     VectorXd bbox_R;
     VectorXd bbox_tl_0;
     VectorXd bbox_br_0;
-    double IOL_bbox_scale;
 
     ResourceFinder rf_bbox = rf.findNestedResourceFinder("BBOX_ESTIMATOR");
     const std::string iol_object_name = rf_bbox.check("iol_object_name", Value("Bottle")).asString();
@@ -305,7 +304,7 @@ int main(int argc, char** argv)
     MatrixXd bbox_cov_0_diagonal = bbox_cov_0.asDiagonal();
     MatrixXd bbox_Q_diagonal = bbox_Q.asDiagonal();
     MatrixXd bbox_R_diagonal = bbox_R.asDiagonal();
-    double iol_bbox_scale = rf.check("iol_bbox_scale", Value(1.0)).asDouble();
+    double iol_bbox_scale = rf_bbox.check("iol_bbox_scale", Value(1.0)).asDouble();
 
     /* Logging parameters. */
     ResourceFinder rf_logging = rf.findNestedResourceFinder("LOG");

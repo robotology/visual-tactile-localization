@@ -212,6 +212,12 @@ void iCubPointCloud::addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_
 }
 
 
+void iCubPointCloud::addObjectContacts(std::unique_ptr<iCubHandContactsModel> object_contacts)
+{
+    contacts_ = std::move(object_contacts);
+}
+
+
 std::vector<std::pair<int, int>> iCubPointCloud::getObject2DCoordinates(const Ref<const VectorXd>& bbox, std::size_t stride_u, std::size_t stride_v)
 {
     // Create white mask using the current bounding box

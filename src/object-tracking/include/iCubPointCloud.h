@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 
 #include <GazeController.h>
+#include <iCubHandContactsModel.h>
 #include <ObjectOcclusion.h>
 #include <PointCloudModel.h>
 #include <PointCloudPrediction.h>
@@ -49,6 +50,8 @@ public:
     bool setProperty(const std::string& property) override;
 
     void addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_occlusion);
+
+    void addObjectContacts(std::unique_ptr<iCubHandContactsModel> object_contacts);
 
 protected:
     /**
@@ -132,6 +135,12 @@ protected:
      * Object occlusions.
      */
     cv::Mat object_ROI_;
+
+
+    /**
+     * Object contacts.
+     */
+    std::unique_ptr<iCubHandContactsModel> contacts_;
 
     /**
      * Image input/output.

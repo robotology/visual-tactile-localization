@@ -16,7 +16,7 @@
   </module>
   <module>
     <name>linearClassifierModule</name>
-    <parameters> --BufferSize 1 --CSVM 1.0 --databaseFolder IOLDatabase --WeightedSVM 1</parameters>
+    <parameters> --BufferSize 1 --CSVM 1.0 --databaseFolder IOLDatabase_object_tracking --WeightedSVM 1</parameters>
     <node>icub-cuda</node>
   </module>
   <module>

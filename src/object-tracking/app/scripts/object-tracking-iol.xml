@@ -29,7 +29,7 @@
   </module>
   <module>
     <name>objectsPropertiesCollector</name>
-    <parameters>--name memory --db memory_iol.ini</parameters>
+    <parameters>--name memory --db memory_object_tracking.ini</parameters>
     <node>icub21</node>
   </module>
   <module>

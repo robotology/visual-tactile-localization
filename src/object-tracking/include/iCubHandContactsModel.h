@@ -1,6 +1,7 @@
 #ifndef ICUBHANDCONTACTSMODEL_H
 #define ICUBHANDCONTACTSMODEL_H
 
+#include <ContactDetection.h>
 #include <iCubArmModel.h>
 #include <MeshImporter.h>
 #include <VCGTriMesh.h>
@@ -15,7 +16,13 @@
 class iCubHandContactsModel
 {
 public:
-    iCubHandContactsModel(std::unique_ptr<iCubArmModel> icub_arm, std::vector<std::string> used_fingers, const std::string port_prefix);
+    iCubHandContactsModel
+    (
+        std::unique_ptr<iCubArmModel> icub_arm,
+        std::unique_ptr<ContactDetection> contact_detection,
+        std::vector<std::string> used_fingers,
+        const std::string port_prefix
+    );
 
     virtual ~iCubHandContactsModel();
 
@@ -45,6 +52,8 @@ protected:
     const std::vector<std::string> used_fingers_;
 
     std::unique_ptr<iCubArmModel> icub_arm_;
+
+    std::unique_ptr<ContactDetection> contact_detection_;
 
     const std::string log_ID_ = "[ICUBHANDCONTACTSMODEL]";
 

@@ -5,13 +5,16 @@
 using namespace Eigen;
 using namespace yarp::eigen;
 
+
 iCubHandContactsModel::iCubHandContactsModel
 (
     std::unique_ptr<iCubArmModel> icub_arm,
+    std::unique_ptr<ContactDetection> contact_detection,
     std::vector<std::string> used_fingers,
     const std::string port_prefix
 ) :
     icub_arm_(std::move(icub_arm)),
+    contact_detection_(std::move(contact_detection)),
     used_fingers_(used_fingers)
 {
     // Try to open the hand pose input port

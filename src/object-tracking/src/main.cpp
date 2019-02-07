@@ -6,6 +6,7 @@
 #include <iCubHandContactsModel.h>
 #include <iCubHandOcclusion.h>
 #include <iCubPointCloud.h>
+#include <iCubSpringyFingersDetection.h>
 #include <InitParticles.h>
 #include <DiscreteKinematicModel.h>
 #include <DiscretizedKinematicModel.h>
@@ -534,15 +535,22 @@ int main(int argc, char** argv)
 
         if (handle_hand_contacts)
         {
+            /* Initialize iCubArmModel providing the 3D pose of the hand parts relative to the hand palm. */ 
             std::unique_ptr<iCubArmModel> icub_arm = std::unique_ptr<iCubArmModel>(
                 new iCubArmModel(false,
                                  false,
                                  hand_laterality_contacts,
                                  "object-tracking",
-                                 "object-tracking/icub-arm-model/contacts" + hand_laterality_contacts));
+                                 "object-tracking/icub-arm-model/contacts/" + hand_laterality_contacts));
+
+            std::unique_ptr<iCubSpringyFingersDetection> icub_springy_fingers = std::unique_ptr<iCubSpringyFingersDetection>(
+                new iCubSpringyFingersDetection("right"));
 
             std::unique_ptr<iCubHandContactsModel> icub_contacts = std::unique_ptr<iCubHandContactsModel>(
-                new iCubHandContactsModel(std::move(icub_arm), used_fingers_contacts, "object-trackin/icub-hand-contacts"));
+                new iCubHandContactsModel(std::move(icub_arm),
+                                          std::move(icub_springy_fingers),
+                                          used_fingers_contacts,
+                                          "object-trackin/icub-hand-contacts"));
 
             /* Add the contacts to the iCubPointCloud. */
             pc_icub->addObjectContacts(std::move(icub_contacts));

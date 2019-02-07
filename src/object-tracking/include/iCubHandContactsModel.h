@@ -1,5 +1,5 @@
 #ifndef ICUBHANDCONTACTSMODEL_H
-#define ICUBHANDCONTACTSMODEL_h
+#define ICUBHANDCONTACTSMODEL_H
 
 #include <iCubArmModel.h>
 #include <MeshImporter.h>

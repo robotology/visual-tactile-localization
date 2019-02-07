@@ -50,6 +50,7 @@ find_package(OpenGL REQUIRED)
 
 set(${EXE_TARGET_NAME}_HDR
     include/BoundingBoxEstimator.h
+    include/ContactDetection.h
     include/Correction.h
     include/DiscreteKinematicModel.h
     include/DiscretizedKinematicModel.h
@@ -59,6 +60,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/iCubHandContactsModel.h
     include/iCubHandOcclusion.h
     include/iCubPointCloud.h
+    include/iCubSpringyFingersDetection.h
     include/InitParticles.h
     include/MeshImporter.h
     include/MeshModel.h
@@ -87,6 +89,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/iCubHandContactsModel.cpp
     src/iCubHandOcclusion.cpp
     src/iCubPointCloud.cpp
+    src/iCubSpringyFingersDetection.cpp
     src/InitParticles.cpp
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
@@ -175,6 +178,8 @@ set(${EXE_TARGET_NAME}_CONF
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/config_simulation.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/sfm_config.ini
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/springy_calibration_left.ini
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/springy_calibration_right.ini
     )
 
 set(${EXE_TARGET_NAME}_SHADER_VERT

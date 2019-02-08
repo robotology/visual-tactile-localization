@@ -31,6 +31,10 @@ find_package(YARP CONFIG REQUIRED
              eigen
              cv
              )
+
+# ICUB
+find_package(ICUB REQUIRED)
+
 # assimp
 find_package(assimp REQUIRED)
 
@@ -135,6 +139,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       ${OpenCV_LIBS}
                       iCubGazeCtrlLibrary
                       ${OPENGL_LIBRARIES}
+                      ${ICUB_LIBRARIES}
                       )
 
 if (USE_OPENMP)

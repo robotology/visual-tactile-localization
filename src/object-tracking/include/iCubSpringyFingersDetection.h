@@ -3,9 +3,11 @@
 
 #include <ContactDetection.h>
 
-#include <yarp/sig/Vector.h>
-
 #include <iCub/perception/springyFingers.h>
+
+#include <vector>
+
+#include <yarp/sig/Vector.h>
 
 
 class iCubSpringyFingersDetection : public ContactDetection
@@ -23,6 +25,8 @@ protected:
     iCub::perception::SpringyFingersModel springy_model_;
 
     yarp::sig::Vector thresholds_;
+
+    const std::vector<std::string> fingers_names_ = {"thumb", "index", "middle", "ring", "little"};
 };
 
 #endif /* ICUBSPRINGYFINGERSDETECTION_H */

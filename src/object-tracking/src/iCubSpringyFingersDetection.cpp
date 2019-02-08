@@ -6,7 +6,7 @@
 using namespace yarp::os;
 using namespace yarp::sig;
 
-#include <iostream>
+
 iCubSpringyFingersDetection::iCubSpringyFingersDetection(const std::string laterality)
 {
     // Form the name of the configuration file
@@ -48,7 +48,25 @@ iCubSpringyFingersDetection::~iCubSpringyFingersDetection()
 
 std::pair<bool, std::unordered_map<std::string, bool>> iCubSpringyFingersDetection::getActiveFingers()
 {
+    // Get the output of the springy LSSVM model
+    Value springy_output;
+    Bottle* springy_list;
+    springy_model_.getOutput(springy_output);
+    springy_list = springy_output.asList();
 
+    std::unordered_map<std::string, bool> contacts;
+    // Reset contacts
+    for (std::size_t i = 0; i < 5; i++)
+        contacts[fingers_names_.at(i)] = false;
+
+    // Check if there is contact
+    for (std::size_t i = 0; i < 5; i++)
+    {
+        if (springy_list->get(i).asDouble() > thresholds_(i))
+            contacts.at(fingers_names_.at(i)) = true;
+    }
+
+    return std::make_pair(true, contacts);
 }
 
 

@@ -98,6 +98,9 @@ std::pair<bool, Data> iCubPointCloud::measure() const
 
 bool iCubPointCloud::freezeMeasurements()
 {
+    // DEBUGGING
+    contacts_->printContactDetection();
+
     // Get bounding box
     bool valid_bbox;
     VectorXd bbox;

@@ -136,7 +136,6 @@ protected:
      */
     cv::Mat object_ROI_;
 
-
     /**
      * Object contacts.
      */

@@ -149,6 +149,19 @@ bool iCubHandContactsModel::freezeMeasurements()
 }
 
 
+void iCubHandContactsModel::printContactDetection()
+{
+    bool valid_detection;
+    std::unordered_map<std::string, bool> fingers_contacts;
+    std::tie(valid_detection, fingers_contacts) = contact_detection_->getActiveFingers();
+
+
+    for (std::size_t i = 0; i < used_fingers_.size(); i++)
+        if (fingers_contacts[used_fingers_.at(i)])
+            std::cout << "In contact:" << used_fingers_.at(i) << std::endl;
+}
+
+
 Eigen::VectorXd iCubHandContactsModel::measure() const
 {
     return measurements_;

@@ -28,6 +28,8 @@ public:
 
     bool freezeMeasurements();
 
+    void printContactDetection();
+
     Eigen::VectorXd measure() const;
 
 protected:

@@ -5,6 +5,15 @@
 using namespace bfl;
 
 
+MeasurementModelReference::MeasurementModelReference(AdditiveMeasurementModel& measurement_model) :
+    meas_model_(dynamic_cast<iCubPointCloud&>(measurement_model))
+{ }
+
+iCubPointCloud& MeasurementModelReference::getPointCloudModel()
+{
+    return meas_model_;
+}
+
 Correction::Correction
 (
     std::unique_ptr<AdditiveMeasurementModel> meas_model,
@@ -21,6 +30,7 @@ Correction::Correction
      */
     const std::size_t meas_sub_size
 ) noexcept :
+    MeasurementModelReference(*meas_model),
     SUKFCorrection(std::move(meas_model), state_size, alpha, beta, kappa, meas_sub_size, true)
 { }
 
@@ -36,5 +46,5 @@ void Correction::correctStep(const GaussianMixture& pred_state, GaussianMixture&
 
 void Correction::reset()
 {
-    getMeasurementModel().setProperty("reset");
+    getPointCloudModel().setProperty("reset");
 }

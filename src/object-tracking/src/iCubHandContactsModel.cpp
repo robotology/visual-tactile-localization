@@ -51,7 +51,7 @@ iCubHandContactsModel::iCubHandContactsModel
     }
 
     // Load also additional meshes of cleaned fingertips
-    for (auto finger_name : used_fingers)
+    for (auto finger_name : used_fingers_)
     {
         for (auto path : meshes_paths)
         {
@@ -72,14 +72,14 @@ iCubHandContactsModel::iCubHandContactsModel
     }
 
     // Sample clouds on fingertips
-    for (auto used_finger : used_fingers)
-        sampleFingerTip(getFingerTipName(used_finger) + "cleaned");
+    for (auto used_finger : used_fingers_)
+        sampleFingerTip(getFingerTipName(used_finger));
 
     // Resize the output measurement vector
     std::size_t number_samples = 0;
     for (auto used_finger : used_fingers_)
         number_samples += sampled_fingertips_[getFingerTipName(used_finger)].cols();
-    measurements_.resize(3 * number_samples);
+    measurements_ = VectorXd::Zero(3 * number_samples);
 
     // Evaluate accessors to subvector of the measurement vector
     for (std::size_t i = 0, total_size = 0; i < used_fingers_.size(); i++)
@@ -88,9 +88,9 @@ iCubHandContactsModel::iCubHandContactsModel
 
         int sample_size = sampled_fingertips_.at(fingertip_name).cols();
 
-        measurements_accessor_.emplace(std::make_pair(fingertip_name, Map<MatrixXd>(measurements_.segment(total_size, sample_size).data(), 3, sample_size)));
+        measurements_accessor_.emplace(std::make_pair(fingertip_name, Map<MatrixXd>(measurements_.segment(total_size, sample_size * 3).data(), 3, sample_size)));
 
-        total_size += sample_size;
+        total_size += sample_size * 3;
     }
 }
 
@@ -112,7 +112,7 @@ bool iCubHandContactsModel::freezeMeasurements()
     if (hand_pose_yarp == nullptr)
         return false;
 
-    MatrixXd hand_pose = toEigen(*hand_pose_yarp);
+    VectorXd hand_pose = toEigen(*hand_pose_yarp);
 
     // Get the pose of all part of the hand according to finger forward kinematics
     bool valid_hand_model_pose;
@@ -175,6 +175,8 @@ Eigen::VectorXd iCubHandContactsModel::measure() const
 
     if (is_contact)
         std::cout << log_ID_ << "Info: assuming contacts." << std::endl;
+    else
+        std::cout << log_ID_ << "Info: no contacts." << std::endl;
 
     VectorXd no_measurements = VectorXd(0);
     const VectorXd& effective_measurements = is_contact ? measurements_ : no_measurements;
@@ -266,7 +268,7 @@ bool iCubHandContactsModel::loadMesh(const std::string hand_part_name, const std
 
 void iCubHandContactsModel::sampleFingerTip(const std::string fingertip_name)
 {
-    simpleTriMesh& mesh = hand_meshes_.at(fingertip_name);
+    simpleTriMesh& mesh = hand_meshes_.at(fingertip_name + "cleaned");
 
     // Perform back-face culling in order to remove faces pointing towards
     // the negative local z-axis (i.e. negative approach direction of the fingertip).

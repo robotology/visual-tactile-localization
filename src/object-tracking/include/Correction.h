@@ -40,6 +40,8 @@ public:
 
     void correctStep(const bfl::GaussianMixture& pred_state, bfl::GaussianMixture& corr_state) override;
 
+    Eigen::MatrixXd getNoiseCovarianceMatrix(const std::size_t index) override;
+
     void reset();
 };
 

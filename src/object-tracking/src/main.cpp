@@ -518,7 +518,7 @@ int main(int argc, char** argv)
         {
             /* Initialize iCubArmModel providing the 3D pose of the hand parts relative to the hand palm. */
             std::unique_ptr<iCubArmModel> icub_arm = std::unique_ptr<iCubArmModel>(
-                new iCubArmModel(false,
+                new iCubArmModel(true,
                                  false,
                                  hand_laterality_occlusion,
                                  "object-tracking",

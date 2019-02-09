@@ -504,6 +504,7 @@ int main(int argc, char** argv)
         std::unique_ptr<iCubPointCloud> pc_icub = std::unique_ptr<iCubPointCloud>(
             new iCubPointCloud(std::move(pc_prediction),
                                noise_covariance_diagonal,
+                               tactile_covariance_diagonal,
                                port_prefix,
                                "left",
                                depth_fetch_mode,

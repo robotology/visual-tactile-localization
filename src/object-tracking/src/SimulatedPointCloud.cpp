@@ -38,7 +38,7 @@ SimulatedPointCloud::SimulatedPointCloud
     unsigned int seed
 ):
     MeshImporter(mesh_filename),
-    PointCloudModel(std::move(prediction), model_noise_covariance),
+    PointCloudModel(std::move(prediction), model_noise_covariance, Matrix3d::Zero()),
     simulated_model_(std::move(simulated_state_model)),
     observer_origin_(observer_origin),
     number_of_points_(number_of_points),

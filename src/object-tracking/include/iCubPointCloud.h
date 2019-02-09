@@ -29,6 +29,7 @@ public:
     (
         std::unique_ptr<PointCloudPrediction> prediction,
         const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
+        const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance_matrix,
         const std::string port_prefix,
         const std::string eye_name,
         const std::string depth_fetch_mode,
@@ -52,6 +53,8 @@ public:
     void addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_occlusion);
 
     void addObjectContacts(std::unique_ptr<iCubHandContactsModel> object_contacts);
+
+    int getVisualPointCloudSize();
 
 protected:
     /**
@@ -109,6 +112,11 @@ protected:
      */
     std::size_t pc_u_stride_;
     std::size_t pc_v_stride_;
+
+    /**
+     * Size of the last set of points obtained from vision
+     */
+    int visual_point_cloud_size_;
 
     /**
      * Interface to iCub cameras.

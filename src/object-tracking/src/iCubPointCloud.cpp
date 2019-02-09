@@ -21,6 +21,7 @@ iCubPointCloud::iCubPointCloud
 (
     std::unique_ptr<PointCloudPrediction> prediction,
     const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
+    const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance_matrix,
     const std::string port_prefix,
     const std::string eye_name,
     const std::string depth_fetch_mode,
@@ -30,7 +31,7 @@ iCubPointCloud::iCubPointCloud
     const bool send_hull,
     std::shared_ptr<iCubPointCloudExogenousData> exogenous_data
 ) :
-    PointCloudModel(std::move(prediction), noise_covariance_matrix),
+    PointCloudModel(std::move(prediction), noise_covariance_matrix, tactile_noise_covariance_matrix),
     eye_name_(eye_name),
     depth_fetch_mode_(depth_fetch_mode),
     pc_outlier_threshold_(point_cloud_outlier_threshold),
@@ -180,6 +181,9 @@ bool iCubPointCloud::freezeMeasurements()
         }
     }
 
+    // Set the size of the visual part of the point cloud
+    visual_point_cloud_size_ = points.cols();
+
     // Resize measurements to be a column vector.
     measurement_.resize(3 * points.cols(), 1);
     measurement_.swap(Map<MatrixXd>(points.data(), points.size(), 1));
@@ -221,6 +225,11 @@ void iCubPointCloud::addObjectContacts(std::unique_ptr<iCubHandContactsModel> ob
     contacts_ = std::move(object_contacts);
 }
 
+
+int iCubPointCloud::getVisualPointCloudSize()
+{
+    return visual_point_cloud_size_;
+}
 
 std::vector<std::pair<int, int>> iCubPointCloud::getObject2DCoordinates(const Ref<const VectorXd>& bbox, std::size_t stride_u, std::size_t stride_v)
 {

@@ -3,9 +3,15 @@
 using namespace bfl;
 using namespace Eigen;
 
-PointCloudModel::PointCloudModel(std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix) :
+PointCloudModel::PointCloudModel
+(
+    std::unique_ptr<PointCloudPrediction> prediction,
+    const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix,
+    const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance_matrix
+    ) :
     prediction_(std::move(prediction)),
-    model_noise_covariance_(noise_covariance_matrix)
+    model_noise_covariance_(noise_covariance_matrix),
+    tactile_model_noise_covariance_(tactile_noise_covariance_matrix)
 { }
 
 
@@ -40,4 +46,10 @@ std::pair<bool, bfl::Data> PointCloudModel::innovation(const bfl::Data& predicte
 std::pair<bool, MatrixXd> PointCloudModel::getNoiseCovarianceMatrix() const
 {
     return std::make_pair(true, model_noise_covariance_);
+}
+
+
+std::pair<bool, MatrixXd> PointCloudModel::getTactileNoiseCovarianceMatrix() const
+{
+    return std::make_pair(true, tactile_model_noise_covariance_);
 }

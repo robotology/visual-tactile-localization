@@ -13,7 +13,7 @@
 class PointCloudModel : public bfl::AdditiveMeasurementModel
 {
 public:
-    PointCloudModel(std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix);
+    PointCloudModel(std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& noise_covariance_matrix, const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance_matrix);
 
     std::pair<bool, bfl::Data> predictedMeasure(const Eigen::Ref<const Eigen::MatrixXd>& current_states) const override;
 
@@ -21,10 +21,14 @@ public:
 
     std::pair<bool, Eigen::MatrixXd> getNoiseCovarianceMatrix() const override;
 
+    std::pair<bool, Eigen::MatrixXd> getTactileNoiseCovarianceMatrix() const;
+
 protected:
     std::unique_ptr<PointCloudPrediction> prediction_;
 
     Eigen::Matrix3d model_noise_covariance_;
+
+    Eigen::Matrix3d tactile_model_noise_covariance_;
 
     std::vector<std::string> log_filenames(const std::string& prefix_path, const std::string& prefix_name) override
     {

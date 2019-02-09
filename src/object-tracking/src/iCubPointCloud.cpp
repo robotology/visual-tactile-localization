@@ -99,10 +99,6 @@ std::pair<bool, Data> iCubPointCloud::measure() const
 
 bool iCubPointCloud::freezeMeasurements()
 {
-    // DEBUGGING
-    if (contacts_ != nullptr)
-        contacts_->printContactDetection();
-
     // Get bounding box
     bool valid_bbox;
     VectorXd bbox;
@@ -170,9 +166,23 @@ bool iCubPointCloud::freezeMeasurements()
             good_points(i) = 1;
     }
 
-    // take only valid points
-    MatrixXd points(3, good_points.sum());
-    for (int i = 0, j = 0; i < point_cloud.cols(); i++)
+
+    // Check if contact is occurring
+    VectorXd tactile_points;
+    std::size_t number_tactile_points = 0;
+    if (contacts_->freezeMeasurements())
+    {
+        tactile_points = contacts_->measure();
+
+        number_tactile_points = tactile_points.size() / 3;
+    }
+
+    // Allocate storage
+    MatrixXd points(3, good_points.sum() + number_tactile_points);
+
+    // Take only valid visual points
+    int j = 0;
+    for (int i = 0; i < point_cloud.cols(); i++)
     {
         if (good_points(i) == 1)
         {
@@ -180,6 +190,10 @@ bool iCubPointCloud::freezeMeasurements()
             j++;
         }
     }
+
+    // If any, take also contact points
+    for (int i = 0; i < number_tactile_points; i++)
+        tactile_points.segment(i * 3, 3).swap(points.col(j));
 
     // Set the size of the visual part of the point cloud
     visual_point_cloud_size_ = points.cols();

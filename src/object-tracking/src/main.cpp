@@ -209,6 +209,8 @@ int main(int argc, char** argv)
     ResourceFinder rf_measurement_model = rf.findNestedResourceFinder("MEASUREMENT_MODEL");
     VectorXd noise_covariance = loadVectorDouble(rf_measurement_model, "noise_covariance", 3);
     MatrixXd noise_covariance_diagonal = noise_covariance.asDiagonal();
+    VectorXd tactile_covariance = loadVectorDouble(rf_measurement_model, "tactile_covariance", 3);
+    MatrixXd tactile_covariance_diagonal = tactile_covariance.asDiagonal();
 
     /* Unscented transform. */
     ResourceFinder rf_unscented_transform = rf.findNestedResourceFinder("UNSCENTED_TRANSFORM");

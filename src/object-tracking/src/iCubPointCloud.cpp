@@ -169,8 +169,8 @@ bool iCubPointCloud::freezeMeasurements()
 
     // Check if contact is occurring
     VectorXd tactile_points;
-    std::size_t number_tactile_points = 0;
-    if (contacts_->freezeMeasurements())
+    int number_tactile_points = 0;
+    if ((contacts_ != nullptr) && (contacts_->freezeMeasurements()))
     {
         tactile_points = contacts_->measure();
 
@@ -193,10 +193,14 @@ bool iCubPointCloud::freezeMeasurements()
 
     // If any, take also contact points
     for (int i = 0; i < number_tactile_points; i++)
+    {
         tactile_points.segment(i * 3, 3).swap(points.col(j));
 
+	j++;
+    }
+
     // Set the size of the visual part of the point cloud
-    visual_point_cloud_size_ = points.cols();
+    visual_point_cloud_size_ = good_points.sum();
 
     // Resize measurements to be a column vector.
     measurement_.resize(3 * points.cols(), 1);

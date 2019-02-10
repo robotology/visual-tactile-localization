@@ -43,7 +43,7 @@ protected:
 
     Eigen::VectorXd sampleFromProposal(const Eigen::VectorXd& mean, const Eigen::MatrixXd& covariance);
 
-    /* double evaluateProposal(const Eigen::VectorXd& state, const Eigen::VectorXd& mean, const Eigen::MatrixXd& covariance); */
+    double evaluateProposal(const Eigen::VectorXd& state, const Eigen::VectorXd& mean, const Eigen::MatrixXd& covariance);
 
     std::unique_ptr<Correction> gaussian_correction_;
 

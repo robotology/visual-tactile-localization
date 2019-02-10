@@ -111,6 +111,9 @@ void ParticlesCorrection::correctStep(const bfl::ParticleSet& pred_particles, bf
 
     /* Update weights in the log space. */
     corr_particles.weight() = pred_particles.weight() + likelihood_;
+    // for (std::size_t i = 0; i < pred_particles.components; i++)
+    //     corr_particles.weight(i) = pred_particles.weight(i) + likelihood_(i) -
+    //         evaluateProposal(corr_particles.state(i), corr_particles.mean(i), corr_particles.covariance(i));
 }
 
 
@@ -156,16 +159,16 @@ Eigen::VectorXd ParticlesCorrection::sampleFromProposal(const Eigen::VectorXd& m
 }
 
 
-// double ParticlesCorrection::evaluateProposal
-// (
-//     const Eigen::VectorXd& state,
-//     const Eigen::VectorXd& mean,
-//     const Eigen::MatrixXd& covariance
-// )
-// {
-//     /* Evaluate the proposal distribution, a Gaussian centered in 'mean' and having
-//        covariance 'covariance', in the state 'state'. */
-//     VectorXd difference = state - mean;
+double ParticlesCorrection::evaluateProposal
+(
+    const Eigen::VectorXd& state,
+    const Eigen::VectorXd& mean,
+    const Eigen::MatrixXd& covariance
+)
+{
+    /* Evaluate the proposal distribution, a Gaussian centered in 'mean' and having
+       covariance 'covariance', in the state 'state'. */
+    VectorXd difference = state - mean;
 
-//     return (-0.5 * static_cast<double>(difference.size()) * log(2.0 * M_PI) -0.5 * log(covariance.determinant()) -0.5 * (difference.transpose() * covariance.inverse() * difference).array()).exp().coeff(0);
-// }
+    return (-0.5 * static_cast<double>(difference.size()) * log(2.0 * M_PI) -0.5 * log(covariance.determinant()) -0.5 * (difference.transpose() * covariance.inverse() * difference).array()).coeff(0);
+}

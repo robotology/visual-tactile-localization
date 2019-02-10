@@ -522,7 +522,7 @@ int main(int argc, char** argv)
                                  false,
                                  hand_laterality_occlusion,
                                  "object-tracking",
-                                 "object-tracking/icub-arm-model/occlusion" + hand_laterality_occlusion));
+                                 "object-tracking/icub-arm-model/occlusion/" + hand_laterality_occlusion));
 
             /* Initialize iCubHandOcclusion that reads the hand palm pose from a port
                and creates an occlusion mask to be used to clean part of the point cloud of the object

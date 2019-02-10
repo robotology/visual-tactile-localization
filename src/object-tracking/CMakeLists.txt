@@ -251,7 +251,7 @@ set(${EXE_TARGET_NAME}_YCB_MINI_SOCCER_BALL     ${CMAKE_CURRENT_SOURCE_DIR}/mesh
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mini_soccer_ball/nontextured.obj)
 set(${EXE_TARGET_NAME}_YCB_MUG                  ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mug/nontextured.ply
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mug/nontextured.obj)
-set(${EXE_TARGET_NAME}_YCB_MUSTARD_BOTTLE       ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard_bottle/nontextured.obj
+set(${EXE_TARGET_NAME}_YCB_MUSTARD_BOTTLE       ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard_bottle/nontextured.ply
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_mustard_bottle/nontextured.obj)
 set(${EXE_TARGET_NAME}_YCB_ORANGE               ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_orange/nontextured.ply
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/mesh/ycb_orange/nontextured.obj)

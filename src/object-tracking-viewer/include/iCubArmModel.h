@@ -7,6 +7,8 @@
 
 #include <SuperimposeMesh/SICAD.h>
 
+#include <yarp/dev/IAnalogSensor.h>
+#include <yarp/dev/PolyDriver.h>
 #include <yarp/os/Bottle.h>
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/ConstString.h>
@@ -40,6 +42,8 @@ protected:
     bool setArmJoints(const yarp::sig::Vector& q);
 
 private:
+    void setupAnalogBounds();
+
     const std::string log_ID_ = "[iCubArmModel]";
 
     const std::string port_prefix_ = "iCubArmModel";
@@ -63,6 +67,14 @@ private:
     yarp::os::BufferedPort<yarp::os::Bottle> port_torso_enc_;
 
     yarp::os::BufferedPort<yarp::os::Bottle> port_arm_enc_;
+
+    yarp::dev::PolyDriver drv_analog_;
+
+    yarp::dev::IAnalogSensor *ianalog_;
+
+    // matrix of analog bounds
+    // for encoders of proximal/distal joints
+    yarp::sig::Matrix analog_bounds_;
 };
 
 #endif /* ICUBARMMODEL_H */

@@ -86,6 +86,11 @@ public:
     void enableObjectFeedforward(const bool& enable);
 
     /**
+     * Enable/disable feedforward term obtained using finite difference of the hand 3D position projected onto the camera plane.
+     */
+    void enableHandFeedforward(const bool& enable);
+
+    /**
      * Resample particles.
      */
     void resampleParticles(const Eigen::VectorXi& parents);
@@ -156,6 +161,11 @@ protected:
      * Enable/disable object feedforward term.
      */
     bool enable_object_feedforward_;
+
+    /**
+     * Enable/disable object feedforward term.
+     */
+    bool enable_hand_feedforward_;
 
     /**
      * Estimates extraction.

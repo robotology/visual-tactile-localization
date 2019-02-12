@@ -158,6 +158,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
 
     // Reset flag
     enable_object_feedforward_ = true;
+    enable_hand_feedforward_ = false;
 }
 
 
@@ -218,6 +219,7 @@ void BoundingBoxEstimator::reset()
     is_proj_bbox_initialized_ = false;
     is_object_pose_initialized_ = false;
     enable_object_feedforward_= true;
+    enable_hand_feedforward_ = false;
 
     // If user provided a initial mean
     if (user_provided_mean_0_)
@@ -257,6 +259,12 @@ void BoundingBoxEstimator::enableObjectFeedforward(const bool& enable)
 }
 
 
+void BoundingBoxEstimator::enableHandFeedforward(const bool& enable)
+{
+    enable_hand_feedforward_ = enable;
+}
+
+
 void BoundingBoxEstimator::resampleParticles(const VectorXi& parents)
 {
     GaussianMixture resampled_pred(pred_bbox_.components, 4);
@@ -281,7 +289,13 @@ void BoundingBoxEstimator::predict()
     // state transition
     pred_bbox_.mean() = corr_bbox_.mean();
 
-    if (enable_object_feedforward_)
+    if (enable_hand_feedforward_)
+    {
+        // Prefer hand feed forward term when it can be used
+        // pred_bbox_.mean().leftCols(pred_bbox_.components) +=
+
+    }
+    else if (enable_object_feedforward_)
     {
         pred_bbox_.mean().leftCols(pred_bbox_.components) += evalExogenousInput();
     }

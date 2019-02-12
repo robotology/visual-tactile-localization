@@ -461,6 +461,17 @@ bool iCubPointCloudExogenousData::getOcclusion()
 }
 
 
+void iCubPointCloudExogenousData::setContactState(const bool& status)
+{
+    is_contact_ = status;
+}
+
+
+bool iCubPointCloudExogenousData::getContactState()
+{
+    return is_contact_;
+}
+
 void iCubPointCloudExogenousData::reset()
 {
     bbox_set_ = false;

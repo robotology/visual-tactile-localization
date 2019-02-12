@@ -191,6 +191,16 @@ public:
     bool getOcclusion();
 
     /**
+     * Set the current contact status.
+     */
+    void setContactState(const bool& status);
+
+    /**
+     * Get the current contact status.
+     */
+    bool getContactState();
+
+    /**
      * Reset
      */
     void reset();
@@ -201,6 +211,8 @@ protected:
     bool bbox_set_;
 
     bool is_occlusion_;
+
+    bool is_contact_;
 };
 
 #endif /* ICUBPOINTCLOUD_H */

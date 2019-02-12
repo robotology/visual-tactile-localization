@@ -99,6 +99,13 @@ BoundingBoxEstimator::BoundingBoxEstimator
         throw(std::runtime_error(err));
     }
 
+    // Try to open the hand pose input port
+    if (!(hand_pose_port_in_.open("/" + port_prefix + "/hand_pose:i")))
+    {
+        std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open hand pose input port.";
+        throw(std::runtime_error(err));
+    }
+
     if (send_mask_)
     {
         // Open camera input port.
@@ -166,6 +173,7 @@ BoundingBoxEstimator::~BoundingBoxEstimator()
 {
     // Close ports
     opc_rpc_client_.close();
+    hand_pose_port_in_.close();
 
     if (send_mask_)
     {

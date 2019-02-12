@@ -127,7 +127,6 @@ protected:
      */
     bool updateObjectMask();
 
-
     /**
      * Number of particles used.
      */
@@ -226,6 +225,11 @@ protected:
      * Scale factor used to enlarge/reduce the area of the bounding box provided by IOL.
      */
     double IOL_bbox_scale_;
+
+    /**
+     * Input port for hand 3D pose required to evaluate the hand feedforward term.
+     */
+    yarp::os::BufferedPort<yarp::sig::Vector> hand_pose_port_in_;
 
     /**
      * RPC clients.

@@ -2,6 +2,8 @@
 
 #include <Eigen/Dense>
 
+#include <chrono>
+
 #include <yarp/eigen/Eigen.h>
 #include <yarp/os/LogStream.h>
 #include <yarp/sig/Vector.h>
@@ -23,7 +25,8 @@ Filter::Filter
     GaussianFilter_(initial_state, std::move(prediction), std::move(correction)),
     bbox_estimator_(std::move(bbox_estimator)),
     initial_state_(initial_state),
-    icub_point_cloud_share_(icub_point_cloud_share)
+    icub_point_cloud_share_(icub_point_cloud_share),
+    pause_(false)
 {
     // Open estimate output port
     if (!port_estimate_out_.open("/" + port_prefix + "/estimate:o"))
@@ -104,6 +107,18 @@ bool Filter::stop_filter()
 }
 
 
+void Filter::pause_filter()
+{
+    pause_ = true;
+}
+
+
+void Filter::resume_filter()
+{
+    pause_ = false;
+}
+
+
 bool Filter::skip_step(const std::string& what_step, const bool status)
 {
     return skip(what_step, status);
@@ -143,6 +158,13 @@ std::vector<std::string> Filter::log_filenames(const std::string& prefix_path, c
 
 void Filter::filteringStep()
 {
+    if (pause_)
+    {
+        // do nothing
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        return;
+    }
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     bbox_estimator_->step();

@@ -43,6 +43,10 @@ public:
 
     bool stop_filter() override;
 
+    void pause_filter() override;
+
+    void resume_filter() override;
+
     bool skip_step(const std::string& what_step, const bool status) override;
 
     std::vector<std::string> get_point_estimate_info() override;
@@ -72,6 +76,8 @@ private:
     bfl::Gaussian initial_state_;
 
     const std::string log_ID_ = "[Filter]";
+
+    bool pause_;
 };
 
 #endif /* FILTER_H */

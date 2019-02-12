@@ -60,174 +60,91 @@
     <prefix></prefix>
   </module>
 
-  <connection>
-    <from>/icub/camcalib/right/out</from>
-    <to>/object-tracking-depth/SFM/right:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
+  <!-- connections for yarpview-s -->
 
   <connection>
     <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking-depth/SFM/left:i</to>
+    <to>/object-tracking/viewer/cam/left:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/camcalib/right/out</from>
     <to>/object-tracking/viewer/cam/right:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking/viewer/cam/left:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking/hull:o</from>
     <to>/object-tracking/viewer/hull:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking/bbox-estimator/mask:o</from>
     <to>/object-tracking/viewer/mask:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking/cam/left:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking-viewer/cam/left:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking/bbox-estimator/cam/left:i</to>
-    <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking-depth/SFM/disp:o</from>
     <to>/object-tracking/viewer/disp:i</to>
     <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <!-- used by object-tracking-depth -->
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking-depth/SFM/left:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/right/out</from>
+    <to>/object-tracking-depth/SFM/right:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <connection>
+    <!-- camera poses required for stereo vision -->
+    <!-- in case the GazeController is not avaiable -->
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking-depth/SFM/icub/head:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- same as above, also torso is required for the camera pose -->
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking-depth/SFM/icub/torso:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <!-- used by module object-tracking-viewer -->
+
+  <connection>
+    <!-- used to associate colours to each point in the point cloud -->
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking-viewer/cam/left:i</to>
+    <protocol>mjpeg</protocol>
   </connection>
 
   <connection>
     <from>/object-tracking-depth/SFM/depth:o</from>
     <to>/object-tracking-viewer/depth:i</to>
     <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/object-tracking-depth/SFM/depth:o</from>
-    <to>/object-tracking/depth:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking/estimate:o</from>
     <to>/object-tracking-viewer/estimate:i</to>
     <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/head/state:o</from>
-    <to>/object-tracking/icub/head:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/head/state:o</from>
-    <to>/object-tracking-depth/SFM/icub/head:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/head/state:o</from>
-    <to>/object-tracking-viewer/icub/head:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/head/state:o</from>
-    <to>/object-tracking/bbox-estimator/icub/head:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/head/state:o</from>
-    <to>/object-tracking/icub-hand-occlusion/right/icub/head:i</to>
-    <protocol>tcp</protocol>
-  </connection>
-
-  <connection>
-    <from>/icub/torso/state:o</from>
-    <to>/object-tracking/icub/torso:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/torso/state:o</from>
     <to>/object-tracking-viewer/icub/torso:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/torso/state:o</from>
-    <to>/object-tracking-depth/SFM/icub/torso:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/torso/state:o</from>
-    <to>/object-tracking/bbox-estimator/icub/torso:i</to>
-    <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
-  </connection>
-
-  <connection>
-    <from>/icub/torso/state:o</from>
-    <to>/object-tracking/icub-hand-occlusion/right/icub/torso:i</to>
-    <protocol>tcp</protocol>
-  </connection>
-
-  <connection>
-    <from>/icub/torso/state:o</from>
-    <to>/object-tracking/icub-hand-occlusion/right/icub/torso:i</to>
-    <protocol>tcp</protocol>
-  </connection>
-
-  <connection>
-    <from>/icub/torso/state:o</from>
-    <to>/object-tracking/icub-arm-model/occlusion/right/torso:i</to>
     <protocol>tcp</protocol>
   </connection>
 
@@ -238,42 +155,125 @@
   </connection>
 
   <connection>
+    <!-- camera pose required to extract the point cloud from depth -->
+    <!-- in case the GazeController is not avaiable -->
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking-viewer/icub/head:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- estimate of the hand pose required for 3D visualization -->
+    <from>/handTracking/VisualSIS/left/estimates:o</from>
+    <to>/object-tracking-viewer/hand/right/hand_pose:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <!-- used by module object-tracking -->
+
+  <connection>
+    <!-- used as background for interactive visualization (e.g. bounding box, hulls, etc.) -->
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking/cam/left:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <connection>
+    <!-- used as background for interactive visualization within class BoundingBoxEstimator-->
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking/bbox-estimator/cam/left:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <connection>
+    <!-- depth input -->
+    <from>/object-tracking-depth/SFM/depth:o</from>
+    <to>/object-tracking/depth:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- camera pose required to extract the point cloud from depth -->
+    <!-- in case the GazeController is not avaiable -->
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking/icub/head:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- same as above, also torso is required for the camera pose -->
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking/icub/torso:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- camera pose required to project 3D estimate onto 2D camera plane -->
+    <!-- in case the GazeController is not avaiable -->
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking/bbox-estimator/icub/head:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- same as above, also torso is required for the camera pose -->
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking/bbox-estimator/icub/torso:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- camera pose required to project 3D estimate of the hand onto 2D camera plane -->
+    <!-- in case the GazeController is not avaiable -->
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking/icub-hand-occlusion/right/icub/head:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- same as above, also the torso is required for the camera pose -->
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking/icub-hand-occlusion/right/icub/torso:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- estimate of the hand used to evaluate the area occluded by the hand -->
     <from>/handTracking/VisualSIS/left/estimates:o</from>
     <to>/object-tracking/icub-hand-occlusion/right/hand_pose:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
-    <from>/handTracking/VisualSIS/left/estimates:o</from>
-    <to>/object-tracking-viewer/hand/right/hand_pose:i</to>
+    <!-- required to evaluate the pose of the forearm with respect to the palm of the hand -->
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking/icub-arm-model/occlusion/right/torso:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
+    <!-- required to evaluate the pose of the fingers with respect to the palm of the hand -->
     <from>/icub/right_arm/state:o</from>
     <to>/object-tracking/icub-arm-model/occlusion/right/right_arm:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
-    <from>/icub/right_arm/state:o</from>
-    <to>/object-tracking-viewer/hand/right/right_arm:i</to>
+    <!-- estimate of the hand used to evaluate the position of the contact points -->
+    <from>/handTracking/VisualSIS/left/estimates:o</from>
+    <to>/object-tracking/icub-hand-contacts/hand_pose:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
+    <!-- required to evaluate the pose of the forearm with respect to the palm of the hand -->
     <from>/icub/torso/state:o</from>
     <to>/object-tracking/icub-arm-model/contacts/right/torso:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
-    <from>/handTracking/VisualSIS/left/estimates:o</from>
-    <to>/object-trackin/icub-hand-contacts/hand_pose:i</to>
-    <protocol>tcp</protocol>
-  </connection>
-
-  <connection>
+    <!-- required to evaluate the pose of the fingers with respect to the palm of the hand -->
     <from>/icub/right_arm/state:o</from>
     <to>/object-tracking/icub-arm-model/contacts/right/right_arm:i</to>
     <protocol>tcp</protocol>

@@ -553,7 +553,7 @@ int main(int argc, char** argv)
                 new iCubHandContactsModel(std::move(icub_arm),
                                           std::move(icub_springy_fingers),
                                           used_fingers_contacts,
-                                          "object-trackin/icub-hand-contacts"));
+                                          "object-tracking/icub-hand-contacts"));
 
             /* Add the contacts to the iCubPointCloud. */
             pc_icub->addObjectContacts(std::move(icub_contacts));

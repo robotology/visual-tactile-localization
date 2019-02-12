@@ -304,7 +304,7 @@ void BoundingBoxEstimator::predict()
     if (enable_hand_feedforward_)
     {
         // Prefer hand feed forward term when it can be used
-        pred_bbox_.mean().leftCols(pred_bbox_.components) += evalHandExogenousInput();
+        pred_bbox_.mean().leftCols(pred_bbox_.components).topRows<2>() += evalHandExogenousInput();
 
     }
     else if (enable_object_feedforward_)

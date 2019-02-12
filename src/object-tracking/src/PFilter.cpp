@@ -244,7 +244,7 @@ void PFilter::filteringStep()
     double neff = resampling_->neff(cor_particle_.weight());
     if (neff < static_cast<double>(num_particle_) * resampling_threshold_)
     {
-        std::cout << "Resampling..." << std::endl;
+        // std::cout << "Resampling..." << std::endl;
         ParticleSet res_particle(num_particle_, state_size_);
         VectorXi res_parent(num_particle_, 1);
 
@@ -290,11 +290,11 @@ void PFilter::filteringStep()
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    std::cout << "Executed step in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms"
-              << std::endl;
-    std::cout << "Neff is: " << neff<< std::endl << std::endl;
+    // std::cout << "Executed step in "
+    //           << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+    //           << " ms"
+    //           << std::endl;
+    // std::cout << "Neff is: " << neff<< std::endl << std::endl;
 
     // Allow the state model to evaluate the sampling time online
     prediction_->getStateModel().setProperty("tick");

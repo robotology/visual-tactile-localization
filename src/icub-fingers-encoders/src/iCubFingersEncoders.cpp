@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+using namespace yarp::dev;
 using namespace yarp::os;
 using namespace yarp::sig;
 
@@ -82,6 +83,32 @@ iCubFingersEncoders::~iCubFingersEncoders()
 {
     if (!use_interface_)
         port_analogs_.close();
+}
+
+
+std::pair<bool, Vector> iCubFingersEncoders::getEncoders()
+{
+    Vector analogs(16);
+    bool outcome = false;
+
+    if (use_interface_)
+    {
+        outcome = (ianalog_->read(analogs)) == (IAnalogSensor::AS_OK);
+    }
+    else
+    {
+        Bottle* bottle_analogs =  port_analogs_.read(true);
+
+        if (bottle_analogs != nullptr)
+        {
+            for (size_t i = 0; i < 16; ++i)
+                analogs(i) = bottle_analogs->get(i).asDouble();
+
+            outcome = true;
+        }
+    }
+
+    return std::make_pair(outcome, analogs);
 }
 
 

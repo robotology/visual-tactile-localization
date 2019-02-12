@@ -15,6 +15,8 @@ public:
 
     virtual ~iCubFingersEncoders();
 
+    std::pair<bool, yarp::sig::Vector> getEncoders();
+
     std::pair<bool, yarp::sig::Matrix> getAnalogBounds();
 
 protected:

@@ -173,6 +173,12 @@
   </connection>
 
   <connection>
+    <from>/handTracking/VisualSIS/left/estimates:o</from>
+    <to>/object-tracking/bbox-estimator/hand_pose:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
     <from>/icub/right_arm/state:o</from>
     <to>/object-tracking/icub-arm-model/occlusion/right/right_arm:i</to>
     <protocol>tcp</protocol>

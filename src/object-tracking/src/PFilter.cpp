@@ -38,7 +38,8 @@ PFilter::PFilter
     resampling_threshold_(resampling_threshold),
     bbox_estimator_(std::move(bbox_estimator)),
     icub_point_cloud_share_(icub_point_cloud_share),
-    point_estimate_extraction_(9, 3)
+    point_estimate_extraction_(9, 3),
+    pause_(false)
 {
     // Setup point estimates extraction
     set_point_estimate_method(point_estimate_method);
@@ -110,6 +111,18 @@ bool PFilter::stop_filter()
     reboot();
 
     return true;
+}
+
+
+void PFilter::pause_filter()
+{
+    pause_ = true;
+}
+
+
+void PFilter::resume_filter()
+{
+    pause_ = false;
 }
 
 

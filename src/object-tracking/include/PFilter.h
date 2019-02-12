@@ -61,6 +61,10 @@ public:
 
     bool stop_filter() override;
 
+    void pause_filter() override;
+
+    void resume_filter() override;
+
     bool skip_step(const std::string& what_step, const bool status) override;
 
     std::vector<std::string> get_point_estimate_info() override;
@@ -91,6 +95,8 @@ protected:
     Eigen::VectorXd point_estimate_;
 
     double resampling_threshold_;
+
+    bool pause_;
 
 private:
     const std::string log_ID_ = "[PFilter]";

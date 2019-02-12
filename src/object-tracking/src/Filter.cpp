@@ -185,6 +185,7 @@ void Filter::filteringStep()
     // Use estimate as hint for the bounding box estimator
     bbox_estimator_->setObjectPose(corrected_mean);
     bbox_estimator_->enableObjectFeedforward(!(icub_point_cloud_share_->getOcclusion()));
+    bbox_estimator_->enableHandFeedforward(icub_point_cloud_share_->getContactState());
 
     // Send estimate over the port using axis/angle representation
     VectorXd estimate(7);

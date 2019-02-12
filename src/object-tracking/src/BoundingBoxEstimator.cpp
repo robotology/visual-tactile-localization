@@ -1,12 +1,14 @@
 #include <BoundingBoxEstimator.h>
 
 #include <yarp/cv/Cv.h>
+#include <yarp/eigen/Eigen.h>
 #include <yarp/sig/Vector.h>
 
 #include <iostream>
 
 using namespace bfl;
 using namespace Eigen;
+using namespace yarp::eigen;
 using namespace yarp::os;
 using namespace yarp::sig;
 
@@ -83,6 +85,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     extractor_(4),
     is_initialized_(false),
     is_exogenous_initialized_(false),
+    is_hand_exogenous_initialized_(false),
     is_proj_bbox_initialized_(false),
     is_object_pose_initialized_(false),
     gaze_(port_prefix),
@@ -224,6 +227,7 @@ void BoundingBoxEstimator::reset()
 {
     is_initialized_ = false;
     is_exogenous_initialized_ = false;
+    is_hand_exogenous_initialized_ = false;
     is_proj_bbox_initialized_ = false;
     is_object_pose_initialized_ = false;
     enable_object_feedforward_= true;
@@ -412,6 +416,68 @@ MatrixXd BoundingBoxEstimator::evalExogenousInput()
     steady_state_counter_++;
 
     return exog_input;
+}
+
+
+Eigen::Vector2d BoundingBoxEstimator::evalHandExogenousInput()
+{
+    yarp::sig::Vector* hand_pose = hand_pose_port_in_.read(false);
+
+    if (hand_pose == nullptr)
+        return Vector2d::Zero();
+
+    VectorXd pose = toEigen(*hand_pose);
+
+    yarp::sig::Vector eye_pos_left;
+    yarp::sig::Vector eye_att_left;
+    yarp::sig::Vector eye_pos_right;
+    yarp::sig::Vector eye_att_right;
+    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
+    {
+        // Not updating the bounding box since the camera pose is not available
+        return Vector2d::Zero();
+    }
+    VectorXd eye_pos;
+    VectorXd eye_att;
+    if (eye_name_ == "left")
+    {
+        eye_pos = toEigen(eye_pos_left);
+        eye_att = toEigen(eye_att_left);
+    }
+    else
+    {
+        eye_pos = toEigen(eye_pos_right);
+        eye_att = toEigen(eye_att_right);
+    }
+
+    // Eval transformation taking coordinates in and w.r.t. root frame
+    // and producing coordinates in and w.r.t camera frame
+    Transform<double, 3, Eigen::Affine> root_to_camera;
+    root_to_camera = Translation<double, 3>(eye_pos);
+    root_to_camera.rotate(AngleAxis<double>(eye_att(3), eye_att.segment(0, 3)));
+    root_to_camera = root_to_camera.inverse();
+
+    // Convert coordinates in camera frame
+    VectorXd pose_camera_frame = root_to_camera * pose.segment(0, 3).homogeneous();
+
+    // Project hand 3D position in the camera plane
+    Eigen::Vector2d current_proj;
+    current_proj(0) = pose_camera_frame(0) * cam_fx_ / pose_camera_frame(2) + cam_cx_;
+    current_proj(1) = pose_camera_frame(1) * cam_fy_ / pose_camera_frame(2) + cam_cy_;
+
+    Vector2d delta = Vector2d::Zero();
+    if (is_hand_exogenous_initialized_)
+    {
+        delta = current_proj - hand_projection_;
+    }
+
+    // Update for next iteration
+    hand_projection_ = current_proj;
+
+    // The hand pose was received at least one time
+    is_hand_exogenous_initialized_ = true;
+
+    return delta;
 }
 
 

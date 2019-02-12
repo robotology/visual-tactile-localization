@@ -112,6 +112,11 @@ protected:
     Eigen::MatrixXd evalExogenousInput();
 
     /**
+     * Evaluate exogenous input.
+     */
+    Eigen::Vector2d evalHandExogenousInput();
+
+    /**
      * Retrieve the object bounding box according to iCub OPC (objects property collector).
      * Return a boolean indicating the outcome and a 4-vector containing center, width and height.
      */
@@ -139,6 +144,7 @@ protected:
     bfl::GaussianMixture corr_bbox_;
     bool is_initialized_;
     bool is_exogenous_initialized_;
+    bool is_hand_exogenous_initialized_;
 
     std::size_t steady_state_counter_;
     std::size_t steady_state_threshold_;
@@ -225,6 +231,11 @@ protected:
      * Scale factor used to enlarge/reduce the area of the bounding box provided by IOL.
      */
     double IOL_bbox_scale_;
+
+    /**
+     * Last projecttion of hand 3D pose on the camera plane.
+     */
+    Eigen::Vector2d hand_projection_;
 
     /**
      * Input port for hand 3D pose required to evaluate the hand feedforward term.

@@ -95,7 +95,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     // Open RPC port to OPC required to get "measurements" of the bounding box
     if (!(opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
     {
-        std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot open OPC rpc port.";
+        std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open OPC rpc port.";
         throw(std::runtime_error(err));
     }
 
@@ -111,14 +111,14 @@ BoundingBoxEstimator::BoundingBoxEstimator
         // Open camera input port.
         if(!port_image_in_.open("/" + port_prefix + "/cam/" + eye_name + ":i"))
         {
-            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open " + eye_name + " camera input port.";
+            std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open " + eye_name + " camera input port.";
             throw(std::runtime_error(err));
         }
 
         // Open image output port.
         if(!port_mask_image_out_.open("/" + port_prefix + "/mask:o"))
         {
-            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open mask output port.";
+            std::string err = log_ID_ + "CTOR::ERROR\n\tError: cannot open mask output port.";
             throw(std::runtime_error(err));
         }
     }
@@ -126,7 +126,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     // Get iCub cameras intrinsics parameters
     if (!gaze_.getCameraIntrinsics(eye_name, cam_fx_, cam_fy_, cam_cx_, cam_cy_))
     {
-        std::string err = "ICUBPOINTCLOUD::CTOR::ERROR\n\tError: cannot retrieve iCub camera intrinsicse.";
+        std::string err = log_ID_ + "CTOR::ERROR\n\tError: cannot retrieve iCub camera intrinsicse.";
         throw(std::runtime_error(err));
     }
 

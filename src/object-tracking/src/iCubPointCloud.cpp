@@ -180,6 +180,9 @@ bool iCubPointCloud::freezeMeasurements()
     // Allocate storage
     MatrixXd points(3, good_points.sum() + number_tactile_points);
 
+    // Set contact state
+    exogenous_data_->setContactState((number_tactile_points > 0));
+
     // Take only valid visual points
     int j = 0;
     for (int i = 0; i < point_cloud.cols(); i++)

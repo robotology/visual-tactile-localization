@@ -168,7 +168,7 @@
 
   <connection>
     <from>/handTracking/VisualSIS/left/estimates:o</from>
-    <to>/object-trackin/icub-hand-contacts/hand_pose:i</to>
+    <to>/object-tracking/icub-hand-contacts/hand_pose:i</to>
     <protocol>tcp</protocol>
   </connection>
 

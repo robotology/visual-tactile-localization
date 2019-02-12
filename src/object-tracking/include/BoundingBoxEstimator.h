@@ -81,9 +81,9 @@ public:
     std::size_t getNumberComponents();
 
     /**
-     * Enable/disable feedforward term.
+     * Enable/disable feedforward term obtained using finite difference of the object 3D position projected onto the camera plane.
      */
-    void enableFeedforward(const bool& enable);
+    void enableObjectFeedforward(const bool& enable);
 
     /**
      * Resample particles.
@@ -153,9 +153,9 @@ protected:
     bool user_provided_mean_0_;
 
     /**
-     * Enable/disable feedforward termn.
+     * Enable/disable object feedforward term.
      */
-    bool enable_feedforward_;
+    bool enable_object_feedforward_;
 
     /**
      * Estimates extraction.

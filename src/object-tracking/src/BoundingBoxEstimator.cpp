@@ -157,7 +157,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     extractor_.setMobileAverageWindowSize(10);
 
     // Reset flag
-    enable_feedforward_ = true;
+    enable_object_feedforward_ = true;
 }
 
 
@@ -217,7 +217,7 @@ void BoundingBoxEstimator::reset()
     is_exogenous_initialized_ = false;
     is_proj_bbox_initialized_ = false;
     is_object_pose_initialized_ = false;
-    enable_feedforward_= true;
+    enable_object_feedforward_= true;
 
     // If user provided a initial mean
     if (user_provided_mean_0_)
@@ -251,9 +251,9 @@ std::size_t BoundingBoxEstimator::getNumberComponents()
 }
 
 
-void BoundingBoxEstimator::enableFeedforward(const bool& enable)
+void BoundingBoxEstimator::enableObjectFeedforward(const bool& enable)
 {
-    enable_feedforward_ = enable;
+    enable_object_feedforward_ = enable;
 }
 
 
@@ -281,7 +281,7 @@ void BoundingBoxEstimator::predict()
     // state transition
     pred_bbox_.mean() = corr_bbox_.mean();
 
-    if (enable_feedforward_)
+    if (enable_object_feedforward_)
     {
         pred_bbox_.mean().leftCols(pred_bbox_.components) += evalExogenousInput();
     }

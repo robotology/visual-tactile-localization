@@ -27,6 +27,18 @@ service ObjectTrackingIDL
     bool stop_filter();
 
     /**
+     * Pause the filter.
+     *
+     */
+    void pause_filter();
+
+    /**
+     * Resume the filter.
+     *
+     */
+    void resume_filter();
+
+    /**
      * Enable/Disable skipping the filtering step specified in what_step.
      * what_step can be one of the following:
      *

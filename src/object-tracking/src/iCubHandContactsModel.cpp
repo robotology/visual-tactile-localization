@@ -167,16 +167,11 @@ Eigen::VectorXd iCubHandContactsModel::measure() const
     std::unordered_map<std::string, bool> active_fingers;
     std::tie(std::ignore, active_fingers) = contact_detection_->getActiveFingers();
 
-    // Testing
-    // Consider that there is contact if at least one finger is in contact
+    // Temporary
+    // Consider that there is contact if at least one finger is in contact, it is enough in a grapsing scenario
     bool is_contact = false;
     for (std::size_t i = 0; i < used_fingers_.size(); i++)
         is_contact |= active_fingers.at(used_fingers_.at(i));
-
-    if (is_contact)
-        std::cout << log_ID_ << "Info: assuming contacts." << std::endl;
-    else
-        std::cout << log_ID_ << "Info: no contacts." << std::endl;
 
     VectorXd no_measurements = VectorXd(0);
     const VectorXd& effective_measurements = is_contact ? measurements_ : no_measurements;

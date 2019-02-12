@@ -320,27 +320,27 @@ void BoundingBoxEstimator::predict()
 
 void BoundingBoxEstimator::correct()
 {
-    bool valid_measure;
-    VectorXd measured_bbox;
-    std::tie(valid_measure, measured_bbox) = measure();
+    // bool valid_measure;
+    // VectorXd measured_bbox;
+    // std::tie(valid_measure, measured_bbox) = measure();
 
-    if (!valid_measure)
-    {
-        corr_bbox_ = pred_bbox_;
+    // if (!valid_measure)
+    // {
+    corr_bbox_ = pred_bbox_;
 
-        return;
-    }
+    //     return;
+    // }
 
-    for (std::size_t i = 0; i < pred_bbox_.components; i++)
-    {
-        MatrixXd Py = pred_bbox_.covariance(i) + R_;
+    // for (std::size_t i = 0; i < pred_bbox_.components; i++)
+    // {
+    //     MatrixXd Py = pred_bbox_.covariance(i) + R_;
 
-        MatrixXd K = pred_bbox_.covariance(i) * Py.inverse();
+    //     MatrixXd K = pred_bbox_.covariance(i) * Py.inverse();
 
-        corr_bbox_.mean(i) = pred_bbox_.mean(i) + K * (measured_bbox - pred_bbox_.mean(i));
+    //     corr_bbox_.mean(i) = pred_bbox_.mean(i) + K * (measured_bbox - pred_bbox_.mean(i));
 
-        corr_bbox_.covariance(i) = pred_bbox_.covariance(i) - K * Py * K.transpose();
-    }
+    //     corr_bbox_.covariance(i) = pred_bbox_.covariance(i) - K * Py * K.transpose();
+    // }
 }
 
 

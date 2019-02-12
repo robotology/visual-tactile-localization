@@ -99,7 +99,7 @@ std::pair<bool, yarp::sig::Vector> iCubFingersEncoders::loadVectorDouble
     const ResourceFinder& rf,
     const std::string key,
     const std::size_t size
-    )
+)
 {
     bool ok = true;
 

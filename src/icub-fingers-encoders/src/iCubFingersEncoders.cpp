@@ -80,7 +80,17 @@ iCubFingersEncoders::iCubFingersEncoders
 
 iCubFingersEncoders::~iCubFingersEncoders()
 {
+    if (!use_interface_)
+        port_analogs_.close();
+}
 
+
+std::pair<bool, Matrix> iCubFingersEncoders::getAnalogBounds()
+{
+    if (!use_bounds_)
+        return std::make_pair(false, Matrix());
+
+    return std::make_pair(true, analog_bounds_);
 }
 
 

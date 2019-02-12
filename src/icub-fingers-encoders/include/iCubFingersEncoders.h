@@ -15,6 +15,8 @@ public:
 
     virtual ~iCubFingersEncoders();
 
+    std::pair<bool, yarp::sig::Matrix> getAnalogBounds();
+
 protected:
     std::pair<bool, yarp::sig::Vector> loadVectorDouble(const yarp::os::ResourceFinder& rf, const std::string key, const std::size_t size);
 

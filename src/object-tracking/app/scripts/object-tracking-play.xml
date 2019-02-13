@@ -199,6 +199,13 @@
   </connection>
 
   <connection>
+    <!-- used to update the bounding box according to the hand kinematics -->
+    <from>/handTracking/VisualSIS/left/estimates:o</from>
+    <to>/object-tracking/bbox-estimator/hand_pose:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
     <!-- depth input -->
     <from>/object-tracking-depth/SFM/depth:o</from>
     <to>/object-tracking/depth:i</to>

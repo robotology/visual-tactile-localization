@@ -24,6 +24,7 @@ iCubFingersEncoders::iCubFingersEncoders
     rf.setVerbose(true);
     rf.setDefaultConfigFile("analogs_configuration.ini");
     rf.setDefaultContext(context);
+    rf.configure(0, NULL);
 
     // Get inner resource finder according to requested laterality
     if ((laterality != "right") && (laterality != "left"))

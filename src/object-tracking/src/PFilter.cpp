@@ -278,8 +278,7 @@ void PFilter::filteringStep()
 
     // Update the point estimate extraction
     bool valid_estimate;
-    VectorXd point_estimate;
-    std::tie(valid_estimate, point_estimate) =  point_estimate_extraction_.extract(cor_particle_.state(), cor_particle_.weight());
+    std::tie(valid_estimate, point_estimate_) =  point_estimate_extraction_.extract(cor_particle_.state(), cor_particle_.weight());
     if (!valid_estimate)
         yInfo() << log_ID_ << "Cannot extract point estimate!";
 
@@ -290,10 +289,10 @@ void PFilter::filteringStep()
 
         // Send estimate over the port using axis/angle representation
         VectorXd estimate(7);
-        estimate.head<3>() = point_estimate.head<3>();
-        AngleAxisd angle_axis(AngleAxisd(point_estimate(9), Vector3d::UnitZ()) *
-                              AngleAxisd(point_estimate(10), Vector3d::UnitY()) *
-                              AngleAxisd(point_estimate(11), Vector3d::UnitX()));
+        estimate.head<3>() = point_estimate_.head<3>();
+        AngleAxisd angle_axis(AngleAxisd(point_estimate_(9), Vector3d::UnitZ()) *
+                              AngleAxisd(point_estimate_(10), Vector3d::UnitY()) *
+                              AngleAxisd(point_estimate_(11), Vector3d::UnitX()));
         estimate.segment<3>(3) = angle_axis.axis();
         estimate(6) = angle_axis.angle();
 

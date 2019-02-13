@@ -169,6 +169,13 @@
     <protocol>tcp</protocol>
   </connection>
 
+  <connection>
+    <!-- iCub analog encoders -->
+    <from>/icub/right_hand/analog:o</from>
+    <to>/object-tracking-viewer/hand/right/right_hand/analog:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
   <!-- used by module object-tracking -->
 
   <connection>

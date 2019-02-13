@@ -155,6 +155,12 @@
   </connection>
 
   <connection>
+    <from>/icub/right_arm/state:o</from>
+    <to>/object-tracking-viewer/hand/right/right_arm:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
     <!-- camera pose required to extract the point cloud from depth -->
     <!-- in case the GazeController is not avaiable -->
     <from>/icub/head/state:o</from>

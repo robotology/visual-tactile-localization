@@ -305,11 +305,11 @@ void PFilter::filteringStep()
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    // std::cout << "Executed step in "
-    //           << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-    //           << " ms"
-    //           << std::endl;
-    // std::cout << "Neff is: " << neff<< std::endl << std::endl;
+    std::cout << "Executed step in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << " ms"
+              << std::endl;
+    std::cout << "Neff is: " << neff<< std::endl << std::endl;
 
     // Allow the state model to evaluate the sampling time online
     prediction_->getStateModel().setProperty("tick");

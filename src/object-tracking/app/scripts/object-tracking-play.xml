@@ -292,4 +292,25 @@
     <protocol>tcp</protocol>
   </connection>
 
+  <connection>
+    <!-- iCub analog encoders -->
+    <from>/icub/right_hand/analog:o</from>
+    <to>/object-tracking/detection/springy/right/right_hand/analog:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- iCub analog encoders -->
+    <from>/icub/right_hand/analog:o</from>
+    <to>/object-tracking/icub-arm-model/contacts/right/right_hand/analog:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- iCub analog encoders -->
+    <from>/icub/right_hand/analog:o</from>
+    <to>/object-tracking/icub-arm-model/occlusion/right/right_hand/analog:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
 </application>

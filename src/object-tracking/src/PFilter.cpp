@@ -221,6 +221,13 @@ std::vector<std::string> PFilter::log_filenames(const std::string& prefix_path, 
 
 void PFilter::filteringStep()
 {
+    if (pause_)
+    {
+        // do nothing
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        return;
+    }
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     bbox_estimator_->step();

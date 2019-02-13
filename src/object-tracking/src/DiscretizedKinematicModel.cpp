@@ -99,7 +99,7 @@ bool DiscretizedKinematicModel::setProperty(const std::string& property)
 
             // Avoid too large delta during playback
             // if the user stops streaming of data
-            if (delta > 0.1)
+            if (delta > 0.3)
                 delta = 0.01;
 
             evaluateStateTransitionMatrix(delta);

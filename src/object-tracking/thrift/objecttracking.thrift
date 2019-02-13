@@ -39,6 +39,12 @@ service ObjectTrackingIDL
     void resume_filter();
 
     /**
+     * Enable/disable use of contacts.
+     *
+     */
+    void contacts(1:bool enable);
+
+    /**
      * Enable/Disable skipping the filtering step specified in what_step.
      * what_step can be one of the following:
      *

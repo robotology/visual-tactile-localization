@@ -13,6 +13,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <yarp/os/Mutex.h>
 #include <yarp/sig/Image.h>
 
 #include <string>
@@ -200,6 +201,18 @@ public:
      */
     bool getContactState();
 
+
+    /**
+     * Set if the contacts have to be used.
+     */
+    void setUseContacts(const bool enable);
+
+
+    /**
+     * Get if the contacts have to be used.
+     */
+    bool getUseContacts();
+
     /**
      * Reset
      */
@@ -213,6 +226,10 @@ protected:
     bool is_occlusion_;
 
     bool is_contact_;
+
+    bool use_contacts_;
+
+    yarp::os::Mutex lock_;
 };
 
 #endif /* ICUBPOINTCLOUD_H */

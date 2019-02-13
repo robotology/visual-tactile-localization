@@ -177,11 +177,15 @@ bool iCubPointCloud::freezeMeasurements()
         number_tactile_points = tactile_points.size() / 3;
     }
 
-    // Allocate storage
-    MatrixXd points(3, good_points.sum() + number_tactile_points);
-
     // Set contact state
     exogenous_data_->setContactState((number_tactile_points > 0));
+
+    // Allocate storage
+    std::size_t total_number_points = good_points.sum();
+    if (exogenous_data_->getUseContacts())
+        total_number_points += number_tactile_points;
+
+    MatrixXd points(3, total_number_points);
 
     // Take only valid visual points
     int j = 0;
@@ -194,12 +198,15 @@ bool iCubPointCloud::freezeMeasurements()
         }
     }
 
-    // If any, take also contact points
-    for (int i = 0; i < number_tactile_points; i++)
+    // If the user requested them and if they are available, take also contact points
+    if (exogenous_data_->getUseContacts())
     {
-        tactile_points.segment(i * 3, 3).swap(points.col(j));
+        for (int i = 0; i < number_tactile_points; i++)
+        {
+            tactile_points.segment(i * 3, 3).swap(points.col(j));
 
-	j++;
+            j++;
+        }
     }
 
     // Set the size of the visual part of the point cloud
@@ -430,7 +437,9 @@ void iCubPointCloud::drawObjectROI(cv::Mat& image)
 
 
 iCubPointCloudExogenousData::iCubPointCloudExogenousData() :
-    bbox_set_(false)
+    bbox_set_(false),
+    is_occlusion_(false),
+    use_contacts_(true)
 { }
 
 
@@ -466,18 +475,45 @@ bool iCubPointCloudExogenousData::getOcclusion()
 
 void iCubPointCloudExogenousData::setContactState(const bool& status)
 {
+    lock_.lock();
+
     is_contact_ = status;
+
+    lock_.unlock();
 }
 
 
 bool iCubPointCloudExogenousData::getContactState()
 {
-    return is_contact_;
+    bool local_value;
+
+    lock_.lock();
+
+    local_value = is_contact_;
+
+    lock_.unlock();
+
+    return local_value;
 }
+
+
+void iCubPointCloudExogenousData::setUseContacts(const bool enable)
+{
+    use_contacts_ = enable;
+}
+
+
+bool iCubPointCloudExogenousData::getUseContacts()
+{
+    return use_contacts_;
+}
+
 
 void iCubPointCloudExogenousData::reset()
 {
     bbox_set_ = false;
 
     is_occlusion_ = false;
+
+    use_contacts_ = true;
 }

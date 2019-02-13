@@ -426,6 +426,10 @@ Eigen::Vector2d BoundingBoxEstimator::evalHandExogenousInput()
     if (hand_pose == nullptr)
         return Vector2d::Zero();
 
+    // Get the current stamp
+    Stamp curr_stamp;
+    hand_pose_port_in_.getEnvelope(curr_stamp);
+
     VectorXd pose = toEigen(*hand_pose);
 
     yarp::sig::Vector eye_pos_left;
@@ -466,13 +470,14 @@ Eigen::Vector2d BoundingBoxEstimator::evalHandExogenousInput()
     current_proj(1) = pose_camera_frame(1) * cam_fy_ / pose_camera_frame(2) + cam_cy_;
 
     Vector2d delta = Vector2d::Zero();
-    if (is_hand_exogenous_initialized_)
+    if (is_hand_exogenous_initialized_ && ((curr_stamp.getTime() - hand_pose_stamp_.getTime()) < 1))
     {
         delta = current_proj - hand_projection_;
     }
 
     // Update for next iteration
     hand_projection_ = current_proj;
+    hand_pose_stamp_ = curr_stamp;
 
     // The hand pose was received at least one time
     is_hand_exogenous_initialized_ = true;

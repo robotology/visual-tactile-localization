@@ -14,6 +14,7 @@
 
 #include <yarp/sig/Image.h>
 #include <yarp/os/RpcClient.h>
+#include <yarp/os/Stamp.h>
 
 
 class BoundingBoxEstimator
@@ -241,6 +242,7 @@ protected:
      * Input port for hand 3D pose required to evaluate the hand feedforward term.
      */
     yarp::os::BufferedPort<yarp::sig::Vector> hand_pose_port_in_;
+    yarp::os::Stamp hand_pose_stamp_;
 
     /**
      * RPC clients.

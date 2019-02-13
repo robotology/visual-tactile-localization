@@ -140,6 +140,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       iCubGazeCtrlLibrary
                       ${OPENGL_LIBRARIES}
                       ${ICUB_LIBRARIES}
+                      iCubFingersEncoders
                       )
 
 if (USE_OPENMP)

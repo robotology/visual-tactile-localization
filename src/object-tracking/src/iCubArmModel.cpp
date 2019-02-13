@@ -27,7 +27,8 @@ iCubArmModel::iCubArmModel(const bool use_thumb,
     laterality_(laterality),
     context_(context),
     icub_arm_(iCubArm(laterality + "_v2")),
-    icub_kin_finger_{ iCubFinger(laterality + "_thumb"), iCubFinger(laterality + "_index"), iCubFinger(laterality + "_middle"), iCubFinger(laterality + "_ring"), iCubFinger(laterality + "_little") }
+    icub_kin_finger_{ iCubFinger(laterality + "_thumb"), iCubFinger(laterality + "_index"), iCubFinger(laterality + "_middle"), iCubFinger(laterality + "_ring"), iCubFinger(laterality + "_little") },
+    fingers_encoders_(context, laterality, port_prefix)
 {
     ResourceFinder rf;
 
@@ -153,19 +154,6 @@ iCubArmModel::iCubArmModel(const bool use_thumb,
 
     port_torso_enc_.open("/" + port_prefix + "/torso:i");
     port_arm_enc_.open("/" + port_prefix + "/" + laterality_ + "_arm:i");
-
-    Property prop_analog;
-    prop_analog.put("device", "analogsensorclient");
-    prop_analog.put("local", "/" + port_prefix + "/" + laterality_ + "_hand/analog:i");
-    prop_analog.put("remote", "/icub/" + laterality_ + "_hand/analog:o");
-    if (!(drv_analog_.open(prop_analog)))
-        throw std::runtime_error("ERROR::ICUBARMMODEL::CTOR\nERROR: cannot open analog interface for " + laterality_ + " hand.");
-
-    // try to retrieve the views
-    if (!(drv_analog_.view(ianalog_) || ianalog_ == nullptr))
-      throw std::runtime_error("ERROR::ICUBARMMODEL::CTOR\nERROR: cannot open analog interface view for " + laterality_ + " hand.");
-
-    setupAnalogBounds();
 }
 
 
@@ -363,18 +351,40 @@ bool iCubArmModel::setArmJoints(const Vector& q)
     icub_arm_.setAng(q.subVector(0, 9) * CTRL_DEG2RAD);
 
     // Get analog readings
+    bool valid_analogs = false;
     Vector fingers_analogs;
-    if ((ianalog_->read(fingers_analogs)) != yarp::dev::IAnalogSensor::AS_OK)
-        return false;
+    std::tie(valid_analogs, fingers_analogs) = fingers_encoders_.getEncoders();
+
+    bool valid_bounds = false;
+    Matrix fingers_bounds;
+    if (valid_analogs)
+    {
+        // Check if analog bounds are available
+        std::tie(valid_bounds, fingers_bounds) = fingers_encoders_.getAnalogBounds();
+    }
 
     Vector chainjoints;
     for (size_t i = 0; i < 5; ++i)
     {
-        // if (!icub_kin_finger_[i].getChainJoints(q.subVector(3, 18), chainjoints))
-        //     return false;
+        if (valid_analogs)
+        {
+            if (valid_bounds)
+            {
+                if (!(icub_kin_finger_[i].getChainJoints(q.subVector(3, 18), fingers_analogs, chainjoints, fingers_bounds)))
+                    return false;
+            }
+            else
+            {
+                if (!(icub_kin_finger_[i].getChainJoints(q.subVector(3, 18), fingers_analogs, chainjoints)))
+                    return false;
+            }
+        }
+        else
+        {
+            if (!icub_kin_finger_[i].getChainJoints(q.subVector(3, 18), chainjoints))
+                return false;
+        }
 
-        if (!(icub_kin_finger_[i].getChainJoints(q.subVector(3, 18), fingers_analogs, chainjoints, analog_bounds_)))
-	    return false;
         icub_kin_finger_[i].setAng(chainjoints * CTRL_DEG2RAD);
     }
 
@@ -399,42 +409,4 @@ std::tuple<bool, Vector> iCubArmModel::readRootToFingers()
         root_fingers_enc(3 + i) = bottle_arm->get(i).asDouble();
 
     return std::make_tuple(true, root_fingers_enc);
-}
-
-
-void iCubArmModel::setupAnalogBounds()
-{
-    analog_bounds_.resize(16, 2);
-    analog_bounds_(0, 0)  = 224.0;
-    analog_bounds_(1, 0)  = 193.0;
-    analog_bounds_(2, 0)  = 242.0;
-    analog_bounds_(3, 0)  = 238.0;
-    analog_bounds_(4, 0)  = 221.0;
-    analog_bounds_(5, 0)  = 248.0;
-    analog_bounds_(6, 0)  = 248.0;
-    analog_bounds_(7, 0)  = 211.0;
-    analog_bounds_(8, 0)  = 229.0;
-    analog_bounds_(9, 0)  = 229.0;
-    analog_bounds_(10, 0) = 213.0;
-    analog_bounds_(11, 0) = 218.0;
-    analog_bounds_(12, 0) = 232.0;
-    analog_bounds_(13, 0) = 217.0;
-    analog_bounds_(14, 0) = 243.0;
-    analog_bounds_(15, 0) = 0.0;
-    analog_bounds_(0, 1)  = 65.0;
-    analog_bounds_(1, 1)  = 10.0;
-    analog_bounds_(2, 1)  = 26.0;
-    analog_bounds_(3, 1)  = 18.0;
-    analog_bounds_(4, 1)  = 16.0;
-    analog_bounds_(5, 1)  = 0.0;
-    analog_bounds_(6, 1)  = 6.0;
-    analog_bounds_(7, 1)  = 18.0;
-    analog_bounds_(8, 1)  = 0.0;
-    analog_bounds_(9, 1)  = 0.0;
-    analog_bounds_(10, 1) = 12.0;
-    analog_bounds_(11, 1) = 13.0;
-    analog_bounds_(12, 1) = 19.0;
-    analog_bounds_(13, 1) = 28.0;
-    analog_bounds_(14, 1) = 0.0;
-    analog_bounds_(15, 0) = 0.0;
 }

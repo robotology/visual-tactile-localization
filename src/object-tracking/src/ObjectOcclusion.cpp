@@ -65,7 +65,7 @@ void ObjectOcclusion::findOcclusionArea()
             cv::convexHull(contours[0], occlusion_area_not_scaled);
 
             // Enlarge the convex hull a bit
-            occlusion_area_ = enlargeConvexHull(occlusion_area_not_scaled, 1.2);
+            occlusion_area_ = enlargeConvexHull(occlusion_area_not_scaled, 1.3);
 
             occlusion_area_set_ = true;
         }

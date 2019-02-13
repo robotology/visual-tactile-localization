@@ -65,6 +65,8 @@ public:
 
     void resume_filter() override;
 
+    void contacts(const bool enable) override;
+
     bool skip_step(const std::string& what_step, const bool status) override;
 
     std::vector<std::string> get_point_estimate_info() override;

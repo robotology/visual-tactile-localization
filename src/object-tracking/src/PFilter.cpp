@@ -126,6 +126,12 @@ void PFilter::resume_filter()
 }
 
 
+void PFilter::contacts(const bool enable)
+{
+    icub_point_cloud_share_->setUseContacts(enable);
+}
+
+
 bool PFilter::skip_step(const std::string& what_step, const bool status)
 {
     return skip(what_step, status);

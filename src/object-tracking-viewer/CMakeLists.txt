@@ -66,6 +66,7 @@ target_link_libraries(${EXE_TARGET_NAME} PRIVATE
                                          iCubGazeCtrlLibrary
                                          SuperimposeMesh::SuperimposeMesh
                                          ${ICUB_LIBRARIES}
+                                         iCubFingersEncoders
                                          )
 
 set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini)

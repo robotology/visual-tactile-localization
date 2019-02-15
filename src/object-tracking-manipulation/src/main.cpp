@@ -1073,9 +1073,7 @@ public:
          */
 
         // get path of the springy fingers calibration file
-        const std::string config_filename = "springy_calibration_" + actions_laterality_ + ".ini";
-
-        const std::string springy_file_path = rf.findFile(config_filename);
+        const std::string springy_file_path = rf.findFile("springy_calibration_" + actions_laterality_ + ".ini");
 
         // get path of hand sequences file
         const std::string hand_sequences_path = rf.findFile("hand_sequences.ini");
@@ -1084,6 +1082,7 @@ public:
         Property hand_action_properties;
         hand_action_properties.put("local", "object-tracking-manipulation/action-primitives");
         hand_action_properties.put("part", actions_laterality_ + "_arm");
+        hand_action_properties.put("robot", robot_);
         hand_action_properties.put("grasp_model_type", "springy");
         hand_action_properties.put("grasp_model_file", springy_file_path.c_str());
         hand_action_properties.put("hand_sequences_file", hand_sequences_path.c_str());

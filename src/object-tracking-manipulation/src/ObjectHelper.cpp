@@ -85,17 +85,11 @@ ObjectHelper::~ObjectHelper()
 { }
 
 
-void ObjectHelper::update()
-{
-    updateHandForwardKinematics();
-    updateHandPose();
-    updateObjectPose();
-    evaluateApproachPosition();
-}
-
-
 yarp::sig::Vector ObjectHelper::getCoarseApproachPoint()
 {
+    updateObjectPose();
+    evaluateApproachPosition();
+
     // This is to be sent to the Cartesian controller without
     // compensation for the mismatch between the stereo vision and
     // the cartesian domain of the robot.
@@ -111,6 +105,9 @@ yarp::sig::Vector ObjectHelper::getCoarseApproachPoint()
 
 yarp::sig::Vector ObjectHelper::getPreciseApproachPoint()
 {
+    updateHandForwardKinematics();
+    updateHandPose();
+
     // Suppose that the end effector has been already placed in the
     // position suggested by getCoarseApproachPosition
     // At this point it is known

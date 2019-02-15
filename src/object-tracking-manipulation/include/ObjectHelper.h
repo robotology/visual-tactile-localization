@@ -16,8 +16,6 @@ public:
 
     virtual ~ObjectHelper();
 
-    void update();
-
     yarp::sig::Vector getCoarseApproachPoint();
 
     yarp::sig::Vector getPreciseApproachPoint();

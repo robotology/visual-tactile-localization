@@ -20,6 +20,8 @@ public:
 
     yarp::sig::Vector getPreciseApproachPoint();
 
+    yarp::sig::Vector getRequiredHandOrientation();
+
 protected:
     bool updateHandForwardKinematics();
 

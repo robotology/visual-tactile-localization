@@ -138,6 +138,12 @@ yarp::sig::Vector ObjectHelper::getPreciseApproachPoint()
 }
 
 
+yarp::sig::Vector ObjectHelper::getRequiredHandOrientation()
+{
+    return approach_orientation_;
+}
+
+
 bool ObjectHelper::updateHandForwardKinematics()
 {
     yarp::sig::Vector encoders(10, 0.0);

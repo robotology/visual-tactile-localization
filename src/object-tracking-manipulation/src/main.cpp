@@ -3,6 +3,9 @@
 #include <ObjectHelper.h>
 #include <thrift/ObjectTrackingManipulationIDL.h>
 
+#include <iCub/action/actionPrimitives.h>
+
+#include <yarp/dev/CartesianControl.h>
 #include <yarp/math/Math.h>
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/ResourceFinder.h>
@@ -11,16 +14,20 @@
 #include <yarp/sig/Vector.h>
 
 #include <cstdlib>
+#include <deque>
 #include <string>
 
+using namespace yarp::dev;
 using namespace yarp::math;
 using namespace yarp::os;
 using namespace yarp::sig;
+using namespace iCub::action;
 
 enum class Status { Idle,
                     MoveUp, MoveDown, MoveLeft, MoveRight, MoveIn, MoveOut, WaitHandMove,
                     MoveCoarseApproach, MovePreciseApproach,
                     TestCoarseApproach, TestPreciseApproach,
+                    OpenHand, CloseHand, WaitOpenHand, WaitCloseHand,
                     MoveRest, WaitArmRest,
                     MoveHome, WaitArmHome,
                     Stop };
@@ -86,12 +93,16 @@ protected:
      * Controllers.
      */
 
+    // action primitives for fingers opening and closing
+    std::unique_ptr<ActionPrimitives> hand_action_;
+
     // gaze controller
     GazeController gaze_;
 
     // arm controllers
     ArmController right_arm_;
     ArmController left_arm_;
+    ICartesianControl* actions_arm_;
 
     // cartesian controller trajectory times
     double default_traj_time_;
@@ -165,6 +176,8 @@ protected:
     double hand_move_timeout_;
     double hand_home_timeout_;
     double hand_rest_timeout_;
+    double hand_open_timeout_;
+    double hand_close_timeout_;
 
     /*
      * Thrift
@@ -328,6 +341,50 @@ protected:
 
         previous_status_ = status_;
         status_ = Status::TestPreciseApproach;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string open_hand()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::OpenHand;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string close_hand()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::CloseHand;
 
         reply = "[OK] Command issued.";
 
@@ -514,7 +571,6 @@ protected:
         return reply;
     }
 
-
     std::string stop()
     {
         mutex_.lock();
@@ -698,6 +754,22 @@ protected:
         yInfo() << "Precise approach orientation:" << orientation.toString();
 
         return true;
+    }
+
+    /*
+     * Open the hand.
+     */
+    bool openHand()
+    {
+        return hand_action_->pushAction("open_hand");
+    }
+
+    /*
+     * Close the hand.
+     */
+    bool closeHand()
+    {
+        return hand_action_->pushAction("close_hand");
     }
 
     /*
@@ -917,12 +989,16 @@ public:
         hand_shift_ = rf.check("hand_shift", Value(0.01)).asDouble();
         yInfo() << "- hand_shift" << hand_shift_;
 
-        hand_move_timeout_ = rf.check("hand_move_timeout", Value(10.0)).asDouble();
-        hand_home_timeout_ = rf.check("hand_home_timeout", Value(10.0)).asDouble();
-        hand_rest_timeout_ = rf.check("hand_rest_timeout", Value(10.0)).asDouble();
-        yInfo() << "- hand_move_timeout" << hand_move_timeout_;
-        yInfo() << "- hand_home_timeout" << hand_home_timeout_;
-        yInfo() << "- hand_rest_timeout" << hand_rest_timeout_;
+        hand_move_timeout_  = rf.check("hand_move_timeout", Value(10.0)).asDouble();
+        hand_home_timeout_  = rf.check("hand_home_timeout", Value(10.0)).asDouble();
+        hand_rest_timeout_  = rf.check("hand_rest_timeout", Value(10.0)).asDouble();
+        hand_open_timeout_  = rf.check("hand_open_timeout", Value(10.0)).asDouble();
+        hand_close_timeout_ = rf.check("hand_close_timeout", Value(10.0)).asDouble();
+        yInfo() << "- hand_move_timeout"  << hand_move_timeout_;
+        yInfo() << "- hand_home_timeout"  << hand_home_timeout_;
+        yInfo() << "- hand_rest_timeout"  << hand_rest_timeout_;
+        yInfo() << "- hand_open_timeout"  << hand_open_timeout_;
+        yInfo() << "- hand_close_timeout" << hand_close_timeout_;
 
         hand_default_pitch_      = rf.check("hand_default_pitch", Value(0.0)).asDouble();
         hand_default_roll_left_  = rf.check("hand_default_roll_left", Value(0.0)).asDouble();
@@ -983,6 +1059,51 @@ public:
                 arm_ctl.limitTorsoPitch(max_torso_pitch_);
             if (limit_torso_yaw_)
                 arm_ctl.limitTorsoYaw(max_torso_yaw_);
+        }
+
+        /*
+         * Fingers controllers
+         */
+
+        // get path of the springy fingers calibration file
+        const std::string config_filename = "springy_calibration_" + laterality_ + ".ini";
+
+        ResourceFinder rf_object_tracking;
+        rf_object_tracking.setVerbose(true);
+        rf_object_tracking.setDefaultContext("object-tracking");
+        rf_object_tracking.setDefaultConfigFile(config_filename.c_str());
+        rf_object_tracking.configure(0, NULL);
+
+        Property prop;
+        const std::string springy_file_path = rf_object_tracking.findFile(config_filename);
+
+        // get path of hand sequences file
+        const std::string hand_sequences_path = rf.findFile("hand_sequences.ini");
+
+        // initialize hand actions
+        Property hand_action_properties;
+        hand_action_properties.put("local", "object-tracking-manipulation/action-primitives");
+        hand_action_properties.put("part", laterality_ + "_arm");
+        hand_action_properties.put("grasp_model_type", "springy");
+        hand_action_properties.put("grasp_model_file", springy_file_path.c_str());
+        hand_action_properties.put("hand_sequences_file", hand_sequences_path.c_str());
+        hand_action_ = std::unique_ptr<ActionPrimitives>(new ActionPrimitives(hand_action_properties));
+
+        // store a reference to the instance of the cartesian interface opened by ActionPrimivites
+        // since ActionPrimitives is used only to move the fingers,
+        // however, there should not be any need to deal with the context of the underlying cartesian interface
+        hand_action_->getCartesianIF(actions_arm_);
+
+        // print availables hand sequences
+        std::deque<std::string> q = hand_action_->getHandSeqList();
+        yInfo() << "List of available hand sequence keys:";
+        for (std::size_t i = 0; i < q.size(); i++)
+        {
+            Bottle sequence;
+            hand_action_->getHandSequence(q[i],sequence);
+
+            yInfo() << "hand_seq_name:"        << q[i];
+            yInfo() << "hand_seq_description:" << sequence.toString();
         }
 
         /*
@@ -1047,6 +1168,154 @@ public:
         case Status::Idle:
         {
             // nothing to do here
+            break;
+        }
+
+        case Status::OpenHand:
+        {
+            if (!openHand())
+            {
+                yError() << "[OPEN HAND] error while trying to open the hand.";
+                // stop control
+                hand_action_->stopControl();
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to WaitHandMove
+            status_ = Status::WaitOpenHand;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
+
+            break;
+        }
+
+        case Status::CloseHand:
+        {
+            if (!closeHand())
+            {
+                yError() << "[CLOSE HAND] error while trying to close the hand.";
+                // stop control
+                hand_action_->stopControl();
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to WaitHandMove
+            status_ = Status::WaitCloseHand;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
+
+            break;
+        }
+
+        case Status::WaitOpenHand:
+        {
+            // check status
+            bool is_done = false;
+            bool ok = hand_action_->checkActionsDone(is_done, false);
+
+            // handle failure and timeout
+            if (!ok || ((yarp::os::Time::now() - last_time_ > hand_open_timeout_)))
+            {
+                yError() << "[WAIT OPEN HAND] check motion done failed or timeout reached.";
+
+                // stop control
+                hand_action_->stopControl();
+
+                mutex_.lock();
+
+                // go back to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            if (is_done)
+            {
+                // move completed
+                yInfo() << "[WAIT OPEN HAND] done.";
+
+                // stop control
+                hand_action_->stopControl();
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+            }
+
+            break;
+        }
+
+        case Status::WaitCloseHand:
+        {
+            // check status
+            bool is_done = false;
+            bool ok = hand_action_->checkActionsDone(is_done, false);
+
+            // handle failure and timeout
+            if (!ok || ((yarp::os::Time::now() - last_time_ > hand_close_timeout_)))
+            {
+                yError() << "[WAIT CLOSE HAND] check motion done failed or timeout reached.";
+
+                // stop control
+                hand_action_->stopControl();
+
+                mutex_.lock();
+
+                // go back to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            if (is_done)
+            {
+                // move completed
+                yInfo() << "[WAIT CLOSE HAND] done.";
+
+                // stop control
+                hand_action_->stopControl();
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+            }
+
             break;
         }
 
@@ -1424,6 +1693,7 @@ public:
             // stop control
             stopArm("right");
             stopArm("left");
+            hand_action_->stopControl();
 
             // stop gaze tracking
             gaze_.getGazeInterface().setTrackingMode(false);

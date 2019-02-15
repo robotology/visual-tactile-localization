@@ -1304,7 +1304,7 @@ public:
                 break;
             }
 
-            if ((yarp::os::Time::now() - last_time_) > hand_open_timeout_)
+            if ((yarp::os::Time::now() - last_time_) > hand_close_timeout_)
             {
                 // move completed
                 yInfo() << "[WAIT CLOSE HAND] done.";

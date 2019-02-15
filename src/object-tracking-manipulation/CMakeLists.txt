@@ -67,6 +67,7 @@ endif()
 
 set(${EXE_TARGET_NAME}_CONF
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/manipulation_config.ini
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/object_helper_config.ini
     )
 
 yarp_install(FILES ${${EXE_TARGET_NAME}_CONF}                           DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)

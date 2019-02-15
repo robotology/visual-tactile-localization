@@ -14,6 +14,8 @@ service ObjectTrackingManipulationIDL
     string move_home(1:string laterality);
     string coarse_approach();
     string precise_approach();
+    string test_coarse_approach();
+    string test_precise_approach();
     string stop();
     string quit();
 }

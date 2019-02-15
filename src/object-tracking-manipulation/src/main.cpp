@@ -20,6 +20,7 @@ using namespace yarp::sig;
 enum class Status { Idle,
                     MoveUp, MoveDown, MoveLeft, MoveRight, MoveIn, MoveOut, WaitHandMove,
                     MoveCoarseApproach, MovePreciseApproach,
+                    TestCoarseApproach, TestPreciseApproach,
                     MoveRest, WaitArmRest,
                     MoveHome, WaitArmHome,
                     Stop };
@@ -269,6 +270,28 @@ protected:
         return reply;
     }
 
+    std::string test_coarse_approach()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::TestCoarseApproach;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
     std::string precise_approach()
     {
         if (status_ != Status::Idle)
@@ -283,6 +306,28 @@ protected:
 
         previous_status_ = status_;
         status_ = Status::MovePreciseApproach;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string test_precise_approach()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::TestPreciseApproach;
 
         reply = "[OK] Command issued.";
 
@@ -578,6 +623,27 @@ protected:
     }
 
     /*
+     * Issue a coarse approach to the object.
+     */
+    bool testCoarseApproach()
+    {
+        // check if the hand name is valid
+        if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
+            return false;
+
+        // pick the required hand orientation
+        Vector orientation = helper_.getRequiredHandOrientation();
+
+        // pick the coarse approach position
+        Vector position = helper_.getCoarseApproachPoint();
+
+        yInfo() << "Coarse approach position:" << position.toString();
+        yInfo() << "Coarse approach orientation:" << orientation.toString();
+
+        return true;
+    }
+
+    /*
      * Issue a precise approach to the object.
      */
     bool movePreciseApproach()
@@ -611,6 +677,27 @@ protected:
 
         // issue command
         return (arm->cartesian()->goToPoseSync(position, orientation));
+    }
+
+    /*
+     * Issue a precise approach to the object.
+     */
+    bool testPreciseApproach()
+    {
+        // check if the hand name is valid
+        if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
+            return false;
+
+        // pick the required hand orientation
+        Vector orientation = helper_.getRequiredHandOrientation();
+
+        // pick the coarse approach position
+        Vector position = helper_.getPreciseApproachPoint();
+
+        yInfo() << "Precise approach position:" << position.toString();
+        yInfo() << "Precise approach orientation:" << orientation.toString();
+
+        return true;
     }
 
     /*
@@ -994,6 +1081,23 @@ public:
             break;
         }
 
+        case Status::TestCoarseApproach:
+        {
+            if (!testCoarseApproach())
+            {
+                yError() << "[TEST COARSE APPROACH] error while trying to simulate command.";
+            }
+
+            mutex_.lock();
+
+            // go to Idle
+            status_ = Status::Idle;
+
+            mutex_.unlock();
+
+            break;
+        }
+
         case Status::MovePreciseApproach:
         {
             if (!movePreciseApproach())
@@ -1021,6 +1125,23 @@ public:
 
             // reset timer
             last_time_ = yarp::os::Time::now();
+
+            break;
+        }
+
+        case Status::TestPreciseApproach:
+        {
+            if (!testPreciseApproach())
+            {
+                yError() << "[TEST PRECISE APPROACH] error while trying to simulate command.";
+            }
+
+            mutex_.lock();
+
+            // go to Idle
+            status_ = Status::Idle;
+
+            mutex_.unlock();
 
             break;
         }

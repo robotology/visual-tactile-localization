@@ -1,5 +1,6 @@
 #include <ArmController.h>
 #include <GazeController.h>
+#include <ObjectHelper.h>
 #include <thrift/ObjectTrackingManipulationIDL.h>
 
 #include <yarp/math/Math.h>
@@ -75,6 +76,11 @@ protected:
     double period_;
 
     /*
+     * Object helper.
+     */
+    ObjectHelper helper_;
+
+    /*
      * Controllers.
      */
 
@@ -141,6 +147,7 @@ protected:
 
     // name of the robot
     std::string robot_;
+    const std::string laterality_ = "right";
 
     // name of arm to be used
     bool enable_torso_;
@@ -651,7 +658,8 @@ protected:
 
 public:
     ObjectTrackingManipulation() :
-        gaze_("object-tracking-manipulation")
+        gaze_("object-tracking-manipulation"),
+        helper_("object-tracking-manipulation", "object-tracking-manipulation", laterality_)
     { }
 
     bool configure(yarp::os::ResourceFinder &rf)

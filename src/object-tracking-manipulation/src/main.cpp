@@ -19,6 +19,7 @@ using namespace yarp::sig;
 
 enum class Status { Idle,
                     MoveUp, MoveDown, MoveLeft, MoveRight, MoveIn, MoveOut, WaitHandMove,
+                    MoveCoarseApproach, MovePreciseApproach,
                     MoveRest, WaitArmRest,
                     MoveHome, WaitArmHome,
                     Stop };
@@ -240,6 +241,50 @@ protected:
             reply = "[FAILED] Unable to stop gaze tracking.";
         else
             reply = "[OK] Stopped gaze tracking.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string coarse_approach()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MoveCoarseApproach;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string precise_approach()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::MovePreciseApproach;
+
+        reply = "[OK] Command issued.";
 
         mutex_.unlock();
 
@@ -494,6 +539,78 @@ protected:
         }
         else
             return false;
+    }
+
+    /*
+     * Issue a coarse approach to the object.
+     */
+    bool moveCoarseApproach()
+    {
+        // check if the hand name is valid
+        if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
+            return false;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return false;
+
+        // pick the required hand orientation
+        Vector orientation = helper_.getRequiredHandOrientation();
+
+        // set the required hand orientation
+        arm->setHandAttitude(orientation(0), orientation(1), orientation(2));
+
+        // pick the coarse approach position
+        Vector position = helper_.getCoarseApproachPoint();
+
+        // set trajectory time
+        if (default_traj_time_ < 1.0)
+        {
+            yError() << "You are requesting a trajectory time" << default_traj_time_ << "less than 1 seconds!";
+            return false;
+        }
+        if (!(arm->cartesian()->setTrajTime(default_traj_time_)))
+            return false;
+
+        // issue command
+        return (arm->cartesian()->goToPoseSync(position, orientation));
+    }
+
+    /*
+     * Issue a precise approach to the object.
+     */
+    bool movePreciseApproach()
+    {
+        // check if the hand name is valid
+        if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
+            return false;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return false;
+
+        // pick the required hand orientation
+        Vector orientation = helper_.getRequiredHandOrientation();
+
+        // set the required hand orientation
+        arm->setHandAttitude(orientation(0), orientation(1), orientation(2));
+
+        // pick the coarse approach position
+        Vector position = helper_.getPreciseApproachPoint();
+
+        // set trajectory time
+        if (default_traj_time_ < 1.0)
+        {
+            yError() << "You are requesting a trajectory time" << default_traj_time_ << "less than 1 seconds!";
+            return false;
+        }
+        if (!(arm->cartesian()->setTrajTime(default_traj_time_)))
+            return false;
+
+        // issue command
+        return (arm->cartesian()->goToPoseSync(position, orientation));
     }
 
     /*
@@ -843,6 +960,68 @@ public:
         case Status::Idle:
         {
             // nothing to do here
+            break;
+        }
+
+        case Status::MoveCoarseApproach:
+        {
+            if (!moveCoarseApproach())
+            {
+                yError() << "[MOVE COARSE APPROACH] error while trying to move hand.";
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to WaitHandMove
+            status_ = Status::WaitHandMove;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
+
+            break;
+        }
+
+        case Status::MovePreciseApproach:
+        {
+            if (!movePreciseApproach())
+            {
+                yError() << "[MOVE PRECISE APPROACH] error while trying to move hand.";
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to WaitHandMove
+            status_ = Status::WaitHandMove;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
+
             break;
         }
 

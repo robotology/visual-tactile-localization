@@ -1083,6 +1083,9 @@ public:
         hand_action_properties.put("local", "object-tracking-manipulation/action-primitives");
         hand_action_properties.put("part", actions_laterality_ + "_arm");
         hand_action_properties.put("robot", robot_);
+        hand_action_properties.put("torso_yaw", "off");
+        hand_action_properties.put("torso_pitch", "off");
+        hand_action_properties.put("torso_roll", "off");
         hand_action_properties.put("grasp_model_type", "springy");
         hand_action_properties.put("grasp_model_file", springy_file_path.c_str());
         hand_action_properties.put("hand_sequences_file", hand_sequences_path.c_str());

@@ -53,7 +53,7 @@ ObjectHelper::ObjectHelper(const std::string port_prefix, const std::string cont
 
     ResourceFinder rf_object_helper;
     rf_object_helper.setVerbose(true);
-    rf_object_helper.setDefaultContext("object-tracking-manipulation");
+    rf_object_helper.setDefaultContext(context);
     rf_object_helper.setDefaultConfigFile("object_helper_config.ini");
     rf_object_helper.configure(0, NULL);
 

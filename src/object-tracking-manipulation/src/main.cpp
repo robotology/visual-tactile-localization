@@ -1742,7 +1742,7 @@ int main(int argc, char** argv)
     ObjectTrackingManipulation module;
     yarp::os::ResourceFinder rf;
     rf.setVerbose(true);
-    rf.setDefaultContext("object-tracking");
+    rf.setDefaultContext("object-tracking-manipulation");
     rf.setDefaultConfigFile("manipulation_config.ini");
     rf.configure(argc,argv);
 

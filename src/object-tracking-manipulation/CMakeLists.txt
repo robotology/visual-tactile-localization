@@ -71,5 +71,5 @@ set(${EXE_TARGET_NAME}_CONF
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/hand_sequences.ini
     )
 
-yarp_install(FILES ${${EXE_TARGET_NAME}_CONF}                           DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking)
+yarp_install(FILES ${${EXE_TARGET_NAME}_CONF}                           DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking-manipulation)
 install(TARGETS ${EXE_TARGET_NAME} DESTINATION bin)

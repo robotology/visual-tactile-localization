@@ -87,7 +87,7 @@ protected:
     /*
      * Object helper.
      */
-    ObjectHelper helper_;
+    std::unique_ptr<ObjectHelper> helper_;
 
     /*
      * Controllers.
@@ -160,7 +160,7 @@ protected:
 
     // name of the robot
     std::string robot_;
-    const std::string laterality_ = "right";
+    std::string actions_laterality_;
 
     // name of arm to be used
     bool enable_torso_;
@@ -657,13 +657,13 @@ protected:
             return false;
 
         // pick the required hand orientation
-        Vector orientation = helper_.getRequiredHandOrientation();
+        Vector orientation = helper_->getRequiredHandOrientation();
 
         // set the required hand orientation
         arm->setHandAttitude(orientation(0), orientation(1), orientation(2));
 
         // pick the coarse approach position
-        Vector position = helper_.getCoarseApproachPoint();
+        Vector position = helper_->getCoarseApproachPoint();
 
         // set trajectory time
         if (default_traj_time_ < 1.0)
@@ -688,10 +688,10 @@ protected:
             return false;
 
         // pick the required hand orientation
-        Vector orientation = helper_.getRequiredHandOrientation();
+        Vector orientation = helper_->getRequiredHandOrientation();
 
         // pick the coarse approach position
-        Vector position = helper_.getCoarseApproachPoint();
+        Vector position = helper_->getCoarseApproachPoint();
 
         yInfo() << "Coarse approach position:" << position.toString();
         yInfo() << "Coarse approach orientation:" << orientation.toString();
@@ -714,13 +714,13 @@ protected:
             return false;
 
         // pick the required hand orientation
-        Vector orientation = helper_.getRequiredHandOrientation();
+        Vector orientation = helper_->getRequiredHandOrientation();
 
         // set the required hand orientation
         arm->setHandAttitude(orientation(0), orientation(1), orientation(2));
 
         // pick the coarse approach position
-        Vector position = helper_.getPreciseApproachPoint();
+        Vector position = helper_->getPreciseApproachPoint();
 
         // set trajectory time
         if (default_traj_time_ < 1.0)
@@ -745,10 +745,10 @@ protected:
             return false;
 
         // pick the required hand orientation
-        Vector orientation = helper_.getRequiredHandOrientation();
+        Vector orientation = helper_->getRequiredHandOrientation();
 
         // pick the coarse approach position
-        Vector position = helper_.getPreciseApproachPoint();
+        Vector position = helper_->getPreciseApproachPoint();
 
         yInfo() << "Precise approach position:" << position.toString();
         yInfo() << "Precise approach orientation:" << orientation.toString();
@@ -934,8 +934,7 @@ protected:
 
 public:
     ObjectTrackingManipulation() :
-        gaze_("object-tracking-manipulation"),
-        helper_("object-tracking-manipulation", "object-tracking-manipulation", laterality_)
+        gaze_("object-tracking-manipulation")
     { }
 
     bool configure(yarp::os::ResourceFinder &rf)
@@ -961,6 +960,9 @@ public:
 
         robot_ = rf.check("robot", Value("icub")).asString();
         yInfo() << "- robot" << robot_;
+
+        actions_laterality_ = rf.check("actions_laterality", Value("right")).asString();
+        yInfo() << "- actions_laterality" << actions_laterality_;
 
         period_ = rf.check("period", Value(0.02)).asDouble();
         yInfo() << "- period" << period_;
@@ -1032,6 +1034,11 @@ public:
         yInfo() << "- right_arm_rest_att" << right_arm_rest_att_.toString();
 
         /*
+         * Object helper
+         */
+        helper_ = std::unique_ptr<ObjectHelper>(new ObjectHelper("object-tracking-manipulation", "object-tracking-manipulation", actions_laterality_));
+
+        /*
          * Arm Controllers
          */
 
@@ -1066,16 +1073,9 @@ public:
          */
 
         // get path of the springy fingers calibration file
-        const std::string config_filename = "springy_calibration_" + laterality_ + ".ini";
+        const std::string config_filename = "springy_calibration_" + actions_laterality_ + ".ini";
 
-        ResourceFinder rf_object_tracking;
-        rf_object_tracking.setVerbose(true);
-        rf_object_tracking.setDefaultContext("object-tracking");
-        rf_object_tracking.setDefaultConfigFile(config_filename.c_str());
-        rf_object_tracking.configure(0, NULL);
-
-        Property prop;
-        const std::string springy_file_path = rf_object_tracking.findFile(config_filename);
+        const std::string springy_file_path = rf.findFile(config_filename);
 
         // get path of hand sequences file
         const std::string hand_sequences_path = rf.findFile("hand_sequences.ini");
@@ -1083,7 +1083,7 @@ public:
         // initialize hand actions
         Property hand_action_properties;
         hand_action_properties.put("local", "object-tracking-manipulation/action-primitives");
-        hand_action_properties.put("part", laterality_ + "_arm");
+        hand_action_properties.put("part", actions_laterality_ + "_arm");
         hand_action_properties.put("grasp_model_type", "springy");
         hand_action_properties.put("grasp_model_file", springy_file_path.c_str());
         hand_action_properties.put("hand_sequences_file", hand_sequences_path.c_str());

@@ -16,6 +16,8 @@ service ObjectTrackingManipulationIDL
     string precise_approach();
     string test_coarse_approach();
     string test_precise_approach();
+    string open_hand();
+    string close_hand();
     string stop();
     string quit();
 }

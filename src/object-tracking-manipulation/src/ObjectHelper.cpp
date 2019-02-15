@@ -20,7 +20,6 @@ using namespace yarp::sig;
 ObjectHelper::ObjectHelper(const std::string port_prefix, const std::string context, const std::string laterality) :
     icub_arm_(iCubArm(laterality + "_v2"))
 {
-
     if (!port_torso_enc_.open("/" + port_prefix + "/torso:i"))
     {
         throw std::runtime_error("ERROR::" + log_ID_ + "::CTOR::\nERROR:: cannot open torso input port");
@@ -241,12 +240,9 @@ std::pair<bool, yarp::sig::Vector> ObjectHelper::loadVectorDouble
 
     Bottle* b = rf.find(key).asList();
     if (b == nullptr)
-        ok = false;
+        return std::make_pair(false, yarp::sig::Vector());
 
     if (b->size() != size)
-        ok = false;
-
-    if (!ok)
         return std::make_pair(false, yarp::sig::Vector());
 
     yarp::sig::Vector vector(size);

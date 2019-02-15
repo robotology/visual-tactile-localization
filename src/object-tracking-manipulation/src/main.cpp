@@ -1239,12 +1239,13 @@ public:
         {
             // check status
             bool is_done = false;
+	    // non-blocking checkActionsDone is broken. Using a timeout.
             bool ok = hand_action_->checkActionsDone(is_done, false);
 
             // handle failure and timeout
-            if (!ok || ((yarp::os::Time::now() - last_time_ > hand_open_timeout_)))
+            if (!ok)//|| ((yarp::os::Time::now() - last_time_ > hand_open_timeout_)))
             {
-                yError() << "[WAIT OPEN HAND] check motion done failed or timeout reached.";
+                yError() << "[WAIT OPEN HAND] check motion done failed.";
 
                 // stop control
                 hand_action_->stopControl();
@@ -1259,7 +1260,7 @@ public:
                 break;
             }
 
-            if (is_done)
+            if ((yarp::os::Time::now() - last_time_) > hand_open_timeout_)
             {
                 // move completed
                 yInfo() << "[WAIT OPEN HAND] done.";
@@ -1282,10 +1283,11 @@ public:
         {
             // check status
             bool is_done = false;
+	    // non-blocking checkActionsDone is broken. Using a timeout.
             bool ok = hand_action_->checkActionsDone(is_done, false);
 
             // handle failure and timeout
-            if (!ok || ((yarp::os::Time::now() - last_time_ > hand_close_timeout_)))
+            if (!ok)// || ((yarp::os::Time::now() - last_time_ > hand_close_timeout_)))
             {
                 yError() << "[WAIT CLOSE HAND] check motion done failed or timeout reached.";
 
@@ -1302,7 +1304,7 @@ public:
                 break;
             }
 
-            if (is_done)
+            if ((yarp::os::Time::now() - last_time_) > hand_open_timeout_)
             {
                 // move completed
                 yInfo() << "[WAIT CLOSE HAND] done.";

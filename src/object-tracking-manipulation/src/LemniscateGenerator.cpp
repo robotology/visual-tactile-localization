@@ -3,12 +3,14 @@
 using namespace Eigen;
 
 LemniscateGenerator::LemniscateGenerator() :
-    LemniscateGenerator(1.0, 1.0)
+    LemniscateGenerator(1.0, 1.0, false)
 { }
 
 
-LemniscateGenerator::LemniscateGenerator(const double scale, const double time_scale) :
-    scale_(scale), time_scale_(time_scale),
+LemniscateGenerator::LemniscateGenerator(const double scale, const double time_scale, const bool invert_y_z_axes) :
+    scale_(scale),
+    time_scale_(time_scale),
+    invert_y_z_axes_(invert_y_z_axes),
     center_(Vector3d::Zero())
 { }
 
@@ -33,8 +35,16 @@ VectorXd LemniscateGenerator::getCurrentPose(const double time)
     // stay on the x = center(0) plane
     pose(0) = center_(0);
 
-    pose(1) = center_(1) + scale_ * lemniscate_scale * sin(2 * time_scale_ * time) / 2.0;
-    pose(2) = center_(2) + scale_ * lemniscate_scale * cos(time_scale_ * time);
+    if (invert_y_z_axes_)
+    {
+        pose(1) = center_(1) + scale_ * lemniscate_scale * sin(2 * time_scale_ * time) / 2.0;
+        pose(2) = center_(2) + scale_ * lemniscate_scale * cos(time_scale_ * time);
+    }
+    else
+    {
+        pose(1) = center_(1) + scale_ * lemniscate_scale * cos(time_scale_ * time);
+        pose(2) = center_(2) + scale_ * lemniscate_scale * sin(2 * time_scale_ * time) / 2.0;
+    }
 
     return pose;
 }

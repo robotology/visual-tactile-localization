@@ -10,7 +10,7 @@ class LemniscateGenerator : public TrajectoryGenerator
 public:
     LemniscateGenerator();
 
-    LemniscateGenerator(const double scale, const double time_scale);
+    LemniscateGenerator(const double scale, const double time_scale, const bool invert_y_z_axes);
 
     void setCenter(const Eigen::Vector3d& center);
 
@@ -26,6 +26,8 @@ protected:
     double time_scale_;
 
     Eigen::Vector3d center_;
+
+    bool invert_y_z_axes_;
 };
 
 #endif

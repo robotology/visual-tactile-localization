@@ -1,6 +1,7 @@
 #include <ArmController.h>
 #include <GazeController.h>
 #include <LemniscateGenerator.h>
+#include <SinusoidalTrajectory.h>
 #include <ObjectHelper.h>
 #include <thrift/ObjectTrackingManipulationIDL.h>
 
@@ -97,9 +98,14 @@ protected:
     std::unique_ptr<ObjectHelper> helper_;
 
     /*
-     * Trajectory generator.
+     * Trajectory generator (position).
      */
     std::unique_ptr<LemniscateGenerator> generator_;
+
+    /*
+     * Trajectory generator (orientation).
+     */
+    std::unique_ptr<SinusoidalTrajectory> generator_orientation_;
 
     /*
      * Controllers.
@@ -135,6 +141,10 @@ protected:
     // hand shift for movements
     double hand_shift_;
 
+    /*
+     * Positional part of hand trajectory
+     */
+
     // scalings for execution of trajectory
     double traj_time_scale_;
     double traj_scale_;
@@ -150,6 +160,19 @@ protected:
     double hand_default_pitch_;
     double hand_default_roll_left_;
     double hand_default_roll_right_;
+
+    /*
+     */
+
+    /*
+     * Orientation part of hand trajectory
+     */
+
+    yarp::sig::Vector angle_traj_time_scale_;
+    yarp::sig::Vector angle_traj_scale_;
+
+    /*
+     */
 
     // left and right arm rest positions
     yarp::sig::Vector left_arm_home_pos_;
@@ -970,6 +993,7 @@ protected:
     {
         // reset the trajectory generator
         generator_->reset();
+        generator_orientation_->reset();
 
         // pick the correct arm
         ArmController* arm = getArmController(hand_under_use_);
@@ -987,6 +1011,14 @@ protected:
         center = toEigen(pos);
         center(2) += traj_center_z_offset_;
         generator_->setCenter(center);
+
+        // set the center within the orientation generator
+        Eigen::Vector3d axis;
+        axis(0) = att(0);
+        axis(1) = att(1);
+        axis(2) = att(2);
+        Eigen::AngleAxisd angle_axis(att(3), axis);
+        generator_orientation_->setCenter(angle_axis.toRotationMatrix().eulerAngles(2, 1, 0));
 
         // set trajectory time
         if (default_traj_follow_time < 0.8)
@@ -1012,16 +1044,26 @@ protected:
 
         // get the current position of the palm of the hand
         // in case it is required to fix one of the two
-        yarp::sig::Vector pos;
-        yarp::sig::Vector att;
-        if (!arm->cartesian()->getPose(pos, att))
-            return false;
+        // yarp::sig::Vector pos;
+        // yarp::sig::Vector att;
+        // if (!arm->cartesian()->getPose(pos, att))
+        //     return false;
 
         // get the current position along the trajectory
-        Eigen::VectorXd pose = generator_->getCurrentPose(time);
+        Eigen::Vector3d pose = generator_->getCurrentPose(time);
         yarp::sig::Vector traj_pos(3, pose.data());
 
-        return arm->cartesian()->goToPose(traj_pos, att);
+        // get the current orientation along the trajectory
+        Eigen::Vector3d orientation = generator_orientation_->getCurrentPose(time);
+        Eigen::AngleAxisd angle_axis(Eigen::AngleAxisd(orientation(0), Eigen::Vector3d::UnitZ()) *
+                                     Eigen::AngleAxisd(orientation(1), Eigen::Vector3d::UnitY()) *
+                                     Eigen::AngleAxisd(orientation(2), Eigen::Vector3d::UnitX()));
+        yarp::sig::Vector axis_angle(4);
+        yarp::sig::Vector axis(3, angle_axis.axis().data());
+        axis_angle.setSubvector(0, axis);
+        axis_angle(3) = angle_axis.angle();
+
+        return arm->cartesian()->goToPose(traj_pos, axis_angle);
     }
 
     /*
@@ -1112,6 +1154,11 @@ public:
         yInfo() << "- traj_center_z_offset" << traj_center_z_offset_;
         yInfo() << "- invert_traj_orientation" << invert_traj_orientation_;
 
+        angle_traj_scale_ = loadVectorDouble(rf, "angle_traj_scale", 3);
+        angle_traj_time_scale_ = loadVectorDouble(rf, "angle_traj_time_scale", 3);
+        yInfo() << "- angle_traj_scale" << angle_traj_scale_.toString();
+        yInfo() << "- angle_traj_time_scale" << angle_traj_time_scale_.toString();
+
         hand_move_timeout_  = rf.check("hand_move_timeout", Value(10.0)).asDouble();
         hand_home_timeout_  = rf.check("hand_home_timeout", Value(10.0)).asDouble();
         hand_rest_timeout_  = rf.check("hand_rest_timeout", Value(10.0)).asDouble();
@@ -1160,9 +1207,14 @@ public:
         helper_ = std::unique_ptr<ObjectHelper>(new ObjectHelper("object-tracking-manipulation", "object-tracking-manipulation", actions_laterality_));
 
         /*
-         * Trajectory generator
+         * Trajectory generator (position)
          */
         generator_ = std::unique_ptr<LemniscateGenerator>(new LemniscateGenerator(traj_scale_, traj_time_scale_, invert_traj_orientation_));
+
+        /*
+         * Trajectory generator (orientation)
+         */
+        generator_orientation_ = std::unique_ptr<SinusoidalTrajectory>(new SinusoidalTrajectory(toEigen(angle_traj_scale_), toEigen(angle_traj_time_scale_)));
 
         /*
          * Arm Controllers

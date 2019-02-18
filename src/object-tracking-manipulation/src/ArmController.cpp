@@ -371,9 +371,9 @@ bool ArmController::limitTorsoYaw(const double &max)
     return true;
 }
 
-void ArmController::goToPos(const yarp::sig::Vector &pos)
+bool ArmController::goToPos(const yarp::sig::Vector &pos)
 {
-    icart->goToPoseSync(pos, hand_attitude);
+    return icart->goToPoseSync(pos, hand_attitude);
 }
 
 void ArmController::storeContext()

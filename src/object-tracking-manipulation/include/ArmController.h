@@ -142,7 +142,7 @@ public:
      * using the given position and the hand attitude stored in this->
      * hand_attitude.
      */
-    void goToPos(const yarp::sig::Vector &pos);
+    bool goToPos(const yarp::sig::Vector &pos);
 
     /*
      * Store the current context of the cartesian controller

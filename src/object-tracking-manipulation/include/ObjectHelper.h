@@ -20,6 +20,8 @@ public:
 
     yarp::sig::Vector getPreciseApproachPoint();
 
+    yarp::sig::Vector getPreciseApproachDirection();
+
     yarp::sig::Vector getRequiredHandOrientation();
 
 protected:
@@ -50,6 +52,10 @@ protected:
     yarp::sig::Vector approach_position_robot_;
 
     yarp::sig::Vector approach_orientation_;
+
+    yarp::sig::Vector coarse_approach_offset_;
+
+    yarp::sig::Vector precise_approach_direction_;
 
     iCub::iKin::iCubArm icub_arm_;
 

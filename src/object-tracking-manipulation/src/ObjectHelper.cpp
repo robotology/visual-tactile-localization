@@ -72,6 +72,24 @@ ObjectHelper::ObjectHelper(const std::string port_prefix, const std::string cont
     approach_orientation_.resize(3);
     approach_orientation_ = approach_configuration.subVector(3, 5);
 
+    bool valid_coarse_approach_offset;
+    std::tie(valid_coarse_approach_offset, coarse_approach_offset_) =
+        loadVectorDouble(rf_object, laterality + "_coarse_approach_offset", 3);
+
+    if (!valid_coarse_approach_offset)
+    {
+        throw std::runtime_error("ERROR::" + log_ID_ + "::CTOR::\nERROR: cannot load the coarse approach offset.");
+    }
+
+    bool valid_precise_approach_direction;
+    std::tie(valid_precise_approach_direction, precise_approach_direction_) =
+        loadVectorDouble(rf_object, laterality + "_precise_approach_direction", 3);
+
+    if (!valid_precise_approach_direction)
+    {
+        throw std::runtime_error("ERROR::" + log_ID_ + "::CTOR::\nERROR: cannot load the precise approach direction.");
+    }
+
     // Initialize the iCub forward kinematics in order to consider also the torso
     icub_arm_.setAllConstraints(false);
     icub_arm_.releaseLink(0);
@@ -93,12 +111,13 @@ yarp::sig::Vector ObjectHelper::getCoarseApproachPoint()
     // compensation for the mismatch between the stereo vision and
     // the cartesian domain of the robot.
     // Hence, an arbitrary offset is added to this
-    yarp::sig::Vector offset(3);
-    offset(0) = 0.0;
-    offset(1) = 0.1;
-    offset(2) = 0.0;
+    return approach_position_robot_ + coarse_approach_offset_;
+}
 
-    return approach_position_robot_ + offset;
+
+yarp::sig::Vector ObjectHelper::getPreciseApproachDirection()
+{
+    return precise_approach_direction_;
 }
 
 

@@ -7,6 +7,7 @@
 #include <iCub/action/actionPrimitives.h>
 
 #include <yarp/dev/CartesianControl.h>
+#include <yarp/eigen/Eigen.h>
 #include <yarp/math/Math.h>
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/ResourceFinder.h>
@@ -14,11 +15,15 @@
 #include <yarp/os/LogStream.h>
 #include <yarp/sig/Vector.h>
 
+#include <Eigen/Dense>
+
 #include <cstdlib>
 #include <deque>
 #include <string>
 
+using namespace Eigen;
 using namespace yarp::dev;
+using namespace yarp::eigen;
 using namespace yarp::math;
 using namespace yarp::os;
 using namespace yarp::sig;
@@ -94,7 +99,7 @@ protected:
     /*
      * Trajectory generator.
      */
-    LemniscateGenerator generator_;
+    std::unique_ptr<LemniscateGenerator> generator_;
 
     /*
      * Controllers.
@@ -112,8 +117,12 @@ protected:
     ICartesianControl* actions_arm_;
 
     // cartesian controller trajectory times
+    // used for home/rest actions
     double default_traj_time_;
+    // used for move in a certain direction actions
     double default_shift_time_;
+    // used for trajectory following action
+    double default_traj_follow_time;
 
     // max_torso_pitch
     bool limit_torso_pitch_;
@@ -125,6 +134,16 @@ protected:
 
     // hand shift for movements
     double hand_shift_;
+
+    // scalings for execution of trajectory
+    double traj_time_scale_;
+    double traj_scale_;
+
+    // offset for center of the trajectory
+    double traj_center_z_offset_;
+
+    // orientation for trajectory
+    bool invert_traj_orientation_;
 
     // pitch and roll angle used during
     // approaching phase
@@ -580,6 +599,24 @@ protected:
 
     std::string start_motion()
     {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::StartMotion;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
     }
 
     std::string stop()
@@ -927,18 +964,64 @@ protected:
     }
 
     /*
-     *
+     * Initialize trajectory generator
      */
     bool startMoveHandTrajctory()
     {
+        // reset the trajectory generator
+        generator_->reset();
 
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return false;
+
+        // get the current position of the palm of the hand
+        yarp::sig::Vector pos;
+        yarp::sig::Vector att;
+        if (!arm->cartesian()->getPose(pos, att))
+            return false;
+
+        // set the center within the trajectory generator
+        Eigen::Vector3d center;
+        center = toEigen(pos);
+        center(2) += traj_center_z_offset_;
+        generator_->setCenter(center);
+
+        // set trajectory time
+        if (default_traj_follow_time < 0.8)
+        {
+            yError() << "You are requesting a trajectory time" << default_traj_follow_time << "less than 0.8 seconds!";
+            return false;
+        }
+        if (!(arm->cartesian()->setTrajTime(default_traj_follow_time)))
+            return false;
+
+        return true;
     }
 
     /*
-     *
+     * Set next set point along the trajectory
      */
-    bool moveHandTrajctory(const std::string laterality, const std::string direction)
+    bool moveHandTrajectory(const double& time)
     {
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return false;
+
+        // get the current position of the palm of the hand
+        // in case it is required to fix one of the two
+        yarp::sig::Vector pos;
+        yarp::sig::Vector att;
+        if (!arm->cartesian()->getPose(pos, att))
+            return false;
+
+        // get the current position along the trajectory
+        Eigen::VectorXd pose = generator_->getCurrentPose(time);
+        yarp::sig::Vector traj_pos(3, pose.data());
+
+        return arm->cartesian()->goToPose(traj_pos, att);
     }
 
     /*
@@ -1014,8 +1097,20 @@ public:
         default_shift_time_ = rf.check("default_shift_time", Value(5.0)).asDouble();
         yInfo() << "- default_shift_time" << default_shift_time_;
 
+        default_traj_follow_time = rf.check("default_following_time", Value(2.0)).asDouble();
+        yInfo() << "- default_following_time" << default_traj_follow_time;
+
         hand_shift_ = rf.check("hand_shift", Value(0.01)).asDouble();
         yInfo() << "- hand_shift" << hand_shift_;
+
+        traj_scale_ = rf.check("traj_scale", Value(0.01)).asDouble();
+        traj_time_scale_  = rf.check("traj_time_scale", Value(1.0)).asDouble();
+        traj_center_z_offset_  = rf.check("traj_center_z_offset", Value(1.0)).asDouble();
+        invert_traj_orientation_ = rf.check("invert_traj_orientation", Value(false)).asBool();
+        yInfo() << "- traj_scale" << traj_scale_;
+        yInfo() << "- traj_time_scale" << traj_time_scale_;
+        yInfo() << "- traj_center_z_offset" << traj_center_z_offset_;
+        yInfo() << "- invert_traj_orientation" << invert_traj_orientation_;
 
         hand_move_timeout_  = rf.check("hand_move_timeout", Value(10.0)).asDouble();
         hand_home_timeout_  = rf.check("hand_home_timeout", Value(10.0)).asDouble();
@@ -1063,6 +1158,11 @@ public:
          * Object helper
          */
         helper_ = std::unique_ptr<ObjectHelper>(new ObjectHelper("object-tracking-manipulation", "object-tracking-manipulation", actions_laterality_));
+
+        /*
+         * Trajectory generator
+         */
+        generator_ = std::unique_ptr<LemniscateGenerator>(new LemniscateGenerator(traj_scale_, traj_time_scale_, invert_traj_orientation_));
 
         /*
          * Arm Controllers
@@ -1444,6 +1544,63 @@ public:
 
             mutex_.unlock();
 
+            break;
+        }
+
+        case Status::StartMotion:
+        {
+            if (!startMoveHandTrajctory())
+            {
+                yError() << "[START MOTION] error while trying to initialize the trajectory.";
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to MoveTrajectory
+            status_ = Status::MoveTrajectory;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
+
+            break;
+        }
+
+        case Status::MoveTrajectory:
+        {
+            // evaluate current time
+            double current_time = yarp::os::Time::now() - last_time_;
+
+            if (!moveHandTrajectory(current_time))
+            {
+                yError() << "[MOVE TRAJECTORY] error while trying to move hand";
+
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            // execute until user requests stop
             break;
         }
 

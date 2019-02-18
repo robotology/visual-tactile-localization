@@ -784,14 +784,20 @@ protected:
         if (arm == nullptr)
             return false;
 
+        // get the current position of the palm of the hand
+        yarp::sig::Vector pos;
+        yarp::sig::Vector att;
+        if (!arm->cartesian()->getPose(pos, att))
+            return false;
+
         // pick the required hand orientation
-        Vector orientation = helper_->getRequiredHandOrientation();
+        // Vector orientation = helper_->getRequiredHandOrientation();
 
         // set the required hand orientation
-        arm->setHandAttitude(orientation(0), orientation(1), orientation(2));
+        // arm->setHandAttitude(orientation(0), orientation(1), orientation(2));
 
-        // pick the coarse approach position
-        Vector position = helper_->getPreciseApproachPoint();
+        // pick the direction to be used during precise approaching
+        Vector delta = helper_->getPreciseApproachDirection();
 
         // set trajectory time
         if (default_traj_time_ < 1.0)
@@ -803,7 +809,7 @@ protected:
             return false;
 
         // issue command
-        return arm->goToPos(position);
+        return arm->cartesian()->goToPoseSync(pos + delta, att);
     }
 
     /*

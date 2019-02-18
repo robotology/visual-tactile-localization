@@ -20,11 +20,14 @@ list(APPEND CMAKE_MODULE_PATH ${ICUB_MODULE_PATH})
 
 set(${EXE_TARGET_NAME}_HDR
     include/ArmController.h
+    include/LemniscateGenerator.h
     include/ObjectHelper.h
+    include/TrajectoryGenerator.h
     )
 
 set(${EXE_TARGET_NAME}_SRC
     src/ArmController.cpp
+    src/LemniscateGenerator.cpp
     src/ObjectHelper.cpp
     src/main.cpp
     )

@@ -1,5 +1,6 @@
 #include <ArmController.h>
 #include <GazeController.h>
+#include <LemniscateGenerator.h>
 #include <ObjectHelper.h>
 #include <thrift/ObjectTrackingManipulationIDL.h>
 
@@ -30,6 +31,7 @@ enum class Status { Idle,
                     OpenHand, CloseHand, WaitOpenHand, WaitCloseHand,
                     MoveRest, WaitArmRest,
                     MoveHome, WaitArmHome,
+                    StartMotion, MoveTrajectory,
                     Stop };
 
 
@@ -88,6 +90,11 @@ protected:
      * Object helper.
      */
     std::unique_ptr<ObjectHelper> helper_;
+
+    /*
+     * Trajectory generator.
+     */
+    LemniscateGenerator generator_;
 
     /*
      * Controllers.
@@ -571,6 +578,10 @@ protected:
         return reply;
     }
 
+    std::string start_motion()
+    {
+    }
+
     std::string stop()
     {
         mutex_.lock();
@@ -916,6 +927,21 @@ protected:
     }
 
     /*
+     *
+     */
+    bool startMoveHandTrajctory()
+    {
+
+    }
+
+    /*
+     *
+     */
+    bool moveHandTrajctory(const std::string laterality, const std::string direction)
+    {
+    }
+
+    /*
      * Stop control of the specified arm.
      */
     bool stopArm(const std::string& laterality)
@@ -1140,6 +1166,8 @@ public:
 
         // close ports
         rpc_port_.close();
+
+        return true;
     }
 
     double getPeriod()

@@ -746,7 +746,7 @@ protected:
             return false;
 
         // issue command
-        return (arm->cartesian()->goToPoseSync(position, orientation));
+        return arm->goToPos(position);
     }
 
     /*
@@ -803,7 +803,7 @@ protected:
             return false;
 
         // issue command
-        return (arm->cartesian()->goToPoseSync(position, orientation));
+        return arm->goToPos(position);
     }
 
     /*

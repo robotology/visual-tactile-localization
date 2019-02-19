@@ -202,9 +202,9 @@ int main(int argc, char** argv)
     ResourceFinder rf_kinematic_model = rf.findNestedResourceFinder("KINEMATIC_MODEL");
     // double sample_time     = rf_kinematic_model.check("sample_time", Value("1.0")).asDouble();
     VectorXd kin_q_x       = loadVectorDouble(rf_kinematic_model, "q_x", 3);
-    VectorXd kin_q_x_dot   = loadVectorDouble(rf_kinematic_model, "q_x_dot", 3);
+    // VectorXd kin_q_x_dot   = loadVectorDouble(rf_kinematic_model, "q_x_dot", 3);
     VectorXd kin_q_eul     = loadVectorDouble(rf_kinematic_model, "q_eul", 3);
-    VectorXd kin_q_eul_dot = loadVectorDouble(rf_kinematic_model, "q_eul_dot", 3);
+    // VectorXd kin_q_eul_dot = loadVectorDouble(rf_kinematic_model, "q_eul_dot", 3);
     bool use_tdd_occlusion = rf_kinematic_model.check("use_tdd_occlusion", Value(false)).asBool();
     double tdd_max_seconds = rf_kinematic_model.check("tdd_max_seconds", Value(10.0)).asDouble();
     double tdd_exp_gain    = rf_kinematic_model.check("tdd_exp_gain", Value(1.0)).asDouble();
@@ -371,9 +371,9 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "Kinematic model:";
     // yInfo() << log_ID << "- sample_time:" << sample_time;
     yInfo() << log_ID << "- q_x:"         << eigenToString(kin_q_x);
-    yInfo() << log_ID << "- q_x_dot:"     << eigenToString(kin_q_x_dot);
+    // yInfo() << log_ID << "- q_x_dot:"     << eigenToString(kin_q_x_dot);
     yInfo() << log_ID << "- q_eul:"       << eigenToString(kin_q_eul);
-    yInfo() << log_ID << "- q_eul_dot:"   << eigenToString(kin_q_eul_dot);
+    // yInfo() << log_ID << "- q_eul_dot:"   << eigenToString(kin_q_eul_dot);
 
     yInfo() << log_ID << "Measurement model:";
     yInfo() << log_ID << "- noise_covariance:" << eigenToString(noise_covariance);

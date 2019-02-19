@@ -11,6 +11,8 @@
 #include <SuperimposeMesh/Superimpose.h>
 #include <SuperimposeMesh/SICAD.h>
 
+#include <iostream>
+
 using namespace bfl;
 using namespace yarp::eigen;
 using namespace yarp::sig;
@@ -197,6 +199,9 @@ bool iCubPointCloud::freezeMeasurements()
             j++;
         }
     }
+
+    if ((exogenous_data_->getUseContacts()) && (number_tactile_points > 0))
+        std::cout << "Info: using contacts." << std::endl << std::flush;
 
     // If the user requested them and if they are available, take also contact points
     if (exogenous_data_->getUseContacts())

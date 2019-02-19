@@ -61,9 +61,22 @@ void ObjectOcclusion::findOcclusionArea()
         // Consider only the first contour found
         if (contours.size() != 0)
         {
-            // Find the convex hull
+	    std::size_t max_index = 0;
+	    std::size_t max_size = contours[0].size();
+
+	    for (std::size_t i = 1; i < contours.size(); i++)
+	    {
+	        if (contours[i].size() > max_size)
+		{
+		    max_size = contours[i].size();
+		    max_index = i;
+		}
+	    }
+
+	    // Take the contour having the maximum number of points and
+            // find the convex hull
             std::vector<cv::Point> occlusion_area_not_scaled;
-            cv::convexHull(contours[0], occlusion_area_not_scaled);
+            cv::convexHull(contours[max_index], occlusion_area_not_scaled);
 
             // Enlarge the convex hull a bit
             occlusion_area_ = enlargeConvexHull(occlusion_area_not_scaled, occlusion_scale_);
@@ -99,7 +112,7 @@ std::tuple<bool, bool, cv::Mat> ObjectOcclusion::removeOcclusion(const cv::Mat& 
     // Verifiy if there is occlusion
     cv::Mat intersection;
     cv::bitwise_and(mask_in, mask, intersection);
-    if (cv::countNonZero(intersection) == 0)
+    if (cv::countNonZero(intersection) < 10)
         return std::make_tuple(true, false, mask_in);
 
     // Filter out occlusion from the input mask

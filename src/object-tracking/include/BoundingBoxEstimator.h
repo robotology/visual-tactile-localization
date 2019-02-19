@@ -115,7 +115,7 @@ protected:
     /**
      * Evaluate exogenous input.
      */
-    Eigen::Vector2d evalHandExogenousInput();
+    Eigen::MatrixXd evalHandExogenousInput();
 
     /**
      * Retrieve the object bounding box according to iCub OPC (objects property collector).
@@ -234,9 +234,14 @@ protected:
     double IOL_bbox_scale_;
 
     /**
-     * Last projecttion of hand 3D pose on the camera plane.
+     * Last projection of hand 3D pose on the camera plane.
      */
     Eigen::Vector2d hand_projection_;
+
+    /**
+     * Last z coordinate of the hand on the camera plane;
+     */
+    double hand_z_coordinate_;
 
     /**
      * Input port for hand 3D pose required to evaluate the hand feedforward term.

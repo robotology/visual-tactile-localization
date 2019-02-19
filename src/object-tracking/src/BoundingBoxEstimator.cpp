@@ -304,7 +304,7 @@ void BoundingBoxEstimator::predict()
     if (enable_hand_feedforward_)
     {
         // Prefer hand feed forward term when it can be used
-        pred_bbox_.mean().leftCols(pred_bbox_.components).topRows<2>() += evalHandExogenousInput();
+        pred_bbox_.mean().leftCols(pred_bbox_.components) += evalHandExogenousInput();
 
     }
     else if (enable_object_feedforward_)
@@ -419,12 +419,12 @@ MatrixXd BoundingBoxEstimator::evalExogenousInput()
 }
 
 
-Eigen::Vector2d BoundingBoxEstimator::evalHandExogenousInput()
+Eigen::MatrixXd BoundingBoxEstimator::evalHandExogenousInput()
 {
     yarp::sig::Vector* hand_pose = hand_pose_port_in_.read(false);
 
     if (hand_pose == nullptr)
-        return Vector2d::Zero();
+        return MatrixXd::Zero(4, pred_bbox_.components);
 
     // Get the current stamp
     Stamp curr_stamp;
@@ -439,7 +439,7 @@ Eigen::Vector2d BoundingBoxEstimator::evalHandExogenousInput()
     if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
     {
         // Not updating the bounding box since the camera pose is not available
-        return Vector2d::Zero();
+        return MatrixXd::Zero(4, pred_bbox_.components);
     }
     VectorXd eye_pos;
     VectorXd eye_att;
@@ -469,15 +469,47 @@ Eigen::Vector2d BoundingBoxEstimator::evalHandExogenousInput()
     current_proj(0) = pose_camera_frame(0) * cam_fx_ / pose_camera_frame(2) + cam_cx_;
     current_proj(1) = pose_camera_frame(1) * cam_fy_ / pose_camera_frame(2) + cam_cy_;
 
-    Vector2d delta = Vector2d::Zero();
-    if (is_hand_exogenous_initialized_ && ((curr_stamp.getTime() - hand_pose_stamp_.getTime()) < 1))
+    MatrixXd delta = MatrixXd::Zero(4, pred_bbox_.components);
+
+    if ((curr_stamp.getTime() - hand_pose_stamp_.getTime()) < 1)
     {
-        delta = current_proj - hand_projection_;
+        if (is_hand_exogenous_initialized_)
+        {
+            // Evaluate variation in the z coordinate
+            double delta_z = pose_camera_frame(2) - hand_z_coordinate_;
+
+            // Do the processing for each component of the mixture
+            for (std::size_t i = 0; i < pred_bbox_.components; i++)
+            {
+                // Evaluate input for the center of the bounding box
+                // This is the same for each bounding box
+                delta.col(i).head<2>() = current_proj - hand_projection_;
+
+                // Evaluate position of bounding box coordinates
+                double tl_u = corr_bbox_.mean(i, 0) - corr_bbox_.mean(i, 2) / 2.0;
+                double tr_u = corr_bbox_.mean(i, 0) + corr_bbox_.mean(i, 2) / 2.0;
+                double tl_v = corr_bbox_.mean(i, 1) - corr_bbox_.mean(i, 3) / 2.0;
+                double bl_v = corr_bbox_.mean(i, 1) + corr_bbox_.mean(i, 3) / 2.0;
+
+                // Evaluate variations of these positions due to change in the z hand pose
+                double delta_tl_u = -(tl_u - cam_cx_) * delta_z / pose_camera_frame(2);
+                double delta_tr_u = -(tr_u - cam_cx_) * delta_z / pose_camera_frame(2);
+                double delta_tl_v = -(tl_v - cam_cy_) * delta_z / pose_camera_frame(2);
+                double delta_bl_v = -(bl_v - cam_cy_) * delta_z / pose_camera_frame(2);
+
+                // Evalute delta width and height
+                double delta_width = std::abs(delta_tl_u - delta_tr_u);
+                double delta_height = std::abs(delta_tl_v - delta_bl_v);
+                delta.col(i)(2) = delta_width;
+                delta.col(i)(3) = delta_height;
+            }
+        }
     }
 
     // Update for next iteration
     hand_projection_ = current_proj;
     hand_pose_stamp_ = curr_stamp;
+    hand_z_coordinate_ = pose_camera_frame(2);
 
     // The hand pose was received at least one time
     is_hand_exogenous_initialized_ = true;

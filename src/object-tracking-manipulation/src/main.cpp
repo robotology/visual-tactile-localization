@@ -32,6 +32,7 @@ using namespace iCub::action;
 
 enum class Status { Idle,
                     MoveUp, MoveDown, MoveLeft, MoveRight, MoveIn, MoveOut, WaitHandMove,
+                    LatchCoarseApproachPoint,
                     MoveCoarseApproach, MovePreciseApproach,
                     TestCoarseApproach, TestPreciseApproach,
                     OpenHand, CloseHand, WaitOpenHand, WaitCloseHand,
@@ -304,6 +305,28 @@ protected:
             reply = "[FAILED] Unable to stop gaze tracking.";
         else
             reply = "[OK] Stopped gaze tracking.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
+    std::string latch_approach()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::LatchCoarseApproachPoint;
+
+        reply = "[OK] Command issued.";
 
         mutex_.unlock();
 
@@ -778,6 +801,27 @@ protected:
 
         yInfo() << "Coarse approach position:" << position.toString();
         yInfo() << "Coarse approach orientation:" << orientation.toString();
+
+        return true;
+    }
+
+
+    /*
+     * Issue a coarse approach to the object.
+     */
+    bool evaluateCoarseApproachPoint()
+    {
+        // check if the hand name is valid
+        if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
+            return false;
+
+        // request evaluation of approach point
+        if (!helper_->evaluateApproachPosition())
+            return false;
+
+        // test approach point for safety
+        if (!testCoarseApproach())
+            return false;
 
         return true;
     }
@@ -1522,6 +1566,25 @@ public:
                 status_ = Status::Idle;
 
                 mutex_.unlock();
+            }
+
+            break;
+        }
+
+        case Status::LatchCoarseApproachPoint:
+        {
+            if (!evaluateCoarseApproachPoint())
+            {
+                yError() << "[LATCH COARSE APPROACH POINT] error while trying evaluate the approach point.";
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
             }
 
             break;

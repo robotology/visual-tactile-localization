@@ -5,9 +5,10 @@
 using namespace Eigen;
 
 
-ObjectOcclusion::ObjectOcclusion(std::unique_ptr<MeshModel> mesh_model, const std::string cut_method) :
+ObjectOcclusion::ObjectOcclusion(std::unique_ptr<MeshModel> mesh_model, const std::string cut_method, const double occlusion_scale) :
     mesh_model_(std::move(mesh_model)),
-    cut_method_(cut_method)
+    cut_method_(cut_method),
+    occlusion_scale_(occlusion_scale)
 { }
 
 
@@ -65,7 +66,7 @@ void ObjectOcclusion::findOcclusionArea()
             cv::convexHull(contours[0], occlusion_area_not_scaled);
 
             // Enlarge the convex hull a bit
-            occlusion_area_ = enlargeConvexHull(occlusion_area_not_scaled, 1.3);
+            occlusion_area_ = enlargeConvexHull(occlusion_area_not_scaled, occlusion_scale_);
 
             occlusion_area_set_ = true;
         }

@@ -12,7 +12,7 @@
 class ObjectOcclusion
 {
 public:
-    ObjectOcclusion(std::unique_ptr<MeshModel> mesh_model, const std::string cut_method);
+    ObjectOcclusion(std::unique_ptr<MeshModel> mesh_model, const std::string cut_method, const double occlusion_scale);
 
     void findOcclusionArea();
 
@@ -36,6 +36,8 @@ protected:
     bool occlusion_area_set_ = false;
 
     std::vector<cv::Point> occlusion_area_;
+
+    const double occlusion_scale_;
 
     const std::string cut_method_;
 };

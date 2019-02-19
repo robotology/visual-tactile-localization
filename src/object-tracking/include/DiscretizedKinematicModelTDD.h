@@ -61,6 +61,8 @@ protected:
 
     void evaluateNoiseCovarianceMatrix(const double T);
 
+    void dampNoiseCovarianceMatrix();
+
     /**
      * State transition matrix.
      */
@@ -70,6 +72,8 @@ protected:
      * Noise covariance matrix.
      */
     Eigen::MatrixXd Q_;
+
+    Eigen::MatrixXd Q_damped_;
 
     /**
      * Squared power spectral densities

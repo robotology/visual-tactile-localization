@@ -141,23 +141,12 @@ void DiscretizedKinematicModelTDD::evaluateNoiseCovarianceMatrix(const double T)
 
     Q_.block<6, 6>(0, 0) = Q_pos;
     Q_.block<6, 6>(6, 6) = Q_ang;
-}
 
-std::pair<std::size_t, std::size_t> DiscretizedKinematicModelTDD::getOutputSize() const
-{
-    // 9 linear components (x, y, z, x_dot, y_dot, z_dot, yaw_dot, pitch_dot, roll_dot)
-    // 3 angular components (yaw, pitch, roll)
-    return std::make_pair(9, 3);
+    Q_damped_ = Q_;
 }
 
 
-Eigen::MatrixXd DiscretizedKinematicModelTDD::getStateTransitionMatrix()
-{
-    return F_;
-}
-
-
-Eigen::MatrixXd DiscretizedKinematicModelTDD::getNoiseCovarianceMatrix()
+void DiscretizedKinematicModelTDD::dampNoiseCovarianceMatrix()
 {
     ImplData& rImpl = *pImpl_;
 
@@ -183,12 +172,32 @@ Eigen::MatrixXd DiscretizedKinematicModelTDD::getNoiseCovarianceMatrix()
         }
 
         default:
-            return Q_;
+	    Q_damped_ = Q_;
     }
 
     std::cout << damper << std::endl;
 
-    return damper * Q_;
+    Q_damped_ = damper * Q_;
+}
+
+
+std::pair<std::size_t, std::size_t> DiscretizedKinematicModelTDD::getOutputSize() const
+{
+    // 9 linear components (x, y, z, x_dot, y_dot, z_dot, yaw_dot, pitch_dot, roll_dot)
+    // 3 angular components (yaw, pitch, roll)
+    return std::make_pair(9, 3);
+}
+
+
+Eigen::MatrixXd DiscretizedKinematicModelTDD::getStateTransitionMatrix()
+{
+    return F_;
+}
+
+
+Eigen::MatrixXd DiscretizedKinematicModelTDD::getNoiseCovarianceMatrix()
+{
+    return Q_damped_;
 }
 
 bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
@@ -259,6 +268,8 @@ bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
         {
             ++rImpl.current_iterations_;
 
+            dampNoiseCovarianceMatrix();
+
             break;
         }
 
@@ -268,6 +279,8 @@ bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
 
             if (!rImpl.timer_.is_running())
                 rImpl.timer_.start();
+
+            dampNoiseCovarianceMatrix();
 
             break;
         }

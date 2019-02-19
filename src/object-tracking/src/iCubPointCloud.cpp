@@ -436,8 +436,27 @@ void iCubPointCloud::drawObjectROI(cv::Mat& image)
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(object_ROI_, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-    // Draw the contours
-    cv::drawContours(image, contours, 0, cv::Scalar(0, 255, 0));
+    // Draw the contour
+    if (contours.size() != 0)
+    {
+        // Find the contour with max area
+        std::size_t max_index = 0;
+        std::size_t max_area = cv::contourArea(contours[0]);
+
+        for (std::size_t i = 1; i < contours.size(); i++)
+        {
+            double area = cv::contourArea(contours[i]);
+
+            if (area > max_area)
+            {
+                max_area = area;
+                max_index = i;
+            }
+        }
+
+        cv::drawContours(image, contours, max_index, cv::Scalar(0, 255, 0));
+    }
+
 }
 
 

@@ -404,7 +404,7 @@ std::tuple<bool, Vector> iCubArmModel::readRootToFingers()
 
 	// Fix issue with reading of joint 'thumb_opposition'
 	if (i == 8)
-	    reading += 15.0;
+	    reading -= 15.0;
 
         root_fingers_enc(3 + i) = reading;
     }

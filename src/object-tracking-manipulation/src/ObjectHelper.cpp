@@ -95,6 +95,8 @@ ObjectHelper::ObjectHelper(const std::string port_prefix, const std::string cont
     icub_arm_.releaseLink(0);
     icub_arm_.releaseLink(1);
     icub_arm_.releaseLink(2);
+
+    approach_position_robot_available_ = false;
 }
 
 
@@ -102,16 +104,16 @@ ObjectHelper::~ObjectHelper()
 { }
 
 
-yarp::sig::Vector ObjectHelper::getCoarseApproachPoint()
+std::pair<bool, yarp::sig::Vector> ObjectHelper::getCoarseApproachPoint()
 {
-    updateObjectPose();
-    evaluateApproachPosition();
+    if (!approach_position_robot_available_)
+        return std::make_pair(false, Vector());
 
     // This is to be sent to the Cartesian controller without
     // compensation for the mismatch between the stereo vision and
     // the cartesian domain of the robot.
     // Hence, an arbitrary offset is added to this
-    return approach_position_robot_ + coarse_approach_offset_;
+    return std::make_pair(true, approach_position_robot_ + coarse_approach_offset_);
 }
 
 
@@ -214,8 +216,12 @@ bool ObjectHelper::updateObjectPose()
 }
 
 
-void ObjectHelper::evaluateApproachPosition()
+bool ObjectHelper::evaluateApproachPosition()
 {
+    bool valid_object_pose = updateObjectPose();
+    if (!valid_object_pose)
+        return false;
+
     // Evaluate the homogeneous transform associated to the object
     Transform<double, 3, Eigen::Affine> object_to_robot;
     object_to_robot = Translation<double, 3>(toEigen(object_pose_.subVector(0, 2)));
@@ -242,6 +248,10 @@ void ObjectHelper::evaluateApproachPosition()
     // Evaluate the effective approach point
     Vector3d approach_point = object_to_robot * toEigen(approach_position_).homogeneous();
     approach_position_robot_ = yarp::sig::Vector(3, approach_point.data());
+
+    approach_position_robot_available_ = true;
+
+    return true;
 }
 
 

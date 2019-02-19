@@ -16,7 +16,9 @@ public:
 
     virtual ~ObjectHelper();
 
-    yarp::sig::Vector getCoarseApproachPoint();
+    bool evaluateApproachPosition();
+
+    std::pair<bool, yarp::sig::Vector> getCoarseApproachPoint();
 
     yarp::sig::Vector getPreciseApproachPoint();
 
@@ -30,8 +32,6 @@ protected:
     bool updateHandPose();
 
     bool updateObjectPose();
-
-    void evaluateApproachPosition();
 
     std::pair<yarp::sig::Vector, yarp::sig::Vector> getApproachConfiguration();
 
@@ -50,6 +50,7 @@ protected:
     yarp::sig::Vector approach_position_;
 
     yarp::sig::Vector approach_position_robot_;
+    bool approach_position_robot_available_;
 
     yarp::sig::Vector approach_orientation_;
 

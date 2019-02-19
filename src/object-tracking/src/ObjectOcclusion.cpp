@@ -112,7 +112,7 @@ std::tuple<bool, bool, cv::Mat> ObjectOcclusion::removeOcclusion(const cv::Mat& 
     // Verifiy if there is occlusion
     cv::Mat intersection;
     cv::bitwise_and(mask_in, mask, intersection);
-    if (cv::countNonZero(intersection) < 10)
+    if (cv::countNonZero(intersection) < 100)
         return std::make_tuple(true, false, mask_in);
 
     // Filter out occlusion from the input mask

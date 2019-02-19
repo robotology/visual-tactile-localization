@@ -58,22 +58,24 @@ void ObjectOcclusion::findOcclusionArea()
         std::vector<std::vector<cv::Point>> contours;
         cv::findContours(occlusion_mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-        // Consider only the first contour found
         if (contours.size() != 0)
         {
-	    std::size_t max_index = 0;
-	    std::size_t max_size = contours[0].size();
+            // Find the contour with max area
+            std::size_t max_index = 0;
+            std::size_t max_area = cv::contourArea(contours[0]);
 
-	    for (std::size_t i = 1; i < contours.size(); i++)
-	    {
-	        if (contours[i].size() > max_size)
-		{
-		    max_size = contours[i].size();
-		    max_index = i;
-		}
-	    }
+            for (std::size_t i = 1; i < contours.size(); i++)
+            {
+                double area = cv::contourArea(contours[i]);
 
-	    // Take the contour having the maximum number of points and
+                if (area > max_area)
+                {
+                    max_area = area;
+                    max_index = i;
+                }
+            }
+
+            // Take the contour having the maximum number of points and
             // find the convex hull
             std::vector<cv::Point> occlusion_area_not_scaled;
             cv::convexHull(contours[max_index], occlusion_area_not_scaled);

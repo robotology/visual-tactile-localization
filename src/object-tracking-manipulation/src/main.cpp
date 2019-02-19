@@ -734,7 +734,11 @@ protected:
         arm->setHandAttitude(orientation(0), orientation(1), orientation(2));
 
         // pick the coarse approach position
-        Vector position = helper_->getCoarseApproachPoint();
+        bool valid_position;
+        Vector position;
+        std::tie(valid_position, position) = helper_->getCoarseApproachPoint();
+        if (!valid_position)
+            return false;
 
         // set trajectory time
         if (default_traj_time_ < 1.0)
@@ -762,7 +766,15 @@ protected:
         Vector orientation = helper_->getRequiredHandOrientation();
 
         // pick the coarse approach position
-        Vector position = helper_->getCoarseApproachPoint();
+        bool valid_position;
+        Vector position;
+        std::tie(valid_position, position) = helper_->getCoarseApproachPoint();
+        if (!valid_position)
+        {
+            yInfo() << "Coarse approach pose not available:" << position.toString();
+
+            return false;
+        }
 
         yInfo() << "Coarse approach position:" << position.toString();
         yInfo() << "Coarse approach orientation:" << orientation.toString();

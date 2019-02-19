@@ -7,29 +7,29 @@ using namespace Eigen;
 
 InitParticles::InitParticles
 (
-    const Ref<const VectorXd>& center_pos,
-    const Ref<const VectorXd>& radius_pos,
+    const Ref<const VectorXd>& center,
+    const Ref<const VectorXd>& radius,
     const Ref<const MatrixXd>& initial_covariance
 ) :
-    InitParticles(1, center_pos, radius_pos, initial_covariance)
+    InitParticles(1, center, radius, initial_covariance)
 { }
 
 
 InitParticles::InitParticles
 (
     const unsigned int seed,
-    const Ref<const VectorXd>& center_pos,
-    const Ref<const VectorXd>& radius_pos,
+    const Ref<const VectorXd>& center,
+    const Ref<const VectorXd>& radius,
     const Ref<const MatrixXd>& initial_covariance
 ) :
     initial_covariance_(initial_covariance),
     generator_        (std::mt19937_64(seed)),
-    uniform_x_        (std::uniform_real_distribution<double>(center_pos(0) - radius_pos(0), center_pos(0) + radius_pos(0))),
-    uniform_y_        (std::uniform_real_distribution<double>(center_pos(1) - radius_pos(1), center_pos(1) + radius_pos(1))),
-    uniform_z_        (std::uniform_real_distribution<double>(center_pos(2) - radius_pos(2), center_pos(2) + radius_pos(2))),
-    uniform_yaw_      (std::uniform_real_distribution<double>(-M_PI, M_PI)),
-    uniform_pitch_    (std::uniform_real_distribution<double>(-M_PI, M_PI)),
-    uniform_roll_     (std::uniform_real_distribution<double>(-M_PI, M_PI)),
+    uniform_x_        (std::uniform_real_distribution<double>(center(0) - radius(0), center(0) + radius(0))),
+    uniform_y_        (std::uniform_real_distribution<double>(center(1) - radius(1), center(1) + radius(1))),
+    uniform_z_        (std::uniform_real_distribution<double>(center(2) - radius(2), center(2) + radius(2))),
+    uniform_yaw_      (std::uniform_real_distribution<double>(center(3) - radius(3) / 2.0, center(3) + radius(3) / 2.0)),
+    uniform_pitch_    (std::uniform_real_distribution<double>(center(4) - radius(4) / 2.0, center(4) + radius(4) / 2.0)),
+    uniform_roll_     (std::uniform_real_distribution<double>(center(5) - radius(5) / 2.0, center(5) + radius(5) / 2.0)),
     uniform_gen_x_    ([&] { return (uniform_x_)(generator_); }),
     uniform_gen_y_    ([&] { return (uniform_y_)(generator_); }),
     uniform_gen_z_    ([&] { return (uniform_z_)(generator_); }),

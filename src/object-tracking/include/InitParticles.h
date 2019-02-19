@@ -13,16 +13,16 @@ class InitParticles : public bfl::ParticleSetInitialization
 public:
     InitParticles
     (
-        const Eigen::Ref<const Eigen::VectorXd>& center_pos,
-        const Eigen::Ref<const Eigen::VectorXd>& radius_pos,
+        const Eigen::Ref<const Eigen::VectorXd>& center,
+        const Eigen::Ref<const Eigen::VectorXd>& radius,
         const Eigen::Ref<const Eigen::MatrixXd>& initial_covariance
     );
 
     InitParticles
     (
         const unsigned int seed,
-        const Eigen::Ref<const Eigen::VectorXd>& center_pos,
-        const Eigen::Ref<const Eigen::VectorXd>& radius_pos,
+        const Eigen::Ref<const Eigen::VectorXd>& center,
+        const Eigen::Ref<const Eigen::VectorXd>& radius,
         const Eigen::Ref<const Eigen::MatrixXd>& initial_covariance
     );
 

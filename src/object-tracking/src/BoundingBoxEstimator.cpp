@@ -309,7 +309,7 @@ void BoundingBoxEstimator::predict()
     }
     else if (enable_object_feedforward_)
     {
-        pred_bbox_.mean().leftCols(pred_bbox_.components) += evalExogenousInput();
+        pred_bbox_.mean().leftCols(pred_bbox_.components).topRows<2>() += evalExogenousInput().topRows<2>();
     }
 
     // covariance transition

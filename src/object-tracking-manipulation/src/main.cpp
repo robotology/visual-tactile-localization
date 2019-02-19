@@ -1587,6 +1587,13 @@ public:
                 break;
             }
 
+	    mutex_.lock();
+
+	    // go to Idle
+	    status_ = Status::Idle;
+
+	    mutex_.unlock();
+
             break;
         }
 

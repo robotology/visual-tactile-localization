@@ -405,8 +405,18 @@ std::tuple<bool, Vector> iCubArmModel::readRootToFingers()
     root_fingers_enc(1) = bottle_torso->get(1).asDouble();
     root_fingers_enc(2) = bottle_torso->get(0).asDouble();
 
+    // for (size_t i = 0; i < 16; ++i)
+    //     root_fingers_enc(3 + i) = bottle_arm->get(i).asDouble();
     for (size_t i = 0; i < 16; ++i)
-        root_fingers_enc(3 + i) = bottle_arm->get(i).asDouble();
+    {
+        double reading = bottle_arm->get(i).asDouble();
+
+	// Fix issue with reading of joint 'thumb_opposition'
+	if (i == 8)
+	    reading -= 15.0;
+
+        root_fingers_enc(3 + i) = reading;
+    }
 
     return std::make_tuple(true, root_fingers_enc);
 }

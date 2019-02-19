@@ -10,6 +10,7 @@
 #include <InitParticles.h>
 #include <DiscreteKinematicModel.h>
 #include <DiscretizedKinematicModel.h>
+#include <DiscretizedKinematicModelTDD.h>
 #include <NanoflannPointCloudPrediction.h>
 #include <ParticlesCorrection.h>
 #include <PFilter.h>
@@ -204,6 +205,9 @@ int main(int argc, char** argv)
     VectorXd kin_q_x_dot   = loadVectorDouble(rf_kinematic_model, "q_x_dot", 3);
     VectorXd kin_q_eul     = loadVectorDouble(rf_kinematic_model, "q_eul", 3);
     VectorXd kin_q_eul_dot = loadVectorDouble(rf_kinematic_model, "q_eul_dot", 3);
+    bool use_tdd_occlusion = rf_kinematic_model.check("use_tdd_occlusion", Value(false)).asBool();
+    double tdd_max_seconds = rf_kinematic_model.check("tdd_max_seconds", Value(10.0)).asDouble();
+    double tdd_exp_gain    = rf_kinematic_model.check("tdd_exp_gain", Value(1.0)).asDouble();
 
     /* Measurement model. */
     ResourceFinder rf_measurement_model = rf.findNestedResourceFinder("MEASUREMENT_MODEL");
@@ -541,7 +545,7 @@ int main(int argc, char** argv)
 
         if (handle_hand_contacts)
         {
-            /* Initialize iCubArmModel providing the 3D pose of the hand parts relative to the hand palm. */ 
+            /* Initialize iCubArmModel providing the 3D pose of the hand parts relative to the hand palm. */
             std::unique_ptr<iCubArmModel> icub_arm = std::unique_ptr<iCubArmModel>(
                 new iCubArmModel(false,
                                  false,
@@ -575,16 +579,20 @@ int main(int argc, char** argv)
     /**
      * StateModel
      */
-    // std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<DiscreteKinematicModel>(
-    //     new DiscreteKinematicModel(sample_time,
-    //                                kin_q_x(0), kin_q_x(1), kin_q_x(2),
-    //                                kin_q_x_dot(0), kin_q_x_dot(1), kin_q_x_dot(2),
-    //                                kin_q_eul(0), kin_q_eul(1), kin_q_eul(2),
-    //                                kin_q_eul_dot(0), kin_q_eul_dot(1), kin_q_eul_dot(2)));
-    std::unique_ptr<LinearStateModel> kinematic_model = std::unique_ptr<DiscretizedKinematicModel>(
-        new DiscretizedKinematicModel(// sample_time,
-                                      kin_q_x(0), kin_q_x(1), kin_q_x(2),
-                                      kin_q_eul(0), kin_q_eul(1), kin_q_eul(2)));
+    std::unique_ptr<LinearStateModel> kinematic_model;
+    if (use_tdd_occlusion)
+    {
+        kinematic_model = std::unique_ptr<DiscretizedKinematicModelTDD>(
+            new DiscretizedKinematicModelTDD(kin_q_x(0), kin_q_x(1), kin_q_x(2),
+                                             kin_q_eul(0), kin_q_eul(1), kin_q_eul(2),
+                                             tdd_exp_gain, tdd_max_seconds));
+    }
+    else
+    {
+        kinematic_model = std::unique_ptr<DiscretizedKinematicModel>(
+            new DiscretizedKinematicModel(kin_q_x(0), kin_q_x(1), kin_q_x(2),
+                                          kin_q_eul(0), kin_q_eul(1), kin_q_eul(2)));
+    }
 
     std::size_t dim_linear;
     std::size_t dim_circular;

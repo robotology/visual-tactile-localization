@@ -821,14 +821,20 @@ protected:
         if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
             return false;
 
-        // pick the required hand orientation
-        Vector orientation = helper_->getRequiredHandOrientation();
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return false;
+
+        yarp::sig::Vector pos;
+        yarp::sig::Vector att;
+        if (!arm->cartesian()->getPose(pos, att))
+            return false;
 
         // pick the coarse approach position
-        Vector position = helper_->getPreciseApproachPoint();
+        Vector delta = helper_->getPreciseApproachDirection();
 
-        yInfo() << "Precise approach position:" << position.toString();
-        yInfo() << "Precise approach orientation:" << orientation.toString();
+        yInfo() << "Precise approach position:" << (pos + delta).toString();
 
         return true;
     }

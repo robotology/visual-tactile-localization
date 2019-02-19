@@ -497,11 +497,9 @@ Eigen::MatrixXd BoundingBoxEstimator::evalHandExogenousInput()
                 double delta_tl_v = -(tl_v - cam_cy_) * delta_z / pose_camera_frame(2);
                 double delta_bl_v = -(bl_v - cam_cy_) * delta_z / pose_camera_frame(2);
 
-                // Evalute delta width and height
-                double delta_width = std::abs(delta_tl_u - delta_tr_u);
-                double delta_height = std::abs(delta_tl_v - delta_bl_v);
-                delta.col(i)(2) = delta_width;
-                delta.col(i)(3) = delta_height;
+                // Evalute the estimated width and height
+                delta.col(i)(2) = delta_tr_u - delta_tl_u;
+                delta.col(i)(3) = delta_bl_v - delta_tl_v;
             }
         }
     }

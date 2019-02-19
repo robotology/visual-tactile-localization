@@ -194,8 +194,8 @@ int main(int argc, char** argv)
     VectorXd cov_v_0       = loadVectorDouble(rf_initial_conditions, "cov_v_0",       3);
     VectorXd cov_eul_0     = loadVectorDouble(rf_initial_conditions, "cov_eul_0",     3);
     VectorXd cov_eul_dot_0 = loadVectorDouble(rf_initial_conditions, "cov_eul_dot_0", 3);
-    VectorXd center_0      = loadVectorDouble(rf_initial_conditions, "center_0",      3);
-    VectorXd radius_0      = loadVectorDouble(rf_initial_conditions, "radius_0",      3);
+    VectorXd center_0      = loadVectorDouble(rf_initial_conditions, "center_0",      6);
+    VectorXd radius_0      = loadVectorDouble(rf_initial_conditions, "radius_0",      6);
 
     /* Kinematic model. */
     ResourceFinder rf_kinematic_model = rf.findNestedResourceFinder("KINEMATIC_MODEL");

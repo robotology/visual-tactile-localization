@@ -13,7 +13,7 @@
 class iCubHandOcclusion : public ObjectOcclusion
 {
 public:
-    iCubHandOcclusion(std::unique_ptr<iCubArmModel> icub_arm_model, const std::string port_prefix, const std::string eye_name);
+    iCubHandOcclusion(std::unique_ptr<iCubArmModel> icub_arm_model, const std::string port_prefix, const std::string eye_name, const double occlusion_scale);
 
     virtual ~iCubHandOcclusion();
 

@@ -10,9 +10,10 @@ iCubHandOcclusion::iCubHandOcclusion
 (
     std::unique_ptr<iCubArmModel> icub_arm_model,
     const std::string port_prefix,
-    const std::string eye_name
+    const std::string eye_name,
+    const double occlusion_scale
 ) :
-    ObjectOcclusion(std::move(icub_arm_model), "convex_hull"),
+    ObjectOcclusion(std::move(icub_arm_model), "convex_hull", occlusion_scale),
     gaze_(port_prefix),
     eye_name_(eye_name)
 {

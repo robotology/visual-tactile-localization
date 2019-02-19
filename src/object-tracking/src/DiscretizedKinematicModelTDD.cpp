@@ -83,7 +83,8 @@ DiscretizedKinematicModelTDD::DiscretizedKinematicModelTDD
     const double sigma_x,  const double sigma_y,  const double sigma_z,
     const double sigma_yaw, const double sigma_pitch, const double sigma_roll,
     const double gain
-)
+) :
+    pImpl_(std::unique_ptr<ImplData>(new ImplData))
 {
     sigma_position_.resize(3);
     sigma_position_ << sigma_x, sigma_y, sigma_z;

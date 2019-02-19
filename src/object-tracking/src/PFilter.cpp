@@ -312,6 +312,13 @@ void PFilter::filteringStep()
 
     // Allow the state model to evaluate the sampling time online
     prediction_->getStateModel().setProperty("tick");
+
+    // If under occlusion but not in contact advance the time decreasing noise dynamics
+    // of the kinematic model
+    if ((icub_point_cloud_share_->getOcclusion()) && (!icub_point_cloud_share_->getContactState()))
+        prediction_->getStateModel().setProperty("tdd_advance");
+    else
+        prediction_->getStateModel().setProperty("tdd_reset");
 }
 
 

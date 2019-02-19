@@ -240,6 +240,7 @@ int main(int argc, char** argv)
     ResourceFinder rf_hand_occlusion = rf.findNestedResourceFinder("HAND_OCCLUSION");
     bool handle_hand_occlusion            = rf_hand_occlusion.check("handle_occlusion", Value(false)).asBool();
     std::string hand_laterality_occlusion = rf_hand_occlusion.check("laterality", Value("right")).asString();
+    double hand_occlusion_scale           = rf_hand_occlusion.check("hull_scale", Value(1.0)).asDouble();
 
     /* Hand contacts. */
     ResourceFinder rf_hand_contacts = rf.findNestedResourceFinder("HAND_CONTACTS");
@@ -391,6 +392,7 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Hand occlusion:";
     yInfo() << log_ID << "- handle_occlusion:" << handle_hand_occlusion;
+    yInfo() << log_ID << "- hull_scale:" << hand_occlusion_scale;
 
     if (mode == "simulation")
     {
@@ -530,7 +532,8 @@ int main(int argc, char** argv)
             std::unique_ptr<iCubHandOcclusion> hand_occlusion = std::unique_ptr<iCubHandOcclusion>(
                 new iCubHandOcclusion(std::move(icub_arm),
                                       "object-tracking/icub-hand-occlusion/" + hand_laterality_occlusion,
-                                      "left"));
+                                      "left",
+                                      hand_occlusion_scale));
 
             /* Add the occlusion to the iCubPointCloud. */
             pc_icub->addObjectOcclusion(std::move(hand_occlusion));

@@ -58,6 +58,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/Correction.h
     include/DiscreteKinematicModel.h
     include/DiscretizedKinematicModel.h
+    include/DiscretizedKinematicModelTDD.h
     include/Filter.h
     include/GaussianFilter_.h
     include/iCubArmModel.h
@@ -87,6 +88,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/Correction.cpp
     src/DiscreteKinematicModel.cpp
     src/DiscretizedKinematicModel.cpp
+    src/DiscretizedKinematicModelTDD.cpp
     src/Filter.cpp
     src/GaussianFilter_.cpp
     src/iCubArmModel.cpp

@@ -61,8 +61,6 @@ protected:
 
     void evaluateNoiseCovarianceMatrix(const double T);
 
-    void dampNoiseCovarianceMatrix();
-
     /**
      * State transition matrix.
      */
@@ -85,6 +83,10 @@ protected:
     std::chrono::high_resolution_clock::time_point last_time_;
 
     bool last_time_set_ = false;
+
+    bool tdd_advance_ = false;
+
+    bool tdd_reset_ = false;
 
     struct ImplData;
 

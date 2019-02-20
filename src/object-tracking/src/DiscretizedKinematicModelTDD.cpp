@@ -141,43 +141,6 @@ void DiscretizedKinematicModelTDD::evaluateNoiseCovarianceMatrix(const double T)
 
     Q_.block<6, 6>(0, 0) = Q_pos;
     Q_.block<6, 6>(6, 6) = Q_ang;
-
-    Q_damped_ = Q_;
-}
-
-
-void DiscretizedKinematicModelTDD::dampNoiseCovarianceMatrix()
-{
-    ImplData& rImpl = *pImpl_;
-
-
-    double damper = 1.0;
-
-    switch (rImpl.modality_)
-    {
-        case ImplData::Modality::Iteration:
-        {
-            damper = (rImpl.current_iterations_ <= rImpl.iterations_) ? std::exp(-rImpl.current_iterations_ / rImpl.gain_) : 0.0;
-
-            break;
-        }
-
-        case ImplData::Modality::Time:
-        {
-            std::cout << rImpl.current_seconds_ << std::endl;
-
-            damper = (rImpl.current_seconds_ <= rImpl.seconds_) ? std::exp(-rImpl.current_seconds_ / rImpl.gain_) : 0.0;
-
-            break;
-        }
-
-        default:
-	    Q_damped_ = Q_;
-    }
-
-    std::cout << damper << std::endl;
-
-    Q_damped_ = damper * Q_;
 }
 
 
@@ -212,6 +175,89 @@ bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
 
         if (last_time_set_)
         {
+
+            if (tdd_advance_)
+            {
+                switch (rImpl.modality_)
+                {
+
+                case ImplData::Modality::Iteration:
+                {
+                    ++rImpl.current_iterations_;
+
+                    break;
+                }
+
+                case ImplData::Modality::Time:
+                {
+                    if (rImpl.timer_.is_running())
+                        rImpl.current_seconds_ = rImpl.timer_.elapsed() / 1000.0;
+                    else
+                    {
+                        rImpl.current_seconds_ = 0.0;
+                        rImpl.timer_.start();
+                    }
+
+
+                    break;
+                }
+
+                }
+
+                // reset flag for next iteration
+                tdd_advance_ = false;
+            }
+            else if (tdd_reset_)
+            {
+                switch (rImpl.modality_)
+                {
+                case ImplData::Modality::Iteration:
+                {
+                    rImpl.current_iterations_ = 0;
+
+                    break;
+                }
+
+                case ImplData::Modality::Time:
+                {
+                    rImpl.timer_.stop();
+
+                    rImpl.current_seconds_ = 0.0;
+
+                    break;
+                }
+
+                }
+
+                // reset flag for next iteration
+                tdd_reset_ = false;
+            }
+
+            // evaluate damping
+            double damper = 1.0;
+
+            switch (rImpl.modality_)
+            {
+            case ImplData::Modality::Iteration:
+            {
+                damper = (rImpl.current_iterations_ <= rImpl.iterations_) ? std::exp(-rImpl.current_iterations_ / rImpl.gain_) : 0.0;
+
+                break;
+            }
+
+            case ImplData::Modality::Time:
+            {
+                std::cout << rImpl.current_seconds_ << std::endl;
+
+                damper = (rImpl.current_seconds_ <= rImpl.seconds_) ? std::exp(-rImpl.current_seconds_ / rImpl.gain_) : 0.0;
+
+                break;
+            }
+
+            }
+
+            // std::cout << "
+
             std::chrono::duration<double, std::milli> delta_chrono = now - last_time_;
             double delta = delta_chrono.count() / 1000.0;
 
@@ -220,8 +266,13 @@ bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
             if (delta > 0.3)
                 delta = 0.01;
 
+            delta *= damper;
+
             evaluateStateTransitionMatrix(delta);
             evaluateNoiseCovarianceMatrix(delta);
+
+            // Q_damped_ = Q_ * damper;
+            Q_damped_ = Q_;
         }
 
         last_time_ = now;
@@ -229,14 +280,14 @@ bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
 
         return true;
     }
-    else if (property == "reset_time")
+    else if (property == "reset")
     {
         last_time_set_ = false;
 
-        return true;
-    }
-    else if (property == "tdd_reset")
-    {
+        tdd_reset_ = false;
+
+        tdd_advance_ = false;
+
         switch (rImpl.modality_)
         {
         case ImplData::Modality::Iteration:
@@ -250,44 +301,24 @@ bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
         {
             rImpl.timer_.stop();
 
+            rImpl.current_seconds_ = 0.0;
+
             break;
         }
 
-        default:
-            return false;
         }
+
+        return true;
+    }
+    else if (property == "tdd_reset")
+    {
+        tdd_reset_ = true;
 
         return true;
     }
     else if (property == "tdd_advance")
     {
-        switch (rImpl.modality_)
-        {
-
-        case ImplData::Modality::Iteration:
-        {
-            ++rImpl.current_iterations_;
-
-            dampNoiseCovarianceMatrix();
-
-            break;
-        }
-
-        case ImplData::Modality::Time:
-        {
-            rImpl.current_seconds_ = rImpl.timer_.elapsed() / 1000.0;
-
-            if (!rImpl.timer_.is_running())
-                rImpl.timer_.start();
-
-            dampNoiseCovarianceMatrix();
-
-            break;
-        }
-
-        default:
-            return false;
-        }
+        tdd_advance_ = true;
 
         return true;
     }

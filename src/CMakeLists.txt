@@ -4,6 +4,11 @@ add_subdirectory(sfm-library)
 add_subdirectory(object-tracking-depth)
 add_subdirectory(object-tracking)
 
+option(BUILD_OBJECT_TRACKING_GROUND_TRUTH "Build object-tracking-ground-truth" OFF)
+if (BUILD_OBJECT_TRACKING_GROUND_TRUTH)
+  add_subdirectory(object-tracking-ground-truth)
+endif()
+
 option(BUILD_OBJECT_TRACKING_MANIPULATION "Build object-tracking-manipulation" OFF)
 if (BUILD_OBJECT_TRACKING_MANIPULATION)
   add_subdirectory(object-tracking-manipulation)

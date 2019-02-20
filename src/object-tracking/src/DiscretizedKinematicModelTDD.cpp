@@ -259,7 +259,7 @@ bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
 
             }
 
-            // std::cout << "
+            std::cout << damper << std::endl;
 
             std::chrono::duration<double, std::milli> delta_chrono = now - last_time_;
             double delta = delta_chrono.count() / 1000.0;

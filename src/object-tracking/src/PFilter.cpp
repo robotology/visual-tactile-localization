@@ -91,8 +91,8 @@ bool PFilter::reset_filter()
     // Reset the correction step
     reset_correction();
 
-    // Reset the sample time of the prediction
-    prediction_->getStateModel().setProperty("reset_time");
+    // Reset the kinematic model
+    prediction_->getStateModel().setProperty("reset");
 
     // Reset the point estimate
     point_estimate_extraction_.clear();
@@ -105,8 +105,17 @@ bool PFilter::reset_filter()
 
 bool PFilter::stop_filter()
 {
-    // Reset the sample time of the prediction
-    prediction_->getStateModel().setProperty("reset_time");
+    // Reset the bounding box estimator
+    bbox_estimator_->reset();
+
+    // Reset the correction step
+    reset_correction();
+
+    // Reset the kinematic model
+    prediction_->getStateModel().setProperty("reset");
+
+    // Reset the point estimate
+    point_estimate_extraction_.clear();
 
     reboot();
 
@@ -310,15 +319,12 @@ void PFilter::filteringStep()
               << std::endl;
     std::cout << "Neff is: " << neff<< std::endl << std::endl;
 
-    // Allow the state model to evaluate the sampling time online
-    prediction_->getStateModel().setProperty("tick");
-
-    // If under occlusion but not in contact advance the time decreasing noise dynamics
-    // of the kinematic model
     if ((icub_point_cloud_share_->getOcclusion()) && (!icub_point_cloud_share_->getContactState()))
         prediction_->getStateModel().setProperty("tdd_advance");
     else
         prediction_->getStateModel().setProperty("tdd_reset");
+
+    prediction_->getStateModel().setProperty("tick");
 }
 
 

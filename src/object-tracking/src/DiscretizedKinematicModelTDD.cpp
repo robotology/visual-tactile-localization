@@ -103,6 +103,9 @@ DiscretizedKinematicModelTDD::DiscretizedKinematicModelTDD
     evaluateStateTransitionMatrix(0.01);
     evaluateNoiseCovarianceMatrix(0.01);
 
+    // initialize matrix Q_damped_
+    Q_damped_ = Q_;
+
     pImpl_->gain_ = gain;
 }
 

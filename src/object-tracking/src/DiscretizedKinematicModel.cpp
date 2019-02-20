@@ -111,7 +111,7 @@ bool DiscretizedKinematicModel::setProperty(const std::string& property)
 
         return true;
     }
-    else if (property == "reset_time")
+    else if (property == "reset")
     {
         last_time_set_ = false;
     }

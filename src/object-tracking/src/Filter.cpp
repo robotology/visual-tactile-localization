@@ -65,7 +65,7 @@ bool Filter::initialization()
     predicted_state_ = Gaussian(initial_state_.dim_linear, initial_state_.dim_circular);
 
     // Reset the sample time of the prediction
-    prediction_->getStateModel().setProperty("reset_time");
+    prediction_->getStateModel().setProperty("reset");
 
     return true;
 }
@@ -88,7 +88,7 @@ bool Filter::reset_filter()
     correction_->reset();
 
     // Reset the sample time of the prediction
-    prediction_->getStateModel().setProperty("reset_time");
+    prediction_->getStateModel().setProperty("reset");
 
     reset();
 
@@ -99,7 +99,7 @@ bool Filter::reset_filter()
 bool Filter::stop_filter()
 {
     // Reset the sample time of the prediction
-    prediction_->getStateModel().setProperty("reset_time");
+    prediction_->getStateModel().setProperty("reset");
 
     reboot();
 

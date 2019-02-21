@@ -35,7 +35,7 @@ enum class Status { Idle,
                     LatchCoarseApproachPoint,
                     MoveCoarseApproach, MovePreciseApproach,
                     TestCoarseApproach, TestPreciseApproach,
-                    OpenHand, CloseHand, WaitOpenHand, WaitCloseHand,
+                    OpenHand, CloseHand, PostCloseHand, WaitOpenHand, WaitCloseHand,
                     MoveRest, WaitArmRest,
                     MoveHome, WaitArmHome,
                     StartMotion, MoveTrajectory,
@@ -171,6 +171,15 @@ protected:
 
     yarp::sig::Vector angle_traj_time_scale_;
     yarp::sig::Vector angle_traj_scale_;
+
+    /*
+     */
+
+    /*
+     * Orientation part of hand trajectory
+     */
+
+    yarp::sig::Vector post_close_hand_delta_;
 
     /*
      */
@@ -912,6 +921,74 @@ protected:
     }
 
     /*
+     * Action to be done after hand closure
+     */
+    bool postCloseHand()
+    {
+        // check if the hand name is valid
+        if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
+            return false;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return false;
+
+        // get the current position of the palm of the hand
+        yarp::sig::Vector pos;
+        yarp::sig::Vector att;
+        if (!arm->cartesian()->getPose(pos, att))
+            return false;
+
+        // shift position as required
+        pos(0) += post_close_hand_delta_(0);
+        pos(1) += post_close_hand_delta_(1);
+        pos(2) += post_close_hand_delta_(2);
+
+        // change orientation of the hand as required
+        yarp::sig::Vector axis_angle_x(4);
+        yarp::sig::Matrix rot_x;
+        axis_angle_x[0] = 1.0;
+        axis_angle_x[1] = 0.0;
+        axis_angle_x[2] = 0.0;
+        axis_angle_x[3] = post_close_hand_delta_(3) * (M_PI / 180.0);
+        rot_x = yarp::math::axis2dcm(axis_angle_x);
+
+        yarp::sig::Vector axis_angle_y(4);
+        yarp::sig::Matrix rot_y;
+        axis_angle_y[0] = 0.0;
+        axis_angle_y[1] = 1.0;
+        axis_angle_y[2] = 0.0;
+        axis_angle_y[3] = post_close_hand_delta_(4) * (M_PI / 180.0);
+        rot_y = yarp::math::axis2dcm(axis_angle_y);
+
+        yarp::sig::Vector axis_angle_z(4);
+        yarp::sig::Matrix rot_z;
+        axis_angle_z[0] = 0.0;
+        axis_angle_z[1] = 0.0;
+        axis_angle_z[2] = 1.0;
+        axis_angle_z[3] = post_close_hand_delta_(5) * (M_PI / 180.0);
+        rot_z = yarp::math::axis2dcm(axis_angle_z);
+
+        yarp::sig::Matrix rot_hand = yarp::math::axis2dcm(att);
+
+        yarp::sig::Matrix rot_updated = rot_z * rot_y * rot_x * rot_hand;
+        yarp::sig::Vector att_updated = yarp::math::dcm2axis(rot_updated);
+
+        // set trajectory time
+        if (default_shift_time_ < 1.0)
+        {
+            yError() << "You are requesting a shift time" << default_shift_time_ << "less than 1 seconds!";
+            return false;
+        }
+        if(!(arm->cartesian()->setTrajTime(default_shift_time_)))
+            return false;
+
+        // issue command
+        return arm->cartesian()->goToPoseSync(pos, att_updated);
+    }
+
+    /*
      * Move the hand in the requested direction.
      */
     bool moveHand(const std::string laterality, const std::string direction)
@@ -1226,6 +1303,9 @@ public:
         angle_traj_time_scale_ = loadVectorDouble(rf, "angle_traj_time_scale", 3);
         yInfo() << "- angle_traj_scale" << angle_traj_scale_.toString();
         yInfo() << "- angle_traj_time_scale" << angle_traj_time_scale_.toString();
+
+        post_close_hand_delta_ = loadVectorDouble(rf, "post_close_hand_delta", 6);
+        yInfo() << "- post_close_hand_delta" << post_close_hand_delta_.toString();
 
         hand_move_timeout_  = rf.check("hand_move_timeout", Value(10.0)).asDouble();
         hand_home_timeout_  = rf.check("hand_home_timeout", Value(10.0)).asDouble();
@@ -1562,11 +1642,42 @@ public:
 
                 mutex_.lock();
 
+                // go to PostCloseHand
+                status_ = Status::PostCloseHand;
+
+                mutex_.unlock();
+            }
+
+            break;
+        }
+
+        case Status::PostCloseHand:
+        {
+            if (!postCloseHand())
+            {
+                yError() << "[POST CLOSE HAND] error while trying to move hand.";
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
                 // go to Idle
                 status_ = Status::Idle;
 
                 mutex_.unlock();
+
+                break;
             }
+
+            mutex_.lock();
+
+            // go to WaitHandMove
+            status_ = Status::WaitHandMove;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
 
             break;
         }

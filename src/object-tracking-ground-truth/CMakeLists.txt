@@ -5,6 +5,13 @@ find_package(Eigen3 QUIET CONFIG)
 if(NOT EIGEN3_FOUND)
     # in case the cmake/FindEigen3.cmake fails
     find_package(Eigen3 REQUIRED)
+  endif()
+
+# Bayes Filters
+find_package(BayesFilters 0.9.0 QUIET)
+if(NOT BayesFilters_FOUND)
+    message(STATUS "Did not found required master release of BayesFilters. Looking for devel version.")
+    find_package(BayesFilters 0.9.100 REQUIRED)
 endif()
 
 # YARP
@@ -17,10 +24,14 @@ find_package(YARP CONFIG REQUIRED
 
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR
+    include/ArucoMeasurement.h
+    include/KinematicModel.h
     )
 
 set(${EXE_TARGET_NAME}_SRC
     src/main.cpp
+    src/ArucoMeasurement.cpp
+    src/KinematicModel.cpp
     )
 
 # Application target calls
@@ -42,10 +53,15 @@ target_link_libraries(${EXE_TARGET_NAME} PRIVATE
                                          YARP::YARP_sig
                                          YARP::YARP_eigen
                                          iCubGazeCtrlLibrary
+                                         BayesFilters::BayesFilters
                                          )
 
-set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini)
+set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini
+                            ${CMAKE_CURRENT_SOURCE_DIR}/conf/marker_offsets.ini
+                            ${CMAKE_CURRENT_SOURCE_DIR}/conf/opencv_icub_intrinsics_left
+                            ${CMAKE_CURRENT_SOURCE_DIR}/conf/opencv_icub_intrinsics_right
+                            )
 
-yarp_install(FILES ${${EXE_TARGET_NAME}_CONF} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking-viewer-)
+yarp_install(FILES ${${EXE_TARGET_NAME}_CONF} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking-ground-truth)
 
 install(TARGETS ${EXE_TARGET_NAME} DESTINATION bin)

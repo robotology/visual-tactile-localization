@@ -307,10 +307,10 @@ void BoundingBoxEstimator::predict()
         pred_bbox_.mean().leftCols(pred_bbox_.components) += evalHandExogenousInput();
 
     }
-    else if (enable_object_feedforward_)
-    {
-        pred_bbox_.mean().leftCols(pred_bbox_.components).topRows<2>() += evalExogenousInput().topRows<2>();
-    }
+    // else if (enable_object_feedforward_)
+    // {
+    //     pred_bbox_.mean().leftCols(pred_bbox_.components).topRows<2>() += evalExogenousInput().topRows<2>();
+    // }
 
     // covariance transition
     for (std::size_t i = 0; i < pred_bbox_.components; i++)

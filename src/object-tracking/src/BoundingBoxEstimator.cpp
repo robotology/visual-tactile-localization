@@ -85,15 +85,12 @@ BoundingBoxEstimator::BoundingBoxEstimator
     extractor_(4),
     is_initialized_(false),
     is_exogenous_initialized_(false),
-    is_hand_exogenous_initialized_(false),
-    is_proj_bbox_initialized_(false),
     is_object_pose_initialized_(false),
+    is_hand_exogenous_initialized_(false),
     gaze_(port_prefix),
     cov_0_(initial_covariance),
     Q_(process_noise_covariance),
-    R_(measurement_noise_covariance),
-    bbox_width_ratio_(number_components),
-    bbox_height_ratio_(number_components)
+    R_(measurement_noise_covariance)
 {
     // Open RPC port to OPC required to get "measurements" of the bounding box
     if (!(opc_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
@@ -227,9 +224,8 @@ void BoundingBoxEstimator::reset()
 {
     is_initialized_ = false;
     is_exogenous_initialized_ = false;
-    is_hand_exogenous_initialized_ = false;
-    is_proj_bbox_initialized_ = false;
     is_object_pose_initialized_ = false;
+    is_hand_exogenous_initialized_ = false;
     enable_object_feedforward_= true;
     enable_hand_feedforward_ = false;
 
@@ -303,14 +299,13 @@ void BoundingBoxEstimator::predict()
 
     if (enable_hand_feedforward_)
     {
-        // Prefer hand feed forward term when it can be used
         pred_bbox_.mean().leftCols(pred_bbox_.components) += evalHandExogenousInput();
-
     }
-    // else if (enable_object_feedforward_)
-    // {
-    //     pred_bbox_.mean().leftCols(pred_bbox_.components).topRows<2>() += evalExogenousInput().topRows<2>();
-    // }
+    else
+    {
+        // Assume that hand feedforward has to be reset
+        is_hand_exogenous_initialized_ = false;
+    }
 
     // covariance transition
     for (std::size_t i = 0; i < pred_bbox_.components; i++)
@@ -344,173 +339,79 @@ void BoundingBoxEstimator::correct()
 }
 
 
-MatrixXd BoundingBoxEstimator::evalExogenousInput()
-{
-    if (!updateObjectMask())
-        return MatrixXd::Zero(4, pred_bbox_.components);
-
-    MatrixXd exog_input = MatrixXd::Zero(4, pred_bbox_.components);
-    MatrixXd curr_bbox(4, pred_bbox_.components);
-    std::vector<cv::Rect> bbox_rects(pred_bbox_.components);
-
-    for (std::size_t i = 0; i < pred_bbox_.components; i++)
-    {
-        // Extract the tile relative to the i-th component
-        int index_u = i % object_sicad_->getTilesCols();
-        int index_v = i / object_sicad_->getTilesCols();
-
-        cv::Rect crop(cv::Point(index_u * cam_width_, index_v * cam_height_),
-                      cv::Point((index_u + 1) * cam_width_, (index_v + 1) * cam_height_));
-        cv::Mat object_mask_i = object_mask_(crop);
-
-        // Find projected bounding box
-        cv::Mat points;
-        cv::findNonZero(object_mask_i, points);
-        cv::Rect rect = cv::boundingRect(points);
-
-        // Form vector containing center, width and height of projected bounding box
-        curr_bbox(0, i) = rect.x + rect.width / 2.0;
-        curr_bbox(1, i) = rect.y + rect.height / 2.0;
-        curr_bbox(2, i) = rect.width;
-        curr_bbox(3, i) = rect.height;
-
-        bbox_rects.at(i) = rect;
-    }
-
-    if (is_proj_bbox_initialized_)
-    {
-        // Evaluate finite differences
-        MatrixXd delta = curr_bbox - proj_bbox_;
-
-        if (!is_exogenous_initialized_)
-        {
-            if (steady_state_counter_ > steady_state_threshold_)
-            {
-                is_exogenous_initialized_ = true;
-
-                // Evaluate width and height ratio
-                for (std::size_t i = 0; i < pred_bbox_.components; i++)
-                {
-                    bbox_width_ratio_(i) = corr_bbox_.mean(i, 2) / bbox_rects.at(i).width;
-                    bbox_height_ratio_(i) = corr_bbox_.mean(i, 3) / bbox_rects.at(i).height;
-                }
-            }
-        }
-        else
-        {
-            exog_input = delta;
-            for (std::size_t i = 0; i < pred_bbox_.components; i++)
-            {
-                exog_input(2, i) *= bbox_width_ratio_(i);
-                exog_input(3, i) *= bbox_height_ratio_(i);
-            }
-        }
-    }
-
-    // Store projected bounding box for next iteration
-    proj_bbox_ = curr_bbox;
-
-    is_proj_bbox_initialized_ = true;
-
-    // Increment counter
-    steady_state_counter_++;
-
-    return exog_input;
-}
-
-
 Eigen::MatrixXd BoundingBoxEstimator::evalHandExogenousInput()
 {
-    yarp::sig::Vector* hand_pose = hand_pose_port_in_.read(false);
-
-    if (hand_pose == nullptr)
+    // Get the hand pose
+    yarp::sig::Vector* hand_pose_yarp = hand_pose_port_in_.read(false);
+    if (hand_pose_yarp == nullptr)
         return MatrixXd::Zero(4, pred_bbox_.components);
+    VectorXd curr_hand_pose = toEigen(*hand_pose_yarp);
 
     // Get the current stamp
     Stamp curr_stamp;
     hand_pose_port_in_.getEnvelope(curr_stamp);
 
-    VectorXd pose = toEigen(*hand_pose);
+    MatrixXd delta = MatrixXd::Zero(4, pred_bbox_.components);
 
-    yarp::sig::Vector eye_pos_left;
-    yarp::sig::Vector eye_att_left;
-    yarp::sig::Vector eye_pos_right;
-    yarp::sig::Vector eye_att_right;
-    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
+    if (is_hand_exogenous_initialized_)
     {
-        // Not updating the bounding box since the camera pose is not available
-        return MatrixXd::Zero(4, pred_bbox_.components);
-    }
-    VectorXd eye_pos;
-    VectorXd eye_att;
-    if (eye_name_ == "left")
-    {
-        eye_pos = toEigen(eye_pos_left);
-        eye_att = toEigen(eye_att_left);
+        if ((curr_stamp.getTime() - hand_pose_stamp_.getTime()) < 1)
+        {
+            // Evaluate relative motion of the hand
+            Matrix3d hand_rot_prev = AngleAxisd(hand_pose_(6), hand_pose_.segment(3, 3)).toRotationMatrix();
+            Matrix3d hand_rot_curr = AngleAxisd(curr_hand_pose(6), curr_hand_pose.segment(3, 3)).toRotationMatrix();
+            Matrix3d relative_rot = hand_rot_prev.transpose() * hand_rot_curr;
+            Vector3d relative_pos = curr_hand_pose.segment(0, 3) - hand_pose_.segment(0, 3);
+
+            // Perturb previously stored object poses
+            object_3d_pose_perturbed_.topRows<3>().colwise() += relative_pos;
+
+            for (std::size_t i = 0; i < pred_bbox_.components; i++)
+            {
+                Matrix3d object_rot_prev = (AngleAxisd(object_3d_pose_perturbed_.col(i)(9), Vector3d::UnitZ()) *
+                                            AngleAxisd(object_3d_pose_perturbed_.col(i)(10), Vector3d::UnitY()) *
+                                            AngleAxisd(object_3d_pose_perturbed_.col(i)(11), Vector3d::UnitX())).toRotationMatrix();
+                Matrix3d perturbed_rot = object_rot_prev * relative_rot;
+
+                Vector3d euler_angles = perturbed_rot.eulerAngles(2, 1, 0);
+                object_3d_pose_perturbed_.col(i).segment(9, 3) = euler_angles;
+            }
+
+            // Evaluate current bounding boxes
+            bool valid_bbox;
+            MatrixXd curr_bbox(4, pred_bbox_.components);
+            std::tie(valid_bbox, curr_bbox) = updateObjectBoundingBox();
+            if (valid_bbox)
+            {
+                // Update change in the bounding box
+                delta = curr_bbox - proj_bbox_;
+
+                // Update for next iteration
+                proj_bbox_ = curr_bbox;
+            }
+        }
     }
     else
     {
-        eye_pos = toEigen(eye_pos_right);
-        eye_att = toEigen(eye_att_right);
-    }
-
-    // Eval transformation taking coordinates in and w.r.t. root frame
-    // and producing coordinates in and w.r.t camera frame
-    Transform<double, 3, Eigen::Affine> root_to_camera;
-    root_to_camera = Translation<double, 3>(eye_pos);
-    root_to_camera.rotate(AngleAxis<double>(eye_att(3), eye_att.segment(0, 3)));
-    root_to_camera = root_to_camera.inverse();
-
-    // Convert coordinates in camera frame
-    VectorXd pose_camera_frame = root_to_camera * pose.segment(0, 3).homogeneous();
-
-    // Project hand 3D position in the camera plane
-    Eigen::Vector2d current_proj;
-    current_proj(0) = pose_camera_frame(0) * cam_fx_ / pose_camera_frame(2) + cam_cx_;
-    current_proj(1) = pose_camera_frame(1) * cam_fy_ / pose_camera_frame(2) + cam_cy_;
-
-    MatrixXd delta = MatrixXd::Zero(4, pred_bbox_.components);
-
-    if ((curr_stamp.getTime() - hand_pose_stamp_.getTime()) < 1)
-    {
-        if (is_hand_exogenous_initialized_)
+        // Initialize for the first time the object pose that
+        // will be iteratively updated using only the forward kinematics of the hand
+        if (is_object_pose_initialized_)
         {
-            // Evaluate variation in the z coordinate
-            double delta_z = pose_camera_frame(2) - hand_z_coordinate_;
+            object_3d_pose_perturbed_ = object_3d_pose_;
+            bool valid_bbox;
+            std::tie(valid_bbox, proj_bbox_) = BoundingBoxEstimator::updateObjectBoundingBox();
 
-            // Do the processing for each component of the mixture
-            for (std::size_t i = 0; i < pred_bbox_.components; i++)
+            if (valid_bbox)
             {
-                // Evaluate input for the center of the bounding box
-                // This is the same for each bounding box
-                delta.col(i).head<2>() = current_proj - hand_projection_;
-
-                // Evaluate position of bounding box coordinates
-                double tl_u = corr_bbox_.mean(i, 0) - corr_bbox_.mean(i, 2) / 2.0;
-                double tr_u = corr_bbox_.mean(i, 0) + corr_bbox_.mean(i, 2) / 2.0;
-                double tl_v = corr_bbox_.mean(i, 1) - corr_bbox_.mean(i, 3) / 2.0;
-                double bl_v = corr_bbox_.mean(i, 1) + corr_bbox_.mean(i, 3) / 2.0;
-
-                // Evaluate variations of these positions due to change in the z hand pose
-                double delta_tl_u = -(tl_u - cam_cx_) * delta_z / pose_camera_frame(2);
-                double delta_tr_u = -(tr_u - cam_cx_) * delta_z / pose_camera_frame(2);
-                double delta_tl_v = -(tl_v - cam_cy_) * delta_z / pose_camera_frame(2);
-                double delta_bl_v = -(bl_v - cam_cy_) * delta_z / pose_camera_frame(2);
-
-                // Evalute the estimated width and height
-                delta.col(i)(2) = delta_tr_u - delta_tl_u;
-                delta.col(i)(3) = delta_bl_v - delta_tl_v;
+                // Initialization completed
+                is_hand_exogenous_initialized_ = true;
             }
         }
     }
 
     // Update for next iteration
-    hand_projection_ = current_proj;
     hand_pose_stamp_ = curr_stamp;
-    hand_z_coordinate_ = pose_camera_frame(2);
-
-    // The hand pose was received at least one time
-    is_hand_exogenous_initialized_ = true;
+    hand_pose_ = curr_hand_pose;
 
     return delta;
 }
@@ -615,11 +516,33 @@ void BoundingBoxEstimator::sendObjectMask()
 }
 
 
-bool BoundingBoxEstimator::updateObjectMask()
+std::pair<bool, Eigen::MatrixXd> BoundingBoxEstimator::updateObjectBoundingBox()
 {
-    if (!is_object_pose_initialized_)
-        return false;
+    // Get camera pose
+    yarp::sig::Vector eye_pos_left;
+    yarp::sig::Vector eye_att_left;
+    yarp::sig::Vector eye_pos_right;
+    yarp::sig::Vector eye_att_right;
+    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
+    {
+        // Not updating the bounding box since the camera pose is not available
+        return std::make_pair(false, MatrixXd::Zero(4, pred_bbox_.components));
+    }
 
+    VectorXd eye_pos;
+    VectorXd eye_att;
+    if (eye_name_ == "left")
+    {
+        eye_pos = toEigen(eye_pos_left);
+        eye_att = toEigen(eye_att_left);
+    }
+    else
+    {
+        eye_pos = toEigen(eye_pos_right);
+        eye_att = toEigen(eye_att_right);
+    }
+
+    // Populate particles positions
     std::vector<Superimpose::ModelPoseContainer> si_object_poses(pred_bbox_.components);
     for (std::size_t i = 0; i < pred_bbox_.components; i++)
     {
@@ -628,14 +551,14 @@ bool BoundingBoxEstimator::updateObjectMask()
         si_object_pose.resize(7);
 
         // Cartesian coordinates
-        si_object_pose[0] = object_3d_pose_(0, i);
-        si_object_pose[1] = object_3d_pose_(1, i);
-        si_object_pose[2] = object_3d_pose_(2, i);
+        si_object_pose[0] = object_3d_pose_perturbed_(0, i);
+        si_object_pose[1] = object_3d_pose_perturbed_(1, i);
+        si_object_pose[2] = object_3d_pose_perturbed_(2, i);
 
         // Convert from Euler ZYX to axis/angle
-        AngleAxisd angle_axis(AngleAxisd(object_3d_pose_(9, i), Vector3d::UnitZ()) *
-                              AngleAxisd(object_3d_pose_(10, i), Vector3d::UnitY()) *
-                              AngleAxisd(object_3d_pose_(11, i), Vector3d::UnitX()));
+        AngleAxisd angle_axis(AngleAxisd(object_3d_pose_perturbed_(9, i), Vector3d::UnitZ()) *
+                              AngleAxisd(object_3d_pose_perturbed_(10, i), Vector3d::UnitY()) *
+                              AngleAxisd(object_3d_pose_perturbed_(11, i), Vector3d::UnitX()));
         si_object_pose[3] = angle_axis.axis()(0);
         si_object_pose[4] = angle_axis.axis()(1);
         si_object_pose[5] = angle_axis.axis()(2);
@@ -646,23 +569,10 @@ bool BoundingBoxEstimator::updateObjectMask()
         object_pose_container.emplace("object", si_object_pose);
     }
 
-    yarp::sig::Vector eye_pos_left;
-    yarp::sig::Vector eye_att_left;
-    yarp::sig::Vector eye_pos_right;
-    yarp::sig::Vector eye_att_right;
-    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
-    {
-        // Not updating the bounding box since the camera pose is not available
-        return false;
-    }
-
     // Project mesh onto the camera plane
     // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
     bool valid_superimpose = false;
-    if (eye_name_ == "left")
-        valid_superimpose = object_sicad_->superimpose(si_object_poses, eye_pos_left.data(), eye_att_left.data(), object_mask_);
-    else if (eye_name_ == "right")
-        valid_superimpose = object_sicad_->superimpose(si_object_poses, eye_pos_right.data(), eye_att_right.data(), object_mask_);
+        valid_superimpose = object_sicad_->superimpose(si_object_poses, eye_pos.data(), eye_att.data(), object_mask_);
 
     if (!valid_superimpose)
     {
@@ -673,8 +583,33 @@ bool BoundingBoxEstimator::updateObjectMask()
     // Convert to gray scale
     cv::cvtColor(object_mask_, object_mask_, CV_BGR2GRAY);
 
+    // Send mask for inspection if required
     if (send_mask_)
         sendObjectMask();
 
-    return true;
+    // Evaluate bounding boxes
+    MatrixXd curr_bbox(4, pred_bbox_.components);
+    for (std::size_t i = 0; i < pred_bbox_.components; i++)
+    {
+        // Extract the tile relative to the i-th component
+        int index_u = i % object_sicad_->getTilesCols();
+        int index_v = i / object_sicad_->getTilesCols();
+
+        cv::Rect crop(cv::Point(index_u * cam_width_, index_v * cam_height_),
+                      cv::Point((index_u + 1) * cam_width_, (index_v + 1) * cam_height_));
+        cv::Mat object_mask_i = object_mask_(crop);
+
+        // Find projected bounding box
+        cv::Mat points;
+        cv::findNonZero(object_mask_i, points);
+        cv::Rect rect = cv::boundingRect(points);
+
+        // Form vector containing center, width and height of projected bounding box
+        curr_bbox(0, i) = rect.x + rect.width / 2.0;
+        curr_bbox(1, i) = rect.y + rect.height / 2.0;
+        curr_bbox(2, i) = rect.width;
+        curr_bbox(3, i) = rect.height;
+    }
+
+    return std::make_pair(true, curr_bbox);
 }

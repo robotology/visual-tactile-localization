@@ -110,7 +110,7 @@ protected:
     /**
      * Evaluate exogenous input.
      */
-    Eigen::MatrixXd evalExogenousInput();
+    /* Eigen::MatrixXd evalExogenousInput(); */
 
     /**
      * Evaluate exogenous input.
@@ -129,9 +129,9 @@ protected:
     void sendObjectMask();
 
     /**
-     * Update the object mask by projecting the object mesh, according to the last estimate available on the camera plane.
+     * Evaluate the new bounding box according to the pose of the object.
      */
-    bool updateObjectMask();
+    std::pair<bool, Eigen::MatrixXd> updateObjectBoundingBox();
 
     /**
      * Number of particles used.
@@ -208,20 +208,18 @@ protected:
      * Object projected bounding box (center, width, height)
      */
     Eigen::MatrixXd proj_bbox_;
-    bool is_proj_bbox_initialized_;
-
-    /**
-     * Width and height ratio between initial bounding box and predicted bounding box
-     * (required to take into account bad scaling of the point cloud).
-     */
-    Eigen::VectorXd bbox_width_ratio_;
-    Eigen::VectorXd bbox_height_ratio_;
 
     /*
      * Object 3D pose.
      */
     Eigen::MatrixXd object_3d_pose_;
+    Eigen::MatrixXd object_3d_pose_perturbed_;
     bool is_object_pose_initialized_;
+
+    /*
+     * Hand 3D pose.
+     */
+    Eigen::VectorXd hand_pose_;
 
     /**
      * IOL object category name (required to initialize the bounding box of the object).
@@ -232,16 +230,6 @@ protected:
      * Scale factor used to enlarge/reduce the area of the bounding box provided by IOL.
      */
     double IOL_bbox_scale_;
-
-    /**
-     * Last projection of hand 3D pose on the camera plane.
-     */
-    Eigen::Vector2d hand_projection_;
-
-    /**
-     * Last z coordinate of the hand on the camera plane;
-     */
-    double hand_z_coordinate_;
 
     /**
      * Input port for hand 3D pose required to evaluate the hand feedforward term.

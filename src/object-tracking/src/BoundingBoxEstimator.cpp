@@ -166,6 +166,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     // Reset flag
     enable_object_feedforward_ = true;
     enable_hand_feedforward_ = false;
+    enable_hand_feedforward_first_time_ = false;
 }
 
 
@@ -226,6 +227,7 @@ void BoundingBoxEstimator::reset()
     is_exogenous_initialized_ = false;
     is_object_pose_initialized_ = false;
     is_hand_exogenous_initialized_ = false;
+    enable_hand_feedforward_first_time_ = false;
     enable_object_feedforward_= true;
     enable_hand_feedforward_ = false;
 
@@ -297,15 +299,19 @@ void BoundingBoxEstimator::predict()
     // state transition
     pred_bbox_.mean() = corr_bbox_.mean();
 
-    if (enable_hand_feedforward_)
+    if (enable_hand_feedforward_first_time_ || enable_hand_feedforward_)
     {
         pred_bbox_.mean().leftCols(pred_bbox_.components) += evalHandExogenousInput();
+
+	// this is required since even if there is a firm grasp
+	// sometimes contacts are missing!
+	enable_hand_feedforward_first_time_ = true;
     }
-    else
-    {
-        // Assume that hand feedforward has to be reset
-        is_hand_exogenous_initialized_ = false;
-    }
+    // else
+    // {
+    //     // Assume that hand feedforward has to be reset
+    //     is_hand_exogenous_initialized_ = false;
+    // }
 
     // covariance transition
     for (std::size_t i = 0; i < pred_bbox_.components; i++)
@@ -355,8 +361,8 @@ Eigen::MatrixXd BoundingBoxEstimator::evalHandExogenousInput()
 
     if (is_hand_exogenous_initialized_)
     {
-        if ((curr_stamp.getTime() - hand_pose_stamp_.getTime()) < 1)
-        {
+        // if ((curr_stamp.getTime() - hand_pose_stamp_.getTime()) < 1)
+        // {
             // Evaluate relative motion of the hand
             Matrix3d hand_rot_prev = AngleAxisd(hand_pose_(6), hand_pose_.segment(3, 3)).toRotationMatrix();
             Matrix3d hand_rot_curr = AngleAxisd(curr_hand_pose(6), curr_hand_pose.segment(3, 3)).toRotationMatrix();
@@ -389,7 +395,7 @@ Eigen::MatrixXd BoundingBoxEstimator::evalHandExogenousInput()
                 // Update for next iteration
                 proj_bbox_ = curr_bbox;
             }
-        }
+        // }
     }
     else
     {
@@ -572,7 +578,7 @@ std::pair<bool, Eigen::MatrixXd> BoundingBoxEstimator::updateObjectBoundingBox()
     // Project mesh onto the camera plane
     // The shader is designed to have the mesh rendered as a white surface project onto the camera plane
     bool valid_superimpose = false;
-        valid_superimpose = object_sicad_->superimpose(si_object_poses, eye_pos.data(), eye_att.data(), object_mask_);
+    valid_superimpose = object_sicad_->superimpose(si_object_poses, eye_pos.data(), eye_att.data(), object_mask_);
 
     if (!valid_superimpose)
     {

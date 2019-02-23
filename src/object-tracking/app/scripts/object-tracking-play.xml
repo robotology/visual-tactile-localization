@@ -20,16 +20,15 @@
   </module>
 
   <module>
-    <name>yarpdataplayer</name>
-    <parameters>--withExtraTimeCol 2</parameters>
-    <node>localhost</node>
+    <name>object-tracking-ground-truth</name>
+    <parameters></parameters>
+    <node>icub-cuda</node>
   </module>
 
   <module>
-    <name>yarpview</name>
-    <parameters>--name /object-tracking/viewer/disp:i</parameters>
+    <name>yarpdataplayer</name>
+    <parameters>--withExtraTimeCol 2</parameters>
     <node>localhost</node>
-    <prefix></prefix>
   </module>
 
   <module>
@@ -59,6 +58,13 @@
     <node>localhost</node>
     <prefix></prefix>
   </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/aruco:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>  
 
   <!-- connections for yarpview-s -->
 
@@ -90,6 +96,12 @@
     <from>/object-tracking-depth/SFM/disp:o</from>
     <to>/object-tracking/viewer/disp:i</to>
     <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking-ground-truth/marker-estimate/left:o</from>
+    <to>/object-tracking/viewer/aruco:i</to>
+    <protocol>mjpeg</protocol>
   </connection>
 
   <!-- used by object-tracking-depth -->
@@ -179,6 +191,12 @@
     <!-- iCub analog encoders -->
     <from>/icub/right_hand/analog:o</from>
     <to>/object-tracking-viewer/hand/right/right_hand/analog:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking-ground-truth/marker-estimate/left/estimate:o</from>
+    <to>/object-tracking-viewer/ground-truth:i</to>
     <protocol>tcp</protocol>
   </connection>
 
@@ -318,6 +336,14 @@
     <from>/icub/right_hand/analog:o</from>
     <to>/object-tracking/icub-arm-model/occlusion/right/right_hand/analog:i</to>
     <protocol>tcp</protocol>
+  </connection>
+
+  <!-- used by module object-tracking-ground-truth -->
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking-ground-truth/cam/left:i</to>
+    <protocol>mjpeg</protocol>
   </connection>
 
 </application>

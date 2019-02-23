@@ -20,10 +20,9 @@
   </module>
 
   <module>
-    <name>yarpview</name>
-    <parameters>--name /object-tracking/viewer/disp:i</parameters>
-    <node>localhost</node>
-    <prefix></prefix>
+    <name>object-tracking-ground-truth</name>
+    <parameters></parameters>
+    <node>icub-cuda</node>
   </module>
 
   <module>
@@ -36,6 +35,13 @@
   <module>
     <name>yarpview</name>
     <parameters>--name /object-tracking/viewer/mask:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/aruco:i</parameters>
     <node>localhost</node>
     <prefix></prefix>
   </module>
@@ -90,6 +96,12 @@
   </connection>
 
   <connection>
+    <from>/object-tracking-ground-truth/marker-estimate/left/estimate:o</from>
+    <to>/object-tracking-viewer/ground-truth:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
     <from>/object-tracking/hull:o</from>
     <to>/object-tracking/viewer/hull:i</to>
     <protocol>mjpeg</protocol>
@@ -101,6 +113,12 @@
     <to>/object-tracking/viewer/mask:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/object-tracking-ground-truth/marker-estimate/left:o</from>
+    <to>/object-tracking/viewer/aruco:i</to>
+    <protocol>mjpeg</protocol>
   </connection>
 
   <connection>
@@ -120,6 +138,13 @@
   <connection>
     <from>/icub/camcalib/left/out</from>
     <to>/object-tracking/bbox-estimator/cam/left:i</to>
+    <protocol>mjpeg</protocol>
+    <!-- <protocol>tcp</protocol> -->
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/object-tracking-ground-truth/cam/left:i</to>
     <protocol>mjpeg</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>

@@ -133,7 +133,7 @@ int main(int argc, char** argv)
 
     /* Measurement model. */
     ResourceFinder rf_measurement_model = rf.findNestedResourceFinder("MEASUREMENT_MODEL");
-    VectorXd noise_covariance = loadVectorDouble(rf_measurement_model, "noise_covariance", 3);
+    VectorXd noise_covariance = loadVectorDouble(rf_measurement_model, "noise_covariance", 6);
     MatrixXd noise_covariance_diagonal = noise_covariance.asDiagonal();
 
     /* Logging parameters. */

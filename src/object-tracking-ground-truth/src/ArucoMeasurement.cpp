@@ -152,7 +152,6 @@ std::pair<bool, Data> ArucoMeasurement::measure() const
 
 bool ArucoMeasurement::freezeMeasurements()
 {
-
     ImageOf<PixelRgb>* image_in;
     image_in = port_image_in_.read(true);
 
@@ -250,7 +249,7 @@ bool ArucoMeasurement::freezeMeasurements()
 
     is_measurement_available_ = true;
 
-    return false;
+    return true;
 }
 
 std::pair<bool, bfl::Data> ArucoMeasurement::innovation(const bfl::Data& predicted_measurements, const bfl::Data& measurements) const

@@ -157,16 +157,16 @@ void ArucoTracker::filteringStep()
 
         return;
     }
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    // std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     GaussianFilter::filteringStep();
 
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    std::cout << "Executed step in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms"
-              << std::endl;
+    // std::cout << "Executed step in "
+    //           << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+    //           << " ms"
+    //           << std::endl;
 
     // Extract estimate
     VectorXd corrected_mean = corrected_state_.mean();

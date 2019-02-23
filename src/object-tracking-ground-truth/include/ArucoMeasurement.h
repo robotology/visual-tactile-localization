@@ -6,6 +6,8 @@
 
 #include <BayesFilters/LinearMeasurementModel.h>
 
+#include <Eigen/Dense>
+
 #include <GazeController.h>
 
 #include <yarp/os/BufferedPort.h>
@@ -16,7 +18,7 @@
 class ArucoMeasurement : bfl::LinearMeasurementModel
 {
 public:
-    ArucoMeasurement(const std::string port_prefix);
+    ArucoMeasurement(const std::string port_prefix, const std::string eye_name, const Eigen::Ref<Eigen::VectorXd> marker_offset, const bool send_image, const bool send_aruco_estimate);
 
     virtual ~ArucoMeasurement();
 
@@ -27,6 +29,8 @@ public:
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 
 protected:
+    std::pair<bool, Eigen::Transform<double, 3, Eigen::Affine>> getCameraPose();
+
     const std::string eye_name_;
 
     cv::Ptr<cv::aruco::Dictionary> dictionary_;
@@ -37,6 +41,8 @@ protected:
 
     cv::Mat image_with_marker_;
 
+    Eigen::VectorXd marker_offset_;
+
     /**
      * Gaze controller.
      */
@@ -46,6 +52,7 @@ protected:
      * Latest Object pose. This pose is used as a measurement.
      */
     Eigen::VectorXd measurement_;
+    bool is_measurement_available_;
 
     /**
      * Image input / output.

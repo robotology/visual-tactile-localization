@@ -1,21 +1,34 @@
 #include <ArucoMeasurement.h>
 
+#include <Eigen/Dense>
+
+#include <yarp/cv/Cv.h>
+#include <yarp/eigen/Eigen.h>
 #include <yarp/os/ResourceFinder.h>
+#include <yarp/sig/Image.h>
+#include <yarp/sig/Vector.h>
 
+using namespace yarp::cv;
+using namespace yarp::eigen;
 using namespace yarp::os;
+using namespace yarp::sig;
+using namespace Eigen;
 
 
-bool ArucoMeasurement::ArucoMeasurement
+ArucoMeasurement::ArucoMeasurement
 (
     const std::string port_prefix,
     const std::string eye_name,
+    const Ref<VectorXd> marker_offset,
     const bool send_image,
     const bool send_aruco_estimate
 ) :
     eye_name_(eye_name),
+    marker_offset_(marker_offset),
     send_image_(send_image),
     send_aruco_estimate_(send_aruco_estimate),
-    gaze_(port_prefix)
+    gaze_(port_prefix),
+    measurement_(VectorXd(6))
 {
     // Open camera  input port
     if(!port_image_in_.open("/" + port_prefix + "/cam/" + eye_name + ":i"))
@@ -66,17 +79,14 @@ bool ArucoMeasurement::ArucoMeasurement
     bool valid_intrinsics = gaze_.getCameraIntrinsics(eye_name_, fx, fy, cx, cy);
     if (valid_intrinsics)
     {
-        cam_intrinsic.at<double>(0, 0) = fx;
-        cam_intrinsic.at<double>(0, 2) = cx;
-        cam_intrinsic.at<double>(1, 1) = fy;
-        cam_intrinsic.at<double>(1, 2) = cy;
+        cam_intrinsic_.at<double>(0, 0) = fx;
+        cam_intrinsic_.at<double>(0, 2) = cx;
+        cam_intrinsic_.at<double>(1, 1) = fy;
+        cam_intrinsic_.at<double>(1, 2) = cy;
     }
 
     // Configure a standard Aruco dictionary
     dictionary_ = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_250);
-
-    // Missing code required to
-    // - read offset from object surface to object center in body fixed frame from configuration file
 }
 
 
@@ -89,8 +99,48 @@ ArucoMeasurement::~ArucoMeasurement()
 
     if (send_aruco_estimate_)
     {
-        port_aruco_estimate_out.close();
+        port_aruco_estimate_out_.close();
     }
+}
+
+
+std::pair<bool, Transform<double, 3, Eigen::Affine>> ArucoMeasurement::getCameraPose()
+{
+    yarp::sig::Vector eye_pos_left;
+    yarp::sig::Vector eye_att_left;
+
+    yarp::sig::Vector eye_pos_right;
+    yarp::sig::Vector eye_att_right;
+
+    Vector3d eye_pos(3);
+    VectorXd eye_att(4);
+
+    Transform<double, 3, Eigen::Affine> camera_transform;
+
+    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
+        return std::make_pair(false, camera_transform);
+
+    if (eye_name_ == "left")
+    {
+        eye_pos = toEigen(eye_pos_left);
+        eye_att = toEigen(eye_att_left);
+    }
+    else
+    {
+        eye_pos = toEigen(eye_pos_right);
+        eye_att = toEigen(eye_att_right);
+    }
+
+    camera_transform = Translation<double, 3>(eye_pos);
+    camera_transform.rotate(AngleAxisd(eye_att(3), eye_att.head<3>()));
+
+    return std::make_pair(true, camera_transform);
+}
+
+
+std::pair<bool, bfl::Data> ArucoMeasurement::measure() const
+{
+    return std::make_pair(is_measurement_available_, measurement_);
 }
 
 
@@ -120,7 +170,7 @@ bool ArucoMeasurement::freezeMeasurements()
 
     if (send_image_)
     {
-        // Draw axis for each marker found
+        // Draw everything was detected for debugging purposes
         for(int i = 0; i < ids.size(); i++)
             cv::aruco::drawAxis(image, cam_intrinsic_, cam_distortion_, rvecs[i], tvecs[i], 0.1);
 
@@ -128,73 +178,76 @@ bool ArucoMeasurement::freezeMeasurements()
         port_image_out_.write();
     }
 
-        // transformation matrix
-    // from robot root to camera
-    yarp::sig::Matrix root_to_cam(4, 4);
-    root_to_cam.zero();
-    root_to_cam(3, 3) = 1.0;
+    // If everything is ok, it is expected to have one marker only
+    if (ids.size() > 1)
+    {
+        std::cout << log_ID_ << "Error: identified more than one marker." << std::endl;
+        return false;
+    }
 
-    root_to_cam(0, 3) = camera_pos[0];
-    root_to_cam(1, 3) = camera_pos[1];
-    root_to_cam(2, 3) = camera_pos[2];
+    // Get camera pose
+    bool valid_camera_pose;
+    Transform<double, 3, Eigen::Affine> camera_transform;
+    std::tie(valid_camera_pose, camera_transform) = getCameraPose();
+    if (!valid_camera_pose)
+        return false;
 
-    root_to_cam.setSubmatrix(yarp::math::axis2dcm(camera_att).submatrix(0, 2, 0, 2),
-                             0, 0);
+    // Compose marker pose
+    Vector3d pos_wrt_cam;
+    pos_wrt_cam(0) = tvecs.at(0).at<double>(0, 0);
+    pos_wrt_cam(1) = tvecs.at(0).at<double>(1, 0);
+    pos_wrt_cam(2) = tvecs.at(0).at<double>(2, 0);
 
-    // TODO: MISSING CODE required to
-    // - rotate body fixed reference frame taking into account convention of aruco
-    // - apply fixed offset from object surface to center of object
-    // - rewrite with origin in root frame and expressed in root frame
-    // - save measurement (x,y,z,y,p,r) and send to port (x,y,z,axis,angle) if required
-    //
-    // // transformation matrix
-    // // from camera to corner of the object
-    // yarp::sig::Matrix cam_to_obj(4,4);
-    // cam_to_obj.zero();
-    // cam_to_obj(3, 3) = 1.0;
+    cv::Mat att_wrt_cam_cv;
+    cv::Rodrigues(rvecs[0], att_wrt_cam_cv);
+    yarp::sig::Matrix att_wrt_cam_yarp(3, 3);
 
-    // cam_to_obj(0, 3) = pos_wrt_cam.at<double>(0, 0);
-    // cam_to_obj(1, 3) = pos_wrt_cam.at<double>(1, 0);
-    // cam_to_obj(2, 3) = pos_wrt_cam.at<double>(2, 0);
+    Matrix3d att_wrt_cam_eigen;
+    for (size_t i=0; i<3; i++)
+        for (size_t j=0; j<3; j++)
+            att_wrt_cam_eigen(i, j) = att_wrt_cam_cv.at<double>(i, j);
 
-    // cv::Mat att_wrt_cam_matrix;
-    // cv::Rodrigues(att_wrt_cam, att_wrt_cam_matrix);
-    // yarp::sig::Matrix att_wrt_cam_yarp(3, 3);
-    // for (size_t i=0; i<3; i++)
-    //     for (size_t j=0; j<3; j++)
-    //         att_wrt_cam_yarp(i, j) = att_wrt_cam_matrix.at<double>(i, j);
-    // cam_to_obj.setSubmatrix(att_wrt_cam_yarp, 0, 0);
+    Transform<double, 3, Eigen::Affine> marker_transform;
+    marker_transform = Translation<double, 3>(pos_wrt_cam);
+    marker_transform.rotate(att_wrt_cam_eigen);
 
-    // // compose transformations
-    // yarp::sig::Matrix homog = root_to_cam * cam_to_obj;
+    // Compose offset pose between marker to body fixed object frame
+    Transform<double, 3, Eigen::Affine> offset_transform;
+    offset_transform = Translation<double, 3>(Vector3d::Zero());
+    AngleAxisd offset_rotation = AngleAxisd(AngleAxisd(marker_offset_(3), Vector3d::UnitX()) *
+                                            AngleAxisd(marker_offset_(4), Vector3d::UnitY()) *
+                                            AngleAxisd(marker_offset_(5), Vector3d::UnitZ()));
 
-    // // convert to a vector
-    // est_pose = homogToVector(homog);
+    // Compose transform from root frame to object frame
+    Transform<double, 3, Eigen::Affine> transform  = camera_transform * marker_transform * offset_transform;
 
-    // if (is_estimate_available)
-    // {
-    //     // override z using the initial pose
-    //     est_pose[2] = initial_pose[2];
+    // Compose the actual measurement
+    measurement_.head<3>() = transform * marker_offset_.head<3>().homogeneous();
+    measurement_.tail<3>() = transform.rotation().eulerAngles(2, 1, 0);
 
-    //     // override pitch and roll using the initial pose
-    //     est_pose.setSubvector(4, initial_pose.subVector(4, 5));
-    // }
+    if (send_aruco_estimate_)
+    {
+        VectorXd pose(7);
+        pose.head<3>() = measurement_.head<3>();
 
-    // // pick the center of the object
-    // yarp::sig::Vector corner_to_center(4);
-    // corner_to_center[0] = obj_width / 2.0;
-    // corner_to_center[1] = obj_depth / 2.0;
-    // corner_to_center[2] = -obj_height / 2.0;
-    // corner_to_center[3] = 1.0;
+        AngleAxisd orientation(transform.rotation());
 
-    // yarp::sig::Vector center = est_pose_homog * corner_to_center;
-    // est_pose_homog.setCol(3, center);
+        pose.segment(3, 3) = orientation.axis();
+        pose(6) = orientation.angle();
+
+        yarp::sig::Vector& pose_yarp = port_aruco_estimate_out_.prepare();
+        pose_yarp.resize(7);
+        toEigen(pose_yarp) = pose;
+        port_aruco_estimate_out_.write();
+    }
+
+    is_measurement_available_ = true;
 
     return false;
 }
 
 
-std::pair<std::size_t, std::size_t> getOutputSize()
+std::pair<std::size_t, std::size_t> ArucoMeasurement::getOutputSize() const
 {
     /* Three cartesian coordinates, three euler angles (ZXY parametrization). */
     return std::make_pair(3, 3);

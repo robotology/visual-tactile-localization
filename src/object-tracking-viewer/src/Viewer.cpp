@@ -59,13 +59,13 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     yInfo() << log_ID_ << "- hand_laterality:" << hand_laterality;
 
     // Load ground truth visualization boolean
-    bool show_ground_truth_ = rf.check("show_ground_truth", Value("false")).asBool();
+    show_ground_truth_ = rf.check("show_ground_truth", Value("false")).asBool();
     yInfo() << log_ID_ << "- show_ground_truth:" << show_ground_truth_;
 
     if (show_ground_truth_)
     {
         // Open estimate input port
-        if(!port_estimate_in_.open("/" + port_prefix + "/ground-truth:i"))
+        if(!port_ground_truth_in_.open("/" + port_prefix + "/ground-truth:i"))
         {
             std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open ground truth input port.";
             throw(std::runtime_error(err));
@@ -149,6 +149,8 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     renderer_->AddActor(vtk_measurements_->get_actor());
     if (show_hand_)
         vtk_icub_hand_->addToRenderer(*renderer_);
+    if (show_ground_truth_)
+        renderer_->AddActor(mesh_actor_ground_truth_);
 
     renderer_->SetBackground(0.8, 0.8, 0.8);
 
@@ -218,7 +220,6 @@ void Viewer::updateView()
 
         if (ground_truth != nullptr)
         {
-
             VectorXd state = toEigen(*ground_truth);
 
             // Create a new transform

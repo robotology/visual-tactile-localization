@@ -222,6 +222,11 @@ protected:
      */
     Eigen::VectorXd hand_pose_;
 
+    /*
+     * Relative rotation between hand and object.
+     */
+    Eigen::MatrixXd relative_hand_object_rotation_;
+
     /**
      * IOL object category name (required to initialize the bounding box of the object).
      */

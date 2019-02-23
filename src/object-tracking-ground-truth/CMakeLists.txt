@@ -29,12 +29,14 @@ find_package(OpenCV REQUIRED)
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR
     include/ArucoMeasurement.h
+    include/Correction.h
     include/KinematicModel.h
     )
 
 set(${EXE_TARGET_NAME}_SRC
     src/main.cpp
     src/ArucoMeasurement.cpp
+    src/Correction.cpp
     src/KinematicModel.cpp
     )
 

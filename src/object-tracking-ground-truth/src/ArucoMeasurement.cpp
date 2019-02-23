@@ -228,9 +228,9 @@ bool ArucoMeasurement::freezeMeasurements()
     // Compose offset pose between marker to body fixed object frame
     Transform<double, 3, Eigen::Affine> offset_transform;
     offset_transform = Translation<double, 3>(Vector3d::Zero());
-    AngleAxisd offset_rotation = AngleAxisd(AngleAxisd(marker_offset_(3), Vector3d::UnitX()) *
-                                            AngleAxisd(marker_offset_(4), Vector3d::UnitY()) *
-                                            AngleAxisd(marker_offset_(5), Vector3d::UnitZ()));
+    offset_transform.rotate(AngleAxisd(AngleAxisd(marker_offset_(3), Vector3d::UnitX()) *
+				       AngleAxisd(marker_offset_(4), Vector3d::UnitY()) *
+				       AngleAxisd(marker_offset_(5), Vector3d::UnitZ())));
 
     // Compose transform from root frame to object frame
     Transform<double, 3, Eigen::Affine> transform  = camera_transform * marker_transform * offset_transform;

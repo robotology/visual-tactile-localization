@@ -58,6 +58,20 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     std::string hand_laterality = rf.check("hand_laterality", Value("right")).asString();
     yInfo() << log_ID_ << "- hand_laterality:" << hand_laterality;
 
+    // Load ground truth visualization boolean
+    bool show_ground_truth_ = rf.check("show_ground_truth", Value("false")).asBool();
+    yInfo() << log_ID_ << "- show_ground_truth:" << show_ground_truth_;
+
+    if (show_ground_truth_)
+    {
+        // Open estimate input port
+        if(!port_estimate_in_.open("/" + port_prefix + "/ground-truth:i"))
+        {
+            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open ground truth input port.";
+            throw(std::runtime_error(err));
+        }
+    }
+
     // Load mesh from the default configuration file of module object-tracking
     ResourceFinder rf_object_tracking;
     rf_object_tracking.setVerbose(true);
@@ -91,6 +105,13 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
 
     mesh_actor_ = vtkSmartPointer<vtkActor>::New();
     mesh_actor_->SetMapper(mapper_);
+
+    if (show_ground_truth_)
+    {
+        mesh_actor_ground_truth_ = vtkSmartPointer<vtkActor>::New();
+        mesh_actor_ground_truth_->SetMapper(mapper_);
+        mesh_actor_ground_truth_->GetProperty()->SetColor(0.0, 0.8, 0.0);
+    }
 
     // Configure measurements actor
     int points_size = 2;
@@ -187,6 +208,30 @@ void Viewer::updateView()
                                       state(3), state(4), state(5));
             // Apply transform
             mesh_actor_->SetUserTransform(vtk_transform);
+        }
+    }
+
+    // Update ground truth
+    if (show_ground_truth_)
+    {
+        yarp::sig::Vector* ground_truth = port_ground_truth_in_.read(false);
+
+        if (ground_truth != nullptr)
+        {
+
+            VectorXd state = toEigen(*ground_truth);
+
+            // Create a new transform
+            vtkSmartPointer<vtkTransform> vtk_transform = vtkSmartPointer<vtkTransform>::New();
+
+            // Set translation
+            vtk_transform->Translate(state.head<3>().data());
+
+            // Set rotation
+            vtk_transform->RotateWXYZ(state(6) * 180 / M_PI,
+                                      state(3), state(4), state(5));
+            // Apply transform
+            mesh_actor_ground_truth_->SetUserTransform(vtk_transform);
         }
     }
 

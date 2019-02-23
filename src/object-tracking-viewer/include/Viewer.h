@@ -157,6 +157,8 @@ private:
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_in_;
 
+    yarp::os::BufferedPort<yarp::sig::Vector> port_ground_truth_in_;
+
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_in_;
 
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat>> port_depth_in_;
@@ -174,6 +176,8 @@ private:
     vtkSmartPointer<vtkPolyDataMapper> mapper_;
 
     vtkSmartPointer<vtkActor> mesh_actor_;
+
+    vtkSmartPointer<vtkActor> mesh_actor_ground_truth_;
 
     vtkSmartPointer<vtkRenderer> renderer_;
 
@@ -196,6 +200,8 @@ private:
     float pc_left_z_threshold_;
 
     bool show_hand_;
+
+    bool show_ground_truth_;
 
     std::unique_ptr<VtkiCubHand> vtk_icub_hand_;
 

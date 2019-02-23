@@ -20,7 +20,11 @@ find_package(YARP CONFIG REQUIRED
              OS
              sig
              eigen
+             cv
              )
+
+# OpenCV
+find_package(OpenCV REQUIRED)
 
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR
@@ -52,8 +56,10 @@ target_link_libraries(${EXE_TARGET_NAME} PRIVATE
                                          YARP::YARP_OS
                                          YARP::YARP_sig
                                          YARP::YARP_eigen
+                                         YARP::YARP_cv
                                          iCubGazeCtrlLibrary
                                          BayesFilters::BayesFilters
+                                         ${OpenCV_LIBS}
                                          )
 
 set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini

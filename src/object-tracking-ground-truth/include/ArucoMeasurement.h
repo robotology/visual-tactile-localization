@@ -19,7 +19,7 @@
 class ArucoMeasurement : bfl::LinearMeasurementModel
 {
 public:
-    ArucoMeasurement(const std::string port_prefix, const std::string eye_name, const Eigen::Ref<Eigen::VectorXd> marker_offset, Eigen::Ref<Eigen::MatrixXd> noise_covariance, const bool send_image, const bool send_aruco_estimate);
+    ArucoMeasurement(const std::string port_prefix, const std::string eye_name, const Eigen::Ref<Eigen::VectorXd> marker_offset, const double marker_length, Eigen::Ref<Eigen::MatrixXd> noise_covariance, const bool send_image, const bool send_aruco_estimate);
 
     virtual ~ArucoMeasurement();
 
@@ -49,6 +49,8 @@ protected:
     cv::Mat image_with_marker_;
 
     Eigen::VectorXd marker_offset_;
+
+    double marker_length_;
 
     /**
      * Gaze controller.

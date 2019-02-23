@@ -21,12 +21,14 @@ ArucoMeasurement::ArucoMeasurement
     const std::string port_prefix,
     const std::string eye_name,
     const Ref<VectorXd> marker_offset,
+    const double marker_length,
     Eigen::Ref<Eigen::MatrixXd> noise_covariance,
     const bool send_image,
     const bool send_aruco_estimate
 ) :
     eye_name_(eye_name),
     marker_offset_(marker_offset),
+    marker_length_(marker_length),
     send_image_(send_image),
     send_aruco_estimate_(send_aruco_estimate),
     gaze_(port_prefix),
@@ -170,7 +172,7 @@ bool ArucoMeasurement::freezeMeasurements()
 
     // Estimate pose of markers
     std::vector<cv::Mat> rvecs, tvecs;
-    cv::aruco::estimatePoseSingleMarkers(corners, 0.05, cam_intrinsic_, cam_distortion_, rvecs, tvecs);
+    cv::aruco::estimatePoseSingleMarkers(corners, marker_length_, cam_intrinsic_, cam_distortion_, rvecs, tvecs);
 
     if (send_image_)
     {

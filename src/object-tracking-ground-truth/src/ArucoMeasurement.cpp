@@ -21,6 +21,7 @@ ArucoMeasurement::ArucoMeasurement
     const std::string port_prefix,
     const std::string eye_name,
     const Ref<VectorXd> marker_offset,
+    Eigen::Ref<Eigen::MatrixXd> noise_covariance,
     const bool send_image,
     const bool send_aruco_estimate
 ) :
@@ -30,7 +31,8 @@ ArucoMeasurement::ArucoMeasurement
     send_aruco_estimate_(send_aruco_estimate),
     gaze_(port_prefix),
     measurement_(VectorXd(6)),
-    H_(MatrixXd::Identity(6, 6))
+    H_(MatrixXd::Identity(6, 6)),
+    R_(noise_covariance)
 {
     // Open camera  input port
     if(!port_image_in_.open("/" + port_prefix + "/cam/" + eye_name + ":i"))
@@ -262,6 +264,12 @@ std::pair<bool, bfl::Data> ArucoMeasurement::innovation(const bfl::Data& predict
 Eigen::MatrixXd ArucoMeasurement::getMeasurementMatrix() const
 {
     return H_;
+}
+
+
+std::pair<bool, MatrixXd> ArucoMeasurement::getNoiseCovarianceMatrix() const
+{
+    return std::make_pair(true, R_);
 }
 
 

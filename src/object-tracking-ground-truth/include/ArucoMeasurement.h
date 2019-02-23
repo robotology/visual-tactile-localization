@@ -19,7 +19,7 @@
 class ArucoMeasurement : bfl::LinearMeasurementModel
 {
 public:
-    ArucoMeasurement(const std::string port_prefix, const std::string eye_name, const Eigen::Ref<Eigen::VectorXd> marker_offset, const bool send_image, const bool send_aruco_estimate);
+    ArucoMeasurement(const std::string port_prefix, const std::string eye_name, const Eigen::Ref<Eigen::VectorXd> marker_offset, Eigen::Ref<Eigen::MatrixXd> noise_covariance, const bool send_image, const bool send_aruco_estimate);
 
     virtual ~ArucoMeasurement();
 
@@ -30,6 +30,8 @@ public:
     std::pair<bool, bfl::Data> innovation(const bfl::Data& predicted_measurements, const bfl::Data& measurements) const override;
 
     Eigen::MatrixXd getMeasurementMatrix() const;
+
+    std::pair<bool, Eigen::MatrixXd> getNoiseCovarianceMatrix() const;
 
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 
@@ -63,6 +65,11 @@ protected:
      * Linear measurement matrix
      */
     Eigen::MatrixXd H_;
+
+    /*
+     * Noise covariance matrix
+     */
+    Eigen::MatrixXd R_;
 
     /**
      * Image input / output.

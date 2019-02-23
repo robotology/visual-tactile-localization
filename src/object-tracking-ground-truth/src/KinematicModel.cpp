@@ -5,7 +5,7 @@
 using namespace Eigen;
 
 
-KinematicModel::DiscretizedKinematicModel
+KinematicModel::KinematicModel
 (
     const double sigma_x,  const double sigma_y,  const double sigma_z,
     const double sigma_yaw, const double sigma_pitch, const double sigma_roll
@@ -30,7 +30,7 @@ KinematicModel::DiscretizedKinematicModel
 }
 
 
-KinematicModel::~DiscretizedKinematicModel()
+KinematicModel::~KinematicModel()
 { }
 
 

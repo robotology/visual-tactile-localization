@@ -33,7 +33,6 @@ ArucoMeasurement::ArucoMeasurement
     send_aruco_estimate_(send_aruco_estimate),
     gaze_(port_prefix),
     measurement_(MatrixXd(6, 1)),
-    H_(MatrixXd::Identity(6, 6)),
     R_(noise_covariance)
 {
     // Open camera  input port
@@ -93,6 +92,15 @@ ArucoMeasurement::ArucoMeasurement
 
     // Configure a standard Aruco dictionary
     dictionary_ = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_250);
+
+    // Initialize measurement matrix
+    H_ = MatrixXd::Zero(6, 12);
+    H_(0, 0) = 1.0;
+    H_(1, 1) = 1.0;
+    H_(2, 2) = 1.0;
+    H_(3, 9) = 1.0;
+    H_(4, 10) = 1.0;
+    H_(5, 11) = 1.0;
 }
 
 

@@ -44,7 +44,7 @@ ArucoMeasurement::ArucoMeasurement
     }
 
     // Open image output port
-    if(!port_image_out_.open("/" + port_prefix + "/marker_estimate/" + eye_name + ":o"))
+    if(!port_image_out_.open("/" + port_prefix + "/marker-estimate/" + eye_name + ":o"))
     {
         std::string err = log_ID_ + "CTOR::ERROR\n\tError: cannot open marker estimate image output port.";
         throw(std::runtime_error(err));
@@ -53,7 +53,7 @@ ArucoMeasurement::ArucoMeasurement
     if (send_aruco_estimate_)
     {
         // Open aruco estimate output port
-        if(!port_aruco_estimate_out_.open("/" + port_prefix + "/marker_estimate/" + eye_name + ":o"))
+        if(!port_aruco_estimate_out_.open("/" + port_prefix + "/marker-estimate/" + eye_name + "/estimate:o"))
         {
             std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open marker estimate output port.";
             throw(std::runtime_error(err));

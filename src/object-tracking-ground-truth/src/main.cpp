@@ -113,7 +113,7 @@ int main(int argc, char** argv)
 
     /* Get length of ArUco marker side. */
     ResourceFinder rf_aruco = rf.findNestedResourceFinder("ARUCO");
-    double marker_side_length = rf_aruco.check("side_lenth", Value(0.01)).asDouble();
+    double marker_side_length = rf_aruco.check("side_length", Value(0.01)).asDouble();
 
     /* Get initial condition. */
     ResourceFinder rf_initial_conditions = rf.findNestedResourceFinder("INITIAL_CONDITION");

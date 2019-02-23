@@ -29,6 +29,7 @@ find_package(OpenCV REQUIRED)
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR
     include/ArucoMeasurement.h
+    include/ArucoTracker.h
     include/Correction.h
     include/KinematicModel.h
     )
@@ -36,12 +37,18 @@ set(${EXE_TARGET_NAME}_HDR
 set(${EXE_TARGET_NAME}_SRC
     src/main.cpp
     src/ArucoMeasurement.cpp
+    src/ArucoTracker.cpp
     src/Correction.cpp
     src/KinematicModel.cpp
+    src/main.cpp
     )
 
+set(${EXE_TARGET_NAME}_THRIFT_HDR thrift/arucotracker.thrift)
+
 # Application target calls
-add_executable(${EXE_TARGET_NAME} ${${EXE_TARGET_NAME}_HDR} ${${EXE_TARGET_NAME}_SRC})
+yarp_add_idl(${EXE_TARGET_NAME}_THRIFT_SRC ${${EXE_TARGET_NAME}_THRIFT_HDR})
+
+add_executable(${EXE_TARGET_NAME} ${${EXE_TARGET_NAME}_HDR} ${${EXE_TARGET_NAME}_SRC} ${${EXE_TARGET_NAME}_THRIFT_SRC})
 
 target_include_directories(${EXE_TARGET_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 

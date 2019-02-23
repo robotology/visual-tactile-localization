@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
 
+#include <BayesFilters/Data.h>
 #include <BayesFilters/LinearMeasurementModel.h>
 
 #include <Eigen/Dense>
@@ -25,6 +26,10 @@ public:
     std::pair<bool, bfl::Data> measure() const override;
 
     bool freezeMeasurements() override;
+
+    std::pair<bool, bfl::Data> innovation(const bfl::Data& predicted_measurements, const bfl::Data& measurements) const override;
+
+    Eigen::MatrixXd getMeasurementMatrix() const;
 
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 
@@ -53,6 +58,11 @@ protected:
      */
     Eigen::VectorXd measurement_;
     bool is_measurement_available_;
+
+    /*
+     * Linear measurement matrix
+     */
+    Eigen::MatrixXd H_;
 
     /**
      * Image input / output.

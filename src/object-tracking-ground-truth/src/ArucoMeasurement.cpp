@@ -8,6 +8,7 @@
 #include <yarp/sig/Image.h>
 #include <yarp/sig/Vector.h>
 
+using namespace bfl;
 using namespace yarp::cv;
 using namespace yarp::eigen;
 using namespace yarp::os;
@@ -28,7 +29,8 @@ ArucoMeasurement::ArucoMeasurement
     send_image_(send_image),
     send_aruco_estimate_(send_aruco_estimate),
     gaze_(port_prefix),
-    measurement_(VectorXd(6))
+    measurement_(VectorXd(6)),
+    H_(MatrixXd::Identity(6, 6))
 {
     // Open camera  input port
     if(!port_image_in_.open("/" + port_prefix + "/cam/" + eye_name + ":i"))
@@ -138,7 +140,7 @@ std::pair<bool, Transform<double, 3, Eigen::Affine>> ArucoMeasurement::getCamera
 }
 
 
-std::pair<bool, bfl::Data> ArucoMeasurement::measure() const
+std::pair<bool, Data> ArucoMeasurement::measure() const
 {
     return std::make_pair(is_measurement_available_, measurement_);
 }
@@ -244,6 +246,22 @@ bool ArucoMeasurement::freezeMeasurements()
     is_measurement_available_ = true;
 
     return false;
+}
+
+std::pair<bool, bfl::Data> ArucoMeasurement::innovation(const bfl::Data& predicted_measurements, const bfl::Data& measurements) const
+{
+    MatrixXd innovation = -(any::any_cast<MatrixXd>(predicted_measurements).colwise() - any::any_cast<MatrixXd>(measurements).col(0));
+
+    // Wrap Euler angles
+    innovation.bottomRows(3) = (std::complex<double>(0.0,1.0) * innovation.bottomRows(3)).array().exp().arg();
+
+    return std::make_pair(true, std::move(innovation));
+}
+
+
+Eigen::MatrixXd ArucoMeasurement::getMeasurementMatrix() const
+{
+    return H_;
 }
 
 

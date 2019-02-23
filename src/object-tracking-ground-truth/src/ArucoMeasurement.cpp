@@ -152,6 +152,7 @@ std::pair<bool, Data> ArucoMeasurement::measure() const
 
 bool ArucoMeasurement::freezeMeasurements()
 {
+
     ImageOf<PixelRgb>* image_in;
     image_in = port_image_in_.read(true);
 
@@ -170,8 +171,14 @@ bool ArucoMeasurement::freezeMeasurements()
     std::vector<std::vector<cv::Point2f> > corners, rejected;
     cv::aruco::detectMarkers(image, dictionary_, corners, ids);
 
+    // If everything is ok, it is expected to have one marker only
+    if (ids.size() != 1)
+    {
+        return false;
+    }
+
     // Estimate pose of markers
-    std::vector<cv::Mat> rvecs, tvecs;
+    std::vector<cv::Vec3d> rvecs, tvecs;
     cv::aruco::estimatePoseSingleMarkers(corners, marker_length_, cam_intrinsic_, cam_distortion_, rvecs, tvecs);
 
     if (send_image_)
@@ -181,14 +188,8 @@ bool ArucoMeasurement::freezeMeasurements()
             cv::aruco::drawAxis(image, cam_intrinsic_, cam_distortion_, rvecs[i], tvecs[i], 0.1);
 
         // Send the image
+        cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
         port_image_out_.write();
-    }
-
-    // If everything is ok, it is expected to have one marker only
-    if (ids.size() > 1)
-    {
-        std::cout << log_ID_ << "Error: identified more than one marker." << std::endl;
-        return false;
     }
 
     // Get camera pose
@@ -200,9 +201,9 @@ bool ArucoMeasurement::freezeMeasurements()
 
     // Compose marker pose
     Vector3d pos_wrt_cam;
-    pos_wrt_cam(0) = tvecs.at(0).at<double>(0, 0);
-    pos_wrt_cam(1) = tvecs.at(0).at<double>(1, 0);
-    pos_wrt_cam(2) = tvecs.at(0).at<double>(2, 0);
+    pos_wrt_cam(0) = tvecs.at(0)(0);
+    pos_wrt_cam(1) = tvecs.at(0)(1);
+    pos_wrt_cam(2) = tvecs.at(0)(2);
 
     cv::Mat att_wrt_cam_cv;
     cv::Rodrigues(rvecs[0], att_wrt_cam_cv);

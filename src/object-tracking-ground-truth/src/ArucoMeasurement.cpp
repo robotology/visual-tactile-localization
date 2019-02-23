@@ -32,7 +32,7 @@ ArucoMeasurement::ArucoMeasurement
     send_image_(send_image),
     send_aruco_estimate_(send_aruco_estimate),
     gaze_(port_prefix),
-    measurement_(VectorXd(6)),
+    measurement_(MatrixXd(6, 1)),
     H_(MatrixXd::Identity(6, 6)),
     R_(noise_covariance)
 {
@@ -228,13 +228,13 @@ bool ArucoMeasurement::freezeMeasurements()
     Transform<double, 3, Eigen::Affine> transform  = camera_transform * marker_transform * offset_transform;
 
     // Compose the actual measurement
-    measurement_.head<3>() = transform * marker_offset_.head<3>().homogeneous();
-    measurement_.tail<3>() = transform.rotation().eulerAngles(2, 1, 0);
+    measurement_.col(0).head<3>() = transform * marker_offset_.head<3>().homogeneous();
+    measurement_.col(0).tail<3>() = transform.rotation().eulerAngles(2, 1, 0);
 
     if (send_aruco_estimate_)
     {
         VectorXd pose(7);
-        pose.head<3>() = measurement_.head<3>();
+        pose.head<3>() = measurement_.col(0).head<3>();
 
         AngleAxisd orientation(transform.rotation());
 

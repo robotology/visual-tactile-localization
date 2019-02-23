@@ -60,7 +60,7 @@ protected:
     /**
      * Latest Object pose. This pose is used as a measurement.
      */
-    Eigen::VectorXd measurement_;
+    Eigen::MatrixXd measurement_;
     bool is_measurement_available_;
 
     /*

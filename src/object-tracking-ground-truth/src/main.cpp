@@ -62,6 +62,44 @@ VectorXd loadVectorDouble
 }
 
 
+VectorXi loadVectorInt
+(
+    ResourceFinder &rf,
+    const std::string key
+)
+{
+    bool ok = true;
+
+    if (rf.find(key).isNull())
+        ok = false;
+
+    Bottle* b = rf.find(key).asList();
+    if (b == nullptr)
+        ok = false;
+
+    if (!ok)
+    {
+        yError() << "[Main]" << "Unable to load vector" << key;
+        std::exit(EXIT_FAILURE);
+    }
+
+    VectorXi vector(b->size());
+    for (std::size_t i = 0; i < b->size(); i++)
+    {
+        Value item_v = b->get(i);
+        if (item_v.isNull())
+            return VectorXi(0);
+
+        if (!item_v.isInt())
+            return VectorXi(0);
+
+        vector(i) = item_v.asInt();
+    }
+
+    return vector;
+}
+
+
 std::string eigenToString(VectorXd& v)
 {
     std::stringstream ss;

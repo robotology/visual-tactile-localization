@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="yarpmanifest.xsl"?>
+<application>
+
+    <!-- GENERIC INFORMATION -->
+    <name>ObjectTrackingDataDumper</name>
+
+    <!-- REQUIRED MODULES -->
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/camera/left --txTime --rxTime --type image</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/camera/right --txTime --rxTime --type image</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/endeffector/pose --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/torso --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/right_arm --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/head --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/analog --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/hand_pose --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/aruco --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/aruco_kf --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/estimate --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/timings --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /datadumper/bbox --txTime --rxTime --type bottle</parameters>
+    </module>
+
+    <!-- REQUIRED CONNECTIONS -->
+
+    <!-- RC: DUMP -->
+    <connection>
+        <from>/object-tracking/bbox-estimator/iol_bbox:o</from>
+        <to>/datadumper/bbox</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/object-tracking/timings:o</from>
+        <to>/datadumper/timings</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/handTracking/VisualSIS/left/estimates:o</from>
+        <to>/datadumper/hand_pose</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/object-tracking-ground-truth/marker-estimate/left/estimate:o</from>
+        <to>/datadumper/aruco</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/object-tracking-ground-truth/estimate:o</from>
+        <to>/datadumper/aruco_kf</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/object-tracking/estimate:o</from>
+        <to>/datadumper/estimate</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/icub/camcalib/left/out</from>
+        <to>/datadumper/camera/left</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/icub/camcalib/right/out</from>
+        <to>/datadumper/camera/right</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/icub/cartesianController/right_arm/state:o</from>
+        <to>/datadumper/endeffector/pose</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/icub/torso/state:o</from>
+        <to>/datadumper/torso</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/icub/right_arm/state:o</from>
+        <to>/datadumper/right_arm</to>
+        <protocol>tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/icub/head/state:o</from>
+        <to>/datadumper/head</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/icub/right_hand/analog:o</from>
+        <to>/datadumper/analog</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+</application>

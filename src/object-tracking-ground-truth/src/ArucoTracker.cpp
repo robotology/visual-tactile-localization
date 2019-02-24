@@ -65,6 +65,8 @@ bool ArucoTracker::initialization()
     // Reset the sample time of the prediction
     prediction_->getStateModel().setProperty("reset");
 
+    // Reset the measurement model
+    correction_->getMeasurementModel().setProperty("reset");
 
     return true;
 }
@@ -83,6 +85,9 @@ bool ArucoTracker::reset_filter()
     // Reset the sample time of the prediction
     prediction_->getStateModel().setProperty("reset");
 
+    // Reset the measurement model
+    correction_->getMeasurementModel().setProperty("reset");
+
     reset();
 
     return true;
@@ -93,6 +98,9 @@ bool ArucoTracker::stop_filter()
 {
     // Reset the sample time of the prediction
     prediction_->getStateModel().setProperty("reset");
+
+    // Reset the measurement model
+    correction_->getMeasurementModel().setProperty("reset");
 
     reboot();
 

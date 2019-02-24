@@ -2,9 +2,12 @@
 #define ARUCOTRACKER_H
 
 #include <BayesFilters/Gaussian.h>
-#include <BayesFilters/GaussianCorrection.h>
-#include <BayesFilters/GaussianFilter.h>
+/* #include <BayesFilters/GaussianCorrection.h> */
+/* #include <BayesFilters/GaussianFilter.h> */
 #include <BayesFilters/GaussianPrediction.h>
+
+#include <Correction.h>
+#include <GaussianFilter_.h>
 
 #include <yarp/os/BufferedPort.h>
 #include <yarp/sig/Vector.h>
@@ -14,7 +17,7 @@
 #include <memory>
 
 
-class ArucoTracker : public bfl::GaussianFilter,
+class ArucoTracker : public bfl::GaussianFilter_,
                      public ArucoTrackerIDL
 {
 public:
@@ -23,7 +26,7 @@ public:
         const std::string port_prefix,
         bfl::Gaussian& initial_state,
         std::unique_ptr<bfl::GaussianPrediction> prediction,
-        std::unique_ptr<bfl::GaussianCorrection> correction
+        std::unique_ptr<Correction> correction
     );
 
     virtual ~ArucoTracker();

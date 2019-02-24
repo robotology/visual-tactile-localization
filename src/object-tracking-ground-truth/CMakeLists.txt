@@ -31,6 +31,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/ArucoMeasurement.h
     include/ArucoTracker.h
     include/Correction.h
+    include/GaussianFilter_.h
     include/KinematicModel.h
     )
 
@@ -39,6 +40,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/ArucoMeasurement.cpp
     src/ArucoTracker.cpp
     src/Correction.cpp
+    src/GaussianFilter_.cpp
     src/KinematicModel.cpp
     src/main.cpp
     )

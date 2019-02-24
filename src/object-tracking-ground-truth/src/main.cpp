@@ -234,7 +234,7 @@ int main(int argc, char** argv)
     /**
      * Correction step.
      */
-    std::unique_ptr<GaussianCorrection> correction =
+    std::unique_ptr<Correction> correction =
         std::unique_ptr<Correction>(new Correction(std::move(measurement_model)));
 
     /**

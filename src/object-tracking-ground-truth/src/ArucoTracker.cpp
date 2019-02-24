@@ -20,9 +20,9 @@ ArucoTracker::ArucoTracker
     const std::string port_prefix,
     Gaussian& initial_state,
     std::unique_ptr<GaussianPrediction> prediction,
-    std::unique_ptr<GaussianCorrection> correction
+    std::unique_ptr<Correction> correction
 ) :
-    GaussianFilter(initial_state, std::move(prediction), std::move(correction)),
+    GaussianFilter_(initial_state, std::move(prediction), std::move(correction)),
     initial_state_(initial_state),
     pause_(false)
 {
@@ -64,6 +64,7 @@ bool ArucoTracker::initialization()
 
     // Reset the sample time of the prediction
     prediction_->getStateModel().setProperty("reset");
+
 
     return true;
 }
@@ -159,7 +160,7 @@ void ArucoTracker::filteringStep()
     }
     // std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    GaussianFilter::filteringStep();
+    GaussianFilter_::filteringStep();
 
     // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 

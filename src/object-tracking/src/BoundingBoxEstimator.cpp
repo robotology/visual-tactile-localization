@@ -594,14 +594,14 @@ std::pair<bool, Eigen::MatrixXd> BoundingBoxEstimator::updateObjectBoundingBox()
         si_object_pose.resize(7);
 
         // Cartesian coordinates
-        si_object_pose[0] = object_3d_pose_perturbed_(0, i);
-        si_object_pose[1] = object_3d_pose_perturbed_(1, i);
-        si_object_pose[2] = object_3d_pose_perturbed_(2, i);
+        si_object_pose[0] = object_3d_pose_perturbed_(0);
+        si_object_pose[1] = object_3d_pose_perturbed_(1);
+        si_object_pose[2] = object_3d_pose_perturbed_(2);
 
         // Convert from Euler ZYX to axis/angle
-        AngleAxisd angle_axis(AngleAxisd(object_3d_pose_perturbed_(9, i), Vector3d::UnitZ()) *
-                              AngleAxisd(object_3d_pose_perturbed_(10, i), Vector3d::UnitY()) *
-                              AngleAxisd(object_3d_pose_perturbed_(11, i), Vector3d::UnitX()));
+        AngleAxisd angle_axis(AngleAxisd(object_3d_pose_perturbed_(9), Vector3d::UnitZ()) *
+                              AngleAxisd(object_3d_pose_perturbed_(10), Vector3d::UnitY()) *
+                              AngleAxisd(object_3d_pose_perturbed_(11), Vector3d::UnitX()));
         si_object_pose[3] = angle_axis.axis()(0);
         si_object_pose[4] = angle_axis.axis()(1);
         si_object_pose[5] = angle_axis.axis()(2);

@@ -15,11 +15,23 @@
 #include <yarp/sig/Image.h>
 #include <yarp/sig/Vector.h>
 
+#include <unordered_map>
+
 
 class ArucoMeasurement : public bfl::LinearMeasurementModel
 {
 public:
-    ArucoMeasurement(const std::string port_prefix, const std::string eye_name, const Eigen::Ref<Eigen::VectorXd> marker_offset, const double marker_length, Eigen::Ref<Eigen::MatrixXd> noise_covariance, const bool send_image, const bool send_aruco_estimate);
+    ArucoMeasurement
+    (
+        const std::string port_prefix,
+        const std::string eye_name,
+        const Eigen::VectorXi& marker_ids,
+        const Eigen::VectorXd& marker_lengths,
+        const std::vector<Eigen::VectorXd>& marker_offsets,
+        Eigen::Ref<Eigen::MatrixXd> noise_covariance,
+        const bool send_image,
+        const bool send_aruco_estimate
+    );
 
     virtual ~ArucoMeasurement();
 
@@ -50,7 +62,11 @@ protected:
 
     cv::Mat image_with_marker_;
 
-    Eigen::VectorXd marker_offset_;
+    std::unordered_map<int, int> marker_ids_;
+
+    Eigen::VectorXd marker_lengths_;
+
+    std::vector<Eigen::VectorXd> marker_offsets_;
 
     double marker_length_;
 

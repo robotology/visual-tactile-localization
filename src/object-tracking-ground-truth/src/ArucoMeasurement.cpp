@@ -20,15 +20,16 @@ ArucoMeasurement::ArucoMeasurement
 (
     const std::string port_prefix,
     const std::string eye_name,
-    const Ref<VectorXd> marker_offset,
-    const double marker_length,
+    const VectorXi& marker_ids,
+    const VectorXd& marker_lengths,
+    const std::vector<VectorXd>& marker_offsets,
     Eigen::Ref<Eigen::MatrixXd> noise_covariance,
     const bool send_image,
     const bool send_aruco_estimate
 ) :
     eye_name_(eye_name),
-    marker_offset_(marker_offset),
-    marker_length_(marker_length),
+    marker_lengths_(marker_lengths),
+    marker_offsets_(marker_offsets),
     send_image_(send_image),
     send_aruco_estimate_(send_aruco_estimate),
     gaze_(port_prefix),
@@ -102,6 +103,12 @@ ArucoMeasurement::ArucoMeasurement
     H_(3, 9) = 1.0;
     H_(4, 10) = 1.0;
     H_(5, 11) = 1.0;
+
+    // Initialize map of marker ids
+    // key is the marker_id
+    // value is the position in the vector of ids
+    for (std::size_t i = 0; i < marker_ids.size(); i++)
+        marker_ids_[marker_ids(i)] = i;
 }
 
 
@@ -179,15 +186,30 @@ bool ArucoMeasurement::freezeMeasurements()
     std::vector<std::vector<cv::Point2f> > corners, rejected;
     cv::aruco::detectMarkers(image, dictionary_, corners, ids);
 
-    // If everything is ok, it is expected to have one marker only
-    if (ids.size() != 1)
+    // Search for a feasible id
+    bool found_marker = false;
+    int marker_index;
+    for (std::size_t i = 0; i < ids.size(); i++)
+    {
+        std::unordered_map<int, int>::const_iterator match = marker_ids_.find (ids[i]);
+        if (match != marker_ids_.end())
+        {
+            found_marker = true;
+
+            marker_index = match->second;
+
+            break;
+        }
+    }
+
+    if (!found_marker)
     {
         return true;
     }
 
     // Estimate pose of markers
     std::vector<cv::Vec3d> rvecs, tvecs;
-    cv::aruco::estimatePoseSingleMarkers(corners, marker_length_, cam_intrinsic_, cam_distortion_, rvecs, tvecs);
+    cv::aruco::estimatePoseSingleMarkers(corners, marker_lengths_(marker_index), cam_intrinsic_, cam_distortion_, rvecs, tvecs);
 
     if (send_image_)
     {
@@ -226,18 +248,21 @@ bool ArucoMeasurement::freezeMeasurements()
     marker_transform = Translation<double, 3>(pos_wrt_cam);
     marker_transform.rotate(att_wrt_cam_eigen);
 
+    // Take the correct marker offset
+    VectorXd marker_offset = marker_offsets_.at(marker_index);
+
     // Compose offset pose between marker to body fixed object frame
     Transform<double, 3, Eigen::Affine> offset_transform;
     offset_transform = Translation<double, 3>(Vector3d::Zero());
-    offset_transform.rotate(AngleAxisd(AngleAxisd(marker_offset_(3), Vector3d::UnitX()) *
-				       AngleAxisd(marker_offset_(4), Vector3d::UnitY()) *
-				       AngleAxisd(marker_offset_(5), Vector3d::UnitZ())));
+    offset_transform.rotate(AngleAxisd(AngleAxisd(marker_offset(3), Vector3d::UnitX()) *
+				       AngleAxisd(marker_offset(4), Vector3d::UnitY()) *
+				       AngleAxisd(marker_offset(5), Vector3d::UnitZ())));
 
     // Compose transform from root frame to object frame
     Transform<double, 3, Eigen::Affine> transform  = camera_transform * marker_transform * offset_transform;
 
     // Compose the actual measurement
-    measurement_.col(0).head<3>() = transform * marker_offset_.head<3>().homogeneous();
+    measurement_.col(0).head<3>() = transform * marker_offset.head<3>().homogeneous();
     measurement_.col(0).tail<3>() = transform.rotation().eulerAngles(2, 1, 0);
 
     if (send_aruco_estimate_)

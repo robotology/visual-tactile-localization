@@ -165,7 +165,7 @@ bool ArucoMeasurement::freezeMeasurements()
     image_in = port_image_in_.read(true);
 
     if (image_in == nullptr)
-        return false;
+        return true;
 
     // Prepare output image
     ImageOf<PixelRgb>& image_out = port_image_out_.prepare();
@@ -182,7 +182,7 @@ bool ArucoMeasurement::freezeMeasurements()
     // If everything is ok, it is expected to have one marker only
     if (ids.size() != 1)
     {
-        return false;
+        return true;
     }
 
     // Estimate pose of markers
@@ -205,7 +205,7 @@ bool ArucoMeasurement::freezeMeasurements()
     Transform<double, 3, Eigen::Affine> camera_transform;
     std::tie(valid_camera_pose, camera_transform) = getCameraPose();
     if (!valid_camera_pose)
-        return false;
+        return true;
 
     // Compose marker pose
     Vector3d pos_wrt_cam;

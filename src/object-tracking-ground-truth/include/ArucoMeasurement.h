@@ -35,6 +35,8 @@ public:
 
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 
+    bool setProperty(const std::string& property) override;
+
 protected:
     std::pair<bool, Eigen::Transform<double, 3, Eigen::Affine>> getCameraPose();
 

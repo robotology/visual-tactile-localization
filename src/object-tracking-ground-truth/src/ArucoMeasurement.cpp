@@ -33,7 +33,8 @@ ArucoMeasurement::ArucoMeasurement
     send_aruco_estimate_(send_aruco_estimate),
     gaze_(port_prefix),
     measurement_(MatrixXd(6, 1)),
-    R_(noise_covariance)
+    R_(noise_covariance),
+    is_measurement_available_(false)
 {
     // Open camera  input port
     if(!port_image_in_.open("/" + port_prefix + "/cam/" + eye_name + ":i"))
@@ -287,4 +288,11 @@ std::pair<std::size_t, std::size_t> ArucoMeasurement::getOutputSize() const
 {
     /* Three cartesian coordinates, three euler angles (ZXY parametrization). */
     return std::make_pair(3, 3);
+}
+
+
+bool ArucoMeasurement::setProperty(const std::string& property)
+{
+    if (property == "reset")
+        is_measurement_available_ = false;
 }

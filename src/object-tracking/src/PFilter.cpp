@@ -246,12 +246,12 @@ void PFilter::filteringStep()
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     bbox_estimator_->step();
-    Vector4d bounding_box;
-    if (getFilteringStep() == 0)
-        bounding_box = bbox_estimator_->getEstimate(pred_particle_.weight());
-    else
-        bounding_box = bbox_estimator_->getEstimate(cor_particle_.weight());
-    icub_point_cloud_share_->setBoundingBox(bounding_box);
+    // Vector4d bounding_box;
+    // if (getFilteringStep() == 0)
+    //     bounding_box = bbox_estimator_->getEstimate(pred_particle_.weight());
+    // else
+    //     bounding_box = bbox_estimator_->getEstimate(cor_particle_.weight());
+    icub_point_cloud_share_->setBoundingBox(bbox_estimator_->getEstimate());
 
     if (getFilteringStep() != 0)
         prediction_->predict(cor_particle_, pred_particle_);
@@ -273,15 +273,15 @@ void PFilter::filteringStep()
         resampling_->resample(cor_particle_, res_particle, res_parent);
 
         // resample also bounding box particles
-        bbox_estimator_->resampleParticles(res_parent);
+        // bbox_estimator_->resampleParticles(res_parent);
 
         cor_particle_ = res_particle;
     }
 
     // Use estimate as hint for the bounding box estimator
-    bbox_estimator_->setObjectPose(cor_particle_.mean());
+    bbox_estimator_->setObjectPose(cor_particle_.mean(), cor_particle_.weight());
     // Enable/disable bounding box object feedforward term according to the current state of occlusion
-    bbox_estimator_->enableObjectFeedforward(!(icub_point_cloud_share_->getOcclusion()));
+    // bbox_estimator_->enableObjectFeedforward(!(icub_point_cloud_share_->getOcclusion()));
     // Eanble/disable bounding box hand feedforward term according to the corrent state of contact
     bbox_estimator_->enableHandFeedforward(icub_point_cloud_share_->getContactState());
 

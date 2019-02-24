@@ -77,6 +77,11 @@ public:
     void setObjectPose(const Eigen::Ref<const Eigen::MatrixXd>& pose);
 
     /**
+     * Set the current object 3D estimate to be used as an hint by the bounding box estimator.
+     */
+    void setObjectPose(const Eigen::Ref<const Eigen::MatrixXd>& pose, const Eigen::Ref<const Eigen::VectorXd>& weights);
+
+    /**
      * Get the number of components.
      */
     std::size_t getNumberComponents();
@@ -214,7 +219,8 @@ protected:
      * Object 3D pose.
      */
     Eigen::MatrixXd object_3d_pose_;
-    Eigen::MatrixXd object_3d_pose_perturbed_;
+    Eigen::VectorXd object_3d_pose_perturbed_;
+    Eigen::VectorXd object_3d_pose_weights_;
     bool is_object_pose_initialized_;
 
     /*
@@ -225,7 +231,7 @@ protected:
     /*
      * Relative rotation between hand and object.
      */
-    Eigen::MatrixXd relative_hand_object_rotation_;
+    Eigen::Matrix3d relative_hand_object_rotation_;
 
     /**
      * IOL object category name (required to initialize the bounding box of the object).

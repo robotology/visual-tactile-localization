@@ -214,10 +214,11 @@ Eigen::VectorXd BoundingBoxEstimator::getEstimate()
 
 Eigen::VectorXd BoundingBoxEstimator::getEstimate(const Ref<const VectorXd>& weights)
 {
-    VectorXd estimate;
-    std::tie(std::ignore, estimate) = extractor_.extract(corr_bbox_.mean().leftCols(corr_bbox_.components), weights);
+    // VectorXd estimate;
+    // std::tie(std::ignore, estimate) = extractor_.extract(corr_bbox_.mean().leftCols(corr_bbox_.components), weights);
 
-    return estimate;
+    // return estimate;
+    return corr_bbox_.mean(0);
 }
 
 
@@ -249,9 +250,19 @@ void BoundingBoxEstimator::reset()
 }
 
 
-void BoundingBoxEstimator::setObjectPose(const Eigen::Ref<const Eigen::MatrixXd>& pose)
+void BoundingBoxEstimator::setObjectPose(const Ref<const MatrixXd>& pose)
+{
+    VectorXd weights(1);
+    weights(0) = 1.0;
+
+    setObjectPose(pose, weights);
+}
+
+void BoundingBoxEstimator::setObjectPose(const Ref<const MatrixXd>& pose, const Ref<const VectorXd>& weights)
 {
     object_3d_pose_ = pose;
+
+    object_3d_pose_weights_ = weights;
 
     is_object_pose_initialized_ = true;
 }
@@ -277,24 +288,24 @@ void BoundingBoxEstimator::enableHandFeedforward(const bool& enable)
 
 void BoundingBoxEstimator::resampleParticles(const VectorXi& parents)
 {
-    GaussianMixture resampled_pred(pred_bbox_.components, 4);
-    GaussianMixture resampled_corr(pred_bbox_.components, 4);
-    MatrixXd resampled_hand_object_rotation(relative_hand_object_rotation_.rows(), relative_hand_object_rotation_.cols());
+    // GaussianMixture resampled_pred(pred_bbox_.components, 4);
+    // GaussianMixture resampled_corr(pred_bbox_.components, 4);
+    // MatrixXd resampled_hand_object_rotation(relative_hand_object_rotation_.rows(), relative_hand_object_rotation_.cols());
 
-    for (std::size_t i = 0; i < pred_bbox_.components; i++)
-    {
-        resampled_pred.mean(i) = pred_bbox_.mean(parents(i));
-        resampled_pred.covariance(i) = pred_bbox_.covariance(parents(i));
+    // for (std::size_t i = 0; i < pred_bbox_.components; i++)
+    // {
+    //     resampled_pred.mean(i) = pred_bbox_.mean(parents(i));
+    //     resampled_pred.covariance(i) = pred_bbox_.covariance(parents(i));
 
-        resampled_corr.mean(i) = corr_bbox_.mean(parents(i));
-        resampled_corr.covariance(i) = corr_bbox_.covariance(parents(i));
+    //     resampled_corr.mean(i) = corr_bbox_.mean(parents(i));
+    //     resampled_corr.covariance(i) = corr_bbox_.covariance(parents(i));
 
-        resampled_hand_object_rotation.col(i) = relative_hand_object_rotation_.col(parents(i));
-    }
+    //     resampled_hand_object_rotation.col(i) = relative_hand_object_rotation_.col(parents(i));
+    // }
 
-    pred_bbox_ = resampled_pred;
-    corr_bbox_ = resampled_corr;
-    relative_hand_object_rotation_ = resampled_hand_object_rotation;
+    // pred_bbox_ = resampled_pred;
+    // corr_bbox_ = resampled_corr;
+    // relative_hand_object_rotation_ = resampled_hand_object_rotation;
 }
 
 
@@ -383,12 +394,12 @@ Eigen::MatrixXd BoundingBoxEstimator::evalHandExogenousInput()
                 //                             AngleAxisd(object_3d_pose_perturbed_.col(i)(11), Vector3d::UnitX())).toRotationMatrix();
                 // Matrix3d perturbed_rot = object_rot_prev * relative_rot;
 
-                Matrix3d relative_rotation = (AngleAxisd(relative_hand_object_rotation_.col(i)(9), Vector3d::UnitZ()) *
-                                              AngleAxisd(relative_hand_object_rotation_.col(i)(10), Vector3d::UnitY()) *
-                                              AngleAxisd(relative_hand_object_rotation_.col(i)(11), Vector3d::UnitX())).toRotationMatrix();
+                // Matrix3d relative_rotation = (AngleAxisd(relative_hand_object_rotation_.col(i)(9), Vector3d::UnitZ()) *
+                //                               AngleAxisd(relative_hand_object_rotation_.col(i)(10), Vector3d::UnitY()) *
+                //                               AngleAxisd(relative_hand_object_rotation_.col(i)(11), Vector3d::UnitX())).toRotationMatrix();
 
-                Vector3d euler_angles = (hand_rot_curr * relative_rotation).eulerAngles(2, 1, 0);
-                object_3d_pose_perturbed_.col(i).segment(9, 3) = euler_angles;
+                Vector3d euler_angles = (hand_rot_curr * relative_hand_object_rotation_).eulerAngles(2, 1, 0);
+                object_3d_pose_perturbed_.segment(9, 3) = euler_angles;
             }
 
             // Evaluate current bounding boxes
@@ -411,7 +422,11 @@ Eigen::MatrixXd BoundingBoxEstimator::evalHandExogenousInput()
         // will be iteratively updated using only the forward kinematics of the hand
         if (is_object_pose_initialized_)
         {
-            object_3d_pose_perturbed_ = object_3d_pose_;
+            // find particles with maximum weight
+            int max_index;
+            object_3d_pose_weights_.maxCoeff(&max_index);
+
+            object_3d_pose_perturbed_ = object_3d_pose_.col(max_index);
             bool valid_bbox;
             std::tie(valid_bbox, proj_bbox_) = BoundingBoxEstimator::updateObjectBoundingBox();
 
@@ -422,19 +437,17 @@ Eigen::MatrixXd BoundingBoxEstimator::evalHandExogenousInput()
             }
 
             // Store the relative orientation between the hand and the object
-            relative_hand_object_rotation_.resize(3, pred_bbox_.components);
+            // relative_hand_object_rotation_.resize(3, pred_bbox_.components);
 
             Matrix3d hand_rot_curr = AngleAxisd(curr_hand_pose(6), curr_hand_pose.segment(3, 3)).toRotationMatrix();
 
             for (std::size_t i = 0; i < pred_bbox_.components; i++)
             {
-                Matrix3d object_rot_curr = (AngleAxisd(object_3d_pose_perturbed_.col(i)(9), Vector3d::UnitZ()) *
-                                            AngleAxisd(object_3d_pose_perturbed_.col(i)(10), Vector3d::UnitY()) *
-                                            AngleAxisd(object_3d_pose_perturbed_.col(i)(11), Vector3d::UnitX())).toRotationMatrix();
+                Matrix3d object_rot_curr = (AngleAxisd(object_3d_pose_perturbed_(9), Vector3d::UnitZ()) *
+                                            AngleAxisd(object_3d_pose_perturbed_(10), Vector3d::UnitY()) *
+                                            AngleAxisd(object_3d_pose_perturbed_(11), Vector3d::UnitX())).toRotationMatrix();
 
-                Matrix3d relative_rotation = hand_rot_curr.transpose() * object_rot_curr;
-
-                relative_hand_object_rotation_.col(i) = relative_rotation.eulerAngles(2, 1, 0);
+                relative_hand_object_rotation_ = hand_rot_curr.transpose() * object_rot_curr;
             }
         }
     }

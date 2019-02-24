@@ -651,7 +651,8 @@ int main(int argc, char** argv)
         std::pair<int, int> bottom_right = std::make_pair(static_cast<int>(bbox_br_0(0)), static_cast<int>(bbox_br_0(1)));
         bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
             new BoundingBoxEstimator(std::make_pair(top_left, bottom_right),
-                                     number_particles,
+                                     // number_particles,
+                                     1,
                                      "object-tracking/bbox-estimator",
                                      "left",
                                      object_mesh_path_obj,

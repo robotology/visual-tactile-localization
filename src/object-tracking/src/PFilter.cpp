@@ -308,10 +308,10 @@ void PFilter::filteringStep()
     std::cout << "Neff is: " << neff<< std::endl << std::endl;
 
     // Send execution time
-    double execution_time = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+    double execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     Vector& timings = port_timings_out_.prepare();
     timings.resize(1);
-    timings[0] = execution_time;
+    timings[0] = execution_time / 1000.0;
     port_timings_out_.write();
 
     if (valid_estimate)

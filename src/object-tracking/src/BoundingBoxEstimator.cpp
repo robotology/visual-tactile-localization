@@ -37,6 +37,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
         IOL_object_name,
         IOL_bbox_scale,
         send_mask,
+        false,
         initial_covariance,
         process_noise_covariance,
         measurement_noise_covariance
@@ -71,6 +72,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     const std::string IOL_object_name,
     const double IOL_bbox_scale,
     const bool send_mask,
+    const bool bounding_box_from_port,
     const Eigen::Ref<const Eigen::MatrixXd>& initial_covariance,
     const Eigen::Ref<const Eigen::MatrixXd>& process_noise_covariance,
     const Eigen::Ref<const Eigen::MatrixXd>& measurement_noise_covariance
@@ -81,6 +83,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     IOL_object_name_(IOL_object_name),
     IOL_bbox_scale_(IOL_bbox_scale),
     send_mask_(send_mask),
+    bounding_box_from_port_(bounding_box_from_port),
     user_provided_mean_0_(false),
     extractor_(4),
     is_initialized_(false),
@@ -104,6 +107,15 @@ BoundingBoxEstimator::BoundingBoxEstimator
     {
         std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open iol bounding box output port.";
         throw(std::runtime_error(err));
+    }
+
+    if (bounding_box_from_port_)
+    {
+        if (!(iol_bbox_port_out_.open("/" + port_prefix + "/iol_bbox:i")))
+        {
+            std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open iol bounding box input port.";
+            throw(std::runtime_error(err));
+        }
     }
 
     // Try to open the hand pose input port
@@ -184,6 +196,9 @@ BoundingBoxEstimator::~BoundingBoxEstimator()
     hand_pose_port_in_.close();
     iol_bbox_port_out_.close();
 
+    if (bounding_box_from_port_)
+        iol_bbox_port_in_.close();
+
     if (send_mask_)
     {
         port_image_in_.close();
@@ -197,7 +212,20 @@ void BoundingBoxEstimator::step()
     while(!is_initialized_)
     {
         bool valid_measure;
-        std::tie(valid_measure, iol_mean_0_) = measure();
+        if (bounding_box_from_port_)
+        {
+            Vector* bbox = iol_bbox_port_in_.read(true);
+
+            if (bbox != nullptr)
+            {
+                iol_mean_0_ = toEigen(*bbox);
+                valid_measure = true;
+            }
+        }
+        else
+        {
+            std::tie(valid_measure, iol_mean_0_) = measure();
+        }
 
         if (valid_measure)
         {

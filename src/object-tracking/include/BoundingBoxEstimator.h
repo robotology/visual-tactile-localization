@@ -50,6 +50,7 @@ public:
         const std::string IOL_object_name,
         const double IOL_bbox_scale,
         const bool send_mask,
+        const bool bounding_box_from_port,
         const Eigen::Ref<const Eigen::MatrixXd>& initial_covariance,
         const Eigen::Ref<const Eigen::MatrixXd>& process_noise_covariance,
         const Eigen::Ref<const Eigen::MatrixXd>& measurement_noise_covariance
@@ -257,10 +258,14 @@ protected:
     yarp::os::Stamp hand_pose_stamp_;
 
     /**
-     * IOL bounding box output port.
-     * The initial bounding box received by IOL is sent for debugging purposes.
+     * IOL bounding box input/output port.
+     * The initial bounding box received by IOL is sent and can be received for debugging purposes.
      */
+    yarp::os::BufferedPort<yarp::sig::Vector> iol_bbox_port_in_;
+
     yarp::os::BufferedPort<yarp::sig::Vector> iol_bbox_port_out_;
+
+    bool bounding_box_from_port_;
 
     /**
      * RPC clients.

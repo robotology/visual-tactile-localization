@@ -146,15 +146,15 @@ int main(int argc, char** argv)
     rf_offsets.setDefaultContext("object-tracking-ground-truth");
     rf_offsets.setDefaultConfigFile("marker_offsets.ini");
     rf_offsets.configure(argc, argv);
-    ResourceFinder rf_offset_object = rf_offsets.findNestedResourceFinder(object_name.c_str());
+    ResourceFinder rf_offsets_object = rf_offsets.findNestedResourceFinder(object_name.c_str());
 
-    VectorXi marker_ids = loadVectorInt(rf_offsets, "marker_ids");
+    VectorXi marker_ids = loadVectorInt(rf_offsets_object, "marker_ids");
 
-    VectorXd marker_lengths = loadVectorDouble(rf_offsets, "marker_sizes", marker_ids.size());
+    VectorXd marker_lengths = loadVectorDouble(rf_offsets_object, "marker_sizes", marker_ids.size());
 
     std::vector<VectorXd> marker_offsets;
     for (std::size_t i = 0; i < marker_ids.size(); i++)
-        marker_offsets.push_back(loadVectorDouble(rf_offset_object, "offset" + std::to_string(i), 6));
+        marker_offsets.push_back(loadVectorDouble(rf_offsets_object, "offset" + std::to_string(i), 6));
 
     /* Get length of ArUco marker side. */
     ResourceFinder rf_aruco = rf.findNestedResourceFinder("ARUCO");

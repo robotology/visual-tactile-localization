@@ -86,6 +86,8 @@ protected:
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_out_;
 
+    yarp::os::BufferedPort<yarp::sig::Vector> port_timings_out_;
+
     yarp::os::Port port_rpc_command_;
 
     std::unique_ptr<BoundingBoxEstimator> bbox_estimator_;

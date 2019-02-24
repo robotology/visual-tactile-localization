@@ -52,6 +52,13 @@ PFilter::PFilter
         throw(std::runtime_error(err));
     }
 
+    // Open timings output port
+    if (!port_timings_out_.open("/" + port_prefix + "/timings:o"))
+    {
+        std::string err = "PFILTER::CTOR::ERROR\n\tError: cannot timings output port.";
+        throw(std::runtime_error(err));
+    }
+
     // Open RPC input port for commands
     if (!port_rpc_command_.open("/" + port_prefix + "/cmd:i"))
     {
@@ -72,6 +79,7 @@ PFilter::PFilter
 PFilter::~PFilter()
 {
     port_estimate_out_.close();
+    port_timings_out_.close();
 }
 
 
@@ -291,6 +299,21 @@ void PFilter::filteringStep()
     if (!valid_estimate)
         yInfo() << log_ID_ << "Cannot extract point estimate!";
 
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    std::cout << "Executed step in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << " ms"
+              << std::endl;
+    std::cout << "Neff is: " << neff<< std::endl << std::endl;
+
+    // Send execution time
+    double execution_time = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+    Vector& timings = port_timings_out_.prepare();
+    timings.resize(1);
+    timings[0] = execution_time;
+    port_timings_out_.write();
+
     if (valid_estimate)
     {
         // Log
@@ -310,14 +333,8 @@ void PFilter::filteringStep()
         toEigen(estimate_yarp) = estimate;
         port_estimate_out_.write();
     }
-
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-    std::cout << "Executed step in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms"
-              << std::endl;
-    std::cout << "Neff is: " << neff<< std::endl << std::endl;
+    else
+        std::cout << "Unable to extract the estimate!" << std::endl;
 
     if ((icub_point_cloud_share_->getOcclusion()) && (!icub_point_cloud_share_->getContactState()))
         prediction_->getStateModel().setProperty("tdd_advance");

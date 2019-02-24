@@ -304,6 +304,7 @@ int main(int argc, char** argv)
     bbox_Q                            = loadVectorDouble(rf_bbox, "Q", 4);
     bbox_R                            = loadVectorDouble(rf_bbox, "R", 4);
     bool use_bbox_0                   = rf_bbox.check("use_bbox_0", Value(false)).asBool();
+    bool use_bbox_port                = rf_bbox.check("use_bbox_port", Value(false)).asBool();
     if (use_bbox_0)
     {
         bbox_tl_0 = loadVectorDouble(rf_bbox, "bbox_tl_0", 2);
@@ -431,6 +432,7 @@ int main(int argc, char** argv)
         yInfo() << log_ID << "- bbox_tl_0:" << eigenToString(bbox_tl_0);
         yInfo() << log_ID << "- bbox_br_0:" << eigenToString(bbox_br_0);
     }
+    yInfo() << log_ID << "- use_bbox_port:"   << use_bbox_port;
     yInfo() << log_ID << "- cov_0"            << eigenToString(bbox_cov_0);
     yInfo() << log_ID << "- Q"                << eigenToString(bbox_Q);
     yInfo() << log_ID << "-R"                 << eigenToString(bbox_R);
@@ -676,6 +678,7 @@ int main(int argc, char** argv)
                                      iol_object_name,
                                      iol_bbox_scale,
                                      enable_send_mask,
+                                     use_bbox_port,
                                      bbox_cov_0_diagonal,
                                      bbox_Q_diagonal,
                                      bbox_R_diagonal));

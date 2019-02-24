@@ -140,14 +140,21 @@ int main(int argc, char** argv)
     ResourceFinder rf_object = rf_object_tracking.findNestedResourceFinder("OBJECT");
     const std::string object_name = rf_object.check("object_name", Value("ycb_mustard_bottle")).asString();
 
-    /* Get marker offset. */
+    /* Get marker properties. */
     ResourceFinder rf_offsets;
     rf_offsets.setVerbose();
     rf_offsets.setDefaultContext("object-tracking-ground-truth");
     rf_offsets.setDefaultConfigFile("marker_offsets.ini");
     rf_offsets.configure(argc, argv);
     ResourceFinder rf_offset_object = rf_offsets.findNestedResourceFinder(object_name.c_str());
-    VectorXd marker_offset = loadVectorDouble(rf_offset_object, "offset", 6);
+
+    VectorXi marker_ids = loadVectorInt(rf_offsets, "marker_ids");
+
+    VectorXd marker_lengths = loadVectorDouble(rf_offsets, "marker_sizes", marker_ids.size());
+
+    std::vector<VectorXd> marker_offsets;
+    for (std::size_t i = 0; i < marker_ids.size(); i++)
+        marker_offsets.push_back(loadVectorDouble(rf_offset_object, "offset" + std::to_string(i), 6));
 
     /* Get length of ArUco marker side. */
     ResourceFinder rf_aruco = rf.findNestedResourceFinder("ARUCO");
@@ -190,9 +197,6 @@ int main(int argc, char** argv)
     bool send_aruco_estimate = rf_misc.check("send_aruco_estimate", Value(false)).asBool();
 
     /* Log parameters. */
-    yInfo() << log_ID << "Aruco:";
-    yInfo() << log_ID << "- side_length: " << marker_side_length;
-
     yInfo() << log_ID << "Initial conditions:";
     yInfo() << log_ID << "- x_0: "           << eigenToString(x_0);
     yInfo() << log_ID << "- v_0: "           << eigenToString(v_0);
@@ -212,7 +216,14 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Object:";
     yInfo() << log_ID << "- object_name:"   << object_name;
-    yInfo() << log_ID << "- marker_offset:" << eigenToString(marker_offset);
+
+    yInfo() << log_ID << "Aruco:";
+    for (std::size_t i = 0; i < marker_ids.size(); i++)
+    {
+        yInfo() << log_ID << "- marker_" << marker_ids(i) <<":";
+        yInfo() << log_ID << "__length:" << marker_lengths(i);
+        yInfo() << log_ID << "__offset:" << eigenToString(marker_offsets.at(i));
+    }
 
     yInfo() << log_ID << "Logging:";
     yInfo() << log_ID << "- enable_log:"        << enable_log;
@@ -237,7 +248,7 @@ int main(int argc, char** argv)
      * ArUco measurement model.
      */
     std::unique_ptr<LinearMeasurementModel> measurement_model = std::unique_ptr<LinearMeasurementModel>(
-        new ArucoMeasurement(port_prefix, "left", marker_offset, marker_side_length, noise_covariance_diagonal, send_aruco_image, send_aruco_estimate));
+        new ArucoMeasurement(port_prefix, "left", marker_ids, marker_lengths, marker_offsets, noise_covariance_diagonal, send_aruco_image, send_aruco_estimate));
 
     /**
      * Initial condition.

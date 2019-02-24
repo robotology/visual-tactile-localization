@@ -194,8 +194,14 @@
     <protocol>tcp</protocol>
   </connection>
 
+  <!-- <connection> -->
+  <!--   <from>/object-tracking-ground-truth/marker-estimate/left/estimate:o</from> -->
+  <!--   <to>/object-tracking-viewer/ground-truth:i</to> -->
+  <!--   <protocol>tcp</protocol> -->
+  <!-- </connection> -->
+
   <connection>
-    <from>/object-tracking-ground-truth/marker-estimate/left/estimate:o</from>
+    <from>/object-tracking-ground-truth/estimate:o</from>
     <to>/object-tracking-viewer/ground-truth:i</to>
     <protocol>tcp</protocol>
   </connection>

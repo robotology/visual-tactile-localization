@@ -12,9 +12,11 @@
 
 #include <SuperimposeMesh/SICAD.h>
 
-#include <yarp/sig/Image.h>
+#include <yarp/os/BufferedPort.h>
 #include <yarp/os/RpcClient.h>
 #include <yarp/os/Stamp.h>
+#include <yarp/sig/Image.h>
+#include <yarp/sig/Vector.h>
 
 
 class BoundingBoxEstimator
@@ -169,6 +171,11 @@ protected:
     bool user_provided_mean_0_;
 
     /**
+     * IOL initial condition;
+     */
+    Eigen::VectorXd iol_mean_0_;
+
+    /**
      * Enable/disable object feedforward term.
      */
     bool enable_object_feedforward_;
@@ -248,6 +255,12 @@ protected:
      */
     yarp::os::BufferedPort<yarp::sig::Vector> hand_pose_port_in_;
     yarp::os::Stamp hand_pose_stamp_;
+
+    /**
+     * IOL bounding box output port.
+     * The initial bounding box received by IOL is sent for debugging purposes.
+     */
+    yarp::os::BufferedPort<yarp::sig::Vector> iol_bbox_port_out_;
 
     /**
      * RPC clients.

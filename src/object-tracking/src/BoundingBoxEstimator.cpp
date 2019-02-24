@@ -99,6 +99,13 @@ BoundingBoxEstimator::BoundingBoxEstimator
         throw(std::runtime_error(err));
     }
 
+    // Try to open the IOL bounding box output port
+    if (!(iol_bbox_port_out_.open("/" + port_prefix + "/iol_bbox:o")))
+    {
+        std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open iol bounding box output port.";
+        throw(std::runtime_error(err));
+    }
+
     // Try to open the hand pose input port
     if (!(hand_pose_port_in_.open("/" + port_prefix + "/hand_pose:i")))
     {
@@ -175,6 +182,7 @@ BoundingBoxEstimator::~BoundingBoxEstimator()
     // Close ports
     opc_rpc_client_.close();
     hand_pose_port_in_.close();
+    iol_bbox_port_out_.close();
 
     if (send_mask_)
     {
@@ -189,17 +197,23 @@ void BoundingBoxEstimator::step()
     while(!is_initialized_)
     {
         bool valid_measure;
-        VectorXd mean_0;
-        std::tie(valid_measure, mean_0) = measure();
+        std::tie(valid_measure, iol_mean_0_) = measure();
 
         if (valid_measure)
         {
             for (std::size_t i = 0; i < corr_bbox_.components; i++)
-                corr_bbox_.mean(i) = mean_0;
+                corr_bbox_.mean(i) = iol_mean_0_;
 
             is_initialized_ = true;
         }
     }
+
+    yarp::sig::Vector& bbox = iol_bbox_port_out_.prepare();
+    bbox.resize(4);
+    toEigen(bbox) = iol_mean_0_;
+    bbox[2] /= IOL_bbox_scale_;
+    bbox[3] /= IOL_bbox_scale_;
+    iol_bbox_port_out_.write();
 
     predict();
     correct();

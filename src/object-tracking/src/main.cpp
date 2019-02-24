@@ -667,7 +667,8 @@ int main(int argc, char** argv)
     else
     {
         bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
-            new BoundingBoxEstimator(number_particles,
+            new BoundingBoxEstimator(// number_particles,
+				     1,
                                      "object-tracking/bbox-estimator",
                                      "left",
                                      object_mesh_path_obj,
@@ -683,7 +684,8 @@ int main(int argc, char** argv)
     /**
      * The maximum allowed number of particles depend on the sicad engine within the BoundingBoxEstimator
      */
-    eff_number_particles = bbox_estimator->getNumberComponents();
+    // eff_number_particles = bbox_estimator->getNumberComponents();
+    eff_number_particles = number_particles;
     yInfo() << log_ID << "Requested" << number_particles << "particles, allowed" << eff_number_particles << "particles.";
 
     /**

@@ -181,16 +181,18 @@ void ArucoTracker::filteringStep()
     VectorXd corrected_mean = corrected_state_.mean();
 
     // Send estimate over the port using axis/angle representation
-    VectorXd estimate(7);
+    VectorXd estimate(13);
     estimate.head<3>() = corrected_mean.head<3>();
     AngleAxisd angle_axis(AngleAxisd(corrected_mean(9), Vector3d::UnitZ()) *
                           AngleAxisd(corrected_mean(10), Vector3d::UnitY()) *
                           AngleAxisd(corrected_mean(11), Vector3d::UnitX()));
     estimate.segment<3>(3) = angle_axis.axis();
     estimate(6) = angle_axis.angle();
+    estimate.segment<3>(7) = corrected_mean.segment<3>(3);
+    estimate.segment<3>(10) = corrected_mean.segment<3>(6);
 
     Vector& estimate_yarp = port_estimate_out_.prepare();
-    estimate_yarp.resize(7);
+    estimate_yarp.resize(13);
     toEigen(estimate_yarp) = estimate;
     port_estimate_out_.write();
 

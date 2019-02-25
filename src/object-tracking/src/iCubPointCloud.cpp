@@ -240,7 +240,8 @@ bool iCubPointCloud::setProperty(const std::string& property)
     if (property == "reset")
     {
         // do reset
-        ok = true;
+        for (auto& occlusion : occlusions_)
+            occlusion->reset();
     }
 
     return ok;

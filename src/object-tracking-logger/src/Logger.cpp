@@ -118,16 +118,19 @@ bool ObjectTrackingLogger::updateModule()
             VectorXd ground_truth_1_eigen = toEigen(*ground_truth_1);
             VectorXd execution_time_eigen = toEigen(*execution_time);
 
-            VectorXd estimate_euler(6);
-            VectorXd ground_truth_0_euler(6);
+            VectorXd estimate_euler(12);
+            VectorXd ground_truth_0_euler(12);
             VectorXd ground_truth_1_euler(6);
             estimate_euler.head<3>() = estimate_eigen.head<3>();
             ground_truth_0_euler.head<3>() = ground_truth_0_eigen.head<3>();
             ground_truth_1_euler.head<3>() = ground_truth_1_eigen.head<3>();
 
-            estimate_euler.tail<3>() = axisAngleToEuler210(estimate_eigen.segment(3, 4));
-            ground_truth_0_euler.tail<3>() = axisAngleToEuler210(ground_truth_0_eigen.segment(3, 4));
+            estimate_euler.segment<3>(3) = axisAngleToEuler210(estimate_eigen.segment(3, 4));
+            ground_truth_0_euler.segment<3>(3) = axisAngleToEuler210(ground_truth_0_eigen.segment(3, 4));
             ground_truth_1_euler.tail<3>() = axisAngleToEuler210(ground_truth_1_eigen.segment(3, 4));
+
+            estimate_euler.segment<6>(6) = estimate_eigen.segment<6>(6);
+            ground_truth_0_euler.segment<6>(6) = ground_truth_0_euler.segment<6>(6);
 
             // std::cout << estimate_eigen.transpose() << std::endl << std::flush;
             // std::cout << ground_truth_0_eigen.transpose() << std::endl << std::flush;

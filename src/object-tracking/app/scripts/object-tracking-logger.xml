@@ -1,0 +1,40 @@
+<application>
+
+  <name>ObjectTrackingLogger</name>
+
+  <module>
+    <name>object-tracking-logger</name>
+    <node>localhost</node>
+  </module>
+
+  <module>
+    <name>yarpdataplayer</name>
+    <parameters>--withExtraTimeCol 2</parameters>
+    <node>localhost</node>
+  </module>
+
+  <connection>
+    <from>/object-tracking/estimate:o</from>
+    <to>/object-tracking-logger/estimate:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking-ground-truth/estimate:o</from>
+    <to>/object-tracking-logger/ground-truth-0:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking-ground-truth/marker-estimate/left/estimate:o</from>
+    <to>/object-tracking-logger/ground-truth-1:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking/timings:o</from>
+    <to>/object-tracking-logger/execution-time:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+</application>

@@ -250,16 +250,12 @@ bool DiscretizedKinematicModelTDD::setProperty(const std::string& property)
 
             case ImplData::Modality::Time:
             {
-                std::cout << rImpl.current_seconds_ << std::endl;
-
                 damper = (rImpl.current_seconds_ <= rImpl.seconds_) ? std::exp(-rImpl.current_seconds_ / rImpl.gain_) : 0.0;
 
                 break;
             }
 
             }
-
-            std::cout << damper << std::endl;
 
             std::chrono::duration<double, std::milli> delta_chrono = now - last_time_;
             double delta = delta_chrono.count() / 1000.0;

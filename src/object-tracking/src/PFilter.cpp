@@ -320,16 +320,18 @@ void PFilter::filteringStep()
         logger(point_estimate_.transpose());
 
         // Send estimate over the port using axis/angle representation
-        VectorXd estimate(7);
+        VectorXd estimate(13);
         estimate.head<3>() = point_estimate_.head<3>();
         AngleAxisd angle_axis(AngleAxisd(point_estimate_(9), Vector3d::UnitZ()) *
                               AngleAxisd(point_estimate_(10), Vector3d::UnitY()) *
                               AngleAxisd(point_estimate_(11), Vector3d::UnitX()));
         estimate.segment<3>(3) = angle_axis.axis();
         estimate(6) = angle_axis.angle();
+        estimate.segment<3>(7) = point_estimate_.segment<3>(3);
+        estimate.segment<3>(10) = point_estimate_.segment<3>(6);
 
         Vector& estimate_yarp = port_estimate_out_.prepare();
-        estimate_yarp.resize(7);
+        estimate_yarp.resize(13);
         toEigen(estimate_yarp) = estimate;
         port_estimate_out_.write();
     }

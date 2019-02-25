@@ -352,4 +352,22 @@
     <protocol>mjpeg</protocol>
   </connection>
 
+  <connection>
+    <from>/object-tracking/bbox-estimator/iol_bbox:o</from>
+    <to>/object-tracking/bbox-estimator/iol_bbox:i</to>
+    <protocol>fast_tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking-ground-truth/icub/torso:i</to>
+    <protocol>fast_tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking-ground-truth/icub/head:i</to>
+    <protocol>fast_tcp</protocol>
+  </connection>
+
 </application>

@@ -22,7 +22,7 @@
   <module>
     <name>object-tracking-ground-truth</name>
     <parameters></parameters>
-    <node>icub-cuda</node>
+    <node>localhost</node>
   </module>
 
   <module>

@@ -320,4 +320,6 @@ bool ArucoMeasurement::setProperty(const std::string& property)
 {
     if (property == "reset")
         is_measurement_available_ = false;
+
+    return true;
 }

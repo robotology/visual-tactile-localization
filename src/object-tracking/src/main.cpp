@@ -669,8 +669,7 @@ int main(int argc, char** argv)
     else
     {
         bbox_estimator = std::unique_ptr<BoundingBoxEstimator>(
-            new BoundingBoxEstimator(// number_particles,
-				     1,
+            new BoundingBoxEstimator(1,
                                      "object-tracking/bbox-estimator",
                                      "left",
                                      object_mesh_path_obj,

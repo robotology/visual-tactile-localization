@@ -87,7 +87,6 @@ BoundingBoxEstimator::BoundingBoxEstimator
     user_provided_mean_0_(false),
     extractor_(4),
     is_initialized_(false),
-    is_exogenous_initialized_(false),
     is_object_pose_initialized_(false),
     is_hand_exogenous_initialized_(false),
     gaze_(port_prefix),
@@ -102,20 +101,21 @@ BoundingBoxEstimator::BoundingBoxEstimator
         throw(std::runtime_error(err));
     }
 
-    // Try to open the IOL bounding box output port
-    if (!(iol_bbox_port_out_.open("/" + port_prefix + "/iol_bbox:o")))
-    {
-        std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open iol bounding box output port.";
-        throw(std::runtime_error(err));
-    }
-
     if (bounding_box_from_port_)
     {
-        if (!(iol_bbox_port_out_.open("/" + port_prefix + "/iol_bbox:i")))
+        // The bounding box is taken from a port
+        // This is required while replaying data
+        if (!(iol_bbox_port_in_.open("/" + port_prefix + "/iol_bbox:i")))
         {
             std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open iol bounding box input port.";
             throw(std::runtime_error(err));
         }
+    }
+    else if (!(iol_bbox_port_out_.open("/" + port_prefix + "/iol_bbox:o")))
+    {
+        // In the normal mode of operation, the bounding box is send over a port for logging purposes
+        std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open iol bounding box output port.";
+        throw(std::runtime_error(err));
     }
 
     // Try to open the hand pose input port
@@ -175,9 +175,6 @@ BoundingBoxEstimator::BoundingBoxEstimator
     for (std::size_t i = 0; i < corr_bbox_.components; i++)
         corr_bbox_.covariance(i) = cov_0_;
 
-    steady_state_counter_ = 0;
-    steady_state_threshold_ = 75;
-
     // Initialize estimate extractor
     extractor_.setMethod(EstimatesExtraction::ExtractionMethod::emode);
     extractor_.setMobileAverageWindowSize(10);
@@ -194,10 +191,11 @@ BoundingBoxEstimator::~BoundingBoxEstimator()
     // Close ports
     opc_rpc_client_.close();
     hand_pose_port_in_.close();
-    iol_bbox_port_out_.close();
 
     if (bounding_box_from_port_)
         iol_bbox_port_in_.close();
+    else
+        iol_bbox_port_out_.close();
 
     if (send_mask_)
     {
@@ -211,14 +209,16 @@ void BoundingBoxEstimator::step()
 {
     while(!is_initialized_)
     {
-        bool valid_measure;
+        bool valid_measure = false;
         if (bounding_box_from_port_)
         {
             Vector* bbox = iol_bbox_port_in_.read(true);
 
             if (bbox != nullptr)
             {
+                iol_mean_0_.resize(4);
                 iol_mean_0_ = toEigen(*bbox);
+                iol_mean_0_.tail<2>() *= IOL_bbox_scale_;
                 valid_measure = true;
             }
         }
@@ -234,14 +234,19 @@ void BoundingBoxEstimator::step()
 
             is_initialized_ = true;
         }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    yarp::sig::Vector& bbox = iol_bbox_port_out_.prepare();
-    bbox.resize(4);
-    toEigen(bbox) = iol_mean_0_;
-    bbox[2] /= IOL_bbox_scale_;
-    bbox[3] /= IOL_bbox_scale_;
-    iol_bbox_port_out_.write();
+    if (!bounding_box_from_port_)
+    {
+        yarp::sig::Vector& bbox = iol_bbox_port_out_.prepare();
+        bbox.resize(4);
+        toEigen(bbox) = iol_mean_0_;
+        bbox[2] /= IOL_bbox_scale_;
+        bbox[3] /= IOL_bbox_scale_;
+        iol_bbox_port_out_.write();
+    }
 
     predict();
     correct();
@@ -267,7 +272,6 @@ Eigen::VectorXd BoundingBoxEstimator::getEstimate(const Ref<const VectorXd>& wei
 void BoundingBoxEstimator::reset()
 {
     is_initialized_ = false;
-    is_exogenous_initialized_ = false;
     is_object_pose_initialized_ = false;
     is_hand_exogenous_initialized_ = false;
     enable_hand_feedforward_first_time_ = false;
@@ -287,8 +291,6 @@ void BoundingBoxEstimator::reset()
         corr_bbox_.covariance() = cov_0_;
 
     extractor_.clear();
-
-    steady_state_counter_ = 0;
 }
 
 
@@ -360,9 +362,9 @@ void BoundingBoxEstimator::predict()
     {
         pred_bbox_.mean().leftCols(pred_bbox_.components) += evalHandExogenousInput();
 
-	// this is required since even if there is a firm grasp
-	// sometimes contacts are missing!
-	enable_hand_feedforward_first_time_ = true;
+        // this is required since even if there is a firm grasp
+        // sometimes contacts are missing!
+        enable_hand_feedforward_first_time_ = true;
     }
     // else
     // {

@@ -228,7 +228,7 @@ bool ObjectHelper::evaluateApproachPosition()
     object_to_robot.rotate(AngleAxisd(object_pose_(6), toEigen(object_pose_.subVector(3, 5))));
 
     // Do object-specific overrides
-    if (object_name_ == "ycb_mustard_bottle")
+    if (object_name_ == "ycb_mustard_bottle" || object_name_ == "ycb_sugar_box")
     {
         // Get the center of the mesh in robot root frame
         Vector3d mesh_0 = toEigen(object_pose_.subVector(0, 2));
@@ -244,6 +244,8 @@ bool ObjectHelper::evaluateApproachPosition()
         if (x_axis(1) < 0)
             object_to_robot.rotate(AngleAxisd(M_PI, Vector3d::UnitZ()));
     }
+    else
+      yInfo() << "Warning: you are trying to approach an unknown object!";
 
     // Evaluate the effective approach point
     Vector3d approach_point = object_to_robot * toEigen(approach_position_).homogeneous();

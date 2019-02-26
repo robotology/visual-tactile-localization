@@ -1,0 +1,72 @@
+#! /bin/python3
+
+import matplotlib.pyplot as plt
+import csv
+import numpy as np
+import math
+import sys
+
+def read_data(prefix, postfix):
+
+    data = []
+
+    with open(prefix + '_' + postfix + '.txt', newline='') as csv_data:
+        for row in csv_data:
+            data.append([float(num_string.rstrip()) for num_string in row.split(sep = " ") if num_string != ''])
+
+    return np.array(data)
+
+def plot_y(axes, y_data, label_txt):
+
+    return axes.plot(y_data, label=label_txt)
+
+def main():
+
+    prefix = sys.argv[1] + "/data"
+
+    # corr estimate
+    corr_mean_data = read_data(prefix, "estimate")
+    x_c = corr_mean_data[:, 0];
+    y_c = corr_mean_data[:, 1];
+    z_c = corr_mean_data[:, 2];
+    phi_c = corr_mean_data[:, 3];
+    theta_c = corr_mean_data[:, 4];
+    psi_c = corr_mean_data[:, 5];
+
+    # theta_c_fixed = [wrap(angle) for angle in theta_c]
+    # psi_c_fixed = [wrap(angle) for angle in psi_c]
+
+    # corr estimate
+    gt_data = read_data(prefix, "gt_0")
+    x_gt = gt_data[:, 0];
+    y_gt = gt_data[:, 1];
+    z_gt = gt_data[:, 2];
+    phi_gt = gt_data[:, 3];
+    theta_gt = gt_data[:, 4];
+    psi_gt = gt_data[:, 5];
+
+    # make plot
+    fig, ax = plt.subplots(2,3)
+
+    corr_x_plot, = plot_y(ax[0, 0], x_gt - x_c, "x err")
+    ax[0, 0].legend(handles = [corr_x_plot])
+
+    corr_y_plot, = plot_y(ax[0, 1], y_gt - y_c, "y err")
+    ax[0, 1].legend(handles = [corr_y_plot])
+
+    corr_z_plot, = plot_y(ax[0, 2], z_gt - z_c, "z err")
+    ax[0, 2].legend(handles = [corr_z_plot])
+
+    corr_phi_plot, = plot_y(ax[1, 0], (phi_gt - phi_c) * 180 / math.pi, "phi err")
+    ax[1, 0].legend(handles = [corr_phi_plot])
+
+    corr_theta_plot, = plot_y(ax[1, 1], (theta_gt - theta_c) * 180 / math.pi, "theta err")
+    ax[1, 1].legend(handles = [corr_theta_plot])
+
+    corr_psi_plot, = plot_y(ax[1, 2], (psi_gt - psi_c) * 180 / math.pi, "psi err")
+    ax[1, 2].legend(handles = [corr_psi_plot])
+
+    plt.show()
+
+if __name__ == "__main__":
+    main()

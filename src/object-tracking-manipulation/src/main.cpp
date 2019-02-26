@@ -1184,6 +1184,7 @@ protected:
         // set the center within the trajectory generator
         Eigen::Vector3d center;
         center = toEigen(pos);
+        center(1) -= 0.03;
         center(2) += traj_center_z_offset_;
         generator_->setCenter(center);
 

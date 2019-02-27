@@ -110,6 +110,35 @@ BoundingBoxEstimator::BoundingBoxEstimator
             std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open iol bounding box input port.";
             throw(std::runtime_error(err));
         }
+
+        // Synchronize with the bounding box signal
+        std::cout << "Waiting for bounding box signal. Please connect to the port..." << std::endl;
+
+        while (!is_initialized_)
+        {
+            Vector* bbox = iol_bbox_port_in_.read(true);
+
+            if (bbox != nullptr)
+            {
+                mean_0_.resize(4);
+                mean_0_ = toEigen(*bbox);
+                mean_0_.tail<2>() *= IOL_bbox_scale_;
+
+                std::cout << "Bounding box set :" << mean_0_ << std::endl;
+
+                for (std::size_t i = 0; i < corr_bbox_.components; i++)
+                    corr_bbox_.mean(i) = mean_0_;
+
+                is_initialized_ = true;
+
+                // This way the initial condition can be used again when the filter is reset
+                // withtou synchronizing again with the port
+                user_provided_mean_0_ = true;
+            }
+
+            std::cout << "Still waiting..." << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
     }
     else if (!(iol_bbox_port_out_.open("/" + port_prefix + "/iol_bbox:o")))
     {
@@ -210,23 +239,7 @@ void BoundingBoxEstimator::step()
     while(!is_initialized_)
     {
         bool valid_measure = false;
-        if (bounding_box_from_port_)
-        {
-            Vector* bbox = iol_bbox_port_in_.read(true);
-
-            if (bbox != nullptr)
-            {
-                iol_mean_0_.resize(4);
-                iol_mean_0_ = toEigen(*bbox);
-                iol_mean_0_.tail<2>() *= IOL_bbox_scale_;
-                valid_measure = true;
-            }
-        }
-        else
-        {
-            std::tie(valid_measure, iol_mean_0_) = measure();
-        }
-
+        std::tie(valid_measure, iol_mean_0_) = measure();
         if (valid_measure)
         {
             for (std::size_t i = 0; i < corr_bbox_.components; i++)

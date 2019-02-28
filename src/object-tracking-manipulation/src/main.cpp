@@ -36,6 +36,7 @@ enum class Status { Idle,
                     MoveCoarseApproach, MovePreciseApproach,
                     TestCoarseApproach, TestPreciseApproach,
                     OpenHand, CloseHand, PostCloseHand, WaitOpenHand, WaitCloseHand,
+                    DoPour,
                     MoveRest, WaitArmRest,
                     MoveHome, WaitArmHome,
                     StartMotion, MoveTrajectory,
@@ -161,6 +162,11 @@ protected:
     double hand_default_pitch_;
     double hand_default_roll_left_;
     double hand_default_roll_right_;
+
+    // parameters for pouring action
+    yarp::sig::Vector pour_translation_;
+    yarp::sig::Vector pour_rotation_;
+    double pour_traj_time_;
 
     /*
      */
@@ -474,6 +480,28 @@ protected:
         return reply;
     }
 
+    std::string do_pour()
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((hand_under_use_ != "left") && (hand_under_use_ != "right"))
+            return "[FAILED] You need to set an hand using set_hand <laterality>";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        previous_status_ = status_;
+        status_ = Status::DoPour;
+
+        reply = "[OK] Command issued.";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
     std::string move_up()
     {
         if (status_ != Status::Idle)
@@ -773,6 +801,69 @@ protected:
         }
         else
             return false;
+    }
+
+    /*
+     * Issue a pouring movement.
+     */
+    bool doPour()
+    {
+        // check if the hand name is valid
+        if ((hand_under_use_.empty()) || ((hand_under_use_ != "right") && (hand_under_use_ != "left")))
+            return false;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return false;
+
+        // get the current position of the palm of the hand
+        yarp::sig::Vector pos;
+        yarp::sig::Vector att;
+        if (!arm->cartesian()->getPose(pos, att))
+            return false;
+
+        // change orientation of the hand as required
+        yarp::sig::Vector axis_angle_x(4);
+        yarp::sig::Matrix rot_x;
+        axis_angle_x[0] = 1.0;
+        axis_angle_x[1] = 0.0;
+        axis_angle_x[2] = 0.0;
+        axis_angle_x[3] = pour_rotation_(0) * (M_PI / 180.0);
+        rot_x = yarp::math::axis2dcm(axis_angle_x);
+
+        yarp::sig::Vector axis_angle_y(4);
+        yarp::sig::Matrix rot_y;
+        axis_angle_y[0] = 0.0;
+        axis_angle_y[1] = 1.0;
+        axis_angle_y[2] = 0.0;
+        axis_angle_y[3] = pour_rotation_(1) * (M_PI / 180.0);
+        rot_y = yarp::math::axis2dcm(axis_angle_y);
+
+        yarp::sig::Vector axis_angle_z(4);
+        yarp::sig::Matrix rot_z;
+        axis_angle_z[0] = 0.0;
+        axis_angle_z[1] = 0.0;
+        axis_angle_z[2] = 1.0;
+        axis_angle_z[3] = pour_rotation_(2) * (M_PI / 180.0);
+        rot_z = yarp::math::axis2dcm(axis_angle_z);
+
+        yarp::sig::Matrix rot_hand = yarp::math::axis2dcm(att);
+
+        yarp::sig::Matrix rot_updated = rot_z * rot_y * rot_x * rot_hand;
+        yarp::sig::Vector att_updated = yarp::math::dcm2axis(rot_updated);
+
+        // set trajectory time
+        if (pour_traj_time_ < 1.0)
+        {
+            yError() << "You are requesting a trajectory time" << pour_traj_time_ << "less than 1 seconds!";
+            return false;
+        }
+        if (!(arm->cartesian()->setTrajTime(pour_traj_time_)))
+            return false;
+
+        // issue command
+        return arm->cartesian()->goToPoseSync(pos + pour_translation_, att_updated);
     }
 
     /*
@@ -1379,6 +1470,13 @@ public:
         right_arm_rest_att_ = right_arm_rest_pose.subVector(3, 6);
         yInfo() << "- right_arm_rest_pos" << right_arm_rest_pos_.toString();
         yInfo() << "- right_arm_rest_att" << right_arm_rest_att_.toString();
+
+        pour_translation_ = loadVectorDouble(rf, "pour_translation", 3);
+        pour_rotation_ = loadVectorDouble(rf, "pour_rotation", 3);
+        pour_traj_time_ = rf.check("pour_traj_time", Value(2.0)).asDouble();
+        yInfo() << "- pour_translation" << pour_translation_.toString();
+        yInfo() << "- pour_rotation" << pour_rotation_.toString();
+        yInfo() << "- pour_traj_time" << pour_traj_time_;
 
         /*
          * Object helper
@@ -2159,6 +2257,37 @@ public:
 
                 mutex_.unlock();
             }
+
+            break;
+        }
+
+        case Status::DoPour:
+        {
+            if (!doPour())
+            {
+                yError() << "[DO POUR] error while trying to move hand.";
+                // stop control
+                stopArm(hand_under_use_l);
+
+                mutex_.lock();
+
+                // go to Idle
+                status_ = Status::Idle;
+
+                mutex_.unlock();
+
+                break;
+            }
+
+            mutex_.lock();
+
+            // go to WaitHandMove
+            status_ = Status::WaitHandMove;
+
+            mutex_.unlock();
+
+            // reset timer
+            last_time_ = yarp::os::Time::now();
 
             break;
         }

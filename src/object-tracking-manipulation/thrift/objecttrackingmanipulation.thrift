@@ -23,4 +23,5 @@ service ObjectTrackingManipulationIDL
     string get_hand_pose(1:string laterality);
     string stop();
     string quit();
+    string do_pour();
 }

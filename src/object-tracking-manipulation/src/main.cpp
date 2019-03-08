@@ -674,6 +674,36 @@ protected:
         return reply;
     }
 
+    std::string get_hand_pose(const std::string& laterality)
+    {
+        if (status_ != Status::Idle)
+            return "[FAILED] Wait for completion of the current phase.";
+
+        if ((laterality != "left") && (laterality != "right"))
+            return "[FAILED] You need to specify a valid laterality.";
+
+        mutex_.lock();
+
+        std::string reply;
+
+        // pick the correct arm
+        ArmController* arm = getArmController(hand_under_use_);
+        if (arm == nullptr)
+            return "[FAILED] Cannot get the interface to the requested hand.";
+
+        // get the current position of the palm of the hand
+        yarp::sig::Vector pos;
+        yarp::sig::Vector att;
+        if (!arm->cartesian()->getPose(pos, att))
+            return "[FAILED] Cannot get the current pose of the requested hand.";
+
+        reply = "[OK]\n\tPosition: " + pos.toString() + "\n\tOrientation: " + att.toString() + "\n\t";
+
+        mutex_.unlock();
+
+        return reply;
+    }
+
     std::string stop()
     {
         mutex_.lock();

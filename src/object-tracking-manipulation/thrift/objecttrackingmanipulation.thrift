@@ -20,6 +20,7 @@ service ObjectTrackingManipulationIDL
     string open_hand();
     string close_hand();
     string start_motion();
+    string get_hand_pose(1:string laterality);
     string stop();
     string quit();
 }

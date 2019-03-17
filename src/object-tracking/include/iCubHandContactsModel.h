@@ -59,7 +59,7 @@ protected:
 
     const std::string log_ID_ = "[ICUBHANDCONTACTSMODEL]";
 
-    const std::size_t fingertip_number_samples_ = 25;
+    const std::size_t fingertip_number_samples_ = 15;
 };
 
 #endif /* ICUBHANDCONTACTSMODEL_H */

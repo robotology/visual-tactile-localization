@@ -288,8 +288,6 @@ void PFilter::filteringStep()
 
     // Use estimate as hint for the bounding box estimator
     bbox_estimator_->setObjectPose(cor_particle_.mean(), cor_particle_.weight());
-    // Enable/disable bounding box object feedforward term according to the current state of occlusion
-    // bbox_estimator_->enableObjectFeedforward(!(icub_point_cloud_share_->getOcclusion()));
     // Eanble/disable bounding box hand feedforward term according to the corrent state of contact
     bbox_estimator_->enableHandFeedforward(icub_point_cloud_share_->getContactState());
 

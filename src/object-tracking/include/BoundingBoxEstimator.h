@@ -170,11 +170,6 @@ protected:
     /**
      * Enable/disable object feedforward term.
      */
-    bool enable_object_feedforward_;
-
-    /**
-     * Enable/disable object feedforward term.
-     */
     bool enable_hand_feedforward_;
     bool enable_hand_feedforward_first_time_;
 

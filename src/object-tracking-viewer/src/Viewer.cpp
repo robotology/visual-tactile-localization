@@ -111,6 +111,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
         mesh_actor_ground_truth_ = vtkSmartPointer<vtkActor>::New();
         mesh_actor_ground_truth_->SetMapper(mapper_);
         mesh_actor_ground_truth_->GetProperty()->SetColor(0.0, 0.8, 0.0);
+        mesh_actor_ground_truth_->GetProperty()->SetOpacity(0.4);
     }
 
     // Configure measurements actor

@@ -90,11 +90,6 @@ public:
     std::size_t getNumberComponents();
 
     /**
-     * Enable/disable feedforward term obtained using finite difference of the object 3D position projected onto the camera plane.
-     */
-    void enableObjectFeedforward(const bool& enable);
-
-    /**
      * Enable/disable feedforward term obtained using finite difference of the hand 3D position projected onto the camera plane.
      */
     void enableHandFeedforward(const bool& enable);

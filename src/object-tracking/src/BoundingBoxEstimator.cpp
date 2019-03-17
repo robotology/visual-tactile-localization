@@ -209,7 +209,6 @@ BoundingBoxEstimator::BoundingBoxEstimator
     extractor_.setMobileAverageWindowSize(10);
 
     // Reset flag
-    enable_object_feedforward_ = true;
     enable_hand_feedforward_ = false;
     enable_hand_feedforward_first_time_ = false;
 }
@@ -288,7 +287,6 @@ void BoundingBoxEstimator::reset()
     is_object_pose_initialized_ = false;
     is_hand_exogenous_initialized_ = false;
     enable_hand_feedforward_first_time_ = false;
-    enable_object_feedforward_= true;
     enable_hand_feedforward_ = false;
 
     // If user provided a initial mean
@@ -328,12 +326,6 @@ void BoundingBoxEstimator::setObjectPose(const Ref<const MatrixXd>& pose, const 
 std::size_t BoundingBoxEstimator::getNumberComponents()
 {
     return number_components_;
-}
-
-
-void BoundingBoxEstimator::enableObjectFeedforward(const bool& enable)
-{
-    enable_object_feedforward_ = enable;
 }
 
 

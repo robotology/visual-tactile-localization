@@ -235,18 +235,16 @@ std::pair<std::size_t, std::size_t> iCubPointCloud::getOutputSize() const
 
 bool iCubPointCloud::setProperty(const std::string& property)
 {
-    bool ok = false;
-
     if (property == "reset")
     {
         // do reset
         for (auto& occlusion : occlusions_)
             occlusion->reset();
 
-        ok = true;
+        exogenous_data_->reset();
     }
 
-    return ok;
+    return true;
 }
 
 
@@ -466,7 +464,8 @@ void iCubPointCloud::drawObjectROI(cv::Mat& image)
 iCubPointCloudExogenousData::iCubPointCloudExogenousData() :
     bbox_set_(false),
     is_occlusion_(false),
-    use_contacts_(true)
+    use_contacts_(true),
+    is_contact_(false)
 { }
 
 
@@ -543,4 +542,6 @@ void iCubPointCloudExogenousData::reset()
     is_occlusion_ = false;
 
     use_contacts_ = true;
+
+    is_contact_ = false;
 }

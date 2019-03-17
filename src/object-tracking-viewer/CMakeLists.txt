@@ -18,16 +18,16 @@ find_package(YARP CONFIG REQUIRED
 # ICUB
 find_package(ICUB REQUIRED)
 
-# VTK
-find_package(VTK             REQUIRED)
-include(${VTK_USE_FILE})
-
 # Superimpose Mesh
 find_package(SuperimposeMesh 0.9.4.0 QUIET)
 if(NOT SuperimposeMesh_FOUND)
     message(STATUS "Did not found required master release of SuperimposeMesh. Looking for devel version.")
     find_package(SuperimposeMesh 0.10.100.0 REQUIRED)
 endif()
+
+# VTK
+find_package(VTK             REQUIRED)
+include(${VTK_USE_FILE})
 
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR

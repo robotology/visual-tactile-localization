@@ -211,6 +211,7 @@ BoundingBoxEstimator::BoundingBoxEstimator
     // Reset flag
     enable_hand_feedforward_ = false;
     enable_hand_feedforward_first_time_ = false;
+    enable_hand_feedforward_counter_ = 0;
 }
 
 
@@ -288,6 +289,7 @@ void BoundingBoxEstimator::reset()
     is_hand_exogenous_initialized_ = false;
     enable_hand_feedforward_first_time_ = false;
     enable_hand_feedforward_ = false;
+    enable_hand_feedforward_counter_ = 0;
 
     // If user provided a initial mean
     if (user_provided_mean_0_)
@@ -331,7 +333,12 @@ std::size_t BoundingBoxEstimator::getNumberComponents()
 
 void BoundingBoxEstimator::enableHandFeedforward(const bool& enable)
 {
-    enable_hand_feedforward_ = enable;
+    enable_hand_feedforward_counter_++;
+
+    if (enable_hand_feedforward_counter_ > 10)
+    {
+        enable_hand_feedforward_ = enable;
+    }
 }
 
 

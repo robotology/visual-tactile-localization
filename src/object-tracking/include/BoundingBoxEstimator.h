@@ -172,6 +172,7 @@ protected:
      */
     bool enable_hand_feedforward_;
     bool enable_hand_feedforward_first_time_;
+    int enable_hand_feedforward_counter_;
 
     /**
      * Estimates extraction.

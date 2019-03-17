@@ -81,6 +81,9 @@ set(${EXE_TARGET_NAME}_HDR
     include/SimulatedPointCloud.h
     include/VCGTriMesh.h
     include/vcg_import_obj_w_stream.h
+    include/springyFingers.h
+    include/iCub/perception/private/models.h
+    include/iCub/perception/private/ports.h
     )
 
 set(${EXE_TARGET_NAME}_SRC
@@ -108,6 +111,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/SimulatedFilter.cpp
     src/SimulatedPointCloud.cpp
     src/main.cpp
+    src/springyFingers.cpp
     )
 
 set(${EXE_TARGET_NAME}_THRIFT_HDR thrift/objecttracking.thrift)

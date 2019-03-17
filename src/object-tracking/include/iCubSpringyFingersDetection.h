@@ -3,7 +3,7 @@
 
 #include <ContactDetection.h>
 
-#include <iCub/perception/springyFingers.h>
+#include <springyFingers.h>
 
 #include <vector>
 

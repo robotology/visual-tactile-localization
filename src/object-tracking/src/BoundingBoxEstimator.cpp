@@ -250,7 +250,7 @@ void BoundingBoxEstimator::step()
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    if (!bounding_box_from_port_)
+    if ((!bounding_box_from_port_) && (!user_provided_mean_0_))
     {
         yarp::sig::Vector& bbox = iol_bbox_port_out_.prepare();
         bbox.resize(4);

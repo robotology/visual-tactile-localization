@@ -2,9 +2,23 @@
   <name>Object Tracking on iCub (Play)</name>
 
   <module>
+    <name>yarpdataplayer</name>
+    <parameters>--withExtraTimeCol 2</parameters>
+    <node>localhost</node>
+  </module>
+
+  <module>
     <name>object-tracking</name>
     <parameters></parameters>
     <node>localhost</node>
+    <dependencies>
+      <port timeout="5.0">/icub/camcalib/left/out</port>
+      <port timeout="5.0">/handTracking/VisualSIS/left/estimates:o</port>
+      <port timeout="5.0">/icub/head/state:o</port>
+      <port timeout="5.0">/icub/torso/state:o</port>
+      <port timeout="5.0">/icub/right_arm/state:o</port>
+      <port timeout="5.0">/icub/right_hand/analog:o</port>
+    </dependencies>
   </module>
 
   <module>
@@ -20,27 +34,8 @@
   </module>
 
   <module>
-    <name>object-tracking-ground-truth</name>
-    <parameters></parameters>
-    <node>localhost</node>
-  </module>
-
-  <module>
-    <name>yarpdataplayer</name>
-    <parameters>--withExtraTimeCol 2</parameters>
-    <node>localhost</node>
-  </module>
-
-  <module>
     <name>yarpview</name>
     <parameters>--name /object-tracking/viewer/hull:i</parameters>
-    <node>localhost</node>
-    <prefix></prefix>
-  </module>
-
-  <module>
-    <name>yarpview</name>
-    <parameters>--name /object-tracking/viewer/mask:i</parameters>
     <node>localhost</node>
     <prefix></prefix>
   </module>
@@ -52,20 +47,6 @@
     <prefix></prefix>
   </module>
 
-  <module>
-    <name>yarpview</name>
-    <parameters>--name /object-tracking/viewer/cam/right:i</parameters>
-    <node>localhost</node>
-    <prefix></prefix>
-  </module>
-
-  <module>
-    <name>yarpview</name>
-    <parameters>--name /object-tracking/viewer/aruco:i</parameters>
-    <node>localhost</node>
-    <prefix></prefix>
-  </module>  
-
   <!-- connections for yarpview-s -->
 
   <connection>
@@ -75,32 +56,8 @@
   </connection>
 
   <connection>
-    <from>/icub/camcalib/right/out</from>
-    <to>/object-tracking/viewer/cam/right:i</to>
-    <protocol>mjpeg</protocol>
-  </connection>
-
-  <connection>
     <from>/object-tracking/hull:o</from>
     <to>/object-tracking/viewer/hull:i</to>
-    <protocol>mjpeg</protocol>
-  </connection>
-
-  <connection>
-    <from>/object-tracking/bbox-estimator/mask:o</from>
-    <to>/object-tracking/viewer/mask:i</to>
-    <protocol>mjpeg</protocol>
-  </connection>
-
-  <connection>
-    <from>/object-tracking-depth/SFM/disp:o</from>
-    <to>/object-tracking/viewer/disp:i</to>
-    <protocol>tcp</protocol>
-  </connection>
-
-  <connection>
-    <from>/object-tracking-ground-truth/marker-estimate/left:o</from>
-    <to>/object-tracking/viewer/aruco:i</to>
     <protocol>mjpeg</protocol>
   </connection>
 
@@ -194,12 +151,6 @@
     <protocol>tcp</protocol>
   </connection>
 
-  <!-- <connection> -->
-  <!--   <from>/object-tracking-ground-truth/marker-estimate/left/estimate:o</from> -->
-  <!--   <to>/object-tracking-viewer/ground-truth:i</to> -->
-  <!--   <protocol>tcp</protocol> -->
-  <!-- </connection> -->
-
   <connection>
     <from>/object-tracking-ground-truth/estimate:o</from>
     <to>/object-tracking-viewer/ground-truth:i</to>
@@ -212,13 +163,6 @@
     <!-- used as background for interactive visualization (e.g. bounding box, hulls, etc.) -->
     <from>/icub/camcalib/left/out</from>
     <to>/object-tracking/cam/left:i</to>
-    <protocol>mjpeg</protocol>
-  </connection>
-
-  <connection>
-    <!-- used as background for interactive visualization within class BoundingBoxEstimator-->
-    <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking/bbox-estimator/cam/left:i</to>
     <protocol>mjpeg</protocol>
   </connection>
 
@@ -342,32 +286,6 @@
     <from>/icub/right_hand/analog:o</from>
     <to>/object-tracking/icub-arm-model/occlusion/right/right_hand/analog:i</to>
     <protocol>tcp</protocol>
-  </connection>
-
-  <!-- used by module object-tracking-ground-truth -->
-
-  <connection>
-    <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking-ground-truth/cam/left:i</to>
-    <protocol>mjpeg</protocol>
-  </connection>
-
-  <connection>
-    <from>/object-tracking/bbox-estimator/iol_bbox:o</from>
-    <to>/object-tracking/bbox-estimator/iol_bbox:i</to>
-    <protocol>fast_tcp</protocol>
-  </connection>
-
-  <connection>
-    <from>/icub/torso/state:o</from>
-    <to>/object-tracking-ground-truth/icub/torso:i</to>
-    <protocol>fast_tcp</protocol>
-  </connection>
-
-  <connection>
-    <from>/icub/head/state:o</from>
-    <to>/object-tracking-ground-truth/icub/head:i</to>
-    <protocol>fast_tcp</protocol>
   </connection>
 
 </application>

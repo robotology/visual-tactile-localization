@@ -236,7 +236,7 @@ bool PFilter::quit()
 }
 
 
-std::vector<std::string> PFilter::log_filenames(const std::string& prefix_path, const std::string& prefix_name)
+std::vector<std::string> PFilter::log_file_names(const std::string& prefix_path, const std::string& prefix_name)
 {
     return  {prefix_path + "/" + prefix_name + "_estimate"};
 }

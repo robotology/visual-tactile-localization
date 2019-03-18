@@ -150,7 +150,7 @@ bool ArucoTracker::quit()
 }
 
 
-std::vector<std::string> ArucoTracker::log_filenames(const std::string& prefix_path, const std::string& prefix_name)
+std::vector<std::string> ArucoTracker::log_file_names(const std::string& prefix_path, const std::string& prefix_name)
 {
     return  {prefix_path + "/" + prefix_name + "_pred_mean",
              prefix_path + "/" + prefix_name + "_cor_mean"};

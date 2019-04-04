@@ -1,20 +1,9 @@
 /*
- * Copyright (C) 2010 RobotCub Consortium, European Commission FP6 Project IST-004370
- * Author: Sean Ryan Fanello, Giulia Pasquale
- * email:  sean.fanello@iit.it giulia.pasquale@iit.it
- * website: www.robotcub.org
- * Permission is granted to copy, distribute, and/or modify this program
- * under the terms of the GNU General Public License, version 2 or any
- * later version published by the Free Software Foundation.
+ * Copyright (C) 2019 Istituto Italiano di Tecnologia (IIT)
  *
- * A copy of the license can be found at
- * http://www.robotcub.org/icub/license/gpl.txt
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details
-*/
+ * This software may be modified and distributed under the terms of the
+ * GPL-2+ license. See the accompanying LICENSE file for details.
+ */
 
 /**
 * \ingroup StereoVisionLib

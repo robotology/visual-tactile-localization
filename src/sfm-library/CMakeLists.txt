@@ -1,6 +1,11 @@
-# Copyright: (C) 2013 iCub Facility - Istituto Italiano di Tecnologia
-# Authors: Sean Fanello
-# CopyPolicy: Released under the terms of the GNU GPL v2.0.
+#===============================================================================
+#
+# Copyright (C) 2019 Istituto Italiano di Tecnologia (IIT)
+#
+# This software may be modified and distributed under the terms of the
+# GPL-2+ license. See the accompanying LICENSE file for details.
+#
+#===============================================================================
 
 cmake_minimum_required(VERSION 3.5)
 

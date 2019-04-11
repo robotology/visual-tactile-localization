@@ -26,27 +26,12 @@ using namespace yarp::sig;
 using namespace Eigen;
 
 Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
-    gaze_(port_prefix)
+    icub_camera_("left", port_prefix, "object-tracking")
 {
     // Open estimate input port
     if(!port_estimate_in_.open("/" + port_prefix + "/estimate:i"))
     {
         std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open estimate input port.";
-        throw(std::runtime_error(err));
-    }
-
-    // Open camera input port
-    // (required to get coloured 3D point cloud)
-    if(!port_image_in_.open("/" + port_prefix + "/cam/left:i"))
-    {
-        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open left camera input port.";
-        throw(std::runtime_error(err));
-    }
-
-    // Open depth input port
-    if(!port_depth_in_.open("/" + port_prefix + "/depth:i"))
-    {
-        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open depth input port.";
         throw(std::runtime_error(err));
     }
 
@@ -103,9 +88,17 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     std::size_t v_stride = 1;
     set2DCoordinates(u_stride, v_stride);
 
-    // Set default deprojection matrix
-    std::string eye_name = "left";
-    setDefaultDeprojectionMatrix(eye_name);
+    // Initialize camera
+    icub_camera_.initialize();
+
+    // Cache deprojection matrix
+    bool valid_deprojection_matrix;
+    std::tie(valid_deprojection_matrix, deprojection_matrix_) = icub_camera_.getDeprojectionMatrix();
+    if(!valid_deprojection_matrix)
+    {
+        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot get deprojection matrix from the camera.";
+        throw(std::runtime_error(err));
+    }
 
     // Configure mesh actor
     mapper_ = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -192,8 +185,6 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
 Viewer::~Viewer()
 {
     port_estimate_in_.close();
-    port_image_in_.close();
-    port_depth_in_.close();
 }
 
 
@@ -247,29 +238,31 @@ void Viewer::updateView()
 
     // Update point cloud of the scene
     {
-        // Try to get input image
-        yarp::sig::ImageOf<PixelRgb>* image_in = port_image_in_.read(false);
-        if (image_in == nullptr)
-            return;
+        bool valid_rgb;
+        cv::Mat rgb_image;
+        std::tie(valid_rgb, rgb_image) = icub_camera_.getRgbImage(false);
 
-        yarp::sig::ImageOf<PixelFloat>* depth_in = port_depth_in_.read(false);
-        if (depth_in == nullptr)
-            return;
+        bool valid_depth;
+        MatrixXf depth_image;
+        std::tie(valid_depth, depth_image) = icub_camera_.getDepthImage(false);
 
-        // Try to get the point cloud
-        bool valid_point_cloud;
-        Eigen::MatrixXd point_cloud;
-        Eigen::VectorXi valid_coordinates;
+        if (valid_rgb && valid_depth)
+        {
+            // Try to get the point cloud
+            bool valid_point_cloud;
+            Eigen::MatrixXd point_cloud;
+            Eigen::VectorXi valid_coordinates;
 
-        std::tie(valid_point_cloud, point_cloud, valid_coordinates) = get3DPointCloud(*depth_in, "left", pc_left_z_threshold_);
+            std::tie(valid_point_cloud, point_cloud, valid_coordinates) = get3DPointCloud(depth_image, pc_left_z_threshold_);
 
-        if (!valid_point_cloud)
-            return;
-
-        // Set 3D points
-        vtk_measurements_->set_points(point_cloud);
-        // Extract corresponding colors from the rgb image
-        vtk_measurements_->set_colors(coordinates_2d_, valid_coordinates, *image_in);
+            if (valid_point_cloud)
+            {
+                // Set 3D points
+                vtk_measurements_->set_points(point_cloud);
+                // Extract corresponding colors from the rgb image
+                vtk_measurements_->set_colors(coordinates_2d_, valid_coordinates, rgb_image);
+            }
+        }
     }
 
     // Update hand of the robot
@@ -292,45 +285,14 @@ void Viewer::set2DCoordinates(const std::size_t u_stride, const std::size_t v_st
 }
 
 
-std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud
-(
-    const yarp::sig::ImageOf<yarp::sig::PixelFloat>& depth,
-    const std::string eye_name,
-    const float z_threshold
-)
+std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud(const MatrixXf& depth, const float z_threshold)
 {
-    if ((eye_name != "left") && (eye_name != "right"))
-        return std::make_tuple(false, MatrixXd(), VectorXi());
-
     // Get the camera pose
-    yarp::sig::Vector eye_pos_left;
-    yarp::sig::Vector eye_att_left;
-    yarp::sig::Vector eye_pos_right;
-    yarp::sig::Vector eye_att_right;
-    Eigen::VectorXd eye_pos(3);
-    Eigen::VectorXd eye_att(4);
-    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
-        return std::make_tuple(false, MatrixXd(), VectorXi());
-
-    if (eye_name == "left")
-    {
-        eye_pos = toEigen(eye_pos_left);
-        eye_att = toEigen(eye_att_left);
-    }
-    else
-    {
-        eye_pos = toEigen(eye_pos_right);
-        eye_att = toEigen(eye_att_right);
-    }
-    Eigen::AngleAxisd angle_axis(eye_att(3), eye_att.head<3>());
-
+    bool valid_camera_pose;
     Eigen::Transform<double, 3, Eigen::Affine> camera_pose;
-
-    // Compose translation
-    camera_pose = Translation<double, 3>(eye_pos);
-
-    // Compose rotation
-    camera_pose.rotate(angle_axis);
+    std::tie(valid_camera_pose, camera_pose) = icub_camera_.getCameraPose(true);
+    if (!valid_camera_pose)
+        return std::make_tuple(false, MatrixXd(), VectorXi());
 
     // Valid points mask
     Eigen::VectorXi valid_points(coordinates_2d_.size());
@@ -339,7 +301,7 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud
     {
         valid_points(i) = 0;
 
-        float depth_u_v = depth(coordinates_2d_[i].first, coordinates_2d_[i].second);
+        float depth_u_v = depth(coordinates_2d_[i].second, coordinates_2d_[i].first);
         if ((depth_u_v > 0) && (depth_u_v < z_threshold))
             valid_points(i) = 1;
     }
@@ -354,8 +316,8 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud
     {
         if(valid_points(i) == 1)
         {
-            float depth_u_v = depth(coordinates_2d_[i].first, coordinates_2d_[i].second);
-            points.col(j) = default_deprojection_matrix_.col(i) * depth_u_v;
+            float depth_u_v = depth(coordinates_2d_[i].second, coordinates_2d_[i].first);
+            points.col(j) = deprojection_matrix_.col(i) * depth_u_v;
 
             j++;
         }
@@ -365,23 +327,4 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud
     MatrixXd points_robot = camera_pose * points.colwise().homogeneous();
 
     return std::make_tuple(true, points_robot, valid_points);
-}
-
-void Viewer::setDefaultDeprojectionMatrix(const std::string eye_name)
-{
-    // Get intrinsic parameters for left camera
-    double fx;
-    double fy;
-    double cx;
-    double cy;
-    gaze_.getCameraIntrinsics(eye_name, fx, fy, cx, cy);
-
-    // Compose default deprojection matrix
-    default_deprojection_matrix_.resize(3, coordinates_2d_.size());
-    for (std::size_t i = 0; i < default_deprojection_matrix_.cols(); i++)
-    {
-        default_deprojection_matrix_(0, i) = (coordinates_2d_[i].first - cx) / fx;
-        default_deprojection_matrix_(1, i) = (coordinates_2d_[i].second - cy) / fy;
-        default_deprojection_matrix_(2, i) = 1.0;
-    }
 }

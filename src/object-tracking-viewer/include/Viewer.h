@@ -26,9 +26,11 @@
 
 #include <Eigen/Dense>
 
-#include <GazeController.h>
+#include <iCubCamera.h>
 
 #include <VtkiCubHand.h>
+
+#include <opencv2/opencv.hpp>
 
 #include <yarp/os/ResourceFinder.h>
 #include <yarp/os/BufferedPort.h>
@@ -116,7 +118,7 @@ public:
         vtk_polydata->SetPoints(vtk_points);
     }
 
-    bool set_colors(const std::vector<std::pair<int, int>>& coordinates, const Eigen::Ref<const Eigen::VectorXi>& valid_coordinates, const yarp::sig::ImageOf<yarp::sig::PixelRgb>& rgb_image)
+    bool set_colors(const std::vector<std::pair<int, int>>& coordinates, const Eigen::Ref<const Eigen::VectorXi>& valid_coordinates, const cv::Mat& rgb_image)
     {
         vtk_colors = vtkSmartPointer<vtkUnsignedCharArray>::New();
         vtk_colors->SetNumberOfComponents(3);
@@ -126,8 +128,10 @@ public:
             if (valid_coordinates(i) == 0)
                 continue;
 
-            yarp::sig::PixelRgb pixel = rgb_image.pixel(coordinates[i].first, coordinates[i].second);
-            std::vector<unsigned char> color = {pixel.r, pixel.g, pixel.b};
+            cv::Vec3b cv_color = rgb_image.at<cv::Vec3b>(cv::Point(coordinates[i].first, coordinates[i].second));
+            /* yarp::sig::PixelRgb pixel = rgb_image.pixel(coordinates[i].first, coordinates[i].second); */
+            /* std::vector<unsigned char> color = {pixel.r, pixel.g, pixel.b}; */
+            std::vector<unsigned char> color = {cv_color[0], cv_color[1], cv_color[2]};
 
             vtk_colors->InsertNextTypedTuple(color.data());
         }
@@ -156,19 +160,11 @@ public:
 private:
     void set2DCoordinates(const std::size_t u_stride, const std::size_t v_stride);
 
-    std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> get3DPointCloud(const yarp::sig::ImageOf<yarp::sig::PixelFloat>& depth, const std::string eye_name, const float z_threshold = 1.0);
-
-    void setDefaultDeprojectionMatrix(const std::string eye_name);
-
-    std::pair<bool, Eigen::MatrixXd> readStateFromFile(const std::string& filename, const std::size_t num_fields);
+    std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> get3DPointCloud(const Eigen::MatrixXf& depth, const float z_threshold = 1.0);
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_in_;
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_ground_truth_in_;
-
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_in_;
-
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelFloat>> port_depth_in_;
 
     std::vector<std::pair<int, int>> coordinates_2d_;
 
@@ -200,9 +196,9 @@ private:
 
     vtkSmartPointer<vtkInteractorStyleSwitch> interactor_style_;
 
-    GazeController gaze_;
+    iCubCamera icub_camera_;
 
-    Eigen::MatrixXd default_deprojection_matrix_;
+    Eigen::MatrixXd deprojection_matrix_;
 
     float pc_left_z_threshold_;
 

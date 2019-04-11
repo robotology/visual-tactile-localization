@@ -40,6 +40,9 @@ set_target_properties(SI::SuperimposeMesh PROPERTIES INTERFACE_LINK_LIBRARIES ""
 find_package(VTK             REQUIRED)
 include(${VTK_USE_FILE})
 
+# OpenCV
+find_package(OpenCV REQUIRED)
+
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR
     include/iCubArmModel.h
@@ -74,9 +77,10 @@ target_link_libraries(${EXE_TARGET_NAME} PRIVATE
                                          YARP::YARP_OS
                                          YARP::YARP_sig
                                          YARP::YARP_eigen
-                                         iCubGazeCtrlLibrary
+                                         CameraLibrary
                                          SI::SuperimposeMesh
                                          ${ICUB_LIBRARIES}
+                                         ${OpenCV_LIBS}
                                          iCubFingersEncoders
                                          )
 

@@ -201,6 +201,7 @@ set(${EXE_TARGET_NAME}_CONF
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/analogs_configuration.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/config_simulation.ini
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/icub_camera_config.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/sfm_config.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/springy_calibration_left.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/springy_calibration_right.ini

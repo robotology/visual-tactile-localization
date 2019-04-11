@@ -8,6 +8,7 @@
 #===============================================================================
 
 add_subdirectory(gaze-ctrl-library)
+add_subdirectory(camera-library)
 add_subdirectory(icub-fingers-encoders)
 add_subdirectory(sfm-library)
 add_subdirectory(object-tracking-depth)

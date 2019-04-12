@@ -160,13 +160,6 @@ iCubCamera::iCubCamera
         icub_eye_fk_.releaseLink(2);
     }
 
-    // Open rgb input port
-    if (!(port_rgb_in_.open("/" + port_prefix + "/rgbImage:i")))
-    {
-        std::string err = log_ID_ + "::ctor. Error: cannot open iCub " + laterality_ + "rgb camera input port.";
-        throw(std::runtime_error(err));
-    }
-
     // Log parameters
     std::cout << log_ID_ + "::ctor. Camera " + laterality_ + " parameters." << std::endl;
     std::cout << log_ID_ + "    - width: " << parameters_.width << std::endl;
@@ -176,6 +169,12 @@ iCubCamera::iCubCamera
     std::cout << log_ID_ + "    - cx: " << parameters_.cx << std::endl;
     std::cout << log_ID_ + "    - cy: " << parameters_.cy << std::endl;
 
+    // Open rgb input port
+    if (!(port_rgb_in_.open("/" + port_prefix + "/rgbImage:i")))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open iCub " + laterality_ + "rgb camera input port.";
+        throw(std::runtime_error(err));
+    }
 
     // Open depth input port
     if (laterality_ == "right")

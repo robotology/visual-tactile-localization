@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     ResourceFinder rf;
     rf.setVerbose(true);
     rf.setDefaultConfigFile("config.ini");
-    rf.setDefaultContext("object-tracking-viewer");
+    // rf.setDefaultContext("object-tracking-viewer");
     rf.configure(argc, argv);
 
     Viewer(port_prefix, rf);

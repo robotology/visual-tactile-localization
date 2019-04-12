@@ -18,7 +18,12 @@ using namespace yarp::os;
 using namespace yarp::sig;
 
 
-RealsenseCamera::RealsenseCamera(const std::string& port_prefix, const std::string& context)
+RealsenseCamera::RealsenseCamera
+(
+    const std::string& port_prefix,
+    const std::string& fallback_context,
+    const std::string& fallback_key
+)
 {
     Property properties;
     properties.put("device", "RGBDSensorClient");
@@ -53,11 +58,11 @@ RealsenseCamera::RealsenseCamera(const std::string& port_prefix, const std::stri
         // Load camera resolution and instrinsic parameters from configuration file
         ResourceFinder rf;
         rf.setVerbose(true);
-        rf.setDefaultContext(context);
+        rf.setDefaultContext(fallback_context);
         rf.setDefaultConfigFile("realsense_camera_config.ini");
         rf.configure(0, nullptr);
 
-        ResourceFinder rf_camera = rf.findNestedResourceFinder("camera");
+        ResourceFinder rf_camera = rf.findNestedResourceFinder(fallback_key.c_str());
         bool ok =  rf_camera.check("width");
         ok &= rf_camera.check("height");
         ok &= rf_camera.check("fx");

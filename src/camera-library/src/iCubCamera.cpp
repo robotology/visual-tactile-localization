@@ -26,7 +26,8 @@ iCubCamera::iCubCamera
 (
     const std::string& laterality,
     const std::string& port_prefix,
-    const std::string& context
+    const std::string& fallback_context,
+    const std::string& fallback_key
 ) :
     laterality_(laterality)
 {
@@ -115,29 +116,29 @@ iCubCamera::iCubCamera
         // Load camera resolution and instrinsic parameters from configuration file
         ResourceFinder rf;
         rf.setVerbose(true);
-        rf.setDefaultContext(context);
+        rf.setDefaultContext(fallback_context);
         rf.setDefaultConfigFile("icub_camera_config.ini");
         rf.configure(0, nullptr);
 
-        ResourceFinder rf_laterality = rf.findNestedResourceFinder(laterality_.c_str());
-        ok =  rf_laterality.check("width");
-        ok &= rf_laterality.check("height");
-        ok &= rf_laterality.check("fx");
-        ok &= rf_laterality.check("fy");
-        ok &= rf_laterality.check("cx");
-        ok &= rf_laterality.check("cy");
+        ResourceFinder rf_camera = rf.findNestedResourceFinder(fallback_key.c_str());
+        ok =  rf_camera.check("width");
+        ok &= rf_camera.check("height");
+        ok &= rf_camera.check("fx");
+        ok &= rf_camera.check("fy");
+        ok &= rf_camera.check("cx");
+        ok &= rf_camera.check("cy");
         if (!ok)
         {
             std::string err = log_ID_ + "::ctor. Error: cannot load iCub " + laterality_ + " camera parameters.";
             throw(std::runtime_error(err));
         }
 
-        parameters_.width = rf_laterality.find("width").asDouble();
-        parameters_.height = rf_laterality.find("height").asDouble();
-        parameters_.fx = rf_laterality.find("fx").asDouble();
-        parameters_.fy = rf_laterality.find("fy").asDouble();
-        parameters_.cx = rf_laterality.find("cx").asDouble();
-        parameters_.cy = rf_laterality.find("cy").asDouble();
+        parameters_.width = rf_camera.find("width").asDouble();
+        parameters_.height = rf_camera.find("height").asDouble();
+        parameters_.fx = rf_camera.find("fx").asDouble();
+        parameters_.fy = rf_camera.find("fy").asDouble();
+        parameters_.cx = rf_camera.find("cx").asDouble();
+        parameters_.cy = rf_camera.find("cy").asDouble();
         parameters_.initialized = true;
 
         // Open ports

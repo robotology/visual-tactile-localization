@@ -58,6 +58,10 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     std::string camera_name = rf.check("camera", Value("icub")).asString();
     yInfo() << log_ID_ << "- camera:" << camera_name;
 
+    // Load key for fallback camera configuration
+    std::string camera_fallback_key = rf.check("fallback_config", Value("left_320_240")).asString();
+    yInfo() << log_ID_ << "- camera fallback configuration key:" << camera_name;
+
     if (show_ground_truth_)
     {
         // Open estimate input port
@@ -93,9 +97,9 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
 
     // Initialize camera
     if (camera_name == "icub")
-        camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking"));
+        camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking", camera_fallback_key));
     else if (camera_name == "realsense")
-        camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking"));
+        camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
     else
     {
         std::string err = "VIEWER::CTOR::ERROR\n\tError: the camera you requested (" + camera_name + ") is not supported.";

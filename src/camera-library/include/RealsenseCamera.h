@@ -21,7 +21,7 @@ class RealsenseCamera : public Camera
 {
 public:
 
-    RealsenseCamera(const std::string& port_prefix, const std::string& context);
+    RealsenseCamera(const std::string& port_prefix, const std::string& fallback_configuration, const std::string& fallback_key);
 
     ~RealsenseCamera();
 

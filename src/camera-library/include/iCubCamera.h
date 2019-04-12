@@ -30,7 +30,7 @@ class iCubCamera : public Camera
 {
 public:
 
-    iCubCamera(const std::string& laterality, const std::string& port_prefix, const std::string& context);
+    iCubCamera(const std::string& laterality, const std::string& port_prefix, const std::string& fallback_context, const std::string& fallback_key);
 
     ~iCubCamera();
 

@@ -84,8 +84,10 @@ target_link_libraries(${EXE_TARGET_NAME} PRIVATE
                                          iCubFingersEncoders
                                          )
 
-set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini)
+set(${EXE_TARGET_NAME}_CONF_ICUB ${CMAKE_CURRENT_SOURCE_DIR}/conf/icub/config.ini)
+set(${EXE_TARGET_NAME}_CONF_R1 ${CMAKE_CURRENT_SOURCE_DIR}/conf/r1/config.ini)
 
-yarp_install(FILES ${${EXE_TARGET_NAME}_CONF} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking-viewer)
+yarp_install(FILES ${${EXE_TARGET_NAME}_CONF_ICUB} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking-viewer-icub)
+yarp_install(FILES ${${EXE_TARGET_NAME}_CONF_R1}   DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking-viewer-r1)
 
 install(TARGETS ${EXE_TARGET_NAME} DESTINATION bin)

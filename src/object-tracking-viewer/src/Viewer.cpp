@@ -25,8 +25,7 @@ using namespace yarp::os;
 using namespace yarp::sig;
 using namespace Eigen;
 
-Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
-    icub_camera_("left", port_prefix, "object-tracking")
+Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
 {
     // Open estimate input port
     if(!port_estimate_in_.open("/" + port_prefix + "/estimate:i"))
@@ -54,6 +53,10 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     // Load ground truth visualization boolean
     show_ground_truth_ = rf.check("show_ground_truth", Value("false")).asBool();
     yInfo() << log_ID_ << "- show_ground_truth:" << show_ground_truth_;
+
+    // Load name of the camera
+    std::string camera_name = rf.check("camera", Value("icub")).asString();
+    yInfo() << log_ID_ << "- camera:" << camera_name;
 
     if (show_ground_truth_)
     {
@@ -89,11 +92,20 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     set2DCoordinates(u_stride, v_stride);
 
     // Initialize camera
-    icub_camera_.initialize();
+    if (camera_name == "icub")
+        camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking"));
+    else if (camera_name == "realsense")
+        camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking"));
+    else
+    {
+        std::string err = "VIEWER::CTOR::ERROR\n\tError: the camera you requested (" + camera_name + ") is not supported.";
+        throw(std::runtime_error(err));
+    }
+    camera_->initialize();
 
     // Cache deprojection matrix
     bool valid_deprojection_matrix;
-    std::tie(valid_deprojection_matrix, deprojection_matrix_) = icub_camera_.getDeprojectionMatrix();
+    std::tie(valid_deprojection_matrix, deprojection_matrix_) = camera_->getDeprojectionMatrix();
     if(!valid_deprojection_matrix)
     {
         std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot get deprojection matrix from the camera.";
@@ -129,9 +141,9 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     orientation_widget_->SetOrientationMarker(axes_);
 
     // Configure camera
-    camera_ = vtkSmartPointer<vtkCamera>::New();
-    camera_->SetPosition(0.0, 0.0, 0.5);
-    camera_->SetViewUp(-1.0, 0.0, -1.0);
+    vtk_camera_ = vtkSmartPointer<vtkCamera>::New();
+    vtk_camera_->SetPosition(0.0, 0.0, 0.5);
+    vtk_camera_->SetViewUp(-1.0, 0.0, -1.0);
 
     // Configure interactor style
     interactor_style_ = vtkSmartPointer<vtkInteractorStyleSwitch>::New();
@@ -157,7 +169,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf) :
     renderer_->SetBackground(0.8, 0.8, 0.8);
 
     // Activate camera
-    renderer_->SetActiveCamera(camera_);
+    renderer_->SetActiveCamera(vtk_camera_);
 
     // Set interactor style
     render_window_interactor_->SetInteractorStyle(interactor_style_);
@@ -240,11 +252,11 @@ void Viewer::updateView()
     {
         bool valid_rgb;
         cv::Mat rgb_image;
-        std::tie(valid_rgb, rgb_image) = icub_camera_.getRgbImage(false);
+        std::tie(valid_rgb, rgb_image) = camera_->getRgbImage(false);
 
         bool valid_depth;
         MatrixXf depth_image;
-        std::tie(valid_depth, depth_image) = icub_camera_.getDepthImage(false);
+        std::tie(valid_depth, depth_image) = camera_->getDepthImage(false);
 
         if (valid_rgb && valid_depth)
         {
@@ -290,7 +302,7 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud(const
     // Get the camera pose
     bool valid_camera_pose;
     Eigen::Transform<double, 3, Eigen::Affine> camera_pose;
-    std::tie(valid_camera_pose, camera_pose) = icub_camera_.getCameraPose(true);
+    std::tie(valid_camera_pose, camera_pose) = camera_->getCameraPose(true);
     if (!valid_camera_pose)
         return std::make_tuple(false, MatrixXd(), VectorXi());
 

@@ -26,7 +26,9 @@
 
 #include <Eigen/Dense>
 
+#include <Camera.h>
 #include <iCubCamera.h>
+#include <RealsenseCamera.h>
 
 #include <VtkiCubHand.h>
 
@@ -192,11 +194,11 @@ private:
 
     vtkSmartPointer<vtkOrientationMarkerWidget> orientation_widget_;
 
-    vtkSmartPointer<vtkCamera> camera_;
+    vtkSmartPointer<vtkCamera> vtk_camera_;
 
     vtkSmartPointer<vtkInteractorStyleSwitch> interactor_style_;
 
-    iCubCamera icub_camera_;
+    std::unique_ptr<Camera> camera_;
 
     Eigen::MatrixXd deprojection_matrix_;
 

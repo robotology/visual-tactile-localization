@@ -63,6 +63,8 @@ bool Camera::evalDeprojectionMatrix()
     }
 
     deprojection_matrix_initialized_ = true;
+
+    return true;
 }
 
 

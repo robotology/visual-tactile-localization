@@ -167,13 +167,13 @@ std::pair<bool, Transform<double, 3, Eigen::Affine>> ArucoMeasurement::getCamera
 }
 
 
-std::pair<bool, Data> ArucoMeasurement::measure() const
+std::pair<bool, Data> ArucoMeasurement::measure(const Data& data) const
 {
     return std::make_pair(is_measurement_available_, measurement_);
 }
 
 
-bool ArucoMeasurement::freezeMeasurements()
+bool ArucoMeasurement::freeze()
 {
     ImageOf<PixelRgb>* image_in;
     image_in = port_image_in_.read(true);

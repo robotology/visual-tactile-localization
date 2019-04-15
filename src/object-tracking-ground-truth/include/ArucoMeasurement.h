@@ -42,9 +42,9 @@ public:
 
     virtual ~ArucoMeasurement();
 
-    std::pair<bool, bfl::Data> measure() const override;
+    std::pair<bool, bfl::Data> measure(const bfl::Data& data = bfl::Data()) const override;
 
-    bool freezeMeasurements() override;
+    bool freeze() override;
 
     std::pair<bool, bfl::Data> innovation(const bfl::Data& predicted_measurements, const bfl::Data& measurements) const override;
 

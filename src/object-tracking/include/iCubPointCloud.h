@@ -50,9 +50,9 @@ public:
 
     virtual ~iCubPointCloud();
 
-    std::pair<bool, bfl::Data> measure() const override;
+    std::pair<bool, bfl::Data> measure(const bfl::Data& data = bfl::Data()) const override;
 
-    bool freezeMeasurements() override;
+    bool freeze() override;
 
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 

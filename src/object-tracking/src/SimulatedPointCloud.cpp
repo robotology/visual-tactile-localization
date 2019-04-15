@@ -131,7 +131,7 @@ void SimulatedPointCloud::transformModel(const VectorXd& state, simpleTriMesh& t
 }
 
 
-bool SimulatedPointCloud::freezeMeasurements()
+bool SimulatedPointCloud::freeze()
 {
     try
     {
@@ -248,7 +248,7 @@ VectorXd SimulatedPointCloud::samplePointCloud(const VectorXd& state)
 }
 
 
-std::pair<bool, Data> SimulatedPointCloud::measure() const
+std::pair<bool, Data> SimulatedPointCloud::measure(const Data& data) const
 {
     return std::make_pair(true, measurement_);
 }

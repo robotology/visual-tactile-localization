@@ -9,7 +9,7 @@
 
   <module>
     <name>object-tracking</name>
-    <parameters></parameters>
+    <parameters>--from config_icub_320_240.ini</parameters>
     <node>localhost</node>
     <dependencies>
       <port timeout="5.0">/icub/camcalib/left/out</port>
@@ -23,7 +23,7 @@
 
   <module>
     <name>object-tracking-viewer</name>
-    <parameters></parameters>
+    <parameters>--context object-tracking-viewer-icub</parameters>
     <node>localhost</node>
   </module>
 
@@ -95,13 +95,13 @@
   <connection>
     <!-- used to associate colours to each point in the point cloud -->
     <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking-viewer/cam/left:i</to>
+    <to>/object-tracking-viewer/rgbImage:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
     <from>/object-tracking-depth/SFM/depth:o</from>
-    <to>/object-tracking-viewer/depth:i</to>
+    <to>/object-tracking-viewer/depthImage:i</to>
     <protocol>tcp</protocol>
   </connection>
 
@@ -162,21 +162,21 @@
   <connection>
     <!-- used as background for interactive visualization (e.g. bounding box, hulls, etc.) -->
     <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking/cam/left:i</to>
+    <to>/object-tracking/rgbImage:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
     <!-- used to update the bounding box according to the hand kinematics -->
     <from>/handTracking/VisualSIS/left/estimates:o</from>
-    <to>/object-tracking/bbox-estimator/hand_pose:i</to>
+    <to>/object-tracking/hand_pose:i</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
     <!-- depth input -->
     <from>/object-tracking-depth/SFM/depth:o</from>
-    <to>/object-tracking/depth:i</to>
+    <to>/object-tracking/depthImage:i</to>
     <protocol>tcp</protocol>
   </connection>
 
@@ -192,21 +192,6 @@
     <!-- same as above, also torso is required for the camera pose -->
     <from>/icub/torso/state:o</from>
     <to>/object-tracking/icub/torso:i</to>
-    <protocol>tcp</protocol>
-  </connection>
-
-  <connection>
-    <!-- camera pose required to project 3D estimate onto 2D camera plane -->
-    <!-- in case the GazeController is not avaiable -->
-    <from>/icub/head/state:o</from>
-    <to>/object-tracking/bbox-estimator/icub/head:i</to>
-    <protocol>tcp</protocol>
-  </connection>
-
-  <connection>
-    <!-- same as above, also torso is required for the camera pose -->
-    <from>/icub/torso/state:o</from>
-    <to>/object-tracking/bbox-estimator/icub/torso:i</to>
     <protocol>tcp</protocol>
   </connection>
 

@@ -168,6 +168,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       ${OPENGL_LIBRARIES}
                       ${ICUB_LIBRARIES}
                       iCubFingersEncoders
+                      CameraLibrary
                       )
 
 if (USE_OPENMP)

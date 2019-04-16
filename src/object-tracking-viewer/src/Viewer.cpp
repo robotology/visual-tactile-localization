@@ -62,6 +62,9 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     std::string camera_fallback_key = rf.check("fallback_config", Value("left_320_240")).asString();
     yInfo() << log_ID_ << "- camera fallback configuration key:" << camera_name;
 
+    // Load matched configuration file within context object-tracking
+    std::string object_tracking_configuration_file = rf.check("object_tracking_config", Value("config.ini")).asString();
+
     if (show_ground_truth_)
     {
         // Open estimate input port
@@ -76,7 +79,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     ResourceFinder rf_object_tracking;
     rf_object_tracking.setVerbose(true);
     rf_object_tracking.setDefaultContext("object-tracking");
-    rf_object_tracking.setDefaultConfigFile("config.ini");
+    rf_object_tracking.setDefaultConfigFile(object_tracking_configuration_file.c_str());
     rf_object_tracking.configure(0, NULL);
 
     ResourceFinder rf_object = rf_object_tracking.findNestedResourceFinder("OBJECT");

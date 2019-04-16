@@ -52,6 +52,8 @@ protected:
 
     std::unordered_map<std::string, simpleTriMesh> hand_meshes_;
 
+    std::vector<MeshImporter> hand_meshes_importer_;
+
     std::unordered_map<std::string, Eigen::MatrixXd> sampled_fingertips_;
 
     Eigen::VectorXd measurements_;

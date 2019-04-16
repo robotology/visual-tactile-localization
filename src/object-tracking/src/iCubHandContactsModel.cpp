@@ -224,7 +224,8 @@ bool iCubHandContactsModel::isHandPartEnabled(const std::string hand_part_name)
 
 bool iCubHandContactsModel::loadMesh(const std::string hand_part_name, const std::string mesh_path)
 {
-    MeshImporter importer(mesh_path);
+    hand_meshes_importer_.push_back(MeshImporter(mesh_path));
+    MeshImporter& importer = hand_meshes_importer_.back();
 
     // Convert mesh using MeshImporter
     std::istringstream mesh_input;

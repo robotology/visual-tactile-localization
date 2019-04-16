@@ -64,19 +64,16 @@ endif()
 find_package(OpenGL REQUIRED)
 
 set(${EXE_TARGET_NAME}_HDR
-    include/BoundingBoxEstimator.h
     include/ContactDetection.h
     include/Correction.h
     include/DiscreteKinematicModel.h
     include/DiscretizedKinematicModel.h
     include/DiscretizedKinematicModelTDD.h
-    #include/Filter.h
     include/GaussianFilter_.h
     include/iCubArmModel.h
     include/iCubHandContactsModel.h
     include/iCubHandOcclusion.h
     include/iCubObjectMeasurements.h
-    include/iCubPointCloud.h
     include/iCubSpringyFingersDetection.h
     include/InitParticles.h
     include/InHandObjectSegmentation.h
@@ -103,18 +100,15 @@ set(${EXE_TARGET_NAME}_HDR
     )
 
 set(${EXE_TARGET_NAME}_SRC
-    src/BoundingBoxEstimator.cpp
     src/Correction.cpp
     src/DiscreteKinematicModel.cpp
     src/DiscretizedKinematicModel.cpp
     src/DiscretizedKinematicModelTDD.cpp
-    #src/Filter.cpp
     src/GaussianFilter_.cpp
     src/iCubArmModel.cpp
     src/iCubHandContactsModel.cpp
     src/iCubHandOcclusion.cpp
     src/iCubObjectMeasurements.cpp
-    src/iCubPointCloud.cpp
     src/iCubSpringyFingersDetection.cpp
     src/InHandObjectSegmentation.cpp
     src/InitParticles.cpp

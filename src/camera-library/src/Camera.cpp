@@ -68,7 +68,7 @@ bool Camera::evalDeprojectionMatrix()
 }
 
 
-std::pair<bool, CameraParameters> Camera::getIntrinsicParameters()
+std::pair<bool, CameraParameters> Camera::getIntrinsicParameters() const
 {
     if (!parameters_.initialized)
         return std::make_pair(false, CameraParameters());

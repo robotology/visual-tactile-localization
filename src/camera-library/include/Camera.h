@@ -29,7 +29,7 @@ public:
 
     virtual std::pair<bool, Eigen::MatrixXf> getDepthImage(const bool& blocking) = 0;
 
-    virtual std::pair<bool, CameraParameters> getIntrinsicParameters();
+    virtual std::pair<bool, CameraParameters> getIntrinsicParameters() const;
 
     virtual std::pair<bool, Eigen::MatrixXd> getDeprojectionMatrix();
 

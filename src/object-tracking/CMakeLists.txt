@@ -70,22 +70,27 @@ set(${EXE_TARGET_NAME}_HDR
     include/DiscreteKinematicModel.h
     include/DiscretizedKinematicModel.h
     include/DiscretizedKinematicModelTDD.h
-    include/Filter.h
+    #include/Filter.h
     include/GaussianFilter_.h
     include/iCubArmModel.h
     include/iCubHandContactsModel.h
     include/iCubHandOcclusion.h
+    include/iCubObjectMeasurements.h
     include/iCubPointCloud.h
     include/iCubSpringyFingersDetection.h
     include/InitParticles.h
+    include/InHandObjectSegmentation.h
     include/MeshImporter.h
     include/MeshModel.h
     include/NanoflannPointCloudPrediction.h
     include/ObjectOcclusion.h
+    include/ObjectMeasurements.h
+    include/ObjectRenderer.h
     include/ParticlesCorrection.h
     include/PFilter.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
+    include/PointCloudSegmentation.h
     include/ProximityLikelihood.h
     include/Random3DPose.h
     include/SimulatedFilter.h
@@ -103,20 +108,25 @@ set(${EXE_TARGET_NAME}_SRC
     src/DiscreteKinematicModel.cpp
     src/DiscretizedKinematicModel.cpp
     src/DiscretizedKinematicModelTDD.cpp
-    src/Filter.cpp
+    #src/Filter.cpp
     src/GaussianFilter_.cpp
     src/iCubArmModel.cpp
     src/iCubHandContactsModel.cpp
     src/iCubHandOcclusion.cpp
+    src/iCubObjectMeasurements.cpp
     src/iCubPointCloud.cpp
     src/iCubSpringyFingersDetection.cpp
+    src/InHandObjectSegmentation.cpp
     src/InitParticles.cpp
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
     src/ObjectOcclusion.cpp
+    src/ObjectMeasurements.cpp
+    src/ObjectRenderer.cpp
     src/ParticlesCorrection.cpp
     src/PFilter.cpp
     src/PointCloudModel.cpp
+    src/PointCloudSegmentation.cpp
     src/ProximityLikelihood.cpp
     src/Random3DPose.cpp
     src/SimulatedFilter.cpp

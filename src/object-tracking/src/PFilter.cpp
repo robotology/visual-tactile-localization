@@ -32,7 +32,7 @@ PFilter::PFilter
     std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
     std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
 ) :
-    ParticleCorrectionReset(correction.get()),
+    ParticlesCorrectionReference(correction.get()),
     SIS
     (
         num_particle,
@@ -153,7 +153,10 @@ void PFilter::resume_filter()
 
 void PFilter::contacts(const bool enable)
 {
-    icub_point_cloud_share_->setUseContacts(enable);
+    if (enable)
+        get_measurement_model().setProperty("use_contacts_on");
+    else
+        get_measurement_model().setProperty("use_contacts_off");
 }
 
 

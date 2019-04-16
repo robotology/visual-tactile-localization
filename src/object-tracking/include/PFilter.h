@@ -9,6 +9,7 @@
 #define PFILTER_H
 
 #include <BayesFilters/EstimatesExtraction.h>
+#include <BayesFilters/MeasurementModel.h>
 #include <BayesFilters/ParticleSetInitialization.h>
 #include <BayesFilters/PFPrediction.h>
 #include <BayesFilters/Resampling.h>
@@ -24,10 +25,10 @@
 
 #include <thrift/ObjectTrackingIDL.h>
 
-class ParticleCorrectionReset
+class ParticlesCorrectionReference
 {
 public:
-    ParticleCorrectionReset(ParticlesCorrection* particle_correction) :
+    ParticlesCorrectionReference(ParticlesCorrection* particle_correction) :
         particle_correction_(particle_correction)
     { }
 
@@ -36,11 +37,16 @@ public:
         particle_correction_->reset();
     }
 
+    bfl::MeasurementModel& get_measurement_model()
+    {
+        return particle_correction_->getMeasurementModel();
+    }
+
 private:
     ParticlesCorrection* particle_correction_;
 };
 
-class PFilter : public ParticleCorrectionReset,
+class PFilter : public ParticlesCorrectionReference,
                 public bfl::SIS,
                 public ObjectTrackingIDL
 {

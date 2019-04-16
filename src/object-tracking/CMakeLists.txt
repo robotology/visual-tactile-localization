@@ -22,7 +22,7 @@ endif()
 find_package(SuperimposeMesh 0.9.4.0 QUIET)
 if(NOT SuperimposeMesh_FOUND)
     message(STATUS "Did not found required master release of SuperimposeMesh. Looking for devel version.")
-    find_package(SuperimposeMesh 0.10.100.0 REQUIRED)
+    find_package(SuperimposeMesh 0.10.100 REQUIRED)
 endif()
 
 # Eigen
@@ -147,7 +147,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       PRIVATE
                       assimp
                       BayesFilters::BayesFilters
-                      SuperimposeMesh::SuperimposeMesh
+                      SI::SuperimposeMesh
                       YARP::YARP_OS
                       YARP::YARP_eigen
                       YARP::YARP_cv
@@ -213,6 +213,7 @@ set(${EXE_TARGET_NAME}_SHADER_VERT
 set(${EXE_TARGET_NAME}_SHADER_FRAG
         ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_frame.frag
         ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_model.frag
+        ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_model_texture.frag
         ${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_background.frag
 )
 

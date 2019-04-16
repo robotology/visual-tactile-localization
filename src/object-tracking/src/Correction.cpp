@@ -12,14 +12,17 @@
 using namespace bfl;
 using namespace Eigen;
 
+
 MeasurementModelReference::MeasurementModelReference(AdditiveMeasurementModel& measurement_model) :
-    meas_model_(dynamic_cast<iCubPointCloud&>(measurement_model))
+    measurement_model_(dynamic_cast<ObjectMeasurements&>(measurement_model))
 { }
 
-iCubPointCloud& MeasurementModelReference::getPointCloudModel()
+
+ObjectMeasurements& MeasurementModelReference::getObjectMeasurementsModel()
 {
-    return meas_model_;
+    return measurement_model_;
 }
+
 
 Correction::Correction
 (
@@ -53,19 +56,16 @@ void Correction::correctStep(const GaussianMixture& pred_state, GaussianMixture&
 
 MatrixXd Correction::getNoiseCovarianceMatrix(const std::size_t index)
 {
-    // Get the number of points obtained from vision
-    int visual_point_cloud_size_ = getPointCloudModel().getVisualPointCloudSize();
-
     MatrixXd noise_covariance;
-    if (index < visual_point_cloud_size_)
+    if (index < getObjectMeasurementsModel().getVisualDataSize())
     {
         // Return the noise covariance of visual measurements
-        std::tie(std::ignore, noise_covariance) = getPointCloudModel().getNoiseCovarianceMatrix();
+        std::tie(std::ignore, noise_covariance) = getObjectMeasurementsModel().getVisualNoiseCovarianceMatrix();
     }
     else
     {
         // Return the noise covariance of tactile measurements
-        std::tie(std::ignore, noise_covariance) = getPointCloudModel().getTactileNoiseCovarianceMatrix();
+        std::tie(std::ignore, noise_covariance) = getObjectMeasurementsModel().getTactileNoiseCovarianceMatrix();
     }
 
     return noise_covariance;
@@ -74,5 +74,5 @@ MatrixXd Correction::getNoiseCovarianceMatrix(const std::size_t index)
 
 void Correction::reset()
 {
-    getPointCloudModel().setProperty("reset");
+    getObjectMeasurementsModel().setProperty("reset");
 }

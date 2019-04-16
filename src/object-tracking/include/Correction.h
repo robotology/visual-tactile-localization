@@ -8,9 +8,10 @@
 #ifndef CORRECTION_H
 #define CORRECTION_H
 
-#include <iCubPointCloud.h>
 #include <BayesFilters/AdditiveMeasurementModel.h>
 #include <BayesFilters/SUKFCorrection.h>
+
+#include <ObjectMeasurements.h>
 
 
 class MeasurementModelReference
@@ -18,9 +19,9 @@ class MeasurementModelReference
 public:
     MeasurementModelReference(bfl::AdditiveMeasurementModel& measurement_model);
 
-    iCubPointCloud& getPointCloudModel();
+    ObjectMeasurements& getObjectMeasurementsModel();
 private:
-    iCubPointCloud& meas_model_;
+    ObjectMeasurements& measurement_model_;
 };
 
 

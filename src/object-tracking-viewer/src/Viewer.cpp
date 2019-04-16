@@ -99,9 +99,9 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     set2DCoordinates(u_stride, v_stride);
 
     // Initialize camera
-    if (camera_name == "icub")
+    if (camera_name == "iCubCamera")
         camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking", camera_fallback_key));
-    else if (camera_name == "realsense")
+    else if (camera_name == "RealsenseCamera")
         camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
     else
     {

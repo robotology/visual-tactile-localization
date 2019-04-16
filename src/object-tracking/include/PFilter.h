@@ -18,6 +18,7 @@
 #include <BoundingBoxEstimator.h>
 #include <iCubPointCloud.h>
 #include <ParticlesCorrection.h>
+#include <PointCloudSegmentation.h>
 
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/Port.h>
@@ -62,8 +63,7 @@ public:
         std::unique_ptr<bfl::PFPrediction> prediction,
         std::unique_ptr<ParticlesCorrection> correction,
         std::unique_ptr<bfl::Resampling> resampling,
-        std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
-        std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
+        std::shared_ptr<PointCloudSegmentation> segmentation
     );
 
     virtual ~PFilter();
@@ -103,9 +103,7 @@ protected:
 
     yarp::os::Port port_rpc_command_;
 
-    std::unique_ptr<BoundingBoxEstimator> bbox_estimator_;
-
-    std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share_;
+    std::shared_ptr<PointCloudSegmentation> segmentation_;
 
     bfl::EstimatesExtraction point_estimate_extraction_;
 

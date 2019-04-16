@@ -29,8 +29,7 @@ PFilter::PFilter
     std::unique_ptr<PFPrediction> prediction,
     std::unique_ptr<ParticlesCorrection> correction,
     std::unique_ptr<Resampling> resampling,
-    std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
-    std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
+    std::shared_ptr<PointCloudSegmentation> segmentation
 ) :
     ParticlesCorrectionReference(correction.get()),
     SIS
@@ -44,8 +43,7 @@ PFilter::PFilter
         std::move(resampling)
     ),
     resampling_threshold_(resampling_threshold),
-    bbox_estimator_(std::move(bbox_estimator)),
-    icub_point_cloud_share_(icub_point_cloud_share),
+    segmentation_(segmentation),
     point_estimate_extraction_(9, 3),
     pause_(false)
 {
@@ -101,9 +99,6 @@ bool PFilter::run_filter()
 
 bool PFilter::reset_filter()
 {
-    // Reset the bounding box estimator
-    bbox_estimator_->reset();
-
     // Reset the correction step
     reset_correction();
 
@@ -121,9 +116,6 @@ bool PFilter::reset_filter()
 
 bool PFilter::stop_filter()
 {
-    // Reset the bounding box estimator
-    bbox_estimator_->reset();
-
     // Reset the correction step
     reset_correction();
 
@@ -264,14 +256,6 @@ void PFilter::filteringStep()
     }
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    bbox_estimator_->step();
-    // Vector4d bounding_box;
-    // if (getFilteringStep() == 0)
-    //     bounding_box = bbox_estimator_->getEstimate(pred_particle_.weight());
-    // else
-    //     bounding_box = bbox_estimator_->getEstimate(cor_particle_.weight());
-    icub_point_cloud_share_->setBoundingBox(bbox_estimator_->getEstimate());
-
     if (getFilteringStep() != 0)
         prediction_->predict(cor_particle_, pred_particle_);
 
@@ -285,22 +269,25 @@ void PFilter::filteringStep()
     double neff = resampling_->neff(cor_particle_.weight());
     if (neff < static_cast<double>(num_particle_) * resampling_threshold_)
     {
-        // std::cout << "Resampling..." << std::endl;
         ParticleSet res_particle(num_particle_, state_size_);
         VectorXi res_parent(num_particle_, 1);
 
         resampling_->resample(cor_particle_, res_particle, res_parent);
 
-        // resample also bounding box particles
-        // bbox_estimator_->resampleParticles(res_parent);
-
         cor_particle_ = res_particle;
     }
 
-    // Use estimate as hint for the bounding box estimator
-    bbox_estimator_->setObjectPose(cor_particle_.mean(), cor_particle_.weight());
-    // Eanble/disable bounding box hand feedforward term according to the corrent state of contact
-    bbox_estimator_->enableHandFeedforward(icub_point_cloud_share_->getContactState());
+    // Use mean estimate as hint for the point cloud segmentation scheme
+    Transform<double, 3, Affine> object_transform;
+    int max_weight_index;
+    cor_particle_.weight().maxCoeff(&max_weight_index);
+    const VectorXd& mean = cor_particle_.mean(max_weight_index);
+    object_transform = Translation<double, 3>(mean.head<3>());
+    AngleAxisd rotation(AngleAxisd(mean(9), Vector3d::UnitZ()) *
+                        AngleAxisd(mean(10), Vector3d::UnitY()) *
+                        AngleAxisd(mean(11), Vector3d::UnitX()));
+    object_transform.rotate(rotation);
+    segmentation_->setObjectPose(object_transform);
 
     // Update the point estimate extraction
     bool valid_estimate;
@@ -347,7 +334,7 @@ void PFilter::filteringStep()
     else
         std::cout << "Unable to extract the estimate!" << std::endl;
 
-    if ((icub_point_cloud_share_->getOcclusion()) && (!icub_point_cloud_share_->getContactState()))
+    if ((segmentation_->getProperty("is_occlusion")) && !(get_measurement_model().setProperty("get_contact_state")))
         prediction_->getStateModel().setProperty("tdd_advance");
     else
         prediction_->getStateModel().setProperty("tdd_reset");

@@ -24,9 +24,7 @@ iCubObjectMeasurements::iCubObjectMeasurements
     const double& visual_outlier_threshold,
     const std::string& depth_fetch_mode
 ) :
-    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance),
-    visual_outlier_threshold_(visual_outlier_threshold),
-    depth_fetch_mode_(depth_fetch_mode)
+    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance, visual_outlier_threshold, depth_fetch_mode)
 { }
 
 
@@ -41,10 +39,8 @@ iCubObjectMeasurements::iCubObjectMeasurements
     const double& visual_outlier_threshold,
     const std::string& depth_fetch_mode
 ) :
-    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance, tactile_noise_covariance),
-    contacts_(std::move(object_contacts)),
-    visual_outlier_threshold_(visual_outlier_threshold),
-    depth_fetch_mode_(depth_fetch_mode)
+    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance, tactile_noise_covariance, visual_outlier_threshold, depth_fetch_mode),
+    contacts_(std::move(object_contacts))
 { }
 
 
@@ -146,12 +142,6 @@ bool iCubObjectMeasurements::freezeMeasurements()
 }
 
 
-std::pair<std::size_t, std::size_t> iCubObjectMeasurements::getOutputSize() const
-{
-    return std::make_pair(measurement_.size(), 0);
-}
-
-
 std::pair<bool, Eigen::MatrixXd> iCubObjectMeasurements::getNoiseCovarianceMatrix() const
 {
     if (contacts_ == nullptr)
@@ -161,18 +151,6 @@ std::pair<bool, Eigen::MatrixXd> iCubObjectMeasurements::getNoiseCovarianceMatri
 
     std::string err = log_ID_ + "::getNoiseCovarianceMatrix. Error: since support for tactile measurements is active, you should use methods getVisualNoiseCovarianceMatrix() and getTactileNoiseCovarianceMatrix() instead of getNoiseCovarianceMatrix().";
     throw(std::runtime_error(err));
-}
-
-
-std::size_t iCubObjectMeasurements::getVisualDataSize() const
-{
-    return visual_data_size_;
-}
-
-
-std::size_t iCubObjectMeasurements::getTactileDataSize() const
-{
-    return tactile_data_size_;
 }
 
 
@@ -204,31 +182,4 @@ void iCubObjectMeasurements::reset()
     ObjectMeasurements::reset();
 
     use_contacts_ = true;
-}
-
-
-bool iCubObjectMeasurements::getDepth()
-{
-    std::string mode = depth_fetch_mode_;
-    if (!depth_initialized_)
-    {
-        // in case a depth was never received
-        // it is required to wait at least for the first image in blocking mode
-        mode = "new_image";
-    }
-
-    bool valid_depth;
-    MatrixXf tmp_depth;
-    std::tie(valid_depth, tmp_depth) = camera_->getDepthImage(mode == "new_image");
-
-    if (valid_depth)
-    {
-        depth_ = std::move(tmp_depth);
-        depth_initialized_ = true;
-    }
-
-    if (mode == "skip")
-        return depth_initialized_ && valid_depth;
-    else
-        return depth_initialized_;
 }

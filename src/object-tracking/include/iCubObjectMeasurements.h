@@ -32,13 +32,7 @@ public:
 
     bool freezeMeasurements() override;
 
-    std::pair<std::size_t, std::size_t> getOutputSize() const override;
-
     std::pair<bool, Eigen::MatrixXd> getNoiseCovarianceMatrix() const override;
-
-    std::size_t getVisualDataSize() const override;
-
-    std::size_t getTactileDataSize() const override;
 
     bool setProperty(const std::string& property) override;
 
@@ -47,39 +41,11 @@ protected:
     void reset() override;
 
     /**
-     * Depth.
-     */
-    bool getDepth();
-
-    Eigen::MatrixXf depth_;
-
-    std::string depth_fetch_mode_;
-
-    bool depth_initialized_ = false;
-
-    /**
      * iCub hand contacts
      */
     std::unique_ptr<iCubHandContactsModel> contacts_;
 
     bool use_contacts_ = true;
-
-    /**
-     * Local copy of measurements.
-     */
-    Eigen::MatrixXd measurement_;
-
-    /**
-     * Threshold for detection of outliers in visual data.
-     */
-    double visual_outlier_threshold_;
-
-    /**
-     * Size of the last data
-     */
-    std::size_t visual_data_size_ = 0;
-
-    std::size_t tactile_data_size_ = 0;
 
     const std::string log_ID_ = "iCubObjectMeasurements";
 };

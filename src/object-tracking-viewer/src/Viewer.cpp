@@ -60,7 +60,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
 
     // Load key for fallback camera configuration
     std::string camera_fallback_key = rf.check("fallback_config", Value("left_320_240")).asString();
-    yInfo() << log_ID_ << "- camera fallback configuration key:" << camera_name;
+    yInfo() << log_ID_ << "- camera fallback configuration key:" << camera_fallback_key;
 
     // Load matched configuration file within context object-tracking
     std::string object_tracking_configuration_file = rf.check("object_tracking_config", Value("config.ini")).asString();

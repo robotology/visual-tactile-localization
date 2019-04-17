@@ -4,25 +4,25 @@
   <module>
     <name>object-tracking</name>
     <parameters></parameters>
-    <node>icub-cuda</node>
+    <node>localhost</node>
   </module>
 
   <module>
     <name>object-tracking-viewer</name>
     <parameters></parameters>
-    <node>icub-cuda</node>
+    <node>localhost</node>
   </module>
 
   <module>
     <name>object-tracking-depth</name>
     <parameters></parameters>
-    <node>icub-cuda</node>
+    <node>localhost</node>
   </module>
 
   <module>
     <name>object-tracking-ground-truth</name>
     <parameters></parameters>
-    <node>icub-cuda</node>
+    <node>localhost</node>
   </module>
 
   <module>

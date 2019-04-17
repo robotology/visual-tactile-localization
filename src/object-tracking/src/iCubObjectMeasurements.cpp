@@ -48,13 +48,13 @@ iCubObjectMeasurements::~iCubObjectMeasurements()
 { }
 
 
-std::pair<bool, Data> iCubObjectMeasurements::measure() const
+std::pair<bool, Data> iCubObjectMeasurements::measure(const Data& data) const
 {
     return std::make_pair(true, measurement_);
 }
 
 
-bool iCubObjectMeasurements::freezeMeasurements()
+bool iCubObjectMeasurements::freeze()
 {
     // Reset number of contact points
     tactile_data_size_ = 0;

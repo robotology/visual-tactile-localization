@@ -16,7 +16,6 @@
 #include <BayesFilters/SIS.h>
 
 #include <BoundingBoxEstimator.h>
-#include <iCubPointCloud.h>
 #include <ParticlesCorrection.h>
 #include <PointCloudSegmentation.h>
 

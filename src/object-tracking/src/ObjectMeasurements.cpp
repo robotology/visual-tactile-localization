@@ -46,13 +46,13 @@ ObjectMeasurements::ObjectMeasurements
 }
 
 
-std::pair<bool, Data> ObjectMeasurements::measure() const
+std::pair<bool, Data> ObjectMeasurements::measure(const Data& data) const
 {
     return std::make_pair(true, measurement_);
 }
 
 
-bool ObjectMeasurements::freezeMeasurements()
+bool ObjectMeasurements::freeze()
 {
     // Freeze segmentation
     if (!segmentation_->freezeSegmentation(*camera_))

@@ -27,9 +27,9 @@ public:
 
     ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode);
 
-    std::pair<bool, bfl::Data> measure() const;
+    std::pair<bool, bfl::Data> measure(const bfl::Data& data = bfl::Data()) const;
 
-    bool freezeMeasurements() override;
+    bool freeze() override;
 
     std::pair<std::size_t, std::size_t> getOutputSize() const;
 

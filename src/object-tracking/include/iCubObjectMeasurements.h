@@ -28,9 +28,9 @@ public:
 
     virtual ~iCubObjectMeasurements();
 
-    std::pair<bool, bfl::Data> measure() const override;
+    std::pair<bool, bfl::Data> measure(const bfl::Data& data = bfl::Data()) const override;
 
-    bool freezeMeasurements() override;
+    bool freeze() override;
 
     std::pair<bool, Eigen::MatrixXd> getNoiseCovarianceMatrix() const override;
 

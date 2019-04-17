@@ -231,7 +231,9 @@ int main(int argc, char** argv)
     ResourceFinder rf_hand_contacts = rf.findNestedResourceFinder("HAND_CONTACTS");
     const bool handle_hand_contacts                      = rf_hand_contacts.check("handle_contacts", Value(false)).asBool();
     const std::string hand_laterality_contacts           = rf_hand_contacts.check("laterality", Value()).asString();
-    const std::vector<std::string> used_fingers_contacts = loadListString(rf_hand_contacts, "used_fingers");
+    std::vector<std::string> used_fingers_contacts;
+    if (handle_hand_contacts)
+        used_fingers_contacts = loadListString(rf_hand_contacts, "used_fingers");
 
     /* Mesh parameters. */
     ResourceFinder rf_object = rf.findNestedResourceFinder("OBJECT");

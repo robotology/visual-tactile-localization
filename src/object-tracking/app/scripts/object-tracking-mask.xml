@@ -1,0 +1,128 @@
+<application>
+  <name>Object Tracking with realsense</name>
+
+  <module>
+    <name>object-tracking</name>
+    <parameters>--from config_realsense_320_240.ini</parameters>
+    <node>localhost</node>
+  </module>
+
+  <module>
+    <name>object-tracking-viewer</name>
+    <parameters>--context object-tracking-viewer-r1</parameters>
+    <node>localhost</node>
+  </module>
+
+  <module>
+    <name>yarpdev</name>
+    <parameters>--context object-tracking --from realsense2_dev.ini</parameters>
+    <node>localhost</node>
+  </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/segmentation:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/rgbImage:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/masks:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
+  <!-- connections for yarpview-s -->
+
+  <connection>
+    <from>/depthCamera/rgbImage:o</from>
+    <to>/object-tracking/viewer/rgbImage:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking/segmentation:o</from>
+    <to>/object-tracking/viewer/segmentation:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/instanceSegmenter/RGBImage:o</from>
+    <to>/object-tracking/viewer/masks:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <!-- connections for object-tracking-viewer -->
+
+  <connection>
+    <!-- used to associate colours to each point in the point cloud -->
+    <from>/depthCamera/rgbImage:o</from>
+    <to>/object-tracking-viewer/rgbImage:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <connection>
+    <from>/depthCamera/depthImage:o</from>
+    <to>/object-tracking-viewer/depthImage:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking/estimate:o</from>
+    <to>/object-tracking-viewer/estimate:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking-ground-truth/estimate:o</from>
+    <to>/object-tracking-viewer/ground-truth:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <!-- used by module object-tracking -->
+
+  <connection>
+    <!-- used as background for interactive visualization (e.g. bounding box, hulls, etc.) -->
+    <from>/depthCamera/rgbImage:o</from>
+    <to>/object-tracking/rgbImage:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- depth input -->
+    <from>/depthCamera/depthImage:o</from>
+    <to>/object-tracking/depthImage:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- bounding boxes from mask -->
+    <from>/instanceSegmenter/detectionInfo:o</from>
+    <to>/object-tracking/mask_detectionInfo:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <!-- bounding boxes from mask -->
+    <from>/object-tracking/mask_rpc:o</from>
+    <to>/instanceSegmenter/rpc</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <!-- used by instance segmenter -->
+
+  <connection>
+    <from>/depthCamera/rgbImage:o</from>
+    <to>/instanceSegmenter/rgbimage:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+</application>

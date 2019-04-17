@@ -478,7 +478,12 @@ int main(int argc, char** argv)
 
     }
     else if (robot == "r1")
-    { }
+    {
+        measurement_model = std::unique_ptr<ObjectMeasurements>
+        (
+            new ObjectMeasurements(std::move(camera), segmentation, std::move(point_cloud_prediction), visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
+        );
+    }
 
     if (enable_log)
         measurement_model->enable_log(log_path, "object-tracking");

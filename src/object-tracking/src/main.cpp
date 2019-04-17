@@ -5,6 +5,7 @@
  * GPL-2+ license. See the accompanying LICENSE file for details.
  */
 
+#include <BoundingBoxSegmentation.h>
 #include <Camera.h>
 #include <Correction.h>
 #include <GaussianFilter_.h>
@@ -411,7 +412,19 @@ int main(int argc, char** argv)
             segmentation->addObjectOcclusion(std::move(hand_occlusion));
         }
     }
-    else if (segmentation_type == "mask_based")
+    else if (segmentation_type == "bounding_box")
+    {
+        if (!use_initial_bounding_box)
+        {
+            yError() << log_ID << "With segmentation type == bounding_box, it is required to specify an initial bounding box!";
+            return EXIT_FAILURE;
+        }
+        segmentation = std::unique_ptr<BoundingBoxSegmentation>
+        (
+            new BoundingBoxSegmentation(port_prefix, bbox_0, depth_stride)
+        );
+    }
+    else if (segmentation_type == "mask")
     { }
     else
     {

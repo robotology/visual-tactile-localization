@@ -92,7 +92,6 @@ protected:
 
     std::vector<std::pair<int, int>> coordinates_;
 
-
     /**
      * Perturbed object pose.
      */

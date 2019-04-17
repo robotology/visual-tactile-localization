@@ -64,6 +64,7 @@ endif()
 find_package(OpenGL REQUIRED)
 
 set(${EXE_TARGET_NAME}_HDR
+    include/BoundingBoxSegmentation.h
     include/ContactDetection.h
     include/Correction.h
     include/DiscreteKinematicModel.h
@@ -77,6 +78,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/iCubSpringyFingersDetection.h
     include/InitParticles.h
     include/InHandObjectSegmentation.h
+    include/MaskSegmentation.h
     include/MeshImporter.h
     include/MeshModel.h
     include/NanoflannPointCloudPrediction.h
@@ -100,6 +102,7 @@ set(${EXE_TARGET_NAME}_HDR
     )
 
 set(${EXE_TARGET_NAME}_SRC
+    src/BoundingBoxSegmentation.cpp
     src/Correction.cpp
     src/DiscreteKinematicModel.cpp
     src/DiscretizedKinematicModel.cpp
@@ -112,6 +115,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/iCubSpringyFingersDetection.cpp
     src/InHandObjectSegmentation.cpp
     src/InitParticles.cpp
+    src/MaskSegmentation.cpp
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
     src/ObjectOcclusion.cpp

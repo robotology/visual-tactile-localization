@@ -253,6 +253,9 @@ int main(int argc, char** argv)
         bbox_0.head<2>() = loadVectorDouble(rf_segmentation, "bbox_tl_0", 2);
         bbox_0.tail<2>() = loadVectorDouble(rf_segmentation, "bbox_br_0", 2);
     }
+    std::string mask_name;
+    if (segmentation_type == "mask")
+        mask_name = rf_segmentation.check("mask_name", Value("006_mustard_bottle")).asString();
 
     /* Logging parameters. */
     ResourceFinder rf_logging = rf.findNestedResourceFinder("LOG");

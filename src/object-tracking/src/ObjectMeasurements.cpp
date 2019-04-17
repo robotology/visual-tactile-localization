@@ -16,12 +16,16 @@ ObjectMeasurements::ObjectMeasurements
     std::unique_ptr<Camera> camera,
     std::shared_ptr<PointCloudSegmentation> segmentation,
     std::unique_ptr<PointCloudPrediction> prediction,
-    const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance
+    const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance,
+    const double& visual_outlier_threshold,
+    const std::string& depth_fetch_mode
 ) :
     camera_(std::move(camera)),
     segmentation_(segmentation),
     prediction_(std::move(prediction)),
-    visual_noise_covariance_(visual_noise_covariance)
+    visual_noise_covariance_(visual_noise_covariance),
+    visual_outlier_threshold_(visual_outlier_threshold),
+    depth_fetch_mode_(depth_fetch_mode)
 { }
 
 
@@ -31,12 +35,77 @@ ObjectMeasurements::ObjectMeasurements
     std::shared_ptr<PointCloudSegmentation> segmentation,
     std::unique_ptr<PointCloudPrediction> prediction,
     const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance,
-    const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance
+    const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance,
+    const double& visual_outlier_threshold,
+    const std::string& depth_fetch_mode
 ) :
-    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance)
+    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance, visual_outlier_threshold, depth_fetch_mode)
 {
     tactile_noise_covariance_ = tactile_noise_covariance;
     has_tactile_noise_covariance_ = true;
+}
+
+
+std::pair<bool, Data> ObjectMeasurements::measure() const
+{
+    return std::make_pair(true, measurement_);
+}
+
+
+bool ObjectMeasurements::freezeMeasurements()
+{
+    // Freeze segmentation
+    if (!segmentation_->freezeSegmentation(*camera_))
+        return false;
+
+    // Get depth image
+    if(!getDepth())
+        return false;
+
+    // Get 3D point cloud.
+    bool blocking_call = false;
+    bool valid_point_cloud;
+    MatrixXd point_cloud;
+    std::tie(valid_point_cloud, point_cloud) = segmentation_->extractPointCloud(*camera_, depth_);
+    if (!valid_point_cloud)
+        return false;
+
+    // Evaluate centroid of point cloud and discard too far points
+    VectorXd centroid = (point_cloud.rowwise().sum()) / point_cloud.cols();
+    VectorXi good_points(point_cloud.cols());
+    for (int i = 0 ; i < point_cloud.cols(); i++)
+    {
+        good_points(i) = 0;
+        if ((point_cloud.col(i) - centroid).norm() < visual_outlier_threshold_)
+            good_points(i) = 1;
+    }
+    visual_data_size_ = good_points.sum();
+
+    // Take only valid visual points
+    MatrixXd points(3, visual_data_size_);
+    for (int i = 0, j = 0; i < point_cloud.cols(); i++)
+    {
+        if (good_points(i) == 1)
+        {
+            point_cloud.col(i).swap(points.col(j));
+            j++;
+        }
+    }
+
+    // Resize measurements to be a column vector.
+    measurement_.resize(3 * points.cols(), 1);
+    measurement_.swap(Map<MatrixXd>(points.data(), points.size(), 1));
+
+    // Log measurements
+    logger(measurement_.transpose());
+
+    return true;
+}
+
+
+std::pair<std::size_t, std::size_t> ObjectMeasurements::getOutputSize() const
+{
+    return std::make_pair(measurement_.size(), 0);
 }
 
 
@@ -92,13 +161,13 @@ std::pair<bool, MatrixXd> ObjectMeasurements::getTactileNoiseCovarianceMatrix() 
 
 std::size_t ObjectMeasurements::getVisualDataSize() const
 {
-    return 0;
+    return visual_data_size_;
 }
 
 
 std::size_t ObjectMeasurements::getTactileDataSize() const
 {
-    return 0;
+    return tactile_data_size_;
 }
 
 
@@ -115,7 +184,36 @@ bool ObjectMeasurements::setProperty(const std::string& property)
 }
 
 
+bool ObjectMeasurements::getDepth()
+{
+    std::string mode = depth_fetch_mode_;
+    if (!depth_initialized_)
+    {
+        // in case a depth was never received
+        // it is required to wait at least for the first image in blocking mode
+        mode = "new_image";
+    }
+
+    bool valid_depth;
+    MatrixXf tmp_depth;
+    std::tie(valid_depth, tmp_depth) = camera_->getDepthImage(mode == "new_image");
+
+    if (valid_depth)
+    {
+        depth_ = std::move(tmp_depth);
+        depth_initialized_ = true;
+    }
+
+    if (mode == "skip")
+        return depth_initialized_ && valid_depth;
+    else
+        return depth_initialized_;
+}
+
+
 void ObjectMeasurements::reset()
 {
+    depth_initialized_ = false;
+
     segmentation_->setProperty("reset");
 }

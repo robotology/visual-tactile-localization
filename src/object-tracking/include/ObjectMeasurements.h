@@ -9,6 +9,7 @@
 #define OBJECTMEASUREMENTS_H
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
+#include <BayesFilters/Data.h>
 
 #include <Camera.h>
 #include <PointCloudPrediction.h>
@@ -22,9 +23,15 @@
 class ObjectMeasurements : public bfl::AdditiveMeasurementModel
 {
 public:
-    ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance);
+    ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode_);
 
-    ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance);
+    ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode);
+
+    std::pair<bool, bfl::Data> measure() const;
+
+    bool freezeMeasurements() override;
+
+    std::pair<std::size_t, std::size_t> getOutputSize() const;
 
     std::pair<bool, bfl::Data> predictedMeasure(const Eigen::Ref<const Eigen::MatrixXd>& current_states) const override;
 
@@ -44,7 +51,36 @@ public:
 
 protected:
 
+    bool getDepth();
+
     virtual void reset();
+
+    /**
+     * Local copy of depht image.
+     */
+    Eigen::MatrixXf depth_;
+
+    std::string depth_fetch_mode_;
+
+    bool depth_initialized_ = false;
+
+    /**
+     * Local copy of measurements.
+     * A vector of size 3 * L with L the number of points in set.
+     */
+    Eigen::MatrixXd measurement_;
+
+    /**
+     * Threshold for detection of outliers in visual data.
+     */
+    double visual_outlier_threshold_;
+
+    /**
+     * Size of the last data
+     */
+    std::size_t visual_data_size_ = 0;
+
+    std::size_t tactile_data_size_ = 0;
 
     std::unique_ptr<Camera> camera_;
 

@@ -53,7 +53,7 @@ VectorXd loadVectorDouble
     ResourceFinder &rf,
     const std::string key,
     const std::size_t size
-    )
+)
 {
     bool ok = true;
 

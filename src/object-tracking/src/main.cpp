@@ -369,22 +369,20 @@ int main(int argc, char** argv)
     camera->initialize();
 
     /**
-     * Initialize object rendering engine.
-     */
-    const std::string sicad_shader_path = rf.findPath("shader/");
-    std::unique_ptr<ObjectRenderer> object_renderer = std::unique_ptr<ObjectRenderer>
-    (
-        new ObjectRenderer(object_mesh_path_obj, sicad_shader_path, *camera)
-    );
-
-    std::cout << "*****************************************************************" << std::endl;
-
-    /**
      * Initialize object segmentation.
      */
     std::shared_ptr<PointCloudSegmentation> segmentation;
     if (segmentation_type == "in_hand")
     {
+        /**
+         * Initialize object rendering engine.
+         */
+        const std::string sicad_shader_path = rf.findPath("shader/");
+        std::unique_ptr<ObjectRenderer> object_renderer = std::unique_ptr<ObjectRenderer>
+        (
+            new ObjectRenderer(object_mesh_path_obj, sicad_shader_path, *camera)
+        );
+
         if (use_initial_bounding_box)
         {
             segmentation = std::make_shared<InHandObjectSegmentation>(port_prefix, depth_stride, std::move(object_renderer), bbox_0);

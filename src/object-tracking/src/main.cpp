@@ -19,6 +19,7 @@
 #include <InitParticles.h>
 #include <DiscretizedKinematicModel.h>
 #include <DiscretizedKinematicModelTDD.h>
+#include <MaskSegmentation.h>
 #include <NanoflannPointCloudPrediction.h>
 #include <ObjectRenderer.h>
 #include <ParticlesCorrection.h>
@@ -428,7 +429,12 @@ int main(int argc, char** argv)
         );
     }
     else if (segmentation_type == "mask")
-    { }
+    {
+        segmentation = std::unique_ptr<MaskSegmentation>
+        (
+            new MaskSegmentation(port_prefix, mask_name, depth_stride)
+        );
+    }
     else
     {
         yError() << log_ID << "The requested segmentatio is not available. Requested segmentation type is" << segmentation_type;

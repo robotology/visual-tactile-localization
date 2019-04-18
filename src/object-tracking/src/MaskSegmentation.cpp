@@ -31,7 +31,7 @@ MaskSegmentation::MaskSegmentation(const std::string& port_prefix, const std::st
         throw(std::runtime_error(err));
     }
 
-    if (!(mask_rpc_client_.open("/" + port_prefix + "/opc/rpc:o")))
+    if (!(mask_rpc_client_.open("/" + port_prefix + "/mask_rpc:o")))
     {
         std::string err = log_ID_ + "::ctor. Error: cannot open mask rpc client port.";
         throw(std::runtime_error(err));

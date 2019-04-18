@@ -55,7 +55,7 @@
   </connection>
 
   <connection>
-    <from>/instanceSegmenter/RGBImage:o</from>
+    <from>/instanceSegmenter/RGBimage:o</from>
     <to>/object-tracking/viewer/masks:i</to>
     <protocol>tcp</protocol>
   </connection>

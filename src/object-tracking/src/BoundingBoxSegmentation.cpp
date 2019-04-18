@@ -14,6 +14,7 @@ using namespace Eigen;
 using namespace yarp::sig;
 using namespace yarp::cv;
 
+
 BoundingBoxSegmentation::BoundingBoxSegmentation(const std::string& port_prefix, const Eigen::Ref<const Eigen::VectorXd>& bounding_box, const std::size_t& depth_stride) :
     bounding_box_(bounding_box),
     depth_stride_(depth_stride)

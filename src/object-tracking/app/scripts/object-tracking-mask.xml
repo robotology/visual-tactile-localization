@@ -1,5 +1,5 @@
 <application>
-  <name>Object Tracking with realsense</name>
+  <name>Object Tracking with mask</name>
 
   <module>
     <name>object-tracking</name>

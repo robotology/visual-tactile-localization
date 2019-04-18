@@ -121,8 +121,8 @@
 
   <connection>
     <from>/depthCamera/rgbImage:o</from>
-    <to>/instanceSegmenter/rgbimage:i</to>
-    <protocol>mjpeg</protocol>
+    <to>/instanceSegmenter/RGBimage:i</to>
+    <protocol>tcp</protocol>
   </connection>
 
 </application>

@@ -3,7 +3,7 @@
 
   <module>
     <name>object-tracking</name>
-    <parameters>--from config_realsense_320_240.ini</parameters>
+    <parameters>--from config_mask_320_240.ini</parameters>
     <node>localhost</node>
   </module>
 

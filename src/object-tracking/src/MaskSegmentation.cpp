@@ -7,8 +7,11 @@
 
 #include <MaskSegmentation.h>
 
+#include <iostream>
+
 #include <yarp/cv/Cv.h>
 #include <yarp/os/Value.h>
+
 
 using namespace Eigen;
 using namespace yarp::cv;
@@ -17,7 +20,8 @@ using namespace yarp::sig;
 
 
 MaskSegmentation::MaskSegmentation(const std::string& port_prefix, const std::string& mask_name, const std::size_t& depth_stride) :
-    mask_name_(mask_name)
+    mask_name_(mask_name),
+    depth_stride_(depth_stride)
 {
     if (!port_image_out_.open("/" + port_prefix + "/segmentation:o"))
     {
@@ -166,22 +170,30 @@ bool MaskSegmentation::getProperty(const std::string& property) const
 
 bool MaskSegmentation::setProperty(const std::string& property)
 {
-    return true;
+    if (property == "reset")
+    {
+        initialized_ = false;
+
+	return true;
+    }
+    return false;
 }
 
 
 std::pair<bool, Vector4d> MaskSegmentation::getBoundingBox()
 {
-    // need to use mask_name_ here
-    Bottle* info = port_detection_info_in_.read(true);
+    Bottle* detections = port_detection_info_in_.read(false);
 
-    if ((info == nullptr) || (info->size() == 0))
-        return std::make_pair(false, Vector4d());
-
-    Bottle* detections = info->get(0).asList();
+    if((detections == nullptr) && initialized_)
+        return std::make_pair(true, bounding_box_);
 
     if ((detections == nullptr) || (detections->size() == 0))
-        return std::make_pair(false, Vector4d());
+    {
+	if (initialized_)
+	    return std::make_pair(true, bounding_box_);
+	else
+	    return std::make_pair(false, Vector4d());
+    }
 
     for (std::size_t i = 0; i < detections->size(); i++)
     {
@@ -195,18 +207,22 @@ std::pair<bool, Vector4d> MaskSegmentation::getBoundingBox()
         if (detection_name == mask_name_)
         {
             Bottle* bounding_box_bottle = detection->get(2).asList();
-            Vector4d bounding_box;
 
-            bounding_box(0) = bounding_box_bottle->get(0).asInt();
-            bounding_box(1) = bounding_box_bottle->get(1).asInt();
-            bounding_box(2) = bounding_box_bottle->get(2).asInt();
-            bounding_box(3) = bounding_box_bottle->get(3).asInt();
+            bounding_box_(0) = bounding_box_bottle->get(0).asInt();
+            bounding_box_(1) = bounding_box_bottle->get(1).asInt();
+            bounding_box_(2) = bounding_box_bottle->get(2).asInt();
+            bounding_box_(3) = bounding_box_bottle->get(3).asInt();
 
-            return std::make_pair(false, bounding_box);
+            initialized_ = true;
+
+            return std::make_pair(true, bounding_box_);
         }
     }
 
-    return std::make_pair(false, Vector4d());
+    if (initialized_)
+        return std::make_pair(true, bounding_box_);
+    else
+        return std::make_pair(false, Vector4d());
 }
 
 
@@ -221,8 +237,16 @@ std::pair<bool, std::vector<cv::Point>> MaskSegmentation::getMask(const Ref<cons
     cmd.addInt(center_u);
     cmd.addInt(center_v);
 
-    if ((!mask_rpc_client_.write(cmd, reply)) ||
-        (reply.size() < 1))
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    bool outcome = mask_rpc_client_.write(cmd, reply);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    std::cout << "Get mask points in "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << " ms"
+              << std::endl;
+
+    if ((!outcome) || (reply.size() < 1))
         return std::make_pair(false, std::vector<cv::Point>());
 
     Bottle* mask = reply.get(0).asList();

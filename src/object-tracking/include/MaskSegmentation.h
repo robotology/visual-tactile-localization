@@ -51,6 +51,10 @@ protected:
 
     std::vector<std::pair<int, int>> coordinates_;
 
+    bool initialized_ = false;
+
+    Eigen::Vector4d bounding_box_;
+
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_out_;
 
     yarp::os::BufferedPort<yarp::os::Bottle> port_detection_info_in_;

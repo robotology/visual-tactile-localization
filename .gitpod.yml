@@ -1,0 +1,6 @@
+image: pattacini/visual-tactile-localization:latest
+ports:
+- port: 6080
+  onOpen: notify
+tasks:
+- command: start-vnc-session.sh

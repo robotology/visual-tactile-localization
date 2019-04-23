@@ -72,7 +72,7 @@ Please follow these instructions.
 ## Instructions
 
 ### Download the dataset
-Download the [example dataset](https://istitutoitalianotecnologia-my.sharepoint.com/:u:/g/personal/nicola_piga_iit_it/EXVFgxMk_wJAvIhDG5Mgy-QB12DxOmdjh2cydUHSrvyZSw?e=lCbjEf) and unzip it. In the following the extracted folder will be identified as `$DATASET`.
+Download the [example dataset](https://figshare.com/articles/dataset_in_hand_tracking_iros_2019_zip/8029304) and unzip it. In the following the extracted folder will be identified as `$DATASET`.
 
 #### Start the YARP server and manager
 

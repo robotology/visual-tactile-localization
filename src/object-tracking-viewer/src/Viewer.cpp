@@ -13,6 +13,7 @@
 
 #include <yarp/eigen/Eigen.h>
 #include <yarp/os/ResourceFinder.h>
+#include <yarp/os/LogStream.h>
 #include <yarp/sig/Vector.h>
 
 #include <Eigen/Dense>

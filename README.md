@@ -37,7 +37,7 @@ Use the following commands to build, install and link the library.
 ### Build (object-tracking only)
 `CMake` is used to build the suite:
 ```bash
-$ git clone https://github.com/robotology-playground/visual-tactile-localization
+$ git clone https://github.com/robotology/visual-tactile-localization
 $ cd visual-tactile-localization
 $ mkdir build && cd build
 $ cmake [-DUSE_OPENMP=ON] ..

@@ -10,6 +10,7 @@
 #include <BayesFilters/utils.h>
 
 #include <yarp/eigen/Eigen.h>
+#include <yarp/os/LogStream.h>
 
 using namespace bfl;
 using namespace Eigen;

@@ -8,6 +8,7 @@
 #include <iCubHandContactsModel.h>
 
 #include <yarp/eigen/Eigen.h>
+#include <yarp/os/LogStream.h>
 
 using namespace Eigen;
 using namespace yarp::eigen;

@@ -22,6 +22,8 @@
 #include <MaskSegmentation.h>
 #include <NanoflannPointCloudPrediction.h>
 #include <ObjectRenderer.h>
+#include <ObjectSampler.h>
+#include <ObjectMeshSampler.h>
 #include <ParticlesCorrection.h>
 #include <PointCloudSegmentation.h>
 #include <PFilter.h>
@@ -444,9 +446,14 @@ int main(int argc, char** argv)
     /**
      * Initialize point cloud prediction.
      */
+    std::unique_ptr<ObjectSampler> obj_sampler = std::unique_ptr<ObjectMeshSampler>
+    (
+        new ObjectMeshSampler(object_mesh_path_ply)
+    );
+
     std::unique_ptr<PointCloudPrediction> point_cloud_prediction = std::unique_ptr<NanoflannPointCloudPrediction>
     (
-        new NanoflannPointCloudPrediction(object_mesh_path_ply, pc_pred_num_samples)
+        new NanoflannPointCloudPrediction(std::move(obj_sampler), pc_pred_num_samples)
     );
 
     /**
@@ -573,8 +580,10 @@ int main(int argc, char** argv)
     std::unique_ptr<ParticlesCorrection> pf_correction;
 
     /* Likelihood. */
+    std::unique_ptr<ObjectSampler> obj_sampler_likelihood = std::unique_ptr<ObjectMeshSampler>(
+        new ObjectMeshSampler(object_mesh_path_ply));
     std::unique_ptr<NanoflannPointCloudPrediction> distances_approximation = std::unique_ptr<NanoflannPointCloudPrediction>(
-        new NanoflannPointCloudPrediction(object_mesh_path_ply, pc_pred_num_samples));
+        new NanoflannPointCloudPrediction(std::move(obj_sampler_likelihood), pc_pred_num_samples));
 
     std::unique_ptr<ProximityLikelihood> proximity_likelihood = std::unique_ptr<ProximityLikelihood>(
         new ProximityLikelihood(likelihood_variance, std::move(distances_approximation)));

@@ -10,14 +10,13 @@
 
 #include <Eigen/Dense>
 
-#include <MeshImporter.h>
+#include <ObjectSampler.h>
 #include <PointCloudPrediction.h>
-#include <VCGTriMesh.h>
 
 #include <nanoflann.hpp>
 
 #include <memory>
-
+#include <string>
 
 // Adapted from nanoflann examples
 struct PointCloudAdaptor
@@ -49,19 +48,17 @@ using kdTree = nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<
                                                    PointCloudAdaptor,
                                                    3 /* dimension, since using point clouds */>;
 
-class NanoflannPointCloudPrediction : public PointCloudPrediction, MeshImporter
+class NanoflannPointCloudPrediction : public PointCloudPrediction
 {
 public:
-    NanoflannPointCloudPrediction(const std::string& mesh_filename, const std::size_t number_of_points);
+    NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, const std::size_t number_of_points);
 
     std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
 
     std::pair<bool, Eigen::MatrixXd> evalDistances(ConstMatrixXdRef state, ConstVectorXdRef meas);
 
 protected:
-    void samplePointCloud();
-
-    simpleTriMesh trimesh_;
+    std::unique_ptr<ObjectSampler> obj_sampler_;
 
     std::size_t number_of_points_;
 
@@ -70,6 +67,8 @@ protected:
     std::unique_ptr<PointCloudAdaptor> adapted_cloud_;
 
     std::unique_ptr<kdTree> tree_;
+
+    const std::string log_ID_ = "NanoflannPointCloudPrediction";
 };
 
 #endif

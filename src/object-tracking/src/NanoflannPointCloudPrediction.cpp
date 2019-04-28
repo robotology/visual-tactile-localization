@@ -14,106 +14,24 @@ using namespace Eigen;
 using namespace nanoflann;
 
 
-NanoflannPointCloudPrediction::NanoflannPointCloudPrediction(const std::string& mesh_filename, const std::size_t number_of_points) :
-    MeshImporter(mesh_filename),
+NanoflannPointCloudPrediction::NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, std::size_t number_of_points) :
+    obj_sampler_(std::move(obj_sampler)),
     number_of_points_(number_of_points)
 {
-    // Convert mesh using MeshImporter
-    std::istringstream mesh_input;
-    bool valid_mesh;
-
-    std::tie(valid_mesh, mesh_input) = getMesh("obj");
-
-    if (!valid_mesh)
-    {
-        std::string err = "NANOFLANNPOINTCLOUDPREDICTION::CTOR::ERROR\n\tError: cannot load mesh file " + mesh_filename + ".";
-        throw(std::runtime_error(err));
-    }
-
-    // Open converted obj using vcg mesh importer
-    OBJImportInfo info;
-    int outcome;
-    outcome = simpleTriMeshImporter::OpenStream(trimesh_, mesh_input, info);
-
-    if(simpleTriMeshImporter::ErrorCritical(outcome))
-    {
-        std::string err = "NANOFLANNPOINTCLOUDPREDICTION::CTOR::ERROR\n\tError: cannot load mesh file " + mesh_filename +
-                          ". Error:" + std::string(simpleTriMeshImporter::ErrorMsg(outcome)) + ".";
-        throw(std::runtime_error(err));
-    }
-
-    // Update bounding box
-    vcg::tri::UpdateBounding<simpleTriMesh>::Box(trimesh_);
-
-    // Update face normals
-    if(trimesh_.fn > 0)
-        vcg::tri::UpdateNormal<simpleTriMesh>::PerFace(trimesh_);
-
-    // Update vertex normals
-    if(trimesh_.vn > 0)
-	vcg::tri::UpdateNormal<simpleTriMesh>::PerVertex(trimesh_);
-
     // Sample the point cloud once
-    samplePointCloud();
+    bool valid_cloud = false;
+    std::tie(valid_cloud, cloud_) = obj_sampler_->sample(number_of_points);
+
+    if (!valid_cloud)
+    {
+        std::string err = log_ID_ + "::ctor Error: cannot sample point cloud over object surface.";
+        throw(std::runtime_error(err));
+    }
 
     // Initialize tree
     adapted_cloud_ = std::unique_ptr<PointCloudAdaptor>(new PointCloudAdaptor(cloud_));
     tree_ = std::unique_ptr<kdTree>(new kdTree(3 /* dim */, *adapted_cloud_, KDTreeSingleIndexAdaptorParams(10 /* max leaf */)));
     tree_->buildIndex();
-}
-
-
-void NanoflannPointCloudPrediction::samplePointCloud()
-{
-    // Perform Disk Poisson Sampling
-
-    // Some default parametrs as found in MeshLab
-    std::size_t oversampling = 20;
-    triMeshSurfSampler::PoissonDiskParam poiss_params;
-    poiss_params.radiusVariance = 1;
-    poiss_params.geodesicDistanceFlag = false;
-    poiss_params.bestSampleChoiceFlag = true;
-    poiss_params.bestSamplePoolSize = 10;
-
-    // Estimate radius required to obtain disk poisson sampling
-    // with the number_of_points points
-    simpleTriMesh::ScalarType radius;
-    radius = triMeshSurfSampler::ComputePoissonDiskRadius(trimesh_, number_of_points_);
-
-    // Generate preliminar montecarlo sampling with uniform probability
-    simpleTriMesh montecarlo_mesh;
-    triMeshSampler mc_sampler(montecarlo_mesh);
-    mc_sampler.qualitySampling=true;
-    triMeshSurfSampler::Montecarlo(trimesh_,
-				   mc_sampler,
-				   number_of_points_ * oversampling);
-    // Copy the bounding box from the original mesh
-    montecarlo_mesh.bbox = trimesh_.bbox;
-
-    // Generate disk poisson samples by pruning the montecarlo cloud
-    simpleTriMesh poiss_mesh;
-    triMeshSampler dp_sampler(poiss_mesh);
-    triMeshSurfSampler::PoissonDiskPruning(dp_sampler,
-					   montecarlo_mesh,
-					   radius,
-					   poiss_params);
-    vcg::tri::UpdateBounding<simpleTriMesh>::Box(poiss_mesh);
-
-
-    // Store the cloud
-    std::size_t number_points = std::distance(poiss_mesh.vert.begin(), poiss_mesh.vert.end());
-    cloud_.resize(3, number_points);
-    std::size_t i = 0;
-    for (VertexIterator vi = poiss_mesh.vert.begin(); vi != poiss_mesh.vert.end(); vi++)
-    {
-	// Extract the point
-	const auto p = vi->cP();
-
-        // Add to the cloud
-        cloud_.col(i) << p[0], p[1], p[2];
-
-        i++;
-    }
 }
 
 

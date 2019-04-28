@@ -83,7 +83,9 @@ set(${EXE_TARGET_NAME}_HDR
     include/MeshModel.h
     include/NanoflannPointCloudPrediction.h
     include/ObjectOcclusion.h
+    include/ObjectSampler.h
     include/ObjectMeasurements.h
+    include/ObjectMeshSampler.h
     include/ObjectRenderer.h
     include/ParticlesCorrection.h
     include/PFilter.h
@@ -120,6 +122,8 @@ set(${EXE_TARGET_NAME}_SRC
     src/NanoflannPointCloudPrediction.cpp
     src/ObjectOcclusion.cpp
     src/ObjectMeasurements.cpp
+    src/ObjectMeshSampler.cpp
+    src/ObjectSampler.cpp
     src/ObjectRenderer.cpp
     src/ParticlesCorrection.cpp
     src/PFilter.cpp

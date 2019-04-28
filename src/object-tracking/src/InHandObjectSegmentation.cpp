@@ -11,13 +11,16 @@
 #include <Eigen/Dense>
 
 #include <yarp/eigen/Eigen.h>
+#include <yarp/cv/Cv.h>
 #include <yarp/os/Bottle.h>
 #include <yarp/os/Vocab.h>
-
+#include <yarp/os/Value.h>
 
 using namespace Eigen;
+using namespace yarp::cv;
 using namespace yarp::eigen;
 using namespace yarp::os;
+using namespace yarp::sig;
 
 
 InHandObjectSegmentation::InHandObjectSegmentation
@@ -59,6 +62,12 @@ InHandObjectSegmentation::InHandObjectSegmentation
     object_renderer_(std::move(object_renderer)),
     depth_stride_(depth_stride)
 {
+    if (!port_image_out_.open("/" + port_prefix + "/segmentation:o"))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open ROIs output port.";
+        throw(std::runtime_error(err));
+    }
+
     if (!(hand_pose_port_in_.open("/" + port_prefix + "/hand_pose:i")))
     {
         std::string err = log_ID_ + "::ctor. Error: cannot open hand pose input port.";
@@ -75,6 +84,7 @@ InHandObjectSegmentation::InHandObjectSegmentation
 
 InHandObjectSegmentation::~InHandObjectSegmentation()
 {
+    port_image_out_.close();
     hand_pose_port_in_.close();
     opc_rpc_client_.close();
 }
@@ -105,6 +115,9 @@ bool InHandObjectSegmentation::freezeSegmentation(Camera& camera)
 
     // Get 2d coordinates
     coordinates_ = getObject2DCoordinates(camera_pose_, camera_parameters);
+
+    // Draw ROIs onto the input camera image
+    drawROIsOnCamera(camera);
 
     return true;
 }
@@ -417,7 +430,6 @@ std::vector<std::pair<int, int>> InHandObjectSegmentation::getObject2DCoordinate
     }
 
     // Store a copy of obtained region of interest
-    // This is required for debugging purposes
     region_of_interest_ = bounding_box_mask.clone();
 
     // Find non zero coordinates
@@ -433,4 +445,53 @@ std::vector<std::pair<int, int>> InHandObjectSegmentation::getObject2DCoordinate
     }
 
     return coordinates;
+}
+
+
+void InHandObjectSegmentation::drawROIsOnCamera(Camera& camera)
+{
+    // Get current image
+    bool valid_rgb_image = false;
+    cv::Mat image_in;
+    std::tie(valid_rgb_image, image_in) = camera.getRgbImage(false);
+
+    if (!valid_rgb_image)
+        return;
+
+    // Draw hulls due to occlusions
+    for (auto& occlusion : occlusions_)
+        occlusion->drawOcclusionArea(image_in);
+
+    // Draw object ROI
+    {
+        // Find contours
+        std::vector<std::vector<cv::Point>> contours;
+        cv::findContours(region_of_interest_, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+        // Draw the contour
+        if (contours.size() != 0)
+        {
+            // Find the contour with max area
+            std::size_t max_index = 0;
+            std::size_t max_area = cv::contourArea(contours[0]);
+
+            for (std::size_t i = 1; i < contours.size(); i++)
+            {
+                double area = cv::contourArea(contours[i]);
+
+                if (area > max_area)
+                {
+                    max_area = area;
+                    max_index = i;
+                }
+            }
+
+            cv::drawContours(image_in, contours, max_index, cv::Scalar(0, 255, 0));
+        }
+    }
+
+    cv::cvtColor(image_in, image_in, cv::COLOR_BGR2RGB);
+    ImageOf<PixelRgb>& image_out = port_image_out_.prepare();
+    image_out = fromCvMat<PixelRgb>(image_in);
+    port_image_out_.write();
 }

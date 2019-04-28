@@ -17,6 +17,7 @@
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/RpcClient.h>
 #include <yarp/os/Stamp.h>
+#include <yarp/sig/Image.h>
 #include <yarp/sig/Vector.h>
 
 #include <memory>
@@ -56,6 +57,8 @@ protected:
     void updateBoundingBox(const Eigen::Transform<double, 3, Eigen::Affine> camera_pose);
 
     std::vector<std::pair<int, int>> getObject2DCoordinates(const Eigen::Transform<double, 3, Eigen::Affine> camera_pose, const CameraParameters& camera_parameters);
+
+    void drawROIsOnCamera(Camera& camera);
 
     /**
      * Object renderer.
@@ -136,6 +139,11 @@ protected:
      * RPC clients.
      */
     yarp::os::RpcClient opc_rpc_client_;
+
+    /**
+     * Image showing object and hand considered ROIs
+     */
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_out_;
 
     const std::string log_ID_ = "InHandObjectSegmentation";
 };

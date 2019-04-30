@@ -15,7 +15,7 @@ class ObjectSampler
 public:
 
     virtual ~ObjectSampler();
-x
+
     virtual std::pair<bool, Eigen::MatrixXd> sample(const std::size_t& number_of_points) = 0;
 };
 

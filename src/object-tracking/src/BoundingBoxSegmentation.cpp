@@ -124,7 +124,7 @@ std::pair<bool, Eigen::MatrixXd> BoundingBoxSegmentation::extractPointCloud(Came
     // Points with respect to robot root frame
     MatrixXd points_robot = camera_pose_ * points.colwise().homogeneous();
 
-    return std::make_pair(true, points);
+    return std::make_pair(true, points_robot);
 }
 
 

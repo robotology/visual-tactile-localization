@@ -130,13 +130,13 @@ std::pair<bool, Eigen::MatrixXd> BoundingBoxSegmentation::extractPointCloud(Came
 
 bool BoundingBoxSegmentation::getProperty(const std::string& property) const
 {
-    return true;
+    return false;
 }
 
 
 bool BoundingBoxSegmentation::setProperty(const std::string& property)
 {
-    return true;
+    return false;
 }
 
 

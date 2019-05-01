@@ -37,7 +37,7 @@ std::pair<bool, Eigen::VectorXd> ProximityLikelihood::likelihood(const Measureme
     // Approximate the distance between the point cloud and each particle in pred_states
     bool valid_distances;
     MatrixXd squared_distances;
-    std::tie(valid_distances, squared_distances) = squared_distance_estimator_->evalDistances(pred_states, measurements);
+    std::tie(valid_distances, squared_distances) = squared_distance_estimator_->evaluateDistances(pred_states, measurements);
 
     // Eval likelihood in log space
     VectorXd likelihood(pred_states.cols());

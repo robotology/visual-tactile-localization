@@ -446,7 +446,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        yError() << log_ID << "The requested segmentatio is not available. Requested segmentation type is" << segmentation_type;
+        yError() << log_ID << "The requested segmentation is not available. Requested segmentation type is" << segmentation_type;
         std::exit(EXIT_FAILURE);
     }
 

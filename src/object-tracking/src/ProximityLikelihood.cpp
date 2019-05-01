@@ -11,9 +11,9 @@ using namespace bfl;
 using namespace Eigen;
 
 
-ProximityLikelihood::ProximityLikelihood(const double noise_variance, std::unique_ptr<NanoflannPointCloudPrediction> squared_distance_estimator) :
+ProximityLikelihood::ProximityLikelihood(const double noise_variance, std::shared_ptr<PointCloudPrediction> squared_distance_estimator) :
     gain_(-0.5 / noise_variance),
-    squared_distance_estimator_(std::move(squared_distance_estimator))
+    squared_distance_estimator_(squared_distance_estimator)
 { }
 
 

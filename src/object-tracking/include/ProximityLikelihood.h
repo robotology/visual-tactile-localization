@@ -11,7 +11,7 @@
 #include <BayesFilters/LikelihoodModel.h>
 #include <BayesFilters/MeasurementModel.h>
 
-#include <NanoflannPointCloudPrediction.h>
+#include <PointCloudPrediction.h>
 
 #include <Eigen/Dense>
 
@@ -20,7 +20,7 @@
 class ProximityLikelihood : bfl::LikelihoodModel
 {
 public:
-    ProximityLikelihood(const double noise_variance, std::unique_ptr<NanoflannPointCloudPrediction> squared_distance_estimator_);
+    ProximityLikelihood(const double noise_variance, std::shared_ptr<PointCloudPrediction> squared_distance_estimator_);
 
     virtual ~ProximityLikelihood();
 
@@ -29,7 +29,7 @@ public:
 protected:
     const double gain_;
 
-    std::unique_ptr<NanoflannPointCloudPrediction> squared_distance_estimator_;
+    std::shared_ptr<PointCloudPrediction> squared_distance_estimator_;
 };
 
 #endif /* PROXIMITYMODEL_H */

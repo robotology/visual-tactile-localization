@@ -22,12 +22,14 @@ The suite includes:
  - [iCubContrib](https://github.com/robotology/icub-contrib-common)
  - [nanoflann](https://github.com/jlblancoc/nanoflann)
  - [OpenCV](http://opencv.org) - `version >= 3.3`
- - [OpenMP](https://www.openmp.org/) (optional)
  - [Open Asset Import Library, ASSIMP](http://assimp.org) - `version >= 3.0`
  - [SuperimposeMesh](https://github.com/robotology/superimpose-mesh-lib) - `version >= 0.10.100`
- - [SuperquadricLib](https://github.com/robotology/superquadric-lib) (optional)
- - [VTK](https://vtk.org/) (optional)
  - [YARP](http://www.yarp.it)
+ 
+ Optional dependencies are
+  - [OpenMP](https://www.openmp.org/)
+  - [SuperquadricLib](https://github.com/robotology/superquadric-lib)
+  - [VTK](https://vtk.org/)
  
  **Important**: please use the `devel` branch for the libraries `BayesFilters` and `SuperimposeMesh`.
 

@@ -28,6 +28,9 @@
 #include <PFilter.h>
 #include <ProximityLikelihood.h>
 #include <RealsenseCamera.h>
+#ifdef USE_SUPERQUADRICLIB
+#include <SuperquadricSampler.h>
+#endif
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
 #include <BayesFilters/FilteringAlgorithm.h>
@@ -49,6 +52,9 @@
 using namespace bfl;
 using namespace Eigen;
 using namespace yarp::os;
+#ifdef USE_SUPERQUADRICLIB
+using namespace SuperqModel;
+#endif
 
 VectorXd loadVectorDouble
 (
@@ -213,6 +219,7 @@ int main(int argc, char** argv)
     /* Point cloud prediction. */
     ResourceFinder rf_point_cloud_prediction = rf.findNestedResourceFinder("POINT_CLOUD_PREDICTION");
     const std::size_t pc_pred_num_samples = rf_point_cloud_prediction.check("number_samples", Value("100")).asInt();
+    const bool test_superquadrics = rf_point_cloud_prediction.check("test_superquadrics", Value(false)).asBool();
 
     /* Point cloud filtering. */
     ResourceFinder rf_point_cloud_filtering = rf.findNestedResourceFinder("POINT_CLOUD_FILTERING");
@@ -312,6 +319,7 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Point cloud prediction:";
     yInfo() << log_ID << "- num_samples:" << pc_pred_num_samples;
+    yInfo() << log_ID << "- test_superquadrics:" << test_superquadrics;
 
     yInfo() << log_ID << "Point cloud filtering:";
     yInfo() << log_ID << "- outlier_threshold:" << pc_outlier_threshold;
@@ -445,10 +453,31 @@ int main(int argc, char** argv)
     /**
      * Initialize point cloud prediction.
      */
-    std::unique_ptr<ObjectSampler> obj_sampler = std::unique_ptr<ObjectMeshSampler>
-    (
-        new ObjectMeshSampler(object_mesh_path_ply)
-    );
+    std::unique_ptr<ObjectSampler> obj_sampler;
+#ifdef USE_SUPERQUADRICLIB
+    if (test_superquadrics)
+    {
+        Superquadric superq;
+        VectorXd parameters = MatrixXd(11, 1);
+        parameters *= 0.0;
+        parameters(0) = 0.0626792;
+        parameters(1) = 0.029448;
+        parameters(2) = 0.101533;
+        parameters(3) = 0.55835;
+        parameters(4) = 0.935447;
+        superq.setSuperqParams(parameters);
+        obj_sampler = std::unique_ptr<SuperquadricSampler>(new SuperquadricSampler(superq));
+    }
+    else
+#endif
+    {
+        if (test_superquadrics)
+        {
+            yError() << log_ID << "Superquadrics requested, however the feature is not compiled.";
+            std::exit(EXIT_FAILURE);
+        }
+        obj_sampler = std::unique_ptr<ObjectMeshSampler>(new ObjectMeshSampler(object_mesh_path_ply));
+    }
 
     std::unique_ptr<PointCloudPrediction> point_cloud_prediction = std::unique_ptr<NanoflannPointCloudPrediction>
     (

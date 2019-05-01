@@ -174,8 +174,9 @@ bool MaskSegmentation::setProperty(const std::string& property)
     {
         initialized_ = false;
 
-	return true;
+        return true;
     }
+    
     return false;
 }
 

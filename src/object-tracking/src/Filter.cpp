@@ -27,15 +27,13 @@ Filter::Filter
     Gaussian& initial_state,
     std::unique_ptr<GaussianPrediction> prediction,
     std::unique_ptr<GaussianCorrection> correction,
-    std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
-    std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
+    std::shared_ptr<PointCloudSegmentation> segmentation
 ) :
     GaussianFilter(std::move(prediction), std::move(correction)),
-    bbox_estimator_(std::move(bbox_estimator)),
     initial_state_(initial_state),
     predicted_state_(initial_state.dim_linear, initial_state.dim_circular),
     corrected_state_(initial_state),
-    icub_point_cloud_share_(icub_point_cloud_share),
+    segmentation_(segmentation),
     pause_(false)
 {
     // Open estimate output port
@@ -91,9 +89,6 @@ bool Filter::run_filter()
 
 bool Filter::reset_filter()
 {
-    // Reet the bounding box estimator
-    bbox_estimator_->reset();
-
     // Reset the sample time of the prediction
     prediction_->getStateModel().setProperty("reset");
 
@@ -110,6 +105,9 @@ bool Filter::stop_filter()
 {
     // Reset the sample time of the prediction
     prediction_->getStateModel().setProperty("reset");
+
+    // Reset the correction step
+    correction_->getMeasurementModel().setProperty("reset");
 
     reboot();
 
@@ -131,7 +129,10 @@ void Filter::resume_filter()
 
 void Filter::contacts(const bool enable)
 {
-    icub_point_cloud_share_->setUseContacts(enable);
+    if (enable)
+        correction_->getMeasurementModel().setProperty("use_contacts_on");
+    else
+        correction_->getMeasurementModel().setProperty("use_contacts_off");
 }
 
 
@@ -189,9 +190,6 @@ void Filter::filteringStep()
     }
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    bbox_estimator_->step();
-    icub_point_cloud_share_->setBoundingBox(bbox_estimator_->getEstimate());
-
     prediction_->predict(corrected_state_, predicted_state_);
     correction_->correct(predicted_state_, corrected_state_);
 
@@ -205,9 +203,14 @@ void Filter::filteringStep()
     // Extract estimate
     VectorXd corrected_mean = corrected_state_.mean();
 
-    // Use estimate as hint for the bounding box estimator
-    bbox_estimator_->setObjectPose(corrected_mean);
-    bbox_estimator_->enableHandFeedforward(icub_point_cloud_share_->getContactState());
+    // Use mean estimate as hint for the point cloud segmentation scheme
+    Transform<double, 3, Affine> object_transform;
+    object_transform = Translation<double, 3>(corrected_mean.head<3>());
+    AngleAxisd rotation(AngleAxisd(corrected_mean(9), Vector3d::UnitZ()) *
+                        AngleAxisd(corrected_mean(10), Vector3d::UnitY()) *
+                        AngleAxisd(corrected_mean(11), Vector3d::UnitX()));
+    object_transform.rotate(rotation);
+    segmentation_->setObjectPose(object_transform);
 
     // Send estimate over the port using axis/angle representation
     VectorXd estimate(7);
@@ -222,6 +225,11 @@ void Filter::filteringStep()
     estimate_yarp.resize(7);
     toEigen(estimate_yarp) = estimate;
     port_estimate_out_.write();
+
+    if ((segmentation_->getProperty("is_occlusion")) && !(correction_->getMeasurementModel().setProperty("get_contact_state")))
+        prediction_->getStateModel().setProperty("tdd_advance");
+    else
+        prediction_->getStateModel().setProperty("tdd_reset");
 
     // Allow the state model to evaluate the sampling time online
     prediction_->getStateModel().setProperty("tick");

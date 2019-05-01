@@ -10,12 +10,12 @@
 
 #include <BoundingBoxEstimator.h>
 #include <Correction.h>
+#include <PointCloudSegmentation.h>
 
 #include <BayesFilters/Gaussian.h>
 #include <BayesFilters/GaussianCorrection.h>
 #include <BayesFilters/GaussianFilter.h>
 #include <BayesFilters/GaussianPrediction.h>
-#include <iCubPointCloud.h>
 
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/Port.h>
@@ -35,8 +35,7 @@ public:
         bfl::Gaussian& initial_state,
         std::unique_ptr<bfl::GaussianPrediction> prediction,
         std::unique_ptr<bfl::GaussianCorrection> correction,
-        std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
-        std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
+        std::shared_ptr<PointCloudSegmentation> segmentation
     );
 
     virtual ~Filter();
@@ -74,13 +73,11 @@ protected:
 
     void log() override;
 
+    std::shared_ptr<PointCloudSegmentation> segmentation_;
+
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_out_;
 
     yarp::os::Port port_rpc_command_;
-
-    std::unique_ptr<BoundingBoxEstimator> bbox_estimator_;
-
-    std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share_;
 
     bfl::Gaussian predicted_state_;
 

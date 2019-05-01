@@ -70,6 +70,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/DiscreteKinematicModel.h
     include/DiscretizedKinematicModel.h
     include/DiscretizedKinematicModelTDD.h
+    include/Filter.h
     include/iCubArmModel.h
     include/iCubHandContactsModel.h
     include/iCubHandOcclusion.h
@@ -108,6 +109,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/DiscreteKinematicModel.cpp
     src/DiscretizedKinematicModel.cpp
     src/DiscretizedKinematicModelTDD.cpp
+    src/Filter.cpp
     src/iCubArmModel.cpp
     src/iCubHandContactsModel.cpp
     src/iCubHandOcclusion.cpp

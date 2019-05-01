@@ -16,9 +16,13 @@ using ConstVectorXdRef = const Eigen::Ref<const Eigen::VectorXd>&;
 class PointCloudPrediction
 {
 public:
-    virtual std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) = 0;
+    virtual bool init() = 0;
 
     virtual bool reset() = 0;
+
+    virtual std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) = 0;
+
+    virtual std::pair<bool, Eigen::MatrixXd> evaluateDistances(ConstMatrixXdRef state, ConstVectorXdRef meas) = 0;
 };
 
 #endif /* POINTCLOUDPREDICTION_H */

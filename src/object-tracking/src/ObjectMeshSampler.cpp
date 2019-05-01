@@ -54,7 +54,7 @@ ObjectMeshSampler::ObjectMeshSampler(const std::string& mesh_filename) :
 }
 
 
-std::pair<bool, Eigen::MatrixXd> ObjectMeshSampler::sample(const std::size_t& number_of_points)
+std::pair<bool, MatrixXd> ObjectMeshSampler::sample(const std::size_t& number_of_points)
 {
     // Perform Disk Poisson Sampling
 

@@ -514,14 +514,14 @@ int main(int argc, char** argv)
 
             measurement_model = std::unique_ptr<iCubObjectMeasurements>
             (
-                new iCubObjectMeasurements(std::move(camera), segmentation, std::move(point_cloud_prediction), std::move(icub_contacts), visual_covariance_diagonal, tactile_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
+                new iCubObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, std::move(icub_contacts), visual_covariance_diagonal, tactile_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
             );
         }
         else
         {
             measurement_model = std::unique_ptr<iCubObjectMeasurements>
             (
-                new iCubObjectMeasurements(std::move(camera), segmentation, std::move(point_cloud_prediction), visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
+                new iCubObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
             );
         }
 
@@ -530,7 +530,7 @@ int main(int argc, char** argv)
     {
         measurement_model = std::unique_ptr<ObjectMeasurements>
         (
-            new ObjectMeasurements(std::move(camera), segmentation, std::move(point_cloud_prediction), visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
+            new ObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
         );
     }
 
@@ -615,11 +615,9 @@ int main(int argc, char** argv)
     /* Likelihood. */
     std::unique_ptr<ObjectSampler> obj_sampler_likelihood = std::unique_ptr<ObjectMeshSampler>(
         new ObjectMeshSampler(object_mesh_path_ply));
-    std::unique_ptr<NanoflannPointCloudPrediction> distances_approximation = std::unique_ptr<NanoflannPointCloudPrediction>(
-        new NanoflannPointCloudPrediction(std::move(obj_sampler_likelihood), pc_pred_num_samples));
 
     std::unique_ptr<ProximityLikelihood> proximity_likelihood = std::unique_ptr<ProximityLikelihood>(
-        new ProximityLikelihood(likelihood_variance, std::move(distances_approximation)));
+        new ProximityLikelihood(likelihood_variance, point_cloud_prediction));
 
     pf_correction = std::unique_ptr<ParticlesCorrection>(
         new ParticlesCorrection(std::move(correction), std::move(proximity_likelihood)));

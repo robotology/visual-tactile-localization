@@ -15,22 +15,6 @@ project(object-tracking
 
 set(CMAKE_CXX_STANDARD 11)
 
-# iCub contrib
-find_package(ICUBcontrib REQUIRED)
-
-# ICUB
-find_package(ICUB REQUIRED)
-
-# Bayes Filters
-find_package(BayesFilters 0.9.0 QUIET)
-if(NOT BayesFilters_FOUND)
-    message(STATUS "Did not found required master release of BayesFilters. Looking for devel version.")
-    find_package(BayesFilters 0.9.100 REQUIRED)
-endif()
-
-# OpenCV
-find_package(OpenCV REQUIRED)
-
 # Superimpose Mesh
 find_package(SuperimposeMesh 0.9.4.0 QUIET)
 if(NOT SuperimposeMesh_FOUND)
@@ -40,12 +24,11 @@ endif()
 # Temporary fix avoiding issues with 'assimp' and 'glm'
 set_target_properties(SI::SuperimposeMesh PROPERTIES INTERFACE_LINK_LIBRARIES "")
 
-# Default build type to Release
-if(NOT CMAKE_CONFIGURATION_TYPES)
-    if(NOT CMAKE_BUILD_TYPE)
-        message(STATUS "Setting build type to 'Release' as none was specified.")
-        set_property(CACHE CMAKE_BUILD_TYPE PROPERTY VALUE "Release")
-    endif()
+# Bayes Filters
+find_package(BayesFilters 0.9.0 QUIET)
+if(NOT BayesFilters_FOUND)
+    message(STATUS "Did not found required master release of BayesFilters. Looking for devel version.")
+    find_package(BayesFilters 0.9.100 REQUIRED)
 endif()
 
 # Eigen
@@ -53,6 +36,23 @@ find_package(Eigen3 QUIET CONFIG)
 if(NOT EIGEN3_FOUND)
     # in case the cmake/FindEigen3.cmake fails
     find_package(Eigen3 REQUIRED)
+endif()
+
+# iCub contrib
+find_package(ICUBcontrib REQUIRED)
+
+# ICUB
+find_package(ICUB REQUIRED)
+
+# OpenCV
+find_package(OpenCV REQUIRED)
+
+# Default build type to Release
+if(NOT CMAKE_CONFIGURATION_TYPES)
+    if(NOT CMAKE_BUILD_TYPE)
+        message(STATUS "Setting build type to 'Release' as none was specified.")
+        set_property(CACHE CMAKE_BUILD_TYPE PROPERTY VALUE "Release")
+    endif()
 endif()
 
 include(GNUInstallDirs)

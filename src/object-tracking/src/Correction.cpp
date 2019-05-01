@@ -70,9 +70,3 @@ MatrixXd Correction::getNoiseCovarianceMatrix(const std::size_t index)
 
     return noise_covariance;
 }
-
-
-void Correction::reset()
-{
-    getObjectMeasurementsModel().setProperty("reset");
-}

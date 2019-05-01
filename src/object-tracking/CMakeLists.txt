@@ -75,6 +75,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/Random3DPose.h
     include/SimulatedFilter.h
     include/SimulatedPointCloud.h
+    include/SuperquadricSampler.h
     include/VCGTriMesh.h
     include/vcg_import_obj_w_stream.h
     include/springyFingers.h
@@ -112,6 +113,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/Random3DPose.cpp
     src/SimulatedFilter.cpp
     src/SimulatedPointCloud.cpp
+    src/SuperquadricSampler.cpp
     src/main.cpp
     src/springyFingers.cpp
     )

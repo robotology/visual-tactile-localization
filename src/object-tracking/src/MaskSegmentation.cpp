@@ -164,7 +164,7 @@ std::pair<bool, MatrixXd> MaskSegmentation::extractPointCloud(Camera& camera, co
 
 bool MaskSegmentation::getProperty(const std::string& property) const
 {
-    return true;
+    return false;
 }
 
 

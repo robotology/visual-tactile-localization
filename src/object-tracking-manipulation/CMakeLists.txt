@@ -9,13 +9,6 @@
 
 set(EXE_TARGET_NAME object-tracking-manipulation)
 
-# Eigen
-find_package(Eigen3 QUIET CONFIG)
-if(NOT EIGEN3_FOUND)
-    # in case the cmake/FindEigen3.cmake fails
-    find_package(Eigen3 REQUIRED)
-endif()
-
 # YARP
 find_package(YARP CONFIG REQUIRED
              COMPONENTS

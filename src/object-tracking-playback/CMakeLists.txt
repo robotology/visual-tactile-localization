@@ -13,12 +13,6 @@ set(EXE_TARGET_NAME object-tracking-playback)
 find_package(VTK             REQUIRED)
 include(${VTK_USE_FILE})
 
-# Eigen
-find_package(Eigen3          QUIET CONFIG)
-if(NOT EIGEN3_FOUND)
-    find_package(Eigen3      REQUIRED)
-endif()
-
 # Application source and header files
 set(${EXE_TARGET_NAME}_HDR
     include/Viewer.h

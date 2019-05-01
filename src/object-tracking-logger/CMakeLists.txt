@@ -9,13 +9,6 @@
 
 set(EXE_TARGET_NAME object-tracking-logger)
 
-# Eigen
-find_package(Eigen3 QUIET CONFIG)
-if(NOT EIGEN3_FOUND)
-    # in case the cmake/FindEigen3.cmake fails
-    find_package(Eigen3 REQUIRED)
-endif()
-
 # YARP
 find_package(YARP CONFIG REQUIRED
              COMPONENTS
@@ -23,13 +16,6 @@ find_package(YARP CONFIG REQUIRED
              sig
              eigen
              )
-
-# Bayes Filters
-find_package(BayesFilters 0.9.0 QUIET)
-if(NOT BayesFilters_FOUND)
-    message(STATUS "Did not found required master release of BayesFilters. Looking for devel version.")
-    find_package(BayesFilters 0.9.100 REQUIRED)
-endif()
 
 set(${EXE_TARGET_NAME}_HDR
     include/Logger.h

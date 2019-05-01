@@ -12,29 +12,6 @@ option(USE_SUPERQUADRICLIB "Use SuperquadricLib" OFF)
 
 set(EXE_TARGET_NAME object-tracking)
 
-# Bayes Filters
-find_package(BayesFilters 0.9.0 QUIET)
-if(NOT BayesFilters_FOUND)
-    message(STATUS "Did not found required master release of BayesFilters. Looking for devel version.")
-    find_package(BayesFilters 0.9.100 REQUIRED)
-endif()
-
-# Superimpose Mesh
-find_package(SuperimposeMesh 0.9.4.0 QUIET)
-if(NOT SuperimposeMesh_FOUND)
-    message(STATUS "Did not found required master release of SuperimposeMesh. Looking for devel version.")
-    find_package(SuperimposeMesh 0.10.100 REQUIRED)
-endif()
-# Temporary fix avoiding issues with 'assimp' and 'glm'
-set_target_properties(SI::SuperimposeMesh PROPERTIES INTERFACE_LINK_LIBRARIES "")
-
-# Eigen
-find_package(Eigen3 QUIET CONFIG)
-if(NOT EIGEN3_FOUND)
-    # in case the cmake/FindEigen3.cmake fails
-    find_package(Eigen3 REQUIRED)
-endif()
-
 # YARP
 find_package(YARP CONFIG REQUIRED
              COMPONENTS
@@ -44,17 +21,11 @@ find_package(YARP CONFIG REQUIRED
              cv
              )
 
-# ICUB
-find_package(ICUB REQUIRED)
-
 # assimp
 find_package(assimp REQUIRED)
 
 # nanoflann
 find_package(nanoflann QUIET)
-
-# OpenCV
-find_package(OpenCV REQUIRED)
 
 # OpenMP
 if (USE_OPENMP)
@@ -68,6 +39,7 @@ if (USE_SUPERQUADRICLIB)
 endif()
 
 # OpenGL
+set(OpenGL_GL_PREFERENCE "LEGACY")
 find_package(OpenGL REQUIRED)
 
 set(${EXE_TARGET_NAME}_HDR

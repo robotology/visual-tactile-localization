@@ -347,3 +347,36 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud(const
 
     return std::make_tuple(true, points_robot, valid_points);
 }
+
+// TO BE DONE
+// Configure estimate actor
+// double bx = ;
+// double by = ;
+// double bz = ;
+// double eps1 = ;
+// double eps2 = ;
+
+// superquadric_ = vtkSmartPointer<vtkSuperquadric>::New();
+// superquadric_->ToroidalOff();
+// superquadric_->SetSize(1.0);
+// superquadric_->SetCenter(0.0, 0.0, 0.0);
+
+// superquadric_->SetScale(bx, by, bz);
+// superquadric_->SetPhiRoundness(eps1);
+// superquadric_->SetThetaRoundness(eps2);
+
+// vtkSmartPointer<vtkSampleFunction> sq_sample = vtkSmartPointer<vtkSampleFunction>::New();
+// sq_sample->SetSampleDimensions(50,50,50);
+// sq_sample->SetImplicitFunction(superquadric_);
+// sq_sample->SetModelBounds(-bx,bx,-by,by,-bz,bz);
+
+// vtkSmartPointer<vtkContourFilter> sq_contours = vtkSmartPointer<vtkContourFilter>::New();
+// sq_contours->SetInputConnection(sq_sample->GetOutputPort());
+// sq_contours->GenerateValues(1,0.0,0.0);
+
+// vtkSmartPointer<vtkPolyDataMapper> sq_mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+// sq_mapper->SetInputConnection(sq_contours->GetOutputPort());
+// sq_mapper->ScalarVisibilityOff();
+
+// mesh_actor_ = vtkSmartPointer<vtkActor>::New();
+// mesh_actor_->SetMapper(sq_mapper);

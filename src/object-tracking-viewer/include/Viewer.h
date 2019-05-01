@@ -22,6 +22,7 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkSmartPointer.h>
+#include <vtkSuperquadric.h>
 #include <vtkVertexGlyphFilter.h>
 
 #include <Eigen/Dense>
@@ -179,6 +180,8 @@ private:
     vtkSmartPointer<vtkPLYReader> reader_;
 
     vtkSmartPointer<vtkPolyDataMapper> mapper_;
+
+    vtkSmartPointer<vtkSuperquadric> superquadric_;
 
     vtkSmartPointer<vtkActor> mesh_actor_;
 

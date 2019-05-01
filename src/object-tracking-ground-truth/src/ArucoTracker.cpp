@@ -27,10 +27,12 @@ ArucoTracker::ArucoTracker
     const std::string port_prefix,
     Gaussian& initial_state,
     std::unique_ptr<GaussianPrediction> prediction,
-    std::unique_ptr<Correction> correction
+    std::unique_ptr<GaussianCorrection> correction
 ) :
-    GaussianFilter_(initial_state, std::move(prediction), std::move(correction)),
+    GaussianFilter(std::move(prediction), std::move(correction)),
     initial_state_(initial_state),
+    predicted_state_(initial_state.dim_linear, initial_state.dim_circular),
+    corrected_state_(initial_state),
     pause_(false)
 {
     // Open estimate output port
@@ -164,6 +166,12 @@ std::vector<std::string> ArucoTracker::log_file_names(const std::string& prefix_
 }
 
 
+bool ArucoTracker::runCondition()
+{
+    return true;
+}
+
+
 void ArucoTracker::filteringStep()
 {
     if (pause_)
@@ -175,7 +183,8 @@ void ArucoTracker::filteringStep()
     }
     // std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    GaussianFilter_::filteringStep();
+    prediction_->predict(corrected_state_, predicted_state_);
+    correction_->correct(predicted_state_, corrected_state_);
 
     // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 

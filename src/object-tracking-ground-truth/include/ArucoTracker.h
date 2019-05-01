@@ -9,12 +9,9 @@
 #define ARUCOTRACKER_H
 
 #include <BayesFilters/Gaussian.h>
-/* #include <BayesFilters/GaussianCorrection.h> */
-/* #include <BayesFilters/GaussianFilter.h> */
+#include <BayesFilters/GaussianCorrection.h>
+#include <BayesFilters/GaussianFilter.h>
 #include <BayesFilters/GaussianPrediction.h>
-
-#include <Correction.h>
-#include <GaussianFilter_.h>
 
 #include <yarp/os/BufferedPort.h>
 #include <yarp/sig/Vector.h>
@@ -24,7 +21,7 @@
 #include <memory>
 
 
-class ArucoTracker : public bfl::GaussianFilter_,
+class ArucoTracker : public bfl::GaussianFilter,
                      public ArucoTrackerIDL
 {
 public:
@@ -33,7 +30,7 @@ public:
         const std::string port_prefix,
         bfl::Gaussian& initial_state,
         std::unique_ptr<bfl::GaussianPrediction> prediction,
-        std::unique_ptr<Correction> correction
+        std::unique_ptr<bfl::GaussianCorrection> correction
     );
 
     virtual ~ArucoTracker();
@@ -41,8 +38,6 @@ public:
     bool initialization() override;
 
     bool run_filter() override;
-
-    void filteringStep() override;
 
     bool reset_filter() override;
 
@@ -63,6 +58,10 @@ public:
     bool quit() override;
 
 protected:
+    bool runCondition() override;
+
+    void filteringStep() override;
+
     std::vector<std::string> log_file_names(const std::string& prefix_path, const std::string& prefix_name) override;
 
     void log() override;
@@ -71,7 +70,10 @@ protected:
 
     yarp::os::Port port_rpc_command_;
 
-private:
+    bfl::Gaussian predicted_state_;
+
+    bfl::Gaussian corrected_state_;
+
     bfl::Gaussian initial_state_;
 
     const std::string log_ID_ = "[ArucoTracker]";

@@ -161,17 +161,18 @@ bool iCubObjectMeasurements::setProperty(const std::string& property)
     if (property == "use_contacts_on")
     {
         use_contacts_ = true;
+        outcome &= true;
     }
     else if (property == "use_contacts_off")
     {
         use_contacts_ = false;
+        outcome &= true;
     }
     else if (property == "get_contact_state")
     {
         return (tactile_data_size_ > 0);
+        outcome &= true;
     }
-    else
-        outcome = false;
 
     return outcome;
 }

@@ -89,11 +89,6 @@ std::pair<bool, Eigen::VectorXd> ParticlesCorrection::getLikelihood()
 }
 
 
-void ParticlesCorrection::reset()
-{
-    gaussian_correction_->reset();
-}
-
 void ParticlesCorrection::correctStep(const bfl::ParticleSet& pred_particles, bfl::ParticleSet& corr_particles)
 {
     /* Propagate Gaussian belief associated to each particle. */

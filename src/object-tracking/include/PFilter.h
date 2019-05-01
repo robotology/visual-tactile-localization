@@ -12,11 +12,11 @@
 #include <BayesFilters/MeasurementModel.h>
 #include <BayesFilters/ParticleSetInitialization.h>
 #include <BayesFilters/PFPrediction.h>
+#include <BayesFilters/PFCorrection.h>
 #include <BayesFilters/Resampling.h>
 #include <BayesFilters/SIS.h>
 
 #include <BoundingBoxEstimator.h>
-#include <ParticlesCorrection.h>
 #include <PointCloudSegmentation.h>
 
 #include <yarp/os/BufferedPort.h>
@@ -25,29 +25,8 @@
 
 #include <thrift/ObjectTrackingIDL.h>
 
-class ParticlesCorrectionReference
-{
-public:
-    ParticlesCorrectionReference(ParticlesCorrection* particle_correction) :
-        particle_correction_(particle_correction)
-    { }
 
-    void reset_correction()
-    {
-        particle_correction_->reset();
-    }
-
-    bfl::MeasurementModel& get_measurement_model()
-    {
-        return particle_correction_->getMeasurementModel();
-    }
-
-private:
-    ParticlesCorrection* particle_correction_;
-};
-
-class PFilter : public ParticlesCorrectionReference,
-                public bfl::SIS,
+class PFilter : public bfl::SIS,
                 public ObjectTrackingIDL
 {
 public:
@@ -60,7 +39,7 @@ public:
         const std::size_t point_estimate_window_size,
         std::unique_ptr<bfl::ParticleSetInitialization> initialization,
         std::unique_ptr<bfl::PFPrediction> prediction,
-        std::unique_ptr<ParticlesCorrection> correction,
+        std::unique_ptr<bfl::PFCorrection> correction,
         std::unique_ptr<bfl::Resampling> resampling,
         std::shared_ptr<PointCloudSegmentation> segmentation
     );

@@ -27,11 +27,10 @@ PFilter::PFilter
     const std::size_t point_estimate_window_size,
     std::unique_ptr<ParticleSetInitialization> initialization,
     std::unique_ptr<PFPrediction> prediction,
-    std::unique_ptr<ParticlesCorrection> correction,
+    std::unique_ptr<PFCorrection> correction,
     std::unique_ptr<Resampling> resampling,
     std::shared_ptr<PointCloudSegmentation> segmentation
 ) :
-    ParticlesCorrectionReference(correction.get()),
     SIS
     (
         num_particle,
@@ -99,11 +98,11 @@ bool PFilter::run_filter()
 
 bool PFilter::reset_filter()
 {
-    // Reset the correction step
-    reset_correction();
-
     // Reset the kinematic model
     prediction_->getStateModel().setProperty("reset");
+
+    // Reset the measurement model
+    correction_->getMeasurementModel().setProperty("reset");
 
     // Reset the point estimate
     point_estimate_extraction_.clear();
@@ -116,11 +115,11 @@ bool PFilter::reset_filter()
 
 bool PFilter::stop_filter()
 {
-    // Reset the correction step
-    reset_correction();
-
     // Reset the kinematic model
     prediction_->getStateModel().setProperty("reset");
+
+    // Reset the measurement model
+    correction_->getMeasurementModel().setProperty("reset");
 
     // Reset the point estimate
     point_estimate_extraction_.clear();
@@ -146,9 +145,9 @@ void PFilter::resume_filter()
 void PFilter::contacts(const bool enable)
 {
     if (enable)
-        get_measurement_model().setProperty("use_contacts_on");
+        correction_->getMeasurementModel().setProperty("use_contacts_on");
     else
-        get_measurement_model().setProperty("use_contacts_off");
+        correction_->getMeasurementModel().setProperty("use_contacts_off");
 }
 
 
@@ -334,7 +333,7 @@ void PFilter::filteringStep()
     else
         std::cout << "Unable to extract the estimate!" << std::endl;
 
-    if ((segmentation_->getProperty("is_occlusion")) && !(get_measurement_model().setProperty("get_contact_state")))
+    if ((segmentation_->getProperty("is_occlusion")) && !(correction_->getMeasurementModel().setProperty("get_contact_state")))
         prediction_->getStateModel().setProperty("tdd_advance");
     else
         prediction_->getStateModel().setProperty("tdd_reset");

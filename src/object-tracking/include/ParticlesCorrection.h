@@ -43,8 +43,6 @@ public:
 
     std::pair<bool, Eigen::VectorXd> getLikelihood() override;
 
-    void reset();
-
 protected:
     void correctStep(const bfl::ParticleSet& pred_particles, bfl::ParticleSet& corr_particles) override;
 

@@ -8,6 +8,7 @@
 #===============================================================================
 
 option(USE_OPENMP "Use OpenMP" OFF)
+option(USE_SUPERQUADRICLIB "Use SuperquadricLib" OFF)
 
 set(EXE_TARGET_NAME object-tracking)
 
@@ -58,6 +59,12 @@ find_package(OpenCV REQUIRED)
 # OpenMP
 if (USE_OPENMP)
   find_package(OpenMP REQUIRED)
+endif()
+
+# SuperquadricLib
+if (USE_SUPERQUADRICLIB)
+   find_package(SuperquadricLib REQUIRED)
+   add_definitions(-DUSE_SUPERQUADRICLIB)
 endif()
 
 # OpenGL
@@ -184,6 +191,10 @@ if (USE_OPENMP)
                      PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS} Threads::Threads)
     endif()
     target_link_libraries(${EXE_TARGET_NAME} PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+if (USE_SUPERQUADRICLIB)
+   target_link_libraries(${EXE_TARGET_NAME} PRIVATE SuperquadricLib::SuperquadricLibModel)
 endif()
 
 if (nanoflann_FOUND)

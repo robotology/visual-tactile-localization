@@ -103,17 +103,22 @@
     <protocol>tcp</protocol>
   </connection>
 
+  <!-- <connection> -->
+  <!--   <!-\- bounding boxes from mask -\-> -->
+  <!--   <from>/instanceSegmenter/detectionInfo:o</from> -->
+  <!--   <to>/object-tracking/mask_detectionInfo:i</to> -->
+  <!--   <protocol>tcp</protocol> -->
+  <!-- </connection> -->
+
   <connection>
-    <!-- bounding boxes from mask -->
-    <from>/instanceSegmenter/detectionInfo:o</from>
-    <to>/object-tracking/mask_detectionInfo:i</to>
+    <from>/object-tracking/mask_rpc:o</from>
+    <to>/instanceSegmenter/rpc</to>
     <protocol>tcp</protocol>
   </connection>
 
   <connection>
-    <!-- bounding boxes from mask -->
-    <from>/object-tracking/mask_rpc:o</from>
-    <to>/instanceSegmenter/rpc</to>
+    <from>/instanceSegmenter/mask:o</from>
+    <to>/object-tracking/mask:i</to>
     <protocol>tcp</protocol>
   </connection>
 

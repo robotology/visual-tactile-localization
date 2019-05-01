@@ -25,6 +25,7 @@ The suite includes:
  - [OpenMP](https://www.openmp.org/) (optional)
  - [Open Asset Import Library, ASSIMP](http://assimp.org) - `version >= 3.0`
  - [SuperimposeMesh](https://github.com/robotology/superimpose-mesh-lib) - `version >= 0.10.100`
+ - [SuperquadricLib](https://github.com/robotology/superquadric-lib) (optional)
  - [VTK](https://vtk.org/) (optional)
  - [YARP](http://www.yarp.it)
  
@@ -40,12 +41,14 @@ Use the following commands to build, install and link the library.
 $ git clone https://github.com/robotology/visual-tactile-localization
 $ cd visual-tactile-localization
 $ mkdir build && cd build
-$ cmake [-DUSE_OPENMP=ON] ..
+$ cmake [-DUSE_OPENMP=ON] [-DUSE_SUPERQUADRICLIB=ON]..
 $ make
 $ [sudo] make install
 ```
 
-The option `-DUSE_OPENMP=ON` is **optional**. If set to `ON`, the code is built using the library `OpenMP` for multithreaded execution. 
+The option `-DUSE_OPENMP=ON` is **optional**. If set to `ON`, the code is built using the library `OpenMP` for multithreaded execution.
+
+The option `-DUSE_SUPERQUARICLIB=ON` is **optional**. If set to `ON`, the code is built using the library `SuperquadricLib` and internal representation of the object using Superquadrics is supported.
 
 ### Build the additional modules
 

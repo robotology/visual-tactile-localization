@@ -8,7 +8,6 @@
 #include <BoundingBoxSegmentation.h>
 #include <Camera.h>
 #include <Correction.h>
-#include <GaussianFilter_.h>
 #include <iCubArmModel.h>
 #include <iCubCamera.h>
 #include <iCubHandContactsModel.h>

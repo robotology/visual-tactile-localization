@@ -22,9 +22,9 @@
 class iCubObjectMeasurements : public ObjectMeasurements
 {
 public:
-    iCubObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation>, std::unique_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode);
+    iCubObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation>, std::shared_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode);
 
-    iCubObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation>, std::unique_ptr<PointCloudPrediction> prediction, std::unique_ptr<iCubHandContactsModel> object_contacts, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode);
+    iCubObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation>, std::shared_ptr<PointCloudPrediction> prediction, std::unique_ptr<iCubHandContactsModel> object_contacts, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode);
 
     virtual ~iCubObjectMeasurements();
 

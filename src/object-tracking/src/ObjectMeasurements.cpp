@@ -15,14 +15,14 @@ ObjectMeasurements::ObjectMeasurements
 (
     std::unique_ptr<Camera> camera,
     std::shared_ptr<PointCloudSegmentation> segmentation,
-    std::unique_ptr<PointCloudPrediction> prediction,
+    std::shared_ptr<PointCloudPrediction> prediction,
     const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance,
     const double& visual_outlier_threshold,
     const std::string& depth_fetch_mode
 ) :
     camera_(std::move(camera)),
     segmentation_(segmentation),
-    prediction_(std::move(prediction)),
+    prediction_(prediction),
     visual_noise_covariance_(visual_noise_covariance),
     visual_outlier_threshold_(visual_outlier_threshold),
     depth_fetch_mode_(depth_fetch_mode)
@@ -33,13 +33,13 @@ ObjectMeasurements::ObjectMeasurements
 (
     std::unique_ptr<Camera> camera,
     std::shared_ptr<PointCloudSegmentation> segmentation,
-    std::unique_ptr<PointCloudPrediction> prediction,
+    std::shared_ptr<PointCloudPrediction> prediction,
     const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance,
     const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance,
     const double& visual_outlier_threshold,
     const std::string& depth_fetch_mode
 ) :
-    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance, visual_outlier_threshold, depth_fetch_mode)
+    ObjectMeasurements(std::move(camera), segmentation, prediction, visual_noise_covariance, visual_outlier_threshold, depth_fetch_mode)
 {
     tactile_noise_covariance_ = tactile_noise_covariance;
     has_tactile_noise_covariance_ = true;

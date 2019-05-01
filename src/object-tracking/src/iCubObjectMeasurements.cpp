@@ -19,12 +19,12 @@ iCubObjectMeasurements::iCubObjectMeasurements
 (
     std::unique_ptr<Camera> camera,
     std::shared_ptr<PointCloudSegmentation> segmentation,
-    std::unique_ptr<PointCloudPrediction> prediction,
+    std::shared_ptr<PointCloudPrediction> prediction,
     const Ref<const Matrix3d>& visual_noise_covariance,
     const double& visual_outlier_threshold,
     const std::string& depth_fetch_mode
 ) :
-    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance, visual_outlier_threshold, depth_fetch_mode)
+    ObjectMeasurements(std::move(camera), segmentation, prediction, visual_noise_covariance, visual_outlier_threshold, depth_fetch_mode)
 { }
 
 
@@ -32,14 +32,14 @@ iCubObjectMeasurements::iCubObjectMeasurements
 (
     std::unique_ptr<Camera> camera,
     std::shared_ptr<PointCloudSegmentation> segmentation,
-    std::unique_ptr<PointCloudPrediction> prediction,
+    std::shared_ptr<PointCloudPrediction> prediction,
     std::unique_ptr<iCubHandContactsModel> object_contacts,
     const Ref<const Matrix3d>& visual_noise_covariance,
     const Ref<const Matrix3d>& tactile_noise_covariance,
     const double& visual_outlier_threshold,
     const std::string& depth_fetch_mode
 ) :
-    ObjectMeasurements(std::move(camera), segmentation, std::move(prediction), visual_noise_covariance, tactile_noise_covariance, visual_outlier_threshold, depth_fetch_mode),
+    ObjectMeasurements(std::move(camera), segmentation, prediction, visual_noise_covariance, tactile_noise_covariance, visual_outlier_threshold, depth_fetch_mode),
     contacts_(std::move(object_contacts))
 { }
 

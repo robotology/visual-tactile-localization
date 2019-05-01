@@ -20,18 +20,21 @@ using namespace Eigen;
 using namespace yarp::eigen;
 using namespace yarp::sig;
 
+
 Filter::Filter
 (
     const std::string port_prefix,
     Gaussian& initial_state,
     std::unique_ptr<GaussianPrediction> prediction,
-    std::unique_ptr<Correction> correction,
+    std::unique_ptr<GaussianCorrection> correction,
     std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
     std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
 ) :
-    GaussianFilter_(initial_state, std::move(prediction), std::move(correction)),
+    GaussianFilter(std::move(prediction), std::move(correction)),
     bbox_estimator_(std::move(bbox_estimator)),
     initial_state_(initial_state),
+    predicted_state_(initial_state.dim_linear, initial_state.dim_circular),
+    corrected_state_(initial_state),
     icub_point_cloud_share_(icub_point_cloud_share),
     pause_(false)
 {
@@ -91,11 +94,11 @@ bool Filter::reset_filter()
     // Reet the bounding box estimator
     bbox_estimator_->reset();
 
-    // Reset the correction step
-    correction_->reset();
-
     // Reset the sample time of the prediction
     prediction_->getStateModel().setProperty("reset");
+
+    // Reset the correction step
+    correction_->getMeasurementModel().setProperty("reset");
 
     reset();
 
@@ -169,6 +172,12 @@ std::vector<std::string> Filter::log_file_names(const std::string& prefix_path, 
 }
 
 
+bool Filter::runCondition()
+{
+    return true;
+}
+
+
 void Filter::filteringStep()
 {
     if (pause_)
@@ -183,7 +192,8 @@ void Filter::filteringStep()
     bbox_estimator_->step();
     icub_point_cloud_share_->setBoundingBox(bbox_estimator_->getEstimate());
 
-    GaussianFilter_::filteringStep();
+    prediction_->predict(corrected_state_, predicted_state_);
+    correction_->correct(predicted_state_, corrected_state_);
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 

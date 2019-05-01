@@ -10,11 +10,10 @@
 
 #include <BoundingBoxEstimator.h>
 #include <Correction.h>
-#include <GaussianFilter_.h>
 
 #include <BayesFilters/Gaussian.h>
-// #include <BayesFilters/GaussianCorrection.h>
-/* #include <BayesFilters/GaussianFilter.h> */
+#include <BayesFilters/GaussianCorrection.h>
+#include <BayesFilters/GaussianFilter.h>
 #include <BayesFilters/GaussianPrediction.h>
 #include <iCubPointCloud.h>
 
@@ -26,7 +25,7 @@
 
 #include <memory>
 
-class Filter : public bfl::GaussianFilter_,
+class Filter : public bfl::GaussianFilter,
                public ObjectTrackingIDL
 {
 public:
@@ -35,7 +34,7 @@ public:
         const std::string port_prefix,
         bfl::Gaussian& initial_state,
         std::unique_ptr<bfl::GaussianPrediction> prediction,
-        std::unique_ptr<Correction> correction,
+        std::unique_ptr<bfl::GaussianCorrection> correction,
         std::unique_ptr<BoundingBoxEstimator> bbox_estimator,
         std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share
     );
@@ -69,6 +68,8 @@ public:
 protected:
     std::vector<std::string> log_file_names(const std::string& prefix_path, const std::string& prefix_name) override;
 
+    bool runCondition() override;
+
     void filteringStep() override;
 
     void log() override;
@@ -81,7 +82,10 @@ protected:
 
     std::shared_ptr<iCubPointCloudExogenousData> icub_point_cloud_share_;
 
-private:
+    bfl::Gaussian predicted_state_;
+
+    bfl::Gaussian corrected_state_;
+
     bfl::Gaussian initial_state_;
 
     const std::string log_ID_ = "[Filter]";

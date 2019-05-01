@@ -57,6 +57,8 @@ public:
 
     std::pair<bool, Eigen::MatrixXd> evalDistances(ConstMatrixXdRef state, ConstVectorXdRef meas);
 
+    bool reset() override;
+
 protected:
     std::unique_ptr<ObjectSampler> obj_sampler_;
 

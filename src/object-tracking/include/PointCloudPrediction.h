@@ -17,6 +17,8 @@ class PointCloudPrediction
 {
 public:
     virtual std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) = 0;
+
+    virtual bool reset() = 0;
 };
 
 #endif /* POINTCLOUDPREDICTION_H */

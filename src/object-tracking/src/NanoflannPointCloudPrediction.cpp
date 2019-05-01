@@ -156,3 +156,13 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::evalDistances(ConstMatr
 
     return std::make_pair(true, squared_distances);
 }
+
+
+bool NanoflannPointCloudPrediction::reset()
+{
+    // Sample the point cloud
+    bool valid_cloud;
+    std::tie(valid_cloud, cloud_) = obj_sampler_->sample(number_of_points_);
+
+    return valid_cloud;
+}

@@ -101,6 +101,13 @@ bool Filter::reset_filter()
 }
 
 
+bool Filter::reset_model()
+{
+    // Reset the object model
+    return correction_->getMeasurementModel().setProperty("reset_object_model");
+}
+
+
 bool Filter::stop_filter()
 {
     // Reset the sample time of the prediction

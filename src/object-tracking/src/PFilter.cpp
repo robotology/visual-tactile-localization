@@ -113,6 +113,13 @@ bool PFilter::reset_filter()
 }
 
 
+bool PFilter::reset_model()
+{
+    // Reset the object model
+    return correction_->getMeasurementModel().setProperty("reset_object_model");
+}
+
+
 bool PFilter::stop_filter()
 {
     // Reset the kinematic model

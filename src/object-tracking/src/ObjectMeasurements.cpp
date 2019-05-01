@@ -179,6 +179,10 @@ bool ObjectMeasurements::setProperty(const std::string& property)
 
         return true;
     }
+    else if (property == "reset_object_model")
+    {
+        return prediction_->reset();
+    }
 
     return false;
 }

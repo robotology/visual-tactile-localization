@@ -8,7 +8,6 @@
 #ifndef FILTER_H
 #define FILTER_H
 
-#include <BoundingBoxEstimator.h>
 #include <Correction.h>
 #include <PointCloudSegmentation.h>
 

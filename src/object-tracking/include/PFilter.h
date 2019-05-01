@@ -16,7 +16,6 @@
 #include <BayesFilters/Resampling.h>
 #include <BayesFilters/SIS.h>
 
-#include <BoundingBoxEstimator.h>
 #include <PointCloudSegmentation.h>
 
 #include <yarp/os/BufferedPort.h>

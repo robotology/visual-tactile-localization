@@ -37,11 +37,13 @@ public:
 
 protected:
 
-    std::pair<bool, Eigen::Vector4d> getBoundingBox();
+    // std::pair<bool, Eigen::Vector4d> getBoundingBox();
 
-    std::pair<bool, std::vector<cv::Point>> getMask(const Eigen::Ref<const Eigen::VectorXd>& bounding_box);
+    bool enableMaskStreaming();
 
-    void drawMaskOnCamera(const std::vector<cv::Point>& mask_points, Camera& camera);
+    std::pair<bool, cv::Mat> getMask();
+
+    void drawMaskOnCamera(const cv::Mat& mask_points, Camera& camera);
 
     double depth_stride_;
 
@@ -51,13 +53,19 @@ protected:
 
     std::vector<std::pair<int, int>> coordinates_;
 
-    bool initialized_ = false;
+    cv::Mat mask_;
 
-    Eigen::Vector4d bounding_box_;
+    bool mask_initialized_ = false;
+
+    bool mask_streaming_initialized_ = false;
+
+    // Eigen::Vector4d bounding_box_;
 
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_out_;
 
-    yarp::os::BufferedPort<yarp::os::Bottle> port_detection_info_in_;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono>> port_image_in_;
+
+    // yarp::os::BufferedPort<yarp::os::Bottle> port_detection_info_in_;
 
     yarp::os::RpcClient mask_rpc_client_;
 

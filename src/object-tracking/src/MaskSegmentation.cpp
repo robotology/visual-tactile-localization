@@ -29,11 +29,17 @@ MaskSegmentation::MaskSegmentation(const std::string& port_prefix, const std::st
         throw(std::runtime_error(err));
     }
 
-    if (!port_detection_info_in_.open("/" + port_prefix + "/mask_detectionInfo:i"))
+    if (!port_image_in_.open("/" + port_prefix + "/mask:i"))
     {
-        std::string err = log_ID_ + "::ctor. Error: cannot open bounding box output port.";
+        std::string err = log_ID_ + "::ctor. Error: cannot open mask input port.";
         throw(std::runtime_error(err));
     }
+
+    // if (!port_detection_info_in_.open("/" + port_prefix + "/mask_detectionInfo:i"))
+    // {
+    //     std::string err = log_ID_ + "::ctor. Error: cannot open bounding box output port.";
+    //     throw(std::runtime_error(err));
+    // }
 
     if (!(mask_rpc_client_.open("/" + port_prefix + "/mask_rpc:o")))
     {
@@ -47,7 +53,9 @@ MaskSegmentation::~MaskSegmentation()
 {
     port_image_out_.close();
 
-    port_detection_info_in_.close();
+    port_image_in_.close();
+
+    // port_detection_info_in_.close();
 
     mask_rpc_client_.close();
 }
@@ -55,6 +63,13 @@ MaskSegmentation::~MaskSegmentation()
 
 bool MaskSegmentation::freezeSegmentation(Camera& camera)
 {
+    if (!mask_streaming_initialized_)
+    {
+        mask_streaming_initialized_ = enableMaskStreaming();
+
+        return false;
+    }
+
     // Get camera pose
     bool valid_pose = false;
     std::tie(valid_pose, camera_pose_) = camera.getCameraPose(true);
@@ -68,42 +83,39 @@ bool MaskSegmentation::freezeSegmentation(Camera& camera)
     if (!valid_parameters)
         return false;
 
-    // Get bounding box
-    bool valid_bounding_box = false;
-    Vector4d bounding_box;
-    std::tie(valid_bounding_box, bounding_box) = getBoundingBox();
-    if (!valid_bounding_box)
-        return false;
-
-    // Get points along the mask
+    // Get binary mask
     bool valid_mask = false;
-    std::vector<cv::Point> mask_points;
-    std::tie(valid_mask, mask_points) = getMask(bounding_box);
-    if (!valid_mask)
-        return false;
+    cv::Mat mask;
+    std::tie(valid_mask, mask) = getMask();
 
-    // Draw the mask on the camera image
-    drawMaskOnCamera(mask_points, camera);
-
-    // Create actual white mask on dark background
-    cv::Mat mask(camera_parameters.height, camera_parameters.width, CV_8UC1, cv::Scalar(0));
-    std::vector<std::vector<cv::Point>> vector_mask_points;
-    vector_mask_points.push_back(mask_points);
-    cv::drawContours(mask, vector_mask_points, 0, cv::Scalar(255), CV_FILLED);
-
-    // Find non zero coordinates
-    cv::Mat non_zero_coordinates;
-    cv::findNonZero(mask, non_zero_coordinates);
-
-    // Fill coordinates vector
-    coordinates_.clear();
-    for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= depth_stride_)
+    if (valid_mask)
     {
-        cv::Point& p = non_zero_coordinates.at<cv::Point>(i);
-        coordinates_.push_back(std::make_pair(p.x, p.y));
+        mask_initialized_ = true;
+
+        mask_ = mask.clone();
+
+        // Find non zero coordinates
+        cv::Mat non_zero_coordinates;
+        cv::findNonZero(mask_, non_zero_coordinates);
+
+        // Fill coordinates vector
+        coordinates_.clear();
+        for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= depth_stride_)
+        {
+            cv::Point& p = non_zero_coordinates.at<cv::Point>(i);
+            coordinates_.push_back(std::make_pair(p.x, p.y));
+        }
     }
 
-    return true;
+    if(mask_initialized_)
+    {
+        // Draw the mask on the camera image
+        drawMaskOnCamera(mask_, camera);
+
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -172,7 +184,9 @@ bool MaskSegmentation::setProperty(const std::string& property)
 {
     if (property == "reset")
     {
-        initialized_ = false;
+        mask_initialized_ = false;
+
+        mask_streaming_initialized_ = false;
 
         return true;
     }
@@ -181,92 +195,85 @@ bool MaskSegmentation::setProperty(const std::string& property)
 }
 
 
-std::pair<bool, Vector4d> MaskSegmentation::getBoundingBox()
+// std::pair<bool, Vector4d> MaskSegmentation::getBoundingBox()
+// {
+//     Bottle* detections = port_detection_info_in_.read(false);
+
+//     if((detections == nullptr) && initialized_)
+//         return std::make_pair(true, bounding_box_);
+
+//     if ((detections == nullptr) || (detections->size() == 0))
+//     {
+// 	if (initialized_)
+// 	    return std::make_pair(true, bounding_box_);
+// 	else
+// 	    return std::make_pair(false, Vector4d());
+//     }
+
+//     for (std::size_t i = 0; i < detections->size(); i++)
+//     {
+//         Bottle* detection = detections->get(i).asList();
+
+//         if (detection == nullptr)
+//             continue;
+
+//         std::string detection_name = detection->get(0).asString();
+
+//         if (detection_name == mask_name_)
+//         {
+//             Bottle* bounding_box_bottle = detection->get(2).asList();
+
+//             bounding_box_(0) = bounding_box_bottle->get(0).asInt();
+//             bounding_box_(1) = bounding_box_bottle->get(1).asInt();
+//             bounding_box_(2) = bounding_box_bottle->get(2).asInt();
+//             bounding_box_(3) = bounding_box_bottle->get(3).asInt();
+
+//             initialized_ = true;
+
+//             return std::make_pair(true, bounding_box_);
+//         }
+//     }
+
+//     if (initialized_)
+//         return std::make_pair(true, bounding_box_);
+//     else
+//         return std::make_pair(false, Vector4d());
+// }
+
+
+bool MaskSegmentation::enableMaskStreaming()
 {
-    Bottle* detections = port_detection_info_in_.read(false);
-
-    if((detections == nullptr) && initialized_)
-        return std::make_pair(true, bounding_box_);
-
-    if ((detections == nullptr) || (detections->size() == 0))
-    {
-	if (initialized_)
-	    return std::make_pair(true, bounding_box_);
-	else
-	    return std::make_pair(false, Vector4d());
-    }
-
-    for (std::size_t i = 0; i < detections->size(); i++)
-    {
-        Bottle* detection = detections->get(i).asList();
-
-        if (detection == nullptr)
-            continue;
-
-        std::string detection_name = detection->get(0).asString();
-
-        if (detection_name == mask_name_)
-        {
-            Bottle* bounding_box_bottle = detection->get(2).asList();
-
-            bounding_box_(0) = bounding_box_bottle->get(0).asInt();
-            bounding_box_(1) = bounding_box_bottle->get(1).asInt();
-            bounding_box_(2) = bounding_box_bottle->get(2).asInt();
-            bounding_box_(3) = bounding_box_bottle->get(3).asInt();
-
-            initialized_ = true;
-
-            return std::make_pair(true, bounding_box_);
-        }
-    }
-
-    if (initialized_)
-        return std::make_pair(true, bounding_box_);
-    else
-        return std::make_pair(false, Vector4d());
-}
-
-
-std::pair<bool, std::vector<cv::Point>> MaskSegmentation::getMask(const Ref<const VectorXd>& bounding_box)
-{
-    //  command message format: [get_component_around center_u center_v]
-    int center_u = int((bounding_box(0) + bounding_box(2)) / 2.0);
-    int center_v = int((bounding_box(1) + bounding_box(3)) / 2.0);
+    bool outcome = true;
 
     Bottle cmd, reply;
-    cmd.addString("get_component_around");
-    cmd.addInt(center_u);
-    cmd.addInt(center_v);
+    cmd.addString("??");
+    cmd.addString(mask_name_);
 
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    bool outcome = mask_rpc_client_.write(cmd, reply);
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    outcome &= mask_rpc_client_.write(cmd, reply);
+    outcome &= reply.get(0).asBool();
 
-    std::cout << "Get mask points in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms"
-              << std::endl;
+    // possible alternative
+    // outcome &= (reply.get(0).asString() == "??");
 
-    if ((!outcome) || (reply.size() < 1))
-        return std::make_pair(false, std::vector<cv::Point>());
-
-    Bottle* mask = reply.get(0).asList();
-    if ((mask == nullptr) || (mask->size() == 0))
-        return std::make_pair(false, std::vector<cv::Point>());
-
-    std::vector<cv::Point> points;
-    for (std::size_t i = 0; i < mask->size(); i++)
-    {
-        Bottle* point_bottle = mask->get(i).asList();
-
-        points.push_back(cv::Point(point_bottle->get(0).asInt(), point_bottle->get(1).asInt()));
-    }
-
-    return std::make_pair(true, points);
+    return outcome;
 }
 
 
-void MaskSegmentation::drawMaskOnCamera(const std::vector<cv::Point>& mask_points, Camera& camera)
+std::pair<bool, cv::Mat> MaskSegmentation::getMask()
+{
+    ImageOf<PixelMono>* mask_in;
+    mask_in = port_image_in_.read(false);
+
+    if (mask_in == nullptr)
+        return std::make_pair(false, cv::Mat());
+
+    cv::Mat mask = yarp::cv::toCvMat(*mask_in);
+
+    return std::make_pair(true, mask);
+}
+
+
+void MaskSegmentation::drawMaskOnCamera(const cv::Mat& mask, Camera& camera)
 {
     // Get current image
     bool valid_rgb_image = false;
@@ -278,7 +285,7 @@ void MaskSegmentation::drawMaskOnCamera(const std::vector<cv::Point>& mask_point
 
     // Draw mask contour on current image for debugging purposes
     std::vector<std::vector<cv::Point>> contours;
-    contours.push_back(mask_points);
+    cv::findContours(mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
     cv::drawContours(image_in, contours, 0, cv::Scalar(0, 255, 0));
 
     cv::cvtColor(image_in, image_in, cv::COLOR_BGR2RGB);

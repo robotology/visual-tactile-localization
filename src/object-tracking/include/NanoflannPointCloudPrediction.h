@@ -53,11 +53,13 @@ class NanoflannPointCloudPrediction : public PointCloudPrediction
 public:
     NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, const std::size_t number_of_points);
 
-    std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
-
-    std::pair<bool, Eigen::MatrixXd> evalDistances(ConstMatrixXdRef state, ConstVectorXdRef meas);
+    bool init() override;
 
     bool reset() override;
+
+    std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
+
+    std::pair<bool, Eigen::MatrixXd> evaluateDistances(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
 
 protected:
     std::unique_ptr<ObjectSampler> obj_sampler_;

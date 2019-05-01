@@ -17,21 +17,29 @@ using namespace nanoflann;
 NanoflannPointCloudPrediction::NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, std::size_t number_of_points) :
     obj_sampler_(std::move(obj_sampler)),
     number_of_points_(number_of_points)
+{ }
+
+#include <iostream>
+bool NanoflannPointCloudPrediction::init()
 {
     // Sample the point cloud once
     bool valid_cloud = false;
-    std::tie(valid_cloud, cloud_) = obj_sampler_->sample(number_of_points);
-
+    std::tie(valid_cloud, cloud_) = obj_sampler_->sample(number_of_points_);
     if (!valid_cloud)
-    {
-        std::string err = log_ID_ + "::ctor Error: cannot sample point cloud over object surface.";
-        throw(std::runtime_error(err));
-    }
+        return false;
 
     // Initialize tree
     adapted_cloud_ = std::unique_ptr<PointCloudAdaptor>(new PointCloudAdaptor(cloud_));
     tree_ = std::unique_ptr<kdTree>(new kdTree(3 /* dim */, *adapted_cloud_, KDTreeSingleIndexAdaptorParams(10 /* max leaf */)));
     tree_->buildIndex();
+
+    return true;
+}
+
+
+bool NanoflannPointCloudPrediction::reset()
+{
+    return init();
 }
 
 
@@ -104,7 +112,7 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
 }
 
 
-std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::evalDistances(ConstMatrixXdRef state, ConstVectorXdRef meas)
+std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::evaluateDistances(ConstMatrixXdRef state, ConstVectorXdRef meas)
 {
     // Check if meas size is multiple of 3
     if ((meas.size() % 3) != 0)
@@ -155,14 +163,4 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::evalDistances(ConstMatr
     }
 
     return std::make_pair(true, squared_distances);
-}
-
-
-bool NanoflannPointCloudPrediction::reset()
-{
-    // Sample the point cloud
-    bool valid_cloud;
-    std::tie(valid_cloud, cloud_) = obj_sampler_->sample(number_of_points_);
-
-    return valid_cloud;
 }

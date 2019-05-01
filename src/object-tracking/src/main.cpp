@@ -479,10 +479,15 @@ int main(int argc, char** argv)
         obj_sampler = std::unique_ptr<ObjectMeshSampler>(new ObjectMeshSampler(object_mesh_path_ply));
     }
 
-    std::unique_ptr<PointCloudPrediction> point_cloud_prediction = std::unique_ptr<NanoflannPointCloudPrediction>
-    (
-        new NanoflannPointCloudPrediction(std::move(obj_sampler), pc_pred_num_samples)
-    );
+    std::shared_ptr<PointCloudPrediction> point_cloud_prediction = std::make_shared<NanoflannPointCloudPrediction>(std::move(obj_sampler), pc_pred_num_samples);
+    if (!test_superquadrics)
+    {
+        if (!point_cloud_prediction->init())
+        {
+            yError() << log_ID << "Cannot initialize point cloud prediction object.";
+            std::exit(EXIT_FAILURE);
+        }
+    }
 
     /**
      * Initialize measurement model.

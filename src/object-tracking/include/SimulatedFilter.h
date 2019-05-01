@@ -12,19 +12,19 @@
 
 #include <BayesFilters/Gaussian.h>
 #include <BayesFilters/GaussianCorrection.h>
-#include <GaussianFilter_.h>
+#include <BayesFilters/GaussianFilter.h>
 #include <BayesFilters/GaussianPrediction.h>
 
 #include <memory>
 
-class SimulatedFilter : public bfl::GaussianFilter_
+class SimulatedFilter : public bfl::GaussianFilter
 {
 public:
     SimulatedFilter
     (
         bfl::Gaussian& initial_state,
         std::unique_ptr<bfl::GaussianPrediction> prediction,
-        std::unique_ptr<Correction> correction,
+        std::unique_ptr<bfl::GaussianCorrection> correction,
         unsigned int simulation_steps
     );
 
@@ -40,6 +40,10 @@ protected:
     void log() override;
 
 private:
+    bfl::Gaussian predicted_state_;
+
+    bfl::Gaussian corrected_state_;
+
     unsigned int simulation_steps_;
 };
 

@@ -11,13 +11,6 @@ project("CameraLibrary")
 
 set(LIBRARY_TARGET_NAME ${PROJECT_NAME})
 
-# Eigen
-find_package(Eigen3 QUIET CONFIG)
-if(NOT EIGEN3_FOUND)
-    # in case the cmake/FindEigen3.cmake fails
-    find_package(Eigen3 REQUIRED)
-endif()
-
 # YARP
 find_package(YARP 3.0.0 REQUIRED
              COMPONENTS

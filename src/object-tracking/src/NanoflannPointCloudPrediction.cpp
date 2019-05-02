@@ -19,7 +19,7 @@ NanoflannPointCloudPrediction::NanoflannPointCloudPrediction(std::unique_ptr<Obj
     number_of_points_(number_of_points)
 { }
 
-#include <iostream>
+
 bool NanoflannPointCloudPrediction::init()
 {
     // Sample the point cloud once

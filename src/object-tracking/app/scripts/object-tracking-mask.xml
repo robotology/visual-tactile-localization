@@ -117,7 +117,7 @@
   </connection>
 
   <connection>
-    <from>/instanceSegmenter/mask:o</from>
+    <from>/instanceSegmenter/maskImage:o</from>
     <to>/object-tracking/mask:i</to>
     <protocol>tcp</protocol>
   </connection>

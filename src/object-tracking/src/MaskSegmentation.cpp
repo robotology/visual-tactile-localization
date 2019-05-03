@@ -244,19 +244,28 @@ bool MaskSegmentation::setProperty(const std::string& property)
 
 bool MaskSegmentation::enableMaskStreaming()
 {
-    bool outcome = true;
-
     Bottle cmd, reply;
-    cmd.addString("??");
+    cmd.addString("set_segmented_object_mask");
     cmd.addString(mask_name_);
 
-    outcome &= mask_rpc_client_.write(cmd, reply);
-    outcome &= reply.get(0).asBool();
+    if(mask_rpc_client_.write(cmd, reply))
+    {
+        std::string reply_str = reply.get(0).asString();
+        if (reply_str == "ack")
+            return true;
+        else
+        {
+            std::cerr << log_ID_ + "::ctor. Error: cannot start mask stream." << std::endl
+                      << "Response from mask was: " << reply_str << std::endl;
+        }
+    }
+    else
+    {
+        std::cerr << log_ID_ + "::ctor. Error: cannot start mask stream." << std::endl
+                  << "Rpc write failed" << std::endl;
+    }
 
-    // possible alternative
-    // outcome &= (reply.get(0).asString() == "??");
-
-    return outcome;
+    return false;
 }
 
 

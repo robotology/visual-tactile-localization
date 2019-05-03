@@ -63,6 +63,7 @@ MaskSegmentation::~MaskSegmentation()
 
 bool MaskSegmentation::freezeSegmentation(Camera& camera)
 {
+
     if (!mask_streaming_initialized_)
     {
         mask_streaming_initialized_ = enableMaskStreaming();
@@ -293,7 +294,7 @@ void MaskSegmentation::drawMaskOnCamera(const cv::Mat& mask, Camera& camera)
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
     for (std::size_t i = 0; i < contours.size(); i++)
-        cv::drawContours(image_in, contours, i, cv::Scalar(0, 255, 0));
+        cv::drawContours(image_in, contours, i, cv::Scalar(0, 255, 0), 3);
 
     cv::cvtColor(image_in, image_in, cv::COLOR_BGR2RGB);
     ImageOf<PixelRgb>& image_out = port_image_out_.prepare();

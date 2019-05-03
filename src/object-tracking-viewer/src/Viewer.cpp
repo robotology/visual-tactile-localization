@@ -5,6 +5,7 @@
  * GPL-2+ license. See the accompanying LICENSE file for details.
  */
 
+#include <CameraParameters.h>
 #include <Viewer.h>
 
 #include <vtkTransform.h>
@@ -93,11 +94,6 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     reader_->SetFileName(mesh_path.c_str());
     reader_->Update();
 
-    // Set 2d coordinates
-    std::size_t u_stride = 1;
-    std::size_t v_stride = 1;
-    set2DCoordinates(u_stride, v_stride);
-
     // Initialize camera
     if (camera_name == "iCubCamera")
         camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking", camera_fallback_key));
@@ -118,6 +114,11 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
         std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot get deprojection matrix from the camera.";
         throw(std::runtime_error(err));
     }
+
+    // Cache 2d coordinates
+    std::size_t u_stride = 1;
+    std::size_t v_stride = 1;
+    set2DCoordinates(u_stride, v_stride);
 
     // Configure mesh actor
     mapper_ = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -294,9 +295,13 @@ void Viewer::updateView()
 
 void Viewer::set2DCoordinates(const std::size_t u_stride, const std::size_t v_stride)
 {
-    for (std::size_t u = 0; u < cam_width_; u += u_stride)
+    // Get camera parameters
+    CameraParameters parameters;
+    std::tie(std::ignore, parameters) = camera_->getIntrinsicParameters();
+
+    for (std::size_t u = 0; u < parameters.width; u += u_stride)
     {
-        for (std::size_t v = 0; v < cam_height_; v += v_stride)
+        for (std::size_t v = 0; v < parameters.height; v += v_stride)
         {
             coordinates_2d_.push_back(std::make_pair(u, v));
         }

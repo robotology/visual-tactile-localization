@@ -173,10 +173,6 @@ private:
 
     std::unique_ptr<Points> vtk_measurements_;
 
-    const std::size_t cam_width_ = 320;
-
-    const std::size_t cam_height_ = 240;
-
     vtkSmartPointer<vtkPLYReader> reader_;
 
     vtkSmartPointer<vtkPolyDataMapper> mapper_;

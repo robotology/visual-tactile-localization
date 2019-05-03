@@ -269,6 +269,12 @@ std::pair<bool, cv::Mat> MaskSegmentation::getMask()
 
     cv::Mat mask = yarp::cv::toCvMat(*mask_in);
 
+    cv::Mat non_zero_coordinates;
+    cv::findNonZero(mask, non_zero_coordinates);
+
+    if (non_zero_coordinates.total() == 0)
+        return std::make_pair(false, cv::Mat());
+
     return std::make_pair(true, mask);
 }
 

@@ -2,6 +2,8 @@ image: pattacini/visual-tactile-localization:latest
 ports:
 - port: 6080
   onOpen: notify
+- port: 10000-20000
+  onOpen: ignore
 tasks:
 - command: start-vnc-session.sh
 - command: tmux

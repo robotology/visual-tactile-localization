@@ -2,15 +2,24 @@
 
 The **in-hand-object-tracking** project is a _suite_ of applications for in-hand object tracking for the humanoid robot platform iCub.
 
-<img src="https://github.com/robotology-playground/visual-tactile-localization/blob/master/how_to_images/vtk_viewer_execution.png" alt="in hand object tracking" width="400" height="400"/>
+<p align="center"><img src="https://github.com/robotology-playground/visual-tactile-localization/blob/master/how_to_images/vtk_viewer_execution.png" alt="in hand object tracking" width="400" height="400"/></p>
 
 The suite includes:
  - **object-tracking**: a visual-tactile in-hand object tracker combining partial point clouds and contact points within a 3D model-aided UPF
  - **object-tracking-viewer**: a visualizer that shows the object estimate, the ground truth and the point cloud of the scene
  - **object-tracking-ground-truth**: a marker-based ground-truth module for validation
+ 
+# Try the code on your browser using GitPod
+Run a tracking experiment directly on your browser using GitPod.
+
+[![Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/robotology/visual-tactile-localization)
+
+See the section [Use the suite in a GitPod environment](#computer-use-the-suite-in-a-gitpod-environment) for instructions.
+
 
 # Overview
 - [🎛 Dependencies](#-dependencies)
+- [:computer: Use the suite in a GitPod environment](#computer-use-the-suite-in-a-gitpod-environment)
 - [🔨 Build the suite](#-build-the-suite)
 - [:ok_hand: Run an experiment](#ok_hand-run-an-in-hand-object-tracking-experiment)
 
@@ -29,6 +38,38 @@ The suite includes:
  - [YARP](http://www.yarp.it)
  
  **Important**: please use the `devel` branch for the libraries `BayesFilters` and `SuperimposeMesh`.
+ 
+ **Tip:** if you don't have time to install all the dependecies you can use a GitPod environment directly on your browser, only few steps are required! See the next section for instructions.
+
+# :computer: Use the suite in a GitPod environment
+In order to use the suite in a GitPod environment, please follow these instructions:
+
+1. Press on the following button [![Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/robotology/visual-tactile-localization)
+
+2. Register yourself on `GitPod` in case this is the first time you use it
+
+After log-in, the GitPod system will prepare an environment with all the dependencies required by the suite - this may take some time. Once done, you will be prompted to a screen like this. 
+
+<p align="center"><img src="https://user-images.githubusercontent.com/6014499/57372400-d8a0e680-7195-11e9-854f-74b658282143.png" alt="" width="320" height="240"/></p>
+
+In order to access to the GUI of the environment:
+
+3. Press on the **ports** button in the bottom-right corner of the screen
+
+<p align="center"><img src="https://user-images.githubusercontent.com/6014499/57371365-d9844900-7192-11e9-8ce8-ebcc8be25d97.png" alt=""/></p>
+
+4. Search for the port **6080** and press on the button **Open Browser**
+
+
+<p align="center"><img src="https://user-images.githubusercontent.com/6014499/57371366-da1cdf80-7192-11e9-9abb-b937b4dbc945.png" alt=""/></p>
+
+5. Press on the button **Connect**
+
+<p align="center"><img src="https://user-images.githubusercontent.com/6014499/57373272-477f3f00-7198-11e9-92d5-30f48ba9894e.png" alt=""  width="320" height="240"/></p>
+
+A Linux desktop environment will then be ready for you.
+
+<p align="center"><img src="https://user-images.githubusercontent.com/6014499/57371735-d6d62380-7193-11e9-8871-cd60253f0c15.png" alt="" width="320" height="240"/></p>
 
 
 # 🔨 Build the suite
@@ -63,7 +104,6 @@ In order to build the `object-tracking-ground-truth` module the following option
 ```bash
 $ cmake -DBUILD_OBJECT_TRACKING_GROUND_TRUTH=ON ..
 ```
-
 # :ok_hand: Run an in-hand object tracking experiment
 The tracking algorithm can be tested offline using a dataset provided in the following section.
 
@@ -72,6 +112,9 @@ Please follow these instructions.
 ## Instructions
 
 ### Download the dataset
+
+> If you are using [GitPod](#computer-use-the-suite-in-a-gitpod-environment) it is not required to download the dataset. It is already available in the Desktop of the environment.
+
 Download the [example dataset](https://figshare.com/articles/dataset_in_hand_tracking_iros_2019_zip/8029304) and unzip it. In the following the extracted folder will be identified as `$DATASET`.
 
 #### Start the YARP server and manager

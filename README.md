@@ -71,7 +71,7 @@ A Linux desktop environment will then be ready for you with all the required dep
 
 <p align="center"><img src="https://user-images.githubusercontent.com/6014499/57371735-d6d62380-7193-11e9-8871-cd60253f0c15.png" alt="" width="320" height="240"/></p>
 
-You can build the suite using the instructions of the [next](#-build-the-suite) section.
+You can build the suite using the instructions from the [next](#-build-the-suite) section.
 
 
 # 🔨 Build the suite
@@ -210,6 +210,8 @@ Response: [ok]
 
 #### Start the experiment
 To start the experiment press the `Play` button on the `yarpdataplayer` window as shown in the following figure.
+
+Please note that if you are running the experiment on [GitPod](#computer-use-the-suite-in-a-gitpod-environment), you may experience some performance degradation due to the limited computing capabilities of the environment.
     
 ![YARP dataplayer play](https://github.com/robotology-playground/visual-tactile-localization/blob/master/how_to_images/dataplayer_execution.png)
     

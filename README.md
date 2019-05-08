@@ -67,9 +67,11 @@ In order to access to the GUI of the environment:
 
 <p align="center"><img src="https://user-images.githubusercontent.com/6014499/57373272-477f3f00-7198-11e9-92d5-30f48ba9894e.png" alt=""  width="320" height="240"/></p>
 
-A Linux desktop environment will then be ready for you.
+A Linux desktop environment will then be ready for you with all the required dependencies already installed.
 
 <p align="center"><img src="https://user-images.githubusercontent.com/6014499/57371735-d6d62380-7193-11e9-8871-cd60253f0c15.png" alt="" width="320" height="240"/></p>
+
+You can build the suite using the instructions of the [next](#-build-the-suite) section.
 
 
 # 🔨 Build the suite

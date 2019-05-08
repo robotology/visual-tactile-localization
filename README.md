@@ -115,7 +115,7 @@ Please follow these instructions.
 
 ### Download the dataset
 
-> If you are using [GitPod](#computer-use-the-suite-in-a-gitpod-environment) it is not required to download the dataset. It is already available in the Desktop of the environment.
+> If you are using [GitPod](#computer-use-the-suite-in-a-gitpod-environment), it is not required to download the dataset since already available in the Desktop of the environment.
 
 Download the [example dataset](https://figshare.com/articles/dataset_in_hand_tracking_iros_2019_zip/8029304) and unzip it. In the following the extracted folder will be identified as `$DATASET`.
 

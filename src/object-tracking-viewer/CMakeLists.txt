@@ -28,13 +28,7 @@ find_package(YARP CONFIG REQUIRED
 find_package(ICUB REQUIRED)
 
 # Superimpose Mesh
-find_package(SuperimposeMesh 0.9.4.0 QUIET)
-if(NOT SuperimposeMesh_FOUND)
-    message(STATUS "Did not found required master release of SuperimposeMesh. Looking for devel version.")
-    find_package(SuperimposeMesh 0.10.100 REQUIRED)
-endif()
-# Temporary fix avoiding issues with 'assimp' and 'glm'
-set_target_properties(SI::SuperimposeMesh PROPERTIES INTERFACE_LINK_LIBRARIES "")
+find_package(SuperimposeMesh REQUIRED)
 
 # VTK
 find_package(VTK             REQUIRED)

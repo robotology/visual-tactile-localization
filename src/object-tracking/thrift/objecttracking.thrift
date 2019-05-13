@@ -96,13 +96,6 @@ service ObjectTrackingIDL
     bool set_history_window(1:i16 window);
 
     /**
-     * Reset the model used to represent the object
-     *
-     * @return true/false on success/failure.
-     */
-    bool reset_model();
-
-    /**
      * Quit the filter in graceful way.
      */
     bool quit();

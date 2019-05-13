@@ -45,8 +45,6 @@ public:
 
     bool reset_filter() override;
 
-    bool reset_model() override;
-
     bool stop_filter() override;
 
     void pause_filter() override;

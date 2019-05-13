@@ -10,3 +10,10 @@
 
 ObjectSampler::~ObjectSampler()
 { }
+
+
+void ObjectSampler::setObjectName(const std::string& object_name)
+{
+    std::string err = "ObjectSampler::setObjectBame. Base class method not implemented.";
+    throw(std::runtime_error(err));
+}

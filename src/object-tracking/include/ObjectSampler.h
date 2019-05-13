@@ -17,6 +17,8 @@ public:
     virtual ~ObjectSampler();
 
     virtual std::pair<bool, Eigen::MatrixXd> sample(const std::size_t& number_of_points) = 0;
+
+    virtual void setObjectName(const std::string& object_name);
 };
 
 #endif

@@ -42,6 +42,10 @@ endif()
 set(OpenGL_GL_PREFERENCE "LEGACY")
 find_package(OpenGL REQUIRED)
 
+# VTK
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
+
 set(${EXE_TARGET_NAME}_HDR
     include/BoundingBoxSegmentation.h
     include/ContactDetection.h
@@ -57,6 +61,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/iCubSpringyFingersDetection.h
     include/InitParticles.h
     include/InHandObjectSegmentation.h
+    include/LocalizeSuperquadricSampler.h
     include/MaskSegmentation.h
     include/MeshImporter.h
     include/MeshModel.h
@@ -97,6 +102,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/iCubSpringyFingersDetection.cpp
     src/InHandObjectSegmentation.cpp
     src/InitParticles.cpp
+    src/LocalizeSuperquadricSampler.cpp
     src/MaskSegmentation.cpp
     src/MeshImporter.cpp
     src/NanoflannPointCloudPrediction.cpp
@@ -152,6 +158,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       ${ICUB_LIBRARIES}
                       iCubFingersEncoders
                       CameraLibrary
+                      ${VTK_LIBRARIES}
                       )
 
 if (USE_OPENMP)

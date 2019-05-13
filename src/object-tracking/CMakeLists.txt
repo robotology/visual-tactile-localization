@@ -124,7 +124,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/springyFingers.cpp
     )
 
-set(${EXE_TARGET_NAME}_THRIFT_HDR thrift/objecttracking.thrift)
+set(${EXE_TARGET_NAME}_THRIFT_HDR thrift/objecttracking.thrift thrift/modelinitialization.thrift)
 
 yarp_add_idl(${EXE_TARGET_NAME}_THRIFT_SRC ${${EXE_TARGET_NAME}_THRIFT_HDR})
 

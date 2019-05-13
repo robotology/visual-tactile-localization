@@ -13,10 +13,18 @@
 #include <ObjectSampler.h>
 #include <PointCloudPrediction.h>
 
+#include <BayesFilters/ParticleSet.h>
+#include <BayesFilters/ParticleSetInitialization.h>
+
 #include <nanoflann.hpp>
+
+#include <yarp/os/Port.h>
 
 #include <memory>
 #include <string>
+
+#include <thrift/ModelInitializationIDL.h>
+
 
 // Adapted from nanoflann examples
 struct PointCloudAdaptor
@@ -48,18 +56,22 @@ using kdTree = nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<
                                                    PointCloudAdaptor,
                                                    3 /* dimension, since using point clouds */>;
 
-class NanoflannPointCloudPrediction : public PointCloudPrediction
+class NanoflannPointCloudPrediction : public PointCloudPrediction,
+                                      public ModelInitializationIDL
 {
 public:
     NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, const std::size_t number_of_points);
 
-    bool init() override;
+    ~NanoflannPointCloudPrediction();
 
-    bool reset() override;
+    bool init() override;
 
     std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
 
     std::pair<bool, Eigen::MatrixXd> evaluateDistances(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
+
+    /* Thrift interface */
+    bool initialize_model(const std::string& object_name);
 
 protected:
     std::unique_ptr<ObjectSampler> obj_sampler_;
@@ -71,6 +83,8 @@ protected:
     std::unique_ptr<PointCloudAdaptor> adapted_cloud_;
 
     std::unique_ptr<kdTree> tree_;
+
+    yarp::os::Port port_rpc_command_;
 
     const std::string log_ID_ = "NanoflannPointCloudPrediction";
 };

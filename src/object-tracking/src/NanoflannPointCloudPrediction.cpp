@@ -17,7 +17,26 @@ using namespace nanoflann;
 NanoflannPointCloudPrediction::NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, std::size_t number_of_points) :
     obj_sampler_(std::move(obj_sampler)),
     number_of_points_(number_of_points)
-{ }
+{
+    // Open RPC input port for commands
+    if (!port_rpc_command_.open("/object-tracking/modelling/cmd:i"))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open RPC input command port.";
+        throw(std::runtime_error(err));
+    }
+
+    if (!(this->yarp().attachAsServer(port_rpc_command_)))
+    {
+        std::string err = "PFILTER::CTOR::ERROR\n\tError: cannot attach the RPC command port.";
+        throw(std::runtime_error(err));
+    }
+}
+
+
+NanoflannPointCloudPrediction::~NanoflannPointCloudPrediction()
+{
+    port_rpc_command_.close();
+}
 
 
 bool NanoflannPointCloudPrediction::init()
@@ -34,12 +53,6 @@ bool NanoflannPointCloudPrediction::init()
     tree_->buildIndex();
 
     return true;
-}
-
-
-bool NanoflannPointCloudPrediction::reset()
-{
-    return init();
 }
 
 
@@ -163,4 +176,16 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::evaluateDistances(Const
     }
 
     return std::make_pair(true, squared_distances);
+}
+
+
+bool NanoflannPointCloudPrediction::initialize_model(const std::string& object_name)
+{
+    // Set the object model within the object sampler class
+    obj_sampler_->setObjectName(object_name);
+
+    // Initialize the class
+    init();
+
+    return true;
 }

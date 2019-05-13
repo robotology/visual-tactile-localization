@@ -103,15 +103,20 @@
     <protocol>tcp</protocol>
   </connection>
 
-  <!-- <connection> -->
-  <!--   <!-\- bounding boxes from mask -\-> -->
-  <!--   <from>/instanceSegmenter/detectionInfo:o</from> -->
-  <!--   <to>/object-tracking/mask_detectionInfo:i</to> -->
-  <!--   <protocol>tcp</protocol> -->
-  <!-- </connection> -->
+  <connection>
+    <from>/depthCamera/depthImage:o</from>
+    <to>/object-tracking/localize-superquadric/depthImage:i</to>
+    <protocol>tcp</protocol>
+  </connection>
 
   <connection>
     <from>/object-tracking/mask_rpc:o</from>
+    <to>/instanceSegmenter/rpc</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking/localize-superquadric/mask_rpc:o</from>
     <to>/instanceSegmenter/rpc</to>
     <protocol>tcp</protocol>
   </connection>
@@ -122,6 +127,17 @@
     <protocol>tcp</protocol>
   </connection>
 
+  <connection>
+    <from>/instanceSegmenter/maskImage:o</from>
+    <to>/object-tracking/localize-superquadric/mask:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking/localize-superquadric/localize_superquadric_rpc:o</from>
+    <to>/localize-superquadric/service:rpc</to>
+    <protocol>tcp</protocol>
+  </connection>
   <!-- used by instance segmenter -->
 
   <connection>

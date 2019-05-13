@@ -10,6 +10,7 @@
 
 #include <vcg/complex/complex.h>
 #include <vcg/complex/allocate.h>
+#include <vcg/complex/algorithms/pointcloud_normal.h>
 #include <vcg/complex/algorithms/point_sampling.h>
 #include <vcg/complex/algorithms/update/position.h>
 
@@ -79,5 +80,8 @@ using VertexIterator = simpleTriMesh::VertexIterator;
 
 // VCG allocator
 using simpleTriMeshAllocator = vcg::tri::Allocator<simpleTriMesh>;
+
+// VCG point cloud normal estimation
+using simpleTriMeshPointCloudNormal = vcg::tri::PointCloudNormal<simpleTriMesh>;
 
 #endif /* VCGTRIMESH_H */

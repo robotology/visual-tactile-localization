@@ -196,6 +196,12 @@ bool MaskSegmentation::setProperty(const std::string& property)
 }
 
 
+void MaskSegmentation::setMaskName(const std::string& mask_name)
+{
+    mask_name_ = mask_name;
+}
+
+
 // std::pair<bool, Vector4d> MaskSegmentation::getBoundingBox()
 // {
 //     Bottle* detections = port_detection_info_in_.read(false);

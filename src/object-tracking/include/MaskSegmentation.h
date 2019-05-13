@@ -35,6 +35,8 @@ public:
 
     bool setProperty(const std::string& property) override;
 
+    void setMaskName(const std::string& mask_name);
+
 protected:
 
     // std::pair<bool, Eigen::Vector4d> getBoundingBox();
@@ -49,7 +51,7 @@ protected:
 
     Eigen::Transform<double, 3, Eigen::Affine> camera_pose_;
 
-    const std::string mask_name_;
+    std::string mask_name_;
 
     std::vector<std::pair<int, int>> coordinates_;
 

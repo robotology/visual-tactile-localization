@@ -8,6 +8,8 @@
 #include <BoundingBoxSegmentation.h>
 #include <Camera.h>
 #include <Correction.h>
+#include <DiscretizedKinematicModel.h>
+#include <DiscretizedKinematicModelTDD.h>
 #include <iCubArmModel.h>
 #include <iCubCamera.h>
 #include <iCubHandContactsModel.h>
@@ -16,8 +18,7 @@
 #include <iCubSpringyFingersDetection.h>
 #include <InHandObjectSegmentation.h>
 #include <InitParticles.h>
-#include <DiscretizedKinematicModel.h>
-#include <DiscretizedKinematicModelTDD.h>
+#include <LocalizeSuperquadricSampler.h>
 #include <MaskSegmentation.h>
 #include <NanoflannPointCloudPrediction.h>
 #include <ObjectRenderer.h>
@@ -218,8 +219,8 @@ int main(int argc, char** argv)
 
     /* Point cloud prediction. */
     ResourceFinder rf_point_cloud_prediction = rf.findNestedResourceFinder("POINT_CLOUD_PREDICTION");
+    const std::string pc_pred_type = rf_point_cloud_prediction.check("type", Value()).asString();
     const std::size_t pc_pred_num_samples = rf_point_cloud_prediction.check("number_samples", Value("100")).asInt();
-    const bool test_superquadrics = rf_point_cloud_prediction.check("test_superquadrics", Value(false)).asBool();
 
     /* Point cloud filtering. */
     ResourceFinder rf_point_cloud_filtering = rf.findNestedResourceFinder("POINT_CLOUD_FILTERING");
@@ -319,7 +320,7 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Point cloud prediction:";
     yInfo() << log_ID << "- num_samples:" << pc_pred_num_samples;
-    yInfo() << log_ID << "- test_superquadrics:" << test_superquadrics;
+    yInfo() << log_ID << "- type:" << pc_pred_type;
 
     yInfo() << log_ID << "Point cloud filtering:";
     yInfo() << log_ID << "- outlier_threshold:" << pc_outlier_threshold;
@@ -454,9 +455,12 @@ int main(int argc, char** argv)
      * Initialize point cloud prediction.
      */
     std::unique_ptr<ObjectSampler> obj_sampler;
-#ifdef USE_SUPERQUADRICLIB
-    if (test_superquadrics)
+    std::unique_ptr<ParticleSetInitialization> superquadric_particle_initialization;
+    if (pc_pred_type == "mesh")
+        obj_sampler = std::unique_ptr<ObjectMeshSampler>(new ObjectMeshSampler(object_mesh_path_ply));
+    else if (pc_pred_type == "superquadric")
     {
+#ifdef USE_SUPERQUADRICLIB
         Superquadric superq;
         VectorXd parameters = MatrixXd(11, 1);
         parameters *= 0.0;
@@ -467,20 +471,26 @@ int main(int argc, char** argv)
         parameters(4) = 0.935447;
         superq.setSuperqParams(parameters);
         obj_sampler = std::unique_ptr<SuperquadricSampler>(new SuperquadricSampler(superq));
+#else
+        yError() << log_ID << "Point cloud prediction type 'superquadric' requested, however the feature is not compiled.";
+        std::exit(EXIT_FAILURE);
+#endif
+    }
+    else if (pc_pred_type == "localize_superquadric")
+    {
+        std::unique_ptr<LocalizeSuperquadricSampler> sampler = std::unique_ptr<LocalizeSuperquadricSampler>(new LocalizeSuperquadricSampler("object-tracking/localize-superquadric", camera_name, camera_fallback_key, camera_laterality));
+        superquadric_particle_initialization = sampler->getParticleSetInitialization();
+        obj_sampler = std::move(sampler);
     }
     else
-#endif
     {
-        if (test_superquadrics)
-        {
-            yError() << log_ID << "Superquadrics requested, however the feature is not compiled.";
-            std::exit(EXIT_FAILURE);
-        }
-        obj_sampler = std::unique_ptr<ObjectMeshSampler>(new ObjectMeshSampler(object_mesh_path_ply));
+        yError() << log_ID << "Requested point cloud prediction type " << pc_pred_type << " is not available.";
+        std::exit(EXIT_FAILURE);
     }
 
+
     std::shared_ptr<PointCloudPrediction> point_cloud_prediction = std::make_shared<NanoflannPointCloudPrediction>(std::move(obj_sampler), pc_pred_num_samples);
-    if (!test_superquadrics)
+    if (pc_pred_type == "mesh")
     {
         if (!point_cloud_prediction->init())
         {
@@ -602,8 +612,13 @@ int main(int argc, char** argv)
 
     /* Particles initialization. */
     MatrixXd covariance_0 = initial_covariance.asDiagonal();
-    std::unique_ptr<InitParticles> pf_initialization = std::unique_ptr<InitParticles>(
-        new InitParticles(center_0, radius_0, covariance_0));
+    std::unique_ptr<ParticleSetInitialization> pf_initialization;
+    if (pc_pred_type == "localize_superquadric")
+    {
+        pf_initialization = std::move(superquadric_particle_initialization);
+    }
+    else
+        pf_initialization = std::unique_ptr<InitParticles>(new InitParticles(center_0, radius_0, covariance_0));
 
     /* Gaussian particle filter perdiction. */
     std::unique_ptr<GPFPrediction> pf_prediction = std::unique_ptr<GPFPrediction>(

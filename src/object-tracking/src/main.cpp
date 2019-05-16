@@ -446,7 +446,9 @@ int main(int argc, char** argv)
     {
         segmentation = std::unique_ptr<MaskSegmentation>
         (
-            new MaskSegmentation(port_prefix, mask_name, depth_stride)
+            // If point cloud prediction module is done using class LocalizeSuperquadricSampler as sampler
+            // then it is not required to initialize the mask streaming since already done
+            new MaskSegmentation(port_prefix, mask_name, depth_stride, (pc_pred_type != "localize_superquadric"))
         );
     }
     else

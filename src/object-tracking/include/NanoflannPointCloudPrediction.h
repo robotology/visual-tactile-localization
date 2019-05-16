@@ -23,7 +23,7 @@
 #include <memory>
 #include <string>
 
-#include <thrift/ModelInitializationIDL.h>
+#include <thrift/ModelIDL.h>
 
 
 // Metric to be used with positions and normals
@@ -130,7 +130,7 @@ using kdTreeWithNormals = nanoflann::KDTreeSingleIndexAdaptor<PositionWithNormal
                                                               5 /* dimension, since using point clouds including normals */>;
 
 class NanoflannPointCloudPrediction : public PointCloudPrediction,
-                                      public ModelInitializationIDL
+                                      public ModelIDL
 {
 public:
     NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, const std::size_t number_of_points, const bool& use_normals = false);
@@ -145,6 +145,8 @@ public:
 
     /* Thrift interface */
     bool initialize_model(const std::string& object_name);
+
+    bool enable_normals(const bool enable);
 
 private:
     std::unique_ptr<ObjectSampler> obj_sampler_;
@@ -163,7 +165,7 @@ private:
 
     std::unique_ptr<kdTreeWithNormals> tree_with_normals_;
 
-    const bool use_normals_;
+    bool use_normals_;
 
     yarp::os::Port port_rpc_command_;
 

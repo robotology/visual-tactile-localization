@@ -61,8 +61,8 @@ bool NanoflannPointCloudPrediction::init()
     tree_ = std::unique_ptr<kdTree>(new kdTree(3 /* dim */, *adapted_cloud_, KDTreeSingleIndexAdaptorParams(10 /* max leaf */)));
     tree_->buildIndex();
 
-    if (use_normals_)
-    {
+    // if (use_normals_)
+    // {
         // Initialize tree with normals
         double weight_position = 1.0;
         double weight_phi = 0.001;
@@ -72,7 +72,7 @@ bool NanoflannPointCloudPrediction::init()
         tree_with_normals_ = std::unique_ptr<kdTreeWithNormals>(new kdTreeWithNormals(5/* dim */, *adapted_cloud_with_normals_, KDTreeSingleIndexAdaptorParams(10 /* max leaf */)));
         tree_with_normals_->distance.setWeights(weight_position, weight_phi, weight_lambda);
         tree_with_normals_->buildIndex();
-    }
+    // }
 
     return true;
 }
@@ -80,6 +80,8 @@ bool NanoflannPointCloudPrediction::init()
 
 std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas)
 {
+    bool use_normals = use_normals_;
+
     // Check if meas size is multiple of 3
     if ((meas.size() % 3) != 0)
         return std::make_pair(false, MatrixXd(0, 0));
@@ -92,7 +94,7 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
 
     // If required, evaluate normals
     MatrixXd normals(3, components);
-    if (use_normals_)
+    if (use_normals)
     {
         PointCloud<PointXYZ>::Ptr pcl_cloud (new PointCloud<PointXYZ>);
         PointCloud<Normal>::Ptr pcl_normals (new PointCloud<Normal>);
@@ -119,7 +121,7 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
     }
 
     // Process all the states
-    std::size_t meas_size = use_normals_ ? 5 : 3;
+    std::size_t meas_size = use_normals ? 5 : 3;
     MatrixXd meas_body(meas_size, components * state.cols());
     MatrixXd normals_body(3, components * state.cols());
     std::vector<Transform<double, 3, Eigen::Affine>> poses(state.cols());
@@ -140,11 +142,11 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
 
         // Express measurement in body fixed frame
         meas_body.middleCols(components * i, components).topRows<3>() = poses[i].inverse() * meas_matrix.colwise().homogeneous();
-        if (use_normals_)
+        if (use_normals)
             normals_body.middleCols(components * i, components) = poses[i].rotation().transpose() * normals;
     }
 
-    if (use_normals_)
+    if (use_normals)
     {
 #pragma omp parallel for
         for (std::size_t i = 0; i < components * state.cols(); i++)
@@ -169,7 +171,7 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
             resultSet.init(&ret_index, &out_dist_sqr);
             // Querying tree_ is thread safe as per this issue
             // https://github.com/jlblancoc/nanoflann/issues/54
-            if (use_normals_)
+            if (use_normals)
                 tree_with_normals_->findNeighbors(resultSet, meas_j.transpose().data(), nanoflann::SearchParams(10));
             else
                 tree_->findNeighbors(resultSet, meas_j.data(), nanoflann::SearchParams(10));
@@ -180,7 +182,7 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
                 pred_meas_body.middleCols(components * i, components).col(j) = meas_j.head<3>();
             else
             {
-                if (use_normals_)
+                if (use_normals)
                     pred_meas_body.middleCols(components * i, components).col(j) = cloud_with_normals_.col(ret_index).head<3>();
                 else
                     pred_meas_body.middleCols(components * i, components).col(j) = cloud_.col(ret_index);
@@ -263,6 +265,14 @@ bool NanoflannPointCloudPrediction::initialize_model(const std::string& object_n
 
     // Initialize the class
     init();
+
+    return true;
+}
+
+
+bool NanoflannPointCloudPrediction::enable_normals(const bool enable)
+{
+    use_normals_ = enable;
 
     return true;
 }

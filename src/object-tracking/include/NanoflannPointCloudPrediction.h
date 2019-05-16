@@ -121,7 +121,7 @@ struct PointCloudAdaptor
     bool kdtree_get_bbox(BBOX& /*bb*/) const { return false; }
 };
 
-using kdTree = nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, PointCloudAdaptor > ,
+using kdTree = nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, PointCloudAdaptor >,
                                                    PointCloudAdaptor,
                                                    3 /* dimension, since using point clouds */>;
 
@@ -133,7 +133,7 @@ class NanoflannPointCloudPrediction : public PointCloudPrediction,
                                       public ModelInitializationIDL
 {
 public:
-    NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, const std::size_t number_of_points);
+    NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, const std::size_t number_of_points, const bool& use_normals = false);
 
     ~NanoflannPointCloudPrediction();
 
@@ -146,16 +146,24 @@ public:
     /* Thrift interface */
     bool initialize_model(const std::string& object_name);
 
-protected:
+private:
     std::unique_ptr<ObjectSampler> obj_sampler_;
 
     std::size_t number_of_points_;
 
     Eigen::MatrixXd cloud_;
 
+    Eigen::MatrixXd cloud_with_normals_;
+
     std::unique_ptr<PointCloudAdaptor> adapted_cloud_;
 
+    std::unique_ptr<PointCloudAdaptor> adapted_cloud_with_normals_;
+
     std::unique_ptr<kdTree> tree_;
+
+    std::unique_ptr<kdTreeWithNormals> tree_with_normals_;
+
+    const bool use_normals_;
 
     yarp::os::Port port_rpc_command_;
 

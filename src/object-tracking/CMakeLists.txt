@@ -42,6 +42,9 @@ endif()
 set(OpenGL_GL_PREFERENCE "LEGACY")
 find_package(OpenGL REQUIRED)
 
+# PCL
+find_package(PCL 1.3 REQUIRED)
+
 # VTK
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
@@ -142,6 +145,7 @@ target_include_directories(${EXE_TARGET_NAME}
                            # https://github.com/cnr-isti-vclab/vcglib
                            ${CMAKE_CURRENT_SOURCE_DIR}/include/vcglib
                            ${OPENGL_INCLUDE_DIRS}
+                           ${PCL_INCLUDE_DIRS}
                            )
 
 target_link_libraries(${EXE_TARGET_NAME}
@@ -159,6 +163,7 @@ target_link_libraries(${EXE_TARGET_NAME}
                       iCubFingersEncoders
                       CameraLibrary
                       ${VTK_LIBRARIES}
+                      ${PCL_LIBRARIES}
                       )
 
 if (USE_OPENMP)

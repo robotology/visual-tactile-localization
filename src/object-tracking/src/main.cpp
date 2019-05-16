@@ -219,8 +219,9 @@ int main(int argc, char** argv)
 
     /* Point cloud prediction. */
     ResourceFinder rf_point_cloud_prediction = rf.findNestedResourceFinder("POINT_CLOUD_PREDICTION");
-    const std::string pc_pred_type = rf_point_cloud_prediction.check("type", Value()).asString();
+    const std::string pc_pred_type        = rf_point_cloud_prediction.check("type", Value()).asString();
     const std::size_t pc_pred_num_samples = rf_point_cloud_prediction.check("number_samples", Value("100")).asInt();
+    const bool pc_pred_use_normals        = rf_point_cloud_prediction.check("use_normals", Value(false)).asBool();
 
     /* Point cloud filtering. */
     ResourceFinder rf_point_cloud_filtering = rf.findNestedResourceFinder("POINT_CLOUD_FILTERING");
@@ -321,6 +322,7 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "Point cloud prediction:";
     yInfo() << log_ID << "- num_samples:" << pc_pred_num_samples;
     yInfo() << log_ID << "- type:" << pc_pred_type;
+    yInfo() << log_ID << "- use_normals:" << pc_pred_use_normals;
 
     yInfo() << log_ID << "Point cloud filtering:";
     yInfo() << log_ID << "- outlier_threshold:" << pc_outlier_threshold;
@@ -489,7 +491,7 @@ int main(int argc, char** argv)
     }
 
 
-    std::shared_ptr<PointCloudPrediction> point_cloud_prediction = std::make_shared<NanoflannPointCloudPrediction>(std::move(obj_sampler), pc_pred_num_samples);
+    std::shared_ptr<PointCloudPrediction> point_cloud_prediction = std::make_shared<NanoflannPointCloudPrediction>(std::move(obj_sampler), pc_pred_num_samples, pc_pred_use_normals);
     if (pc_pred_type == "mesh")
     {
         if (!point_cloud_prediction->init())

@@ -93,15 +93,24 @@ std::pair<bool, MatrixXd> ObjectMeshSampler::sample(const std::size_t& number_of
 
     // Store the cloud
     std::size_t number_points = std::distance(poiss_mesh.vert.begin(), poiss_mesh.vert.end());
-    MatrixXd cloud(3, number_points);
+    MatrixXd cloud(5, number_points);
     std::size_t i = 0;
     for (VertexIterator vi = poiss_mesh.vert.begin(); vi != poiss_mesh.vert.end(); vi++)
     {
         // Extract the point
         const auto p = vi->cP();
 
+        // Extract the normal
+        const auto n = vi->cN();
+        Vector3d normal(n[0], n[1], n[2]);
+        normal.normalize();
+
+        // Convert the normal to latitude, longitude
+        double phi = std::atan2(normal(2), std::sqrt(normal(0) * normal(0) + normal(1) * normal(1)));
+        double lambda = std::atan2(normal(1), normal(0));
+
         // Add to the cloud
-        cloud.col(i) << p[0], p[1], p[2];
+        cloud.col(i) << p[0], p[1], p[2], phi, lambda;
 
         i++;
     }

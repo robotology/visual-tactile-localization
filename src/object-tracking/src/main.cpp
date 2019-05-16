@@ -183,12 +183,13 @@ int main(int argc, char** argv)
 
     /* Get initial conditions. */
     ResourceFinder rf_initial_conditions = rf.findNestedResourceFinder("INITIAL_CONDITION");
-    VectorXd cov_x_0       = loadVectorDouble(rf_initial_conditions, "cov_x_0",       3);
-    VectorXd cov_v_0       = loadVectorDouble(rf_initial_conditions, "cov_v_0",       3);
-    VectorXd cov_eul_0     = loadVectorDouble(rf_initial_conditions, "cov_eul_0",     3);
-    VectorXd cov_eul_dot_0 = loadVectorDouble(rf_initial_conditions, "cov_eul_dot_0", 3);
-    VectorXd center_0      = loadVectorDouble(rf_initial_conditions, "center_0",      6);
-    VectorXd radius_0      = loadVectorDouble(rf_initial_conditions, "radius_0",      6);
+    VectorXd cov_x_0             = loadVectorDouble(rf_initial_conditions, "cov_x_0",       3);
+    VectorXd cov_v_0             = loadVectorDouble(rf_initial_conditions, "cov_v_0",       3);
+    VectorXd cov_eul_0           = loadVectorDouble(rf_initial_conditions, "cov_eul_0",     3);
+    VectorXd cov_eul_dot_0       = loadVectorDouble(rf_initial_conditions, "cov_eul_dot_0", 3);
+    VectorXd center_0            = loadVectorDouble(rf_initial_conditions, "center_0",      6);
+    VectorXd radius_0            = loadVectorDouble(rf_initial_conditions, "radius_0",      6);
+    const bool& use_superq_guess = rf_initial_conditions.check("use_superq_guess", Value(false)).asBool();
 
     /* Camera parameters. */
     ResourceFinder rf_camera = rf.findNestedResourceFinder("CAMERA");
@@ -294,12 +295,13 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- variance:" << likelihood_variance;
 
     yInfo() << log_ID << "Initial conditions:";
-    yInfo() << log_ID << "- center_0: "      << eigenToString(center_0);
-    yInfo() << log_ID << "- radius_0: "      << eigenToString(radius_0);
-    yInfo() << log_ID << "- cov_x_0: "       << eigenToString(cov_x_0);
-    yInfo() << log_ID << "- cov_v_0: "       << eigenToString(cov_v_0);
-    yInfo() << log_ID << "- cov_eul_0: "     << eigenToString(cov_eul_0);
-    yInfo() << log_ID << "- cov_eul_dot_0: " << eigenToString(cov_eul_dot_0);
+    yInfo() << log_ID << "- center_0: "         << eigenToString(center_0);
+    yInfo() << log_ID << "- radius_0: "         << eigenToString(radius_0);
+    yInfo() << log_ID << "- cov_x_0: "          << eigenToString(cov_x_0);
+    yInfo() << log_ID << "- cov_v_0: "          << eigenToString(cov_v_0);
+    yInfo() << log_ID << "- cov_eul_0: "        << eigenToString(cov_eul_0);
+    yInfo() << log_ID << "- cov_eul_dot_0: "    << eigenToString(cov_eul_dot_0);
+    yInfo() << log_ID << "- use_superq_guess: " << use_superq_guess;
 
     yInfo() << log_ID << "Camera:";
     yInfo() << log_ID << "- name:"         << camera_name;
@@ -615,7 +617,7 @@ int main(int argc, char** argv)
     /* Particles initialization. */
     MatrixXd covariance_0 = initial_covariance.asDiagonal();
     std::unique_ptr<ParticleSetInitialization> pf_initialization;
-    if (pc_pred_type == "localize_superquadric")
+    if (use_superq_guess && (pc_pred_type == "localize_superquadric"))
     {
         pf_initialization = std::move(superquadric_particle_initialization);
     }

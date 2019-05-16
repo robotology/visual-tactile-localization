@@ -356,9 +356,9 @@ std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::g
     object_pose_(0) = parameters.get(0).asDouble();
     object_pose_(1) = parameters.get(1).asDouble();
     object_pose_(2) = parameters.get(2).asDouble();
-    Matrix3d rotation(AngleAxisd(parameters.get(3).asDouble(), Vector3d::UnitZ()) *
-                      AngleAxisd(parameters.get(4).asDouble(), Vector3d::UnitY()) *
-                      AngleAxisd(parameters.get(5).asDouble(), Vector3d::UnitZ()));
+    Matrix3d rotation(AngleAxisd(parameters.get(3).asDouble() * M_PI / 180.0, Vector3d::UnitZ()) *
+                      AngleAxisd(parameters.get(4).asDouble() * M_PI / 180.0, Vector3d::UnitY()) *
+                      AngleAxisd(parameters.get(5).asDouble() * M_PI / 180.0, Vector3d::UnitZ()));
     Vector3d euler_zyx = rotation.eulerAngles(2, 1, 0);
     object_pose_.tail<3>() = euler_zyx;
 

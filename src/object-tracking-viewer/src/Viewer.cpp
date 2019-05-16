@@ -35,6 +35,19 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
         throw(std::runtime_error(err));
     }
 
+    // Open RPC input port for commands
+    if (!port_rpc_command_.open("/object-tracking-viewer/cmd:i"))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open RPC input command port.";
+        throw(std::runtime_error(err));
+    }
+
+    if (!(this->yarp().attachAsServer(port_rpc_command_)))
+    {
+        std::string err = "PFILTER::CTOR::ERROR\n\tError: cannot attach the RPC command port.";
+        throw(std::runtime_error(err));
+    }
+
     // Load period
     const int period = static_cast<int>(rf.check("period", Value(1.0)).asDouble() * 1000);
     yInfo() << log_ID_ << "- period:" << period << "ms";
@@ -205,6 +218,7 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
 Viewer::~Viewer()
 {
     port_estimate_in_.close();
+    port_rpc_command_.close();
 }
 
 
@@ -228,8 +242,16 @@ void Viewer::updateView()
             // Set rotation
             vtk_transform->RotateWXYZ(state(6) * 180 / M_PI,
                                       state(3), state(4), state(5));
+
             // Apply transform
+            mutex_rpc_.lock();
+
+            if (use_superquadric_visualization_)
+                vtk_transform->RotateX(-90.0);
+
             mesh_actor_->SetUserTransform(vtk_transform);
+
+            mutex_rpc_.unlock();
         }
     }
 
@@ -353,35 +375,45 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud(const
     return std::make_tuple(true, points_robot, valid_points);
 }
 
-// TO BE DONE
-// Configure estimate actor
-// double bx = ;
-// double by = ;
-// double bz = ;
-// double eps1 = ;
-// double eps2 = ;
 
-// superquadric_ = vtkSmartPointer<vtkSuperquadric>::New();
-// superquadric_->ToroidalOff();
-// superquadric_->SetSize(1.0);
-// superquadric_->SetCenter(0.0, 0.0, 0.0);
+bool Viewer::use_superquadric(const double size_x, const double size_y, const double size_z, const double eps_1, const double eps_2)
+{
+    mutex_rpc_.lock();
 
-// superquadric_->SetScale(bx, by, bz);
-// superquadric_->SetPhiRoundness(eps1);
-// superquadric_->SetThetaRoundness(eps2);
+    use_superquadric_visualization_ = true;
 
-// vtkSmartPointer<vtkSampleFunction> sq_sample = vtkSmartPointer<vtkSampleFunction>::New();
-// sq_sample->SetSampleDimensions(50,50,50);
-// sq_sample->SetImplicitFunction(superquadric_);
-// sq_sample->SetModelBounds(-bx,bx,-by,by,-bz,bz);
+    // Remove the previously added actor
+    renderer_->RemoveActor(mesh_actor_);
 
-// vtkSmartPointer<vtkContourFilter> sq_contours = vtkSmartPointer<vtkContourFilter>::New();
-// sq_contours->SetInputConnection(sq_sample->GetOutputPort());
-// sq_contours->GenerateValues(1,0.0,0.0);
+    // Create a new supequadric actor
+    superquadric_ = vtkSmartPointer<vtkSuperquadric>::New();
+    superquadric_->ToroidalOff();
+    superquadric_->SetSize(1.0);
+    superquadric_->SetCenter(0.0, 0.0, 0.0);
+    superquadric_->SetScale(size_x, size_y, size_z);
+    superquadric_->SetPhiRoundness(eps_1);
+    superquadric_->SetThetaRoundness(eps_2);
 
-// vtkSmartPointer<vtkPolyDataMapper> sq_mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-// sq_mapper->SetInputConnection(sq_contours->GetOutputPort());
-// sq_mapper->ScalarVisibilityOff();
+    superquadric_sample_ = vtkSmartPointer<vtkSampleFunction>::New();
+    superquadric_sample_->SetSampleDimensions(50,50,50);
+    superquadric_sample_->SetImplicitFunction(superquadric_);
+    superquadric_sample_->SetModelBounds(-size_x, size_x, -size_y, size_y, -size_z, size_z);
 
-// mesh_actor_ = vtkSmartPointer<vtkActor>::New();
-// mesh_actor_->SetMapper(sq_mapper);
+    superquadric_contours_ = vtkSmartPointer<vtkContourFilter>::New();
+    superquadric_contours_->SetInputConnection(superquadric_sample_->GetOutputPort());
+    superquadric_contours_->GenerateValues(1,0.0,0.0);
+
+    superquadric_mapper_ = vtkSmartPointer<vtkPolyDataMapper>::New();
+    superquadric_mapper_->SetInputConnection(superquadric_contours_->GetOutputPort());
+    superquadric_mapper_->ScalarVisibilityOff();
+
+    mesh_actor_ = vtkSmartPointer<vtkActor>::New();
+    mesh_actor_->SetMapper(superquadric_mapper_);
+
+    // Add the new actor
+    renderer_->AddActor(mesh_actor_);
+
+    mutex_rpc_.unlock();
+
+    return true;
+}

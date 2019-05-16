@@ -11,6 +11,7 @@
 #include <vtkActor.h>
 #include <vtkAxesActor.h>
 #include <vtkCamera.h>
+#include <vtkContourFilter.h>
 #include <vtkDoubleArray.h>
 #include <vtkInteractorStyleSwitch.h>
 #include <vtkOrientationMarkerWidget.h>
@@ -21,6 +22,7 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkSampleFunction.h>
 #include <vtkSmartPointer.h>
 #include <vtkSuperquadric.h>
 #include <vtkVertexGlyphFilter.h>
@@ -37,11 +39,15 @@
 
 #include <yarp/os/ResourceFinder.h>
 #include <yarp/os/BufferedPort.h>
+#include <yarp/os/Mutex.h>
+#include <yarp/os/Port.h>
 #include <yarp/sig/Image.h>
 #include <yarp/sig/Vector.h>
 
 #include <memory>
 #include <string>
+
+#include <thrift/ViewerIDL.h>
 
 
 class Object
@@ -151,7 +157,7 @@ public:
 };
 
 
-class Viewer
+class Viewer : public ViewerIDL
 {
 public:
     Viewer(const std::string port_prefix, yarp::os::ResourceFinder& rf);
@@ -159,6 +165,8 @@ public:
     virtual ~Viewer();
 
     void updateView();
+
+    bool use_superquadric(const double size_x, const double size_y, const double size_z, const double eps_1, const double eps_2) override;
 
 private:
     void set2DCoordinates(const std::size_t u_stride, const std::size_t v_stride);
@@ -169,6 +177,10 @@ private:
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_ground_truth_in_;
 
+    yarp::os::Port port_rpc_command_;
+
+    yarp::os::Mutex mutex_rpc_;
+
     std::vector<std::pair<int, int>> coordinates_2d_;
 
     std::unique_ptr<Points> vtk_measurements_;
@@ -176,8 +188,6 @@ private:
     vtkSmartPointer<vtkPLYReader> reader_;
 
     vtkSmartPointer<vtkPolyDataMapper> mapper_;
-
-    vtkSmartPointer<vtkSuperquadric> superquadric_;
 
     vtkSmartPointer<vtkActor> mesh_actor_;
 
@@ -196,6 +206,19 @@ private:
     vtkSmartPointer<vtkCamera> vtk_camera_;
 
     vtkSmartPointer<vtkInteractorStyleSwitch> interactor_style_;
+
+    /**
+     * Superquadric visualization
+     */
+    bool use_superquadric_visualization_ = false;
+
+    vtkSmartPointer<vtkSuperquadric> superquadric_;
+
+    vtkSmartPointer<vtkSampleFunction> superquadric_sample_;
+
+    vtkSmartPointer<vtkContourFilter> superquadric_contours_;
+
+    vtkSmartPointer<vtkPolyDataMapper> superquadric_mapper_;
 
     std::unique_ptr<Camera> camera_;
 

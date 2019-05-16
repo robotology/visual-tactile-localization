@@ -42,7 +42,7 @@ public:
     std::unique_ptr<bfl::ParticleSetInitialization> getParticleSetInitialization();
 
 protected:
-    std::pair<bool, vtkSmartPointer<vtkSuperquadric>> getSuperquadricFromRpc(const yarp::sig::PointCloudXYZRGBA& yarp_point_cloud);
+    std::pair<bool, vtkSmartPointer<vtkSuperquadric>> getSuperquadricFromRpc(const yarp::sig::PointCloud<yarp::sig::DataXYZRGBA>& yarp_point_cloud);
 
     std::string getObjectMaskName(const std::string& object_name);
 

@@ -120,7 +120,7 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
     // out << good_points.sum() << " 0 0" << std::endl;
 
     // Need to convert the point cloud to a YARP point cloud
-    PointCloudXYZRGBA yarp_point_cloud;
+    PointCloud<DataXYZRGBA> yarp_point_cloud;
     yarp_point_cloud.resize(good_points.sum());
     for (std::size_t i = 0, j = 0; i < point_cloud.cols(); i++)
     {
@@ -289,7 +289,7 @@ std::unique_ptr<ParticleSetInitialization> LocalizeSuperquadricSampler::getParti
 }
 
 
-std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::getSuperquadricFromRpc(const PointCloudXYZRGBA& yarp_point_cloud)
+std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::getSuperquadricFromRpc(const PointCloud<DataXYZRGBA>& yarp_point_cloud)
 {
     vtkSmartPointer<vtkSuperquadric> superquadric = vtkSmartPointer<vtkSuperquadric>::New();
     Bottle cmd, reply;

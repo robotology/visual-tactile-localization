@@ -40,6 +40,13 @@ LocalizeSuperquadricSampler::LocalizeSuperquadricSampler
         throw(std::runtime_error(err));
     }
 
+    // Open port for communication with module object-tracking-viewer
+    if (!(viewer_rpc_client_.open("/" + port_prefix + "/viewer-rpc:o")))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open mask rpc client port.";
+        throw(std::runtime_error(err));
+    }
+
     // Initialize camera required to extract depth
     if (camera_name == "iCubCamera")
     {
@@ -314,23 +321,35 @@ std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::g
     }
 
     // Parameters format: center-x center-y center-z angle-z angle-y angle-z size-x size-y size-z epsilon-1 epsilon-2
-    Bottle* parameters = reply.get(0).asList();
+    Bottle parameters = *(reply.get(0).asList());
 
     superquadric->ToroidalOff();
 
+    // Send received parameters also to module object-tracking-viewer
+    cmd.clear();
+    cmd.addString("use_superquadric");
+    cmd.addDouble(parameters.get(6).asDouble());
+    cmd.addDouble(parameters.get(8).asDouble());
+    cmd.addDouble(parameters.get(7).asDouble());
+    cmd.addDouble(parameters.get(9).asDouble());
+    cmd.addDouble(parameters.get(10).asDouble());
+
+    reply.clear();
+    viewer_rpc_client_.write(cmd, reply);
+
     // This is not a typo, 6-8-7 is the correct sequence
-    superquadric->SetPhiRoundness(parameters->get(9).asDouble());
-    superquadric->SetThetaRoundness(parameters->get(10).asDouble());
-    superquadric->SetScale(parameters->get(6).asDouble(),parameters->get(8).asDouble(),parameters->get(7).asDouble());
+    superquadric->SetPhiRoundness(parameters.get(9).asDouble());
+    superquadric->SetThetaRoundness(parameters.get(10).asDouble());
+    superquadric->SetScale(parameters.get(6).asDouble(),parameters.get(8).asDouble(),parameters.get(7).asDouble());
 
     // Store the object pose
     object_pose_.resize(6);
-    object_pose_(0) = parameters->get(0).asDouble();
-    object_pose_(1) = parameters->get(1).asDouble();
-    object_pose_(2) = parameters->get(2).asDouble();
-    Matrix3d rotation(AngleAxisd(parameters->get(3).asDouble(), Vector3d::UnitZ()) *
-                      AngleAxisd(parameters->get(4).asDouble(), Vector3d::UnitY()) *
-                      AngleAxisd(parameters->get(5).asDouble(), Vector3d::UnitZ()));
+    object_pose_(0) = parameters.get(0).asDouble();
+    object_pose_(1) = parameters.get(1).asDouble();
+    object_pose_(2) = parameters.get(2).asDouble();
+    Matrix3d rotation(AngleAxisd(parameters.get(3).asDouble(), Vector3d::UnitZ()) *
+                      AngleAxisd(parameters.get(4).asDouble(), Vector3d::UnitY()) *
+                      AngleAxisd(parameters.get(5).asDouble(), Vector3d::UnitZ()));
     Vector3d euler_zyx = rotation.eulerAngles(2, 1, 0);
     object_pose_.tail<3>() = euler_zyx;
 

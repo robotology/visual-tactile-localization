@@ -54,6 +54,8 @@ protected:
 
     yarp::os::RpcClient localize_superq_rpc_client_;
 
+    yarp::os::RpcClient viewer_rpc_client_;
+
     const std::string log_ID_ = "LocalizeSuperquadricSampler";
 
     std::string object_name_;

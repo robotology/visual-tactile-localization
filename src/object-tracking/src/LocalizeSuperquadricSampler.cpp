@@ -17,7 +17,8 @@
 #include <yarp/sig/Vector.h>
 
 #include <iostream>
-// #include <fstream>
+
+#include <thrift/LocalizeSuperquadricSamplerIDL.h>
 
 using namespace Eigen;
 using namespace bfl;
@@ -44,6 +45,19 @@ LocalizeSuperquadricSampler::LocalizeSuperquadricSampler
     if (!(viewer_rpc_client_.open("/" + port_prefix + "/viewer-rpc:o")))
     {
         std::string err = log_ID_ + "::ctor. Error: cannot open mask rpc client port.";
+        throw(std::runtime_error(err));
+    }
+
+    // Open RPC input port for commands
+    if (!port_rpc_command_.open("/" + port_prefix + "/cmd:i"))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open RPC input command port.";
+        throw(std::runtime_error(err));
+    }
+
+    if (!(this->yarp().attachAsServer(port_rpc_command_)))
+    {
+        std::string err = "PFILTER::CTOR::ERROR\n\tError: cannot attach the RPC command port.";
         throw(std::runtime_error(err));
     }
 
@@ -74,7 +88,10 @@ LocalizeSuperquadricSampler::LocalizeSuperquadricSampler
 LocalizeSuperquadricSampler::~LocalizeSuperquadricSampler()
 {
     localize_superq_rpc_client_.close();
+    viewer_rpc_client_.close();
+    port_rpc_command_.close();
 }
+
 
 std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t& number_of_points)
 {
@@ -296,6 +313,12 @@ std::unique_ptr<ParticleSetInitialization> LocalizeSuperquadricSampler::getParti
 }
 
 
+bool LocalizeSuperquadricSampler::send_superquadric_to_viewer()
+{
+    return sendSuperquadricToViewer();
+}
+
+
 std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::getSuperquadricFromRpc(const PointCloud<DataXYZRGBA>& yarp_point_cloud)
 {
     vtkSmartPointer<vtkSuperquadric> superquadric = vtkSmartPointer<vtkSuperquadric>::New();
@@ -308,8 +331,6 @@ std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::g
     Bottle& point_cloud_list = cmd.addList();
     point_cloud_list = yarp_point_cloud.toBottle();
     cmd.addInt(0);
-
-    Vector superq_parameters(11, 0.0);
 
     reply.clear();
     localize_superq_rpc_client_.write(cmd, reply);
@@ -324,18 +345,6 @@ std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::g
     Bottle parameters = *(reply.get(0).asList());
 
     superquadric->ToroidalOff();
-
-    // Send received parameters also to module object-tracking-viewer
-    cmd.clear();
-    cmd.addString("use_superquadric");
-    cmd.addDouble(parameters.get(6).asDouble());
-    cmd.addDouble(parameters.get(8).asDouble());
-    cmd.addDouble(parameters.get(7).asDouble());
-    cmd.addDouble(parameters.get(9).asDouble());
-    cmd.addDouble(parameters.get(10).asDouble());
-
-    reply.clear();
-    viewer_rpc_client_.write(cmd, reply);
 
     // This is not a typo, 6-8-7 is the correct sequence
     superquadric->SetPhiRoundness(parameters.get(9).asDouble());
@@ -352,6 +361,17 @@ std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::g
                       AngleAxisd(parameters.get(5).asDouble(), Vector3d::UnitZ()));
     Vector3d euler_zyx = rotation.eulerAngles(2, 1, 0);
     object_pose_.tail<3>() = euler_zyx;
+
+    // Store parameters
+    superquadric_parameters_.resize(11);
+    superquadric_parameters_(0) = parameters.get(6).asDouble();
+    superquadric_parameters_(1) = parameters.get(8).asDouble();
+    superquadric_parameters_(2) = parameters.get(7).asDouble();
+    superquadric_parameters_(3) = parameters.get(9).asDouble();
+    superquadric_parameters_(4) = parameters.get(10).asDouble();
+    superquadric_parameters_.tail<6>() = object_pose_;
+
+    sendSuperquadricToViewer();
 
     return std::make_pair(true, superquadric);
 }
@@ -372,6 +392,30 @@ std::string LocalizeSuperquadricSampler::getObjectMaskName(const std::string& ob
         name = "006_mustard_bottle";
 
     return name;
+}
+
+
+bool LocalizeSuperquadricSampler::sendSuperquadricToViewer()
+{
+    Bottle cmd, reply;
+
+    // Send received parameters also to module object-tracking-viewer
+    cmd.clear();
+    cmd.addString("use_superquadric");
+    cmd.addDouble(superquadric_parameters_(0));
+    cmd.addDouble(superquadric_parameters_(1));
+    cmd.addDouble(superquadric_parameters_(2));
+    cmd.addDouble(superquadric_parameters_(3));
+    cmd.addDouble(superquadric_parameters_(4));
+    cmd.addDouble(superquadric_parameters_(5));
+    cmd.addDouble(superquadric_parameters_(6));
+    cmd.addDouble(superquadric_parameters_(7));
+    cmd.addDouble(superquadric_parameters_(8));
+    cmd.addDouble(superquadric_parameters_(9));
+    cmd.addDouble(superquadric_parameters_(10));
+
+    reply.clear();
+    return viewer_rpc_client_.write(cmd, reply);
 }
 
 

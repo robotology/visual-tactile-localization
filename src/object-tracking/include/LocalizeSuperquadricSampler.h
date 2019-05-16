@@ -22,11 +22,15 @@
 #include <vtkSmartPointer.h>
 #include <vtkSuperquadric.h>
 
+#include <yarp/os/Port.h>
 #include <yarp/os/RpcClient.h>
 #include <yarp/sig/PointCloud.h>
 
+#include <thrift/LocalizeSuperquadricSamplerIDL.h>
 
-class LocalizeSuperquadricSampler : public ObjectSampler
+
+class LocalizeSuperquadricSampler : public ObjectSampler,
+                                    public LocalizeSuperquadricSamplerIDL
 {
 public:
     LocalizeSuperquadricSampler(const std::string& port_prefix, const std::string& camera_name, const std::string& camera_fallback_key, const std::string& camera_laterality = "");
@@ -41,10 +45,14 @@ public:
 
     std::unique_ptr<bfl::ParticleSetInitialization> getParticleSetInitialization();
 
+    bool send_superquadric_to_viewer() override;
+
 protected:
     std::pair<bool, vtkSmartPointer<vtkSuperquadric>> getSuperquadricFromRpc(const yarp::sig::PointCloud<yarp::sig::DataXYZRGBA>& yarp_point_cloud);
 
     std::string getObjectMaskName(const std::string& object_name);
+
+    bool sendSuperquadricToViewer();
 
     std::unique_ptr<MaskSegmentation> segmentation_;
 
@@ -52,9 +60,13 @@ protected:
 
     Eigen::VectorXd object_pose_;
 
+    Eigen::VectorXd superquadric_parameters_;
+
     yarp::os::RpcClient localize_superq_rpc_client_;
 
     yarp::os::RpcClient viewer_rpc_client_;
+
+    yarp::os::Port port_rpc_command_;
 
     const std::string log_ID_ = "LocalizeSuperquadricSampler";
 

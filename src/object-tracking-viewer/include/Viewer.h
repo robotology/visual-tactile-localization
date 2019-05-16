@@ -166,7 +166,7 @@ public:
 
     void updateView();
 
-    bool use_superquadric(const double size_x, const double size_y, const double size_z, const double eps_1, const double eps_2) override;
+    bool use_superquadric(const double size_x, const double size_y, const double size_z, const double eps_1, const double eps_2, const double x, const double y, const double z, const double phi, const double theta, const double psi) override;
 
 private:
     void set2DCoordinates(const std::size_t u_stride, const std::size_t v_stride);

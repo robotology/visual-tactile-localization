@@ -376,7 +376,20 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud(const
 }
 
 
-bool Viewer::use_superquadric(const double size_x, const double size_y, const double size_z, const double eps_1, const double eps_2)
+bool Viewer::use_superquadric
+(
+    const double size_x,
+    const double size_y,
+    const double size_z,
+    const double eps_1,
+    const double eps_2,
+    const double x,
+    const double y,
+    const double z,
+    const double phi,
+    const double theta,
+    const double psi
+)
 {
     mutex_rpc_.lock();
 
@@ -410,8 +423,27 @@ bool Viewer::use_superquadric(const double size_x, const double size_y, const do
     mesh_actor_ = vtkSmartPointer<vtkActor>::New();
     mesh_actor_->SetMapper(superquadric_mapper_);
 
+    vtkSmartPointer<vtkTransform> vtk_transform = vtkSmartPointer<vtkTransform>::New();
+
+    // Set translation
+    Vector3d position;
+    position << x, y, z;
+    vtk_transform->Translate(position.data());
+
+    // Set rotation
+    AngleAxisd angle_axis(AngleAxisd(phi, Vector3d::UnitZ()) *
+                          AngleAxisd(theta, Vector3d::UnitY()) *
+                          AngleAxisd(psi, Vector3d::UnitX()));
+    Vector3d axis = angle_axis.axis();
+    vtk_transform->RotateWXYZ(angle_axis.angle() * 180 / M_PI,
+                              axis(0), axis(1), axis(2));
+    vtk_transform->RotateX(-90.0);
+
     // Add the new actor
     renderer_->AddActor(mesh_actor_);
+
+    // Set pose
+    mesh_actor_->SetUserTransform(vtk_transform);
 
     mutex_rpc_.unlock();
 

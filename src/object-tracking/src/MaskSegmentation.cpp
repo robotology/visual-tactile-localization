@@ -19,9 +19,10 @@ using namespace yarp::os;
 using namespace yarp::sig;
 
 
-MaskSegmentation::MaskSegmentation(const std::string& port_prefix, const std::string& mask_name, const std::size_t& depth_stride) :
+MaskSegmentation::MaskSegmentation(const std::string& port_prefix, const std::string& mask_name, const std::size_t& depth_stride, const bool& handle_mask_streaming) :
     mask_name_(mask_name),
-    depth_stride_(depth_stride)
+    depth_stride_(depth_stride),
+    mask_streaming_initialized_(!handle_mask_streaming)
 {
     if (!port_image_out_.open("/" + port_prefix + "/segmentation:o"))
     {

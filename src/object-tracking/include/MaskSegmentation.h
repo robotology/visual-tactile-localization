@@ -23,7 +23,7 @@ class MaskSegmentation : public PointCloudSegmentation
 {
 public:
 
-    MaskSegmentation(const std::string& port_prefix, const std::string& mask_name, const std::size_t& depth_stride);
+    MaskSegmentation(const std::string& port_prefix, const std::string& mask_name, const std::size_t& depth_stride, const bool& handle_mask_streaming);
 
     ~MaskSegmentation();
 

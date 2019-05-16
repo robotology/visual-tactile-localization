@@ -339,15 +339,18 @@ std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::g
 
 std::string LocalizeSuperquadricSampler::getObjectMaskName(const std::string& object_name)
 {
-    std::string name;
+    std::string name = "";
 
-    // TODO
-    // names that we are going to receive are
-    // Cracker
-    // Domino
-    // Spam
-    // Can
-    // Mustard
+    if (object_name == "Cracker")
+        name = "003_cracker_box";
+    else if (object_name == "Domino")
+        name = "004_sugar_box";
+    else if (object_name == "Spam")
+        name = "010_potted_meat_can";
+    else if (object_name == "Can")
+        name = "005_tomato_soup_can";
+    else if (object_name == "Mustard")
+        name = "006_mustard_bottle";
 
     return name;
 }

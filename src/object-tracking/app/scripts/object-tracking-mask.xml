@@ -138,8 +138,14 @@
     <to>/localize-superquadric/service:rpc</to>
     <protocol>tcp</protocol>
   </connection>
-  <!-- used by instance segmenter -->
 
+  <connection>
+    <from>/localize-superquadric/opc:rpc</from>
+    <to>/memory/rpc</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <!-- used by instance segmenter -->
   <connection>
     <from>/depthCamera/rgbImage:o</from>
     <to>/instanceSegmenter/RGBimage:i</to>

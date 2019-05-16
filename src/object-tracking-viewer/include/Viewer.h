@@ -173,6 +173,8 @@ private:
 
     std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> get3DPointCloud(const Eigen::MatrixXf& depth, const float z_threshold = 1.0);
 
+    void enableSuperquadricActor();
+
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_in_;
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_ground_truth_in_;
@@ -210,6 +212,8 @@ private:
     /**
      * Superquadric visualization
      */
+    bool set_new_superquadric_ = false;
+
     bool use_superquadric_visualization_ = false;
 
     vtkSmartPointer<vtkSuperquadric> superquadric_;
@@ -219,6 +223,8 @@ private:
     vtkSmartPointer<vtkContourFilter> superquadric_contours_;
 
     vtkSmartPointer<vtkPolyDataMapper> superquadric_mapper_;
+
+    Eigen::VectorXd superquadric_parameters_;
 
     std::unique_ptr<Camera> camera_;
 

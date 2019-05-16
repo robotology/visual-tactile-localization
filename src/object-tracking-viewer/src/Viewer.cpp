@@ -224,6 +224,15 @@ Viewer::~Viewer()
 
 void Viewer::updateView()
 {
+    mutex_rpc_.lock();
+    if (set_new_superquadric_)
+    {
+        enableSuperquadricActor();
+
+        set_new_superquadric_ = false;
+    }
+    mutex_rpc_.unlock();
+
     // Update estimate
     {
         yarp::sig::Vector* estimate = port_estimate_in_.read(false);
@@ -243,15 +252,12 @@ void Viewer::updateView()
             vtk_transform->RotateWXYZ(state(6) * 180 / M_PI,
                                       state(3), state(4), state(5));
 
-            // Apply transform
-            mutex_rpc_.lock();
-
             if (use_superquadric_visualization_)
                 vtk_transform->RotateX(-90.0);
 
-            mesh_actor_->SetUserTransform(vtk_transform);
+            // Apply transform
 
-            mutex_rpc_.unlock();
+            mesh_actor_->SetUserTransform(vtk_transform);
         }
     }
 
@@ -376,27 +382,24 @@ std::tuple<bool, Eigen::MatrixXd, Eigen::VectorXi> Viewer::get3DPointCloud(const
 }
 
 
-bool Viewer::use_superquadric
-(
-    const double size_x,
-    const double size_y,
-    const double size_z,
-    const double eps_1,
-    const double eps_2,
-    const double x,
-    const double y,
-    const double z,
-    const double phi,
-    const double theta,
-    const double psi
-)
+void Viewer::enableSuperquadricActor()
 {
-    mutex_rpc_.lock();
-
     use_superquadric_visualization_ = true;
 
     // Remove the previously added actor
     renderer_->RemoveActor(mesh_actor_);
+
+    double x = superquadric_parameters_(0);
+    double y = superquadric_parameters_(1);
+    double z = superquadric_parameters_(2);
+    double phi = superquadric_parameters_(3);
+    double theta = superquadric_parameters_(4);
+    double psi = superquadric_parameters_(5);
+    double size_x = superquadric_parameters_(6);
+    double size_y = superquadric_parameters_(7);
+    double size_z = superquadric_parameters_(8);
+    double eps_1 = superquadric_parameters_(9);
+    double eps_2 = superquadric_parameters_(10);
 
     // Create a new supequadric actor
     superquadric_ = vtkSmartPointer<vtkSuperquadric>::New();
@@ -439,11 +442,46 @@ bool Viewer::use_superquadric
                               axis(0), axis(1), axis(2));
     vtk_transform->RotateX(-90.0);
 
-    // Add the new actor
-    renderer_->AddActor(mesh_actor_);
-
     // Set pose
     mesh_actor_->SetUserTransform(vtk_transform);
+
+    // Add the new actor
+    renderer_->AddActor(mesh_actor_);
+}
+
+
+
+bool Viewer::use_superquadric
+(
+    const double size_x,
+    const double size_y,
+    const double size_z,
+    const double eps_1,
+    const double eps_2,
+    const double x,
+    const double y,
+    const double z,
+    const double phi,
+    const double theta,
+    const double psi
+)
+{
+    mutex_rpc_.lock();
+
+    superquadric_parameters_.resize(11);
+    superquadric_parameters_(0) = x;
+    superquadric_parameters_(1) = y;
+    superquadric_parameters_(2) = z;
+    superquadric_parameters_(3) = phi;
+    superquadric_parameters_(4) = theta;
+    superquadric_parameters_(5) = psi;
+    superquadric_parameters_(6) = size_x;
+    superquadric_parameters_(7) = size_y;
+    superquadric_parameters_(8) = size_z;
+    superquadric_parameters_(9) = eps_1;
+    superquadric_parameters_(10) = eps_2;
+
+    set_new_superquadric_ = true;
 
     mutex_rpc_.unlock();
 

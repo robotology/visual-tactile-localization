@@ -61,6 +61,8 @@ protected:
 
     bool mask_streaming_initialized_ = false;
 
+    const bool handle_mask_streaming_;
+
     // Eigen::Vector4d bounding_box_;
 
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_out_;

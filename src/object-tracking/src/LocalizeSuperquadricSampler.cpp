@@ -81,7 +81,8 @@ LocalizeSuperquadricSampler::LocalizeSuperquadricSampler
     // Second argument is mask name - unknown at the moment
     // Third argument is depth stride - set to 1 - becuase the superquadric modelling pipeline
     // will take care of subsampling the point cloud
-    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 1, true));
+    // segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 1, true));
+    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 1, false));
 }
 
 
@@ -134,7 +135,7 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
     for (int i = 0 ; i < point_cloud.cols(); i++)
     {
         good_points(i) = 0;
-        if ((point_cloud.col(i) - centroid).norm() < 0.1)
+        if ((point_cloud.col(i) - centroid).norm() < 0.2)
             good_points(i) = 1;
     }
 
@@ -356,7 +357,7 @@ std::pair<bool, vtkSmartPointer<vtkSuperquadric>> LocalizeSuperquadricSampler::g
     object_pose_(0) = parameters.get(0).asDouble();
     object_pose_(1) = parameters.get(1).asDouble();
     object_pose_(2) = parameters.get(2).asDouble();
-    Matrix3d rotation(AngleAxisd(parameters.get(3).asDouble() * M_PI / 180.0, Vector3d::UnitZ()) *
+    Matrix3d rotation(AngleAxisd(parameters.get(3).asDouble() * M_PI / 180.0, Vector3d::UnitX()) *
                       AngleAxisd(parameters.get(4).asDouble() * M_PI / 180.0, Vector3d::UnitY()) *
                       AngleAxisd(parameters.get(5).asDouble() * M_PI / 180.0, Vector3d::UnitZ()));
     Vector3d euler_zyx = rotation.eulerAngles(2, 1, 0);

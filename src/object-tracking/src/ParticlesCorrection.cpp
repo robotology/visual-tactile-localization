@@ -98,7 +98,7 @@ void ParticlesCorrection::correctStep(const bfl::ParticleSet& pred_particles, bf
     #pragma omp parallel for
     for (std::size_t i = 0; i < pred_particles.components; i++)
     {
-        corr_particles.state(i) = sampleFromProposal(corr_particles.mean(i), corr_particles.covariance(i));
+        corr_particles.state(i) = corr_particles.mean(i);// sampleFromProposal(corr_particles.mean(i), corr_particles.covariance(i));
     }
 
     /* Evaluate the likelihood. */

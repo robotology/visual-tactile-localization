@@ -1,0 +1,53 @@
+<application>
+
+    <name>ObjectTrackingDataDumperWithMaskAndRealsense</name>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /otd/rgb --txTime --rxTime --type image</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /otd/depth --txTime --rxTime --type image</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /otd/maskmono --txTime --rxTime --type image</parameters>
+    </module>
+
+    <module>
+        <name>yarpdatadumper</name>
+        <node>localhost</node>
+        <parameters>--name /otd/maskcolor --txTime --rxTime --type image</parameters>
+    </module>
+
+    <connection>
+        <from>/depthCamera/rgbImage:o</from>
+        <to>/otd/rgb</to>
+        <protocol>tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/depthCamera/depthImage:o</from>
+        <to>/otd/depth</to>
+        <protocol>tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/instanceSegmenter/RGBimage:o</from>
+        <to>/otd/maskcolor</to>
+        <protocol>tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/instanceSegmenter/maskImage:o</from>
+        <to>/otd/maskmono</to>
+        <protocol>tcp</protocol>
+    </connection>
+
+</application>

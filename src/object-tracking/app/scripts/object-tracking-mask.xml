@@ -99,7 +99,7 @@
     <!-- used as background for interactive visualization (e.g. bounding box, hulls, etc.) -->
     <from>/depthCamera/rgbImage:o</from>
     <to>/object-tracking/rgbImage:i</to>
-    <protocol>tcp</protocol>
+    <protocol>mjpeg</protocol>
   </connection>
 
   <connection>
@@ -155,7 +155,7 @@
   <connection>
     <from>/depthCamera/rgbImage:o</from>
     <to>/instanceSegmenter/RGBimage:i</to>
-    <protocol>tcp</protocol>
+    <protocol>mjpeg</protocol>
   </connection>
 
 </application>

@@ -25,9 +25,9 @@
 class ParticlesCorrection : public bfl::PFCorrection
 {
 public:
-    ParticlesCorrection(std::unique_ptr<Correction> gaussian_correction, std::unique_ptr<ProximityLikelihood> likihood_model/*, std::unique_ptr<bfl::StateModel> state_model*/) noexcept;
+    ParticlesCorrection(std::unique_ptr<Correction> gaussian_correction, std::unique_ptr<ProximityLikelihood> likihood_model/*, std::unique_ptr<bfl::StateModel> state_model*/, const bool& sample_from_mean) noexcept;
 
-    ParticlesCorrection(std::unique_ptr<Correction> gaussian_correction, std::unique_ptr<ProximityLikelihood> likelihood_model/*, std::unique_ptr<bfl::StateModel> state_model*/, unsigned int seed) noexcept;
+    ParticlesCorrection(std::unique_ptr<Correction> gaussian_correction, std::unique_ptr<ProximityLikelihood> likelihood_model/*, std::unique_ptr<bfl::StateModel> state_model*/, const bool& sample_from_mean, unsigned int seed) noexcept;
 
     ParticlesCorrection(ParticlesCorrection&& particles_correction) noexcept;
 
@@ -73,6 +73,8 @@ protected:
     bool valid_likelihood_;
 
     Eigen::VectorXd likelihood_;
+
+    bool sample_from_mean_;
 };
 
 #endif /* PARTICLESCORRECTION_H */

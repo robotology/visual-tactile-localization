@@ -22,10 +22,11 @@ using namespace Eigen;
 ParticlesCorrection::ParticlesCorrection
 (
     std::unique_ptr<Correction> gauss_corr,
-    std::unique_ptr<ProximityLikelihood> lik_model/*,
+    std::unique_ptr<ProximityLikelihood> lik_model,/*,
     std::unique_ptr<StateModel> state_model*/
+    const bool& sample_from_mean
 ) noexcept :
-    ParticlesCorrection(std::move(gauss_corr), std::move(lik_model)/*, std::move(state_model)*/, 1)
+    ParticlesCorrection(std::move(gauss_corr), std::move(lik_model)/*, std::move(state_model)*/, sample_from_mean, 1)
 { }
 
 
@@ -34,11 +35,13 @@ ParticlesCorrection::ParticlesCorrection
     std::unique_ptr<Correction> gauss_corr,
     std::unique_ptr<ProximityLikelihood> lik_model/*,
     std::unique_ptr<StateModel> state_model*/,
+    const bool& sample_from_mean,
     unsigned int seed
 ) noexcept :
     gaussian_correction_(std::move(gauss_corr)),
     likelihood_model_(std::move(lik_model)),
     // state_model_(std::move(state_model)),
+    sample_from_mean_(sample_from_mean),
     generator_(std::mt19937_64(seed)),
     distribution_(std::normal_distribution<double>(0.0, 1.0)),
     gaussian_random_sample_([&] { return (distribution_)(generator_); })
@@ -98,7 +101,10 @@ void ParticlesCorrection::correctStep(const bfl::ParticleSet& pred_particles, bf
     #pragma omp parallel for
     for (std::size_t i = 0; i < pred_particles.components; i++)
     {
-        corr_particles.state(i) = corr_particles.mean(i);// sampleFromProposal(corr_particles.mean(i), corr_particles.covariance(i));
+        if (sample_from_mean_)
+            corr_particles.state(i) = corr_particles.mean(i);
+        else
+            corr_particles.state(i) = sampleFromProposal(corr_particles.mean(i), corr_particles.covariance(i));
     }
 
     /* Evaluate the likelihood. */

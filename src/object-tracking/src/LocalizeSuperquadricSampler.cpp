@@ -132,10 +132,15 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
     // Evaluate centroid of point cloud and discard too far points
     VectorXd centroid = (point_cloud.rowwise().sum()) / point_cloud.cols();
     VectorXi good_points(point_cloud.cols());
+    double threshold;
+    if (object_name_ == "Cracker")
+        threshold = 0.2;
+    else
+        threshold = 0.1;
     for (int i = 0 ; i < point_cloud.cols(); i++)
     {
         good_points(i) = 0;
-        if ((point_cloud.col(i) - centroid).norm() < 0.2)
+        if ((point_cloud.col(i) - centroid).norm() < threshold)
             good_points(i) = 1;
     }
 

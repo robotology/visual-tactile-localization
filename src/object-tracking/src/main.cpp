@@ -171,6 +171,7 @@ int main(int argc, char** argv)
     ResourceFinder rf_particles = rf.findNestedResourceFinder("PARTICLES");
     const std::size_t number_particles = rf_particles.check("number",  Value(1)).asInt();
     const double resampling_threshold  = rf_particles.check("resample_threshold", Value(0.5)).asDouble();
+    const bool sample_from_mean = rf_particles.check("sample_from_mean", Value(false)).asBool();
 
     /* Get likelihood variance */
     ResourceFinder rf_likelihood = rf.findNestedResourceFinder("LIKELIHOOD");
@@ -640,8 +641,7 @@ int main(int argc, char** argv)
     std::unique_ptr<ProximityLikelihood> proximity_likelihood = std::unique_ptr<ProximityLikelihood>(
         new ProximityLikelihood(likelihood_variance, point_cloud_prediction));
 
-    pf_correction = std::unique_ptr<ParticlesCorrection>(
-        new ParticlesCorrection(std::move(correction), std::move(proximity_likelihood)));
+    pf_correction = std::unique_ptr<ParticlesCorrection>(new ParticlesCorrection(std::move(correction), std::move(proximity_likelihood), sample_from_mean));
 
     /* Resampling. */
     std::unique_ptr<Resampling> pf_resampling = std::unique_ptr<Resampling>(new Resampling());

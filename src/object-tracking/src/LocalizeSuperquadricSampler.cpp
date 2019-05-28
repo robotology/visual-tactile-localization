@@ -385,9 +385,9 @@ std::string LocalizeSuperquadricSampler::getObjectMaskName(const std::string& ob
         name = "003_cracker_box";
     else if (object_name == "Domino")
         name = "004_sugar_box";
-    else if (object_name == "Spam")
+    else if (object_name == "SpamCan")
         name = "010_potted_meat_can";
-    else if (object_name == "Can")
+    else if (object_name == "CampbellCan")
         name = "005_tomato_soup_can";
     else if (object_name == "Mustard")
         name = "006_mustard_bottle";

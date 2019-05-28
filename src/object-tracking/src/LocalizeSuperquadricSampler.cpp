@@ -81,8 +81,8 @@ LocalizeSuperquadricSampler::LocalizeSuperquadricSampler
     // Second argument is mask name - unknown at the moment
     // Third argument is depth stride - set to 1 - becuase the superquadric modelling pipeline
     // will take care of subsampling the point cloud
-    // segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 1, true));
-    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 1, false));
+    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 1, true));
+    // segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 1, false));
 }
 
 

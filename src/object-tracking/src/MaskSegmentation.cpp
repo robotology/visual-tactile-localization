@@ -193,13 +193,15 @@ bool MaskSegmentation::setProperty(const std::string& property)
 
         return true;
     }
-    
+
     return false;
 }
 
 
 void MaskSegmentation::setMaskName(const std::string& mask_name)
 {
+    mask_streaming_initialized_ = !handle_mask_streaming_;
+
     mask_name_ = mask_name;
 }
 

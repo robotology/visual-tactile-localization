@@ -77,6 +77,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/ObjectSampler.h
     include/ObjectMeasurements.h
     include/ObjectMeshSampler.h
+    include/ObjectPointCloudPrediction.h
     include/ObjectRenderer.h
     include/ParticlesCorrection.h
     include/PFilter.h
@@ -119,6 +120,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/ObjectOcclusion.cpp
     src/ObjectMeasurements.cpp
     src/ObjectMeshSampler.cpp
+    src/ObjectPointCloudPrediction.cpp
     src/ObjectSampler.cpp
     src/ObjectRenderer.cpp
     src/ParticlesCorrection.cpp

@@ -10,13 +10,15 @@
 #include <omp.h>
 #endif
 
+#ifdef USE_PCL
 #include <pcl/point_types.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/normal_3d_omp.h>
+using namespace pcl;
+#endif
 
 using namespace Eigen;
 using namespace nanoflann;
-using namespace pcl;
 
 
 NanoflannPointCloudPrediction::NanoflannPointCloudPrediction(std::unique_ptr<ObjectSampler> obj_sampler, std::size_t number_of_points, const bool& use_normals) :
@@ -33,9 +35,18 @@ NanoflannPointCloudPrediction::NanoflannPointCloudPrediction(std::unique_ptr<Obj
 
     if (!(this->yarp().attachAsServer(port_rpc_command_)))
     {
-        std::string err = "PFILTER::CTOR::ERROR\n\tError: cannot attach the RPC command port.";
+        std::string err = log_ID_ + "::ctor. Error: cannot attach the RPC command port.";
         throw(std::runtime_error(err));
     }
+
+    // If support for PCL is not available, normals cannot be used
+#ifndef USE_PCL
+    if (use_normals_)
+    {
+        std::string err = log_ID_ + "::ctor. Error: normals cannot be used since the object-tracking module was compiled without PCL support.";
+        throw(std::runtime_error(err));
+    }
+#endif
 }
 
 
@@ -92,8 +103,9 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
     // Reshape measurement as a matrix
     Map<const MatrixXd> meas_matrix(meas.data(), 3, components);
 
-    // If required, evaluate normals
     MatrixXd normals(3, components);
+#ifdef USE_PCL
+    // If required, evaluate normals
     if (use_normals)
     {
         PointCloud<PointXYZ>::Ptr pcl_cloud (new PointCloud<PointXYZ>);
@@ -119,6 +131,7 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
         for (std::size_t i = 0; i < components; i++)
             normals.col(i) = Vector3d(pcl_normals->at(i).normal[0], pcl_normals->at(i).normal[1], pcl_normals->at(i).normal[2]);
     }
+#endif
 
     // Process all the states
     std::size_t meas_size = use_normals ? 5 : 3;
@@ -272,6 +285,13 @@ bool NanoflannPointCloudPrediction::initialize_model(const std::string& object_n
 
 bool NanoflannPointCloudPrediction::enable_normals(const bool enable)
 {
+#ifndef USE_PCL
+    if (enable)
+    {
+        std::string err = log_ID_ + "::enable_normals. Error: normals cannot be used since the object-tracking module was compiled without PCL support.";
+        throw(std::runtime_error(err));
+    }
+#endif
     use_normals_ = enable;
 
     return true;

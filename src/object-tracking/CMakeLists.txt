@@ -9,6 +9,7 @@
 
 option(USE_OPENMP "Use OpenMP" OFF)
 option(USE_SUPERQUADRICLIB "Use SuperquadricLib" OFF)
+option(USE_PCL "Use SuperquadricLib" OFF)
 
 set(EXE_TARGET_NAME object-tracking)
 
@@ -43,7 +44,10 @@ set(OpenGL_GL_PREFERENCE "LEGACY")
 find_package(OpenGL REQUIRED)
 
 # PCL
-find_package(PCL 1.3 REQUIRED)
+if(USE_PCL)
+  find_package(PCL 1.3 REQUIRED)
+  add_definitions(-DUSE_PCL)
+endif()
 
 # VTK
 find_package(VTK REQUIRED)
@@ -145,7 +149,6 @@ target_include_directories(${EXE_TARGET_NAME}
                            # https://github.com/cnr-isti-vclab/vcglib
                            ${CMAKE_CURRENT_SOURCE_DIR}/include/vcglib
                            ${OPENGL_INCLUDE_DIRS}
-                           ${PCL_INCLUDE_DIRS}
                            )
 
 target_link_libraries(${EXE_TARGET_NAME}
@@ -163,7 +166,6 @@ target_link_libraries(${EXE_TARGET_NAME}
                       iCubFingersEncoders
                       CameraLibrary
                       ${VTK_LIBRARIES}
-                      ${PCL_LIBRARIES}
                       )
 
 if (USE_OPENMP)
@@ -181,6 +183,12 @@ endif()
 
 if (USE_SUPERQUADRICLIB)
    target_link_libraries(${EXE_TARGET_NAME} PRIVATE SuperquadricLib::SuperquadricLibModel)
+endif()
+
+
+if (USE_PCL)
+  target_include_directories(${EXE_TARGET_NAME} PRIVATE ${PCL_INCLUDE_DIRS})
+  target_link_librareis(${EXE_TARGET_NAME} PRIVATE ${PCL_LIBRARIES})
 endif()
 
 if (nanoflann_FOUND)

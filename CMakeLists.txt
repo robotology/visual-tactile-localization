@@ -19,7 +19,7 @@ set(CMAKE_CXX_STANDARD 11)
 find_package(SuperimposeMesh 0.9.4.0 QUIET)
 if(NOT SuperimposeMesh_FOUND)
     message(STATUS "Did not found required master release of SuperimposeMesh. Looking for devel version.")
-    find_package(SuperimposeMesh 0.10.100 REQUIRED)
+    find_package(SuperimposeMesh 0.11.100 REQUIRED)
 endif()
 # Temporary fix avoiding issues with 'assimp' and 'glm'
 set_target_properties(SI::SuperimposeMesh PROPERTIES INTERFACE_LINK_LIBRARIES "")

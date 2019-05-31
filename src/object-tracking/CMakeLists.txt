@@ -193,7 +193,7 @@ endif()
 
 if (USE_PCL)
   target_include_directories(${EXE_TARGET_NAME} PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_librareis(${EXE_TARGET_NAME} PRIVATE ${PCL_LIBRARIES})
+  target_link_libraries(${EXE_TARGET_NAME} PRIVATE ${PCL_LIBRARIES})
 endif()
 
 if (nanoflann_FOUND)

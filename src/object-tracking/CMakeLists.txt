@@ -80,6 +80,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/ObjectRenderer.h
     include/ParticlesCorrection.h
     include/PFilter.h
+    include/PointCloudAdaptor.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
     include/PointCloudSegmentation.h
@@ -89,6 +90,8 @@ set(${EXE_TARGET_NAME}_HDR
     include/SimulatedPointCloud.h
     include/SuperquadricSampler.h
     include/VCGTriMesh.h
+    include/kdTree.h
+    include/kdTreeWithNormals.h
     include/vcg_import_obj_w_stream.h
     include/springyFingers.h
     include/iCub/perception/private/models.h

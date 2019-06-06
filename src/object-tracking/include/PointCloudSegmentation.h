@@ -17,6 +17,8 @@
 class PointCloudSegmentation
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     PointCloudSegmentation();
 
     virtual ~PointCloudSegmentation();

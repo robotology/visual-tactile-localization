@@ -45,7 +45,7 @@ find_package(OpenGL REQUIRED)
 
 # PCL
 if(USE_PCL)
-  find_package(PCL 1.3 REQUIRED)
+  find_package(PCL REQUIRED)
   add_definitions(-DUSE_PCL)
 endif()
 

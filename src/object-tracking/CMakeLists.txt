@@ -9,7 +9,7 @@
 
 option(USE_OPENMP "Use OpenMP" OFF)
 option(USE_SUPERQUADRICLIB "Use SuperquadricLib" OFF)
-option(USE_PCL "Use SuperquadricLib" OFF)
+option(USE_PCL "Use PointCloudLibrary" OFF)
 
 set(EXE_TARGET_NAME object-tracking)
 

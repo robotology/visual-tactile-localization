@@ -17,6 +17,8 @@
 using namespace pcl;
 #endif
 
+#include <Eigen/StdVector>
+
 using namespace Eigen;
 using namespace nanoflann;
 
@@ -137,7 +139,7 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(Const
     std::size_t meas_size = use_normals ? 5 : 3;
     MatrixXd meas_body(meas_size, components * state.cols());
     MatrixXd normals_body(3, components * state.cols());
-    std::vector<Transform<double, 3, Eigen::Affine>> poses(state.cols());
+    std::vector<Transform<double, 3, Eigen::Affine>, Eigen::aligned_allocator<Transform<double, 3, Eigen::Affine> > > poses(state.cols());
     #pragma omp parallel for
     for (std::size_t i = 0; i < state.cols(); i++)
     {

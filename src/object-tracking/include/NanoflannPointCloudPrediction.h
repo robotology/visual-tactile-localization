@@ -41,9 +41,9 @@ public:
     std::pair<bool, Eigen::MatrixXd> evaluateDistances(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
 
     /* Thrift interface */
-    bool initialize_model(const std::string& object_name);
+    bool initialize_model(const std::string& object_name) override;
 
-    bool enable_normals(const bool enable);
+    bool enable_normals(const bool enable) override;
 
 private:
     std::unique_ptr<ObjectSampler> obj_sampler_;

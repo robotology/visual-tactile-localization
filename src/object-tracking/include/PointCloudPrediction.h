@@ -21,6 +21,8 @@ public:
     virtual std::pair<bool, Eigen::MatrixXd> predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas) = 0;
 
     virtual std::pair<bool, Eigen::MatrixXd> evaluateDistances(ConstMatrixXdRef state, ConstVectorXdRef meas) = 0;
+
+    virtual Eigen::MatrixXd evaluateModel(const Eigen::Transform<double, 3, Eigen::Affine>& object_pose) = 0;
 };
 
 #endif /* POINTCLOUDPREDICTION_H */

@@ -144,11 +144,6 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
             good_points(i) = 1;
     }
 
-    // ofstream out;
-    // out.open("./pc.off");
-    // out << "OFF" << std::endl;
-    // out << good_points.sum() << " 0 0" << std::endl;
-
     // Need to convert the point cloud to a YARP point cloud
     PointCloud<DataXYZRGBA> yarp_point_cloud;
     yarp_point_cloud.resize(good_points.sum());
@@ -285,16 +280,6 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
 
         i++;
     }
-
-    // ofstream out;
-    // out.open("./poisson.off");
-    // out << "NOFF" << std::endl;
-    // out << poisson_cloud.cols() << " 0 0" << std::endl;
-    // for (std::size_t i = 0; i < poisson_cloud.cols(); i++)
-    // {
-    //     out << poisson_cloud.col(i).transpose() << std::endl;
-    // }
-    // out.close();
 
     return std::make_pair(true, poisson_cloud);
 }

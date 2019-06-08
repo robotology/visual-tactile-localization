@@ -6,6 +6,7 @@
  */
 
 #include <ArucoMeasurement.h>
+#include <CameraParameters.h>
 
 #include <Eigen/Dense>
 
@@ -25,8 +26,8 @@ using namespace Eigen;
 
 ArucoMeasurement::ArucoMeasurement
 (
+    std::unique_ptr<Camera> camera,
     const std::string port_prefix,
-    const std::string eye_name,
     const VectorXi& marker_ids,
     const VectorXd& marker_lengths,
     const std::vector<VectorXd>& marker_offsets,
@@ -34,25 +35,17 @@ ArucoMeasurement::ArucoMeasurement
     const bool send_image,
     const bool send_aruco_estimate
 ) :
-    eye_name_(eye_name),
+    camera_(std::move(camera)),
     marker_lengths_(marker_lengths),
     marker_offsets_(marker_offsets),
     send_image_(send_image),
     send_aruco_estimate_(send_aruco_estimate),
-    gaze_(port_prefix),
     measurement_(MatrixXd(6, 1)),
     R_(noise_covariance),
     is_measurement_available_(false)
 {
-    // Open camera  input port
-    if(!port_image_in_.open("/" + port_prefix + "/cam/" + eye_name + ":i"))
-    {
-        std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open " + eye_name + " camera input port.";
-        throw(std::runtime_error(err));
-    }
-
     // Open image output port
-    if(!port_image_out_.open("/" + port_prefix + "/marker-estimate/" + eye_name + ":o"))
+    if(!port_image_out_.open("/" + port_prefix + "/estimateMarkerImage:o"))
     {
         std::string err = log_ID_ + "CTOR::ERROR\n\tError: cannot open marker estimate image output port.";
         throw(std::runtime_error(err));
@@ -61,43 +54,37 @@ ArucoMeasurement::ArucoMeasurement
     if (send_aruco_estimate_)
     {
         // Open aruco estimate output port
-        if(!port_aruco_estimate_out_.open("/" + port_prefix + "/marker-estimate/" + eye_name + "/estimate:o"))
+        if(!port_aruco_estimate_out_.open("/" + port_prefix + "/estimateMarker:o"))
         {
             std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open marker estimate output port.";
             throw(std::runtime_error(err));
         }
     }
 
-    // Find the path of the camera intrinsic parameters
-    ResourceFinder rf_ground_truth;
-    rf_ground_truth.setVerbose(true);
-    rf_ground_truth.setDefaultContext("object-tracking-ground-truth");
-    std::string intrinsic_path = rf_ground_truth.findFile("opencv_icub_intrinsics_" + eye_name);
-
     // Load camera intrinsic parameters
-    cv::FileStorage fs(intrinsic_path, cv::FileStorage::READ);
-    if(!fs.isOpened())
+    bool valid_intrinsic_parameters;
+    CameraParameters intrinsic_parameters;
+    std::tie(valid_intrinsic_parameters, intrinsic_parameters) = camera_->getIntrinsicParameters();
+    if (!valid_intrinsic_parameters)
     {
-        std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot open camera intrinsic parameters file.";
+        std::string err = log_ID_ + "::CTOR::ERROR\n\tError: cannot get camera intrinsic parameters.";
         throw(std::runtime_error(err));
     }
 
-    fs["camera_matrix"] >> cam_intrinsic_;
-    fs["distortion_coefficients"] >> cam_distortion_;
+    // Populate cv camera instrincs matrix
+    cam_intrinsic_ = cv::Mat(3, 3, CV_64F, 0.0);
+    cam_intrinsic_.at<double>(0, 0) = intrinsic_parameters.fx;
+    cam_intrinsic_.at<double>(0, 2) = intrinsic_parameters.cx;
+    cam_intrinsic_.at<double>(1, 1) = intrinsic_parameters.fy;
+    cam_intrinsic_.at<double>(1, 2) = intrinsic_parameters.cy;
+    cam_intrinsic_.at<double>(2, 2) = 1.0;
 
-    // If available use camera intrinsics from the gaze controller
-    double fx;
-    double fy;
-    double cx;
-    double cy;
-    bool valid_intrinsics = gaze_.getCameraIntrinsics(eye_name_, fx, fy, cx, cy);
-    if (valid_intrinsics)
-    {
-        cam_intrinsic_.at<double>(0, 0) = fx;
-        cam_intrinsic_.at<double>(0, 2) = cx;
-        cam_intrinsic_.at<double>(1, 1) = fy;
-        cam_intrinsic_.at<double>(1, 2) = cy;
-    }
+    // Populate cv camera distortion vector
+    cam_distortion_ = cv::Mat(1, 4, CV_64F, 0.0);
+    cam_distortion_.setTo(cv::Scalar(0.0));
+
+    std::cout << log_ID_ << "CTOR::INFO\n\t Using camera intrinsic:" << std::endl << cam_intrinsic_ << std::endl;
+    std::cout << log_ID_ << "CTOR::INFO\n\t Using camera distortion:" << std::endl << cam_distortion_ << std::endl;
 
     // Configure a standard Aruco dictionary
     dictionary_ = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_250);
@@ -122,48 +109,12 @@ ArucoMeasurement::ArucoMeasurement
 ArucoMeasurement::~ArucoMeasurement()
 {
     // close ports
-    port_image_in_.close();
-
     port_image_out_.close();
 
     if (send_aruco_estimate_)
     {
         port_aruco_estimate_out_.close();
     }
-}
-
-
-std::pair<bool, Transform<double, 3, Eigen::Affine>> ArucoMeasurement::getCameraPose()
-{
-    yarp::sig::Vector eye_pos_left;
-    yarp::sig::Vector eye_att_left;
-
-    yarp::sig::Vector eye_pos_right;
-    yarp::sig::Vector eye_att_right;
-
-    Vector3d eye_pos(3);
-    VectorXd eye_att(4);
-
-    Transform<double, 3, Eigen::Affine> camera_transform;
-
-    if (!gaze_.getCameraPoses(eye_pos_left, eye_att_left, eye_pos_right, eye_att_right))
-        return std::make_pair(false, camera_transform);
-
-    if (eye_name_ == "left")
-    {
-        eye_pos = toEigen(eye_pos_left);
-        eye_att = toEigen(eye_att_left);
-    }
-    else
-    {
-        eye_pos = toEigen(eye_pos_right);
-        eye_att = toEigen(eye_att_right);
-    }
-
-    camera_transform = Translation<double, 3>(eye_pos);
-    camera_transform.rotate(AngleAxisd(eye_att(3), eye_att.head<3>()));
-
-    return std::make_pair(true, camera_transform);
 }
 
 
@@ -175,23 +126,17 @@ std::pair<bool, Data> ArucoMeasurement::measure(const Data& data) const
 
 bool ArucoMeasurement::freeze()
 {
-    ImageOf<PixelRgb>* image_in;
-    image_in = port_image_in_.read(true);
-
-    if (image_in == nullptr)
+    // Get image from camera
+    bool valid_image = false;
+    cv::Mat image_in;
+    std::tie(valid_image, image_in) = camera_->getRgbImage(true);
+    if (!valid_image)
         return true;
-
-    // Prepare output image
-    ImageOf<PixelRgb>& image_out = port_image_out_.prepare();
-
-    // Copy input to output and wrap around a cv::Mat
-    image_out = *image_in;
-    cv::Mat image = yarp::cv::toCvMat(image_out);
 
     // Perform marker detection
     std::vector<int> ids;
     std::vector<std::vector<cv::Point2f> > corners, rejected;
-    cv::aruco::detectMarkers(image, dictionary_, corners, ids);
+    cv::aruco::detectMarkers(image_in, dictionary_, corners, ids);
 
     // Search for a feasible id
     bool found_marker = false;
@@ -222,17 +167,19 @@ bool ArucoMeasurement::freeze()
     {
         // Draw everything was detected for debugging purposes
         for(int i = 0; i < ids.size(); i++)
-            cv::aruco::drawAxis(image, cam_intrinsic_, cam_distortion_, rvecs[i], tvecs[i], 0.1);
+            cv::aruco::drawAxis(image_in, cam_intrinsic_, cam_distortion_, rvecs[i], tvecs[i], 0.1);
 
         // Send the image
-        cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+        ImageOf<PixelRgb>& image_out = port_image_out_.prepare();
+        image_out = fromCvMat<PixelRgb>(image_in);
+        cv::cvtColor(image_in, image_in, cv::COLOR_RGB2BGR);
         port_image_out_.write();
     }
 
     // Get camera pose
     bool valid_camera_pose;
     Transform<double, 3, Eigen::Affine> camera_transform;
-    std::tie(valid_camera_pose, camera_transform) = getCameraPose();
+    std::tie(valid_camera_pose, camera_transform) = camera_->getCameraPose(true);
     if (!valid_camera_pose)
         return true;
 

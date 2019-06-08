@@ -16,13 +16,14 @@
 
 #include <Eigen/Dense>
 
-#include <GazeController.h>
+#include <Camera.h>
+
+#include <memory>
+#include <unordered_map>
 
 #include <yarp/os/BufferedPort.h>
 #include <yarp/sig/Image.h>
 #include <yarp/sig/Vector.h>
-
-#include <unordered_map>
 
 
 class ArucoMeasurement : public bfl::LinearMeasurementModel
@@ -30,8 +31,8 @@ class ArucoMeasurement : public bfl::LinearMeasurementModel
 public:
     ArucoMeasurement
     (
+        std::unique_ptr<Camera> camera,
         const std::string port_prefix,
-        const std::string eye_name,
         const Eigen::VectorXi& marker_ids,
         const Eigen::VectorXd& marker_lengths,
         const std::vector<Eigen::VectorXd>& marker_offsets,
@@ -57,9 +58,7 @@ public:
     bool setProperty(const std::string& property) override;
 
 protected:
-    std::pair<bool, Eigen::Transform<double, 3, Eigen::Affine>> getCameraPose();
-
-    const std::string eye_name_;
+    std::unique_ptr<Camera> camera_;
 
     cv::Ptr<cv::aruco::Dictionary> dictionary_;
 
@@ -78,11 +77,6 @@ protected:
     double marker_length_;
 
     /**
-     * Gaze controller.
-     */
-    GazeController gaze_;
-
-    /**
      * Latest Object pose. This pose is used as a measurement.
      */
     Eigen::MatrixXd measurement_;
@@ -99,10 +93,8 @@ protected:
     Eigen::MatrixXd R_;
 
     /**
-     * Image input / output.
+     * Image output.
      */
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_in_;
-
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_out_;
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_aruco_estimate_out_;

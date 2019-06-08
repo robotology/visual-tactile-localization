@@ -12,6 +12,7 @@ fallback_key        camera_320_240
 fetch_mode          old_image
 
 #Cans
+#2 without normals, with normals a little more
 stride             2
 
 #Mustard
@@ -34,6 +35,8 @@ use_superq_guess    true
 
 [KINEMATIC_MODEL]
 q_x                 (0.1, 0.1, 0.1)
+# for Spam can using more process noise  like 1.0, 1.0, 1.0 is even better
+# however it also requires a good initialization
 q_eul               (0.5, 0.5, 0.5)
 
 [LIKELIHOOD]
@@ -44,6 +47,7 @@ enable_log          false
 absolute_log_path
 
 [MEASUREMENT_MODEL]
+# for Spam 0.001, 0.001, 0.001 seems beneficial
 visual_covariance   (0.01, 0.01, 0.01)
 tactile_covariance  (0.0, 0.0, 0.0)
 

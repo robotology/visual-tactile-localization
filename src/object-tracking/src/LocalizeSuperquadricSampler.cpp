@@ -231,10 +231,13 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
     simpleTriMeshPointCloudNormal::Param normal_estimation_params;
     normal_estimation_params.fittingAdjNum = 10;
     normal_estimation_params.smoothingIterNum = 0;
+
+    // This will force normals to be pointing to the inner of the superquadric
     vcgVector viewPoint;
     viewPoint.SetZero();
     normal_estimation_params.viewPoint = viewPoint;
-    normal_estimation_params.useViewPoint = false;
+    normal_estimation_params.useViewPoint = true;
+
     simpleTriMeshPointCloudNormal::Compute(vcg_sampled_points, normal_estimation_params, nullptr);
 
     // Some default parametrs as found in MeshLab
@@ -267,8 +270,9 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
         const auto p = vi->cP();
 
         // Extract the normal
+        // Normals need to be swapped because the view point was set in (0, 0, 0)
         const auto n = vi->cN();
-        Vector3d normal(n[0], n[1], n[2]);
+        Vector3d normal(-n[0], -n[1], -n[2]);
         normal.normalize();
 
         // Convert the normal to latitude, longitude

@@ -34,24 +34,26 @@ RealsenseCamera::RealsenseCamera
     properties.put("remoteDepthPort", "/depthCamera/depthImage:o");
     properties.put("remoteRpcPort",   "/depthCamera/rpc:i");
 
-    // if (rgbd_drv_.open(properties) && rgbd_drv_.view(irgbd_) && (irgbd_ != nullptr))
-    // {
-    //     yInfo() << log_ID_ << "::ctor. Using driver to connect to the realsense camera.";
+    if (rgbd_drv_.open(properties) && rgbd_drv_.view(irgbd_) && (irgbd_ != nullptr))
+    {
+        // yInfo() << log_ID_ << "::ctor. Using driver to connect to the realsense camera.";
+        yInfo() << log_ID_ << "::ctor. Using driver to read intrinsic parameters.";
 
-    //     yarp::os::Property camera_intrinsics;
-    //     irgbd_->getRgbIntrinsicParam(camera_intrinsics);
+        yarp::os::Property camera_intrinsics;
+        irgbd_->getRgbIntrinsicParam(camera_intrinsics);
 
-    //     parameters_.width = irgbd_->getRgbWidth();
-    //     parameters_.height = irgbd_->getRgbHeight();
-    //     parameters_.fx = camera_intrinsics.find("focalLengthX").asFloat64();
-    //     parameters_.fy = camera_intrinsics.find("focalLengthY").asFloat64();
-    //     parameters_.cx = camera_intrinsics.find("principalPointX").asFloat64();
-    //     parameters_.cy = camera_intrinsics.find("principalPointY").asFloat64();
-    //     parameters_.initialized = true;
-    // }
-    // else
-    // {
-        yWarning() << log_ID_ << "::ctor. Driver not available, using raw ports.";
+        parameters_.width = irgbd_->getRgbWidth();
+        parameters_.height = irgbd_->getRgbHeight();
+        parameters_.fx = camera_intrinsics.find("focalLengthX").asFloat64();
+        parameters_.fy = camera_intrinsics.find("focalLengthY").asFloat64();
+        parameters_.cx = camera_intrinsics.find("principalPointX").asFloat64();
+        parameters_.cy = camera_intrinsics.find("principalPointY").asFloat64();
+        parameters_.initialized = true;
+    }
+    else
+    {
+        // yWarning() << log_ID_ << "::ctor. Driver not available, using raw ports.";
+        yWarning() << log_ID_ << "::ctor. Driver not available, reading intrinsic paramers from fallback configuration.";
 
         use_drv_ = false;
 
@@ -96,7 +98,7 @@ RealsenseCamera::RealsenseCamera
         //     std::string err = log_ID_ + "::ctor. Error: cannot open realsense depth camera input port.";
         //     throw(std::runtime_error(err));
         // }
-    // }
+    }
 
     // Log parameters
     std::cout << log_ID_ + "::ctor. Camera parameters." << std::endl;

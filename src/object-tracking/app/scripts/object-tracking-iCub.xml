@@ -50,33 +50,29 @@
     <from>/icub/camcalib/right/out</from>
     <to>/object-tracking-depth/SFM/right:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/camcalib/left/out</from>
     <to>/object-tracking-depth/SFM/left:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking/SFM/disp:o</from>
     <to>/object-tracking/viewer/disp:i</to>
     <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking-depth/SFM/depth:o</from>
     <to>/object-tracking-viewer/depth:i</to>
     <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking-depth/SFM/depth:o</from>
-    <to>/object-tracking/depth:i</to>
+    <to>/object-tracking/depthImage:i</to>
     <protocol>tcp</protocol>
     <!-- <protocol>tcp</protocol> -->
   </connection>
@@ -85,18 +81,16 @@
     <from>/object-tracking/bbox-estimator/opc/rpc:o</from>
     <to>/memory/rpc</to>
     <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking/estimate:o</from>
     <to>/object-tracking-viewer/estimate:i</to>
     <protocol>tcp</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <!-- <connection> -->
-  <!--   <from>/object-tracking-ground-truth/marker-estimate/left/estimate:o</from> -->
+  <!--   <from>/object-tracking-ground-truth/estimateMarker:o</from> -->
   <!--   <to>/object-tracking-viewer/ground-truth:i</to> -->
   <!--   <protocol>tcp</protocol> -->
   <!-- </connection> -->
@@ -111,48 +105,42 @@
     <from>/object-tracking/hull:o</from>
     <to>/object-tracking/viewer/hull:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/object-tracking/bbox-estimator/mask:o</from>
     <to>/object-tracking/viewer/mask:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
-    <from>/object-tracking-ground-truth/marker-estimate/left:o</from>
+    <from>/object-tracking-ground-truth/estimateMarkerImage:o</from>
     <to>/object-tracking/viewer/aruco:i</to>
     <protocol>mjpeg</protocol>
   </connection>
 
   <connection>
     <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking/cam/left:i</to>
+    <to>/object-tracking/rgbImage:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/camcalib/left/out</from>
     <to>/object-tracking-viewer/cam/left:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/camcalib/left/out</from>
     <to>/object-tracking/bbox-estimator/cam/left:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
     <from>/icub/camcalib/left/out</from>
-    <to>/object-tracking-ground-truth/cam/left:i</to>
+    <to>/object-tracking-ground-truth/rgbImage:i</to>
     <protocol>mjpeg</protocol>
-    <!-- <protocol>tcp</protocol> -->
   </connection>
 
   <connection>
@@ -182,6 +170,18 @@
   <connection>
     <from>/icub/torso/state:o</from>
     <to>/object-tracking/icub-arm-model/contacts/right/torso:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/icub/torso/state:o</from>
+    <to>/object-tracking-ground-truth/icub/torso:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/icub/head/state:o</from>
+    <to>/object-tracking-ground-truth/icub/head:i</to>
     <protocol>tcp</protocol>
   </connection>
 

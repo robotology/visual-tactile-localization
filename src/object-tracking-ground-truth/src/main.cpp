@@ -7,8 +7,11 @@
 
 #include <ArucoMeasurement.h>
 #include <ArucoTracker.h>
+#include <Camera.h>
 #include <Correction.h>
+#include <iCubCamera.h>
 #include <KinematicModel.h>
+#include <RealsenseCamera.h>
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
 #include <BayesFilters/Gaussian.h>
@@ -147,6 +150,13 @@ int main(int argc, char** argv)
     ResourceFinder rf_object = rf_object_tracking.findNestedResourceFinder("OBJECT");
     const std::string object_name = rf_object.check("object_name", Value("ycb_mustard_bottle")).asString();
 
+    /* Get camera name. */
+    ResourceFinder rf_camera = rf.findNestedResourceFinder("CAMERA");
+    const std::string camera_name = rf_camera.check("camera", Value("iCubCamera")).asString();
+    const std::string camera_laterality = rf_camera.check("camera_laterality", Value("")).asString();
+    const std::string camera_fallback_context = rf_camera.check("fallback_context", Value("object-tracking-ground-truth")).asString();
+    const std::string camera_fallback_key = rf_camera.check("fallback_config", Value("left_320_240")).asString();
+
     /* Get marker properties. */
     ResourceFinder rf_offsets;
     rf_offsets.setVerbose();
@@ -204,6 +214,11 @@ int main(int argc, char** argv)
     bool send_aruco_estimate = rf_misc.check("send_aruco_estimate", Value(false)).asBool();
 
     /* Log parameters. */
+    yInfo() << log_ID << "Camera:";
+    yInfo() << log_ID << "- camera:" << camera_name;
+    yInfo() << log_ID << "- fallback_context" << camera_fallback_context;
+    yInfo() << log_ID << "- fallback_config" << camera_fallback_key;
+
     yInfo() << log_ID << "Initial conditions:";
     yInfo() << log_ID << "- x_0: "           << eigenToString(x_0);
     yInfo() << log_ID << "- v_0: "           << eigenToString(v_0);
@@ -252,10 +267,35 @@ int main(int argc, char** argv)
                            kin_q_eul(0), kin_q_eul(1), kin_q_eul(2)));
 
     /**
+     * Camera.
+     */
+    std::unique_ptr<Camera> camera;
+    if (camera_name == "iCubCamera")
+    {
+        camera = std::unique_ptr<iCubCamera>
+        (
+            new iCubCamera(camera_laterality, port_prefix, camera_fallback_context, camera_fallback_key)
+        );
+    }
+    else if (camera_name == "RealsenseCamera")
+    {
+        camera = std::unique_ptr<RealsenseCamera>
+        (
+            new RealsenseCamera(port_prefix, camera_fallback_context, camera_fallback_key)
+        );
+    }
+    else
+    {
+        yError() << log_ID << "The requested camera is not available. Requested camera is" << camera_name;
+        std::exit(EXIT_FAILURE);
+    }
+    camera->initialize();
+
+    /**
      * ArUco measurement model.
      */
     std::unique_ptr<LinearMeasurementModel> measurement_model = std::unique_ptr<LinearMeasurementModel>(
-        new ArucoMeasurement(port_prefix, "left", marker_ids, marker_lengths, marker_offsets, noise_covariance_diagonal, send_aruco_image, send_aruco_estimate));
+        new ArucoMeasurement(std::move(camera), port_prefix, marker_ids, marker_lengths, marker_offsets, noise_covariance_diagonal, send_aruco_image, send_aruco_estimate));
 
     /**
      * Initial condition.

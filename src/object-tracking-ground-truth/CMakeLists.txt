@@ -52,21 +52,21 @@ else()
 endif()
 
 target_link_libraries(${EXE_TARGET_NAME} PRIVATE
+                                         BayesFilters::BayesFilters
+                                         CameraLibrary
+                                         ${OpenCV_LIBS}
                                          ${VTK_LIBRARIES}
                                          YARP::YARP_init
                                          YARP::YARP_OS
                                          YARP::YARP_sig
                                          YARP::YARP_eigen
                                          YARP::YARP_cv
-                                         iCubGazeCtrlLibrary
-                                         BayesFilters::BayesFilters
-                                         ${OpenCV_LIBS}
                                          )
 
 set(${EXE_TARGET_NAME}_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf/config.ini
+                            ${CMAKE_CURRENT_SOURCE_DIR}/conf/icub_camera_config.ini
+                            ${CMAKE_CURRENT_SOURCE_DIR}/conf/realsense_camera_config.ini
                             ${CMAKE_CURRENT_SOURCE_DIR}/conf/marker_offsets.ini
-                            ${CMAKE_CURRENT_SOURCE_DIR}/conf/opencv_icub_intrinsics_left
-                            ${CMAKE_CURRENT_SOURCE_DIR}/conf/opencv_icub_intrinsics_right
                             )
 
 yarp_install(FILES ${${EXE_TARGET_NAME}_CONF} DESTINATION ${ICUBCONTRIB_CONTEXTS_INSTALL_DIR}/object-tracking-ground-truth)

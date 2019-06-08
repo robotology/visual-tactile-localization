@@ -40,6 +40,8 @@ public:
 
     std::pair<bool, Eigen::MatrixXd> evaluateDistances(ConstMatrixXdRef state, ConstVectorXdRef meas) override;
 
+    Eigen::MatrixXd evaluateModel(const Eigen::Transform<double, 3, Eigen::Affine>& object_pose);
+
     /* Thrift interface */
     bool initialize_model(const std::string& object_name) override;
 

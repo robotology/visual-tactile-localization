@@ -273,6 +273,12 @@ std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::evaluateDistances(Const
 }
 
 
+Eigen::MatrixXd NanoflannPointCloudPrediction::evaluateModel(const Transform<double, 3, Affine>& object_pose)
+{
+    return object_pose * cloud_with_normals_.topRows<3>().colwise().homogeneous();
+}
+
+
 bool NanoflannPointCloudPrediction::initialize_model(const std::string& object_name)
 {
     // Set the object model within the object sampler class

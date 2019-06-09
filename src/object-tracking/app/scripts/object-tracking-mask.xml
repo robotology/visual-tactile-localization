@@ -40,6 +40,13 @@
     <prefix></prefix>
   </module>
 
+  <module>
+    <name>yarpview</name>
+    <parameters>--name /object-tracking/viewer/validation:i</parameters>
+    <node>localhost</node>
+    <prefix></prefix>
+  </module>
+
   <!-- connections for yarpview-s -->
 
   <connection>
@@ -51,13 +58,19 @@
   <connection>
     <from>/object-tracking/segmentation:o</from>
     <to>/object-tracking/viewer/segmentation:i</to>
-    <protocol>tcp</protocol>
+    <protocol>mjpeg</protocol>
   </connection>
 
   <connection>
     <from>/instanceSegmenter/RGBimage:o</from>
     <to>/object-tracking/viewer/masks:i</to>
-    <protocol>tcp</protocol>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking/validator2d/validationImage:o</from>
+    <to>/object-tracking/viewer/validation:i</to>
+    <protocol>mjpeg</protocol>
   </connection>
 
   <!-- connections for object-tracking-viewer -->
@@ -157,5 +170,17 @@
     <to>/instanceSegmenter/RGBimage:i</to>
     <protocol>mjpeg</protocol>
   </connection>
+
+  <connection>
+    <from>/object-tracking/segmentation:o</from>
+    <to>/object-tracking/validator2d/validationImage:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <!-- <connection> -->
+  <!--   <from>/depthCamera/rgbImage:o</from> -->
+  <!--   <to>/object-tracking/validator2d/rgbImage:i</to> -->
+  <!--   <protocol>mjpeg</protocol> -->
+  <!-- </connection> -->
 
 </application>

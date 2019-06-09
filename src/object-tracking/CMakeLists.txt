@@ -90,6 +90,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/SimulatedFilter.h
     include/SimulatedPointCloud.h
     include/SuperquadricSampler.h
+    include/Validator2D.h
     include/VCGTriMesh.h
     include/kdTree.h
     include/kdTreeWithNormals.h
@@ -132,6 +133,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/SimulatedFilter.cpp
     src/SimulatedPointCloud.cpp
     src/SuperquadricSampler.cpp
+    src/Validator2D.cpp
     src/main.cpp
     src/springyFingers.cpp
     )

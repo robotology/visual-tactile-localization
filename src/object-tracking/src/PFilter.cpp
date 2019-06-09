@@ -29,7 +29,8 @@ PFilter::PFilter
     std::unique_ptr<PFPrediction> prediction,
     std::unique_ptr<PFCorrection> correction,
     std::unique_ptr<Resampling> resampling,
-    std::shared_ptr<PointCloudSegmentation> segmentation
+    std::shared_ptr<PointCloudSegmentation> segmentation,
+    std::unique_ptr<Validator2D> validator
 ) :
     SIS
     (
@@ -41,6 +42,7 @@ PFilter::PFilter
         std::move(correction),
         std::move(resampling)
     ),
+    validator_(std::move(validator)),
     resampling_threshold_(resampling_threshold),
     segmentation_(segmentation),
     point_estimate_extraction_(9, 3),
@@ -293,6 +295,14 @@ void PFilter::filteringStep()
     std::tie(valid_estimate, point_estimate_) =  point_estimate_extraction_.extract(cor_particle_.state(), cor_particle_.weight());
     if (!valid_estimate)
         yInfo() << log_ID_ << "Cannot extract point estimate!";
+
+    // Render 2d evaluation using current estimate
+    object_transform = Translation<double, 3>(point_estimate_.head<3>());
+    rotation = AngleAxisd(AngleAxisd(point_estimate_(9), Vector3d::UnitZ()) *
+                          AngleAxisd(point_estimate_(10), Vector3d::UnitY()) *
+                          AngleAxisd(point_estimate_(11), Vector3d::UnitX()));
+    object_transform.rotate(rotation);
+    validator_->renderEvaluation(object_transform);
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 

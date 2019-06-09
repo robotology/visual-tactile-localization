@@ -32,6 +32,7 @@
 #ifdef USE_SUPERQUADRICLIB
 #include <SuperquadricSampler.h>
 #endif
+#include <Validator2D.h>
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
 #include <BayesFilters/FilteringAlgorithm.h>
@@ -646,6 +647,12 @@ int main(int argc, char** argv)
     /* Resampling. */
     std::unique_ptr<Resampling> pf_resampling = std::unique_ptr<Resampling>(new Resampling());
 
+    /* 2D Validation. */
+    std::unique_ptr<Validator2D> validator = std::unique_ptr<Validator2D>
+    (
+        new Validator2D(point_cloud_prediction, "object-tracking/validator2d", camera_name, camera_fallback_key, camera_laterality)
+    );
+
     std::unique_ptr<FilteringAlgorithm> filter = std::unique_ptr<PFilter>
     (
         new PFilter(port_prefix,
@@ -654,7 +661,8 @@ int main(int argc, char** argv)
                     std::move(pf_initialization),
                     std::move(pf_prediction), std::move(pf_correction),
                     std::move(pf_resampling),
-                    std::move(segmentation))
+                    segmentation,
+                    std::move(validator))
     );
     std::cout << "done." << std::endl;
 

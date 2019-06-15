@@ -38,8 +38,6 @@ protected:
 
     Eigen::Vector4d bounding_box_;
 
-    double depth_stride_;
-
     Eigen::Transform<double, 3, Eigen::Affine> camera_pose_;
 
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_out_;

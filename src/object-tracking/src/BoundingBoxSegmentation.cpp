@@ -16,9 +16,11 @@ using namespace yarp::cv;
 
 
 BoundingBoxSegmentation::BoundingBoxSegmentation(const std::string& port_prefix, const Eigen::Ref<const Eigen::VectorXd>& bounding_box, const std::size_t& depth_stride) :
-    bounding_box_(bounding_box),
-    depth_stride_(depth_stride)
+    bounding_box_(bounding_box)
 {
+    setDepthStride(depth_stride);
+    setDefaultDepthStride(depth_stride);
+
     if (!port_image_out_.open("/" + port_prefix + "/segmentation:o"))
     {
         std::string err = log_ID_ + "::ctor. Error: cannot open bounding box output port.";
@@ -63,7 +65,7 @@ bool BoundingBoxSegmentation::freezeSegmentation(Camera& camera)
 
     // Fill coordinates vector
     coordinates_.clear();
-    for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= depth_stride_)
+    for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= getDepthStride())
     {
         cv::Point& p = non_zero_coordinates.at<cv::Point>(i);
         coordinates_.push_back(std::make_pair(p.x, p.y));

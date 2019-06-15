@@ -17,6 +17,7 @@
 #include <BayesFilters/SIS.h>
 
 #include <PointCloudSegmentation.h>
+#include <RateStabilizer.h>
 #include <Validator2D.h>
 
 #include <yarp/os/BufferedPort.h>
@@ -42,7 +43,8 @@ public:
         std::unique_ptr<bfl::PFCorrection> correction,
         std::unique_ptr<bfl::Resampling> resampling,
         std::shared_ptr<PointCloudSegmentation> segmentation,
-        std::unique_ptr<Validator2D> validator
+        std::unique_ptr<Validator2D> validator,
+        std::unique_ptr<RateStabilizer> rate_stabilizer
     );
 
     virtual ~PFilter();
@@ -85,6 +87,8 @@ protected:
     std::shared_ptr<PointCloudSegmentation> segmentation_;
 
     std::unique_ptr<Validator2D> validator_;
+
+    std::unique_ptr<RateStabilizer> rate_stabilizer_;
 
     bfl::EstimatesExtraction point_estimate_extraction_;
 

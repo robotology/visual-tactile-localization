@@ -30,7 +30,8 @@ PFilter::PFilter
     std::unique_ptr<PFCorrection> correction,
     std::unique_ptr<Resampling> resampling,
     std::shared_ptr<PointCloudSegmentation> segmentation,
-    std::unique_ptr<Validator2D> validator
+    std::unique_ptr<Validator2D> validator,
+    std::unique_ptr<RateStabilizer> rate_stabilizer
 ) :
     SIS
     (
@@ -43,6 +44,7 @@ PFilter::PFilter
         std::move(resampling)
     ),
     validator_(std::move(validator)),
+    rate_stabilizer_(std::move(rate_stabilizer)),
     resampling_threshold_(resampling_threshold),
     segmentation_(segmentation),
     point_estimate_extraction_(9, 3),
@@ -109,6 +111,13 @@ bool PFilter::reset_filter()
     // Reset the point estimate
     point_estimate_extraction_.clear();
 
+    // Reset the rate stabilizer
+    if (rate_stabilizer_ != nullptr)
+        rate_stabilizer_ ->reset();
+
+    // Reset the segmentation
+    segmentation_->reset();
+
     SIS::reset();
 
     return true;
@@ -125,6 +134,13 @@ bool PFilter::stop_filter()
 
     // Reset the point estimate
     point_estimate_extraction_.clear();
+
+    // Reset the rate stabilizer
+    if (rate_stabilizer_ != nullptr)
+        rate_stabilizer_->reset();
+
+    // Reset the segmentation
+    segmentation_->reset();
 
     reboot();
 
@@ -255,7 +271,7 @@ void PFilter::filteringStep()
 
         return;
     }
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
     if (getFilteringStep() != 0)
         prediction_->predict(cor_particle_, pred_particle_);
@@ -304,21 +320,6 @@ void PFilter::filteringStep()
     object_transform.rotate(rotation);
     validator_->renderEvaluation(object_transform);
 
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-    std::cout << "Executed step in "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms"
-              << std::endl;
-    std::cout << "Neff is: " << neff<< std::endl << std::endl;
-
-    // Send execution time
-    double execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    Vector& timings = port_timings_out_.prepare();
-    timings.resize(1);
-    timings[0] = execution_time / 1000.0;
-    port_timings_out_.write();
-
     if (valid_estimate)
     {
         // Log
@@ -349,6 +350,33 @@ void PFilter::filteringStep()
         prediction_->getStateModel().setProperty("tdd_reset");
 
     prediction_->getStateModel().setProperty("tick");
+
+    // Evaluate execution time
+    std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+    double execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0;
+    double rate = 1 / execution_time;
+
+    std::cout << "Current rate is " << rate << " fps" << std::endl;
+    std::cout << "Neff is: " << neff << std::endl << std::endl;
+
+    // Change depth stride
+    if (rate_stabilizer_ != nullptr)
+    {
+        int depth_stride = segmentation_->getDepthStride();
+        int control = rate_stabilizer_->getOutput(rate);
+        depth_stride += control;
+
+        if (depth_stride <= 0)
+            depth_stride = 1;
+
+        segmentation_->setDepthStride(depth_stride);
+    }
+
+    // Send execution time
+    Vector& timings = port_timings_out_.prepare();
+    timings.resize(1);
+    timings[0] = execution_time;
+    port_timings_out_.write();
 }
 
 

@@ -28,6 +28,12 @@ bool PointCloudSegmentation::getProperty(const std::string& property) const
 }
 
 
+std::size_t PointCloudSegmentation::getDepthStride() const
+{
+    return depth_stride_;
+}
+
+
 void PointCloudSegmentation::setObjectPose(const Eigen::Transform<double, 3, Eigen::Affine>& pose)
 {
     object_pose_ = pose;
@@ -48,9 +54,23 @@ bool PointCloudSegmentation::setProperty(const std::string& property)
 }
 
 
+void PointCloudSegmentation::setDepthStride(const std::size_t& stride)
+{
+    depth_stride_ = stride;
+}
+
+
+void PointCloudSegmentation::setDefaultDepthStride(const std::size_t& stride)
+{
+    default_depth_stride_ = stride;
+}
+
+
 void PointCloudSegmentation::reset()
 {
     object_pose_available_ = false;
+
+    setDepthStride(default_depth_stride_);
 
     for (auto& occlusion : occlusions_)
         occlusion->reset();

@@ -31,9 +31,15 @@ public:
 
     virtual bool getProperty(const std::string& property) const;
 
+    virtual std::size_t getDepthStride() const;
+
     virtual void setObjectPose(const Eigen::Transform<double, 3, Eigen::Affine>& pose);
 
     virtual bool setProperty(const std::string& property);
+
+    virtual void setDepthStride(const std::size_t& stride);
+
+    virtual void setDefaultDepthStride(const std::size_t& stride);
 
     virtual void reset();
 
@@ -50,6 +56,12 @@ protected:
     Eigen::Transform<double, 3, Eigen::Affine> object_pose_;
 
     bool object_pose_available_ = false;
+
+private:
+
+    std::size_t depth_stride_;
+
+    std::size_t default_depth_stride_;
 };
 
 #endif /* POINTCLOUDSEGMENTATION_H */

@@ -28,6 +28,7 @@
 #include <PointCloudSegmentation.h>
 #include <PFilter.h>
 #include <ProximityLikelihood.h>
+#include <RateStabilizer.h>
 #include <RealsenseCamera.h>
 #ifdef USE_SUPERQUADRICLIB
 #include <SuperquadricSampler.h>
@@ -271,6 +272,12 @@ int main(int argc, char** argv)
     if (segmentation_type == "mask")
         mask_name = rf_segmentation.check("mask_name", Value("006_mustard_bottle")).asString();
 
+    /* Rate stabilizer parameters. */
+    ResourceFinder rf_rate_stabilizer = rf.findNestedResourceFinder("RATE_STABILIZER");
+    bool enable_rate_stabilizer = rf_rate_stabilizer.check("enable", Value(false)).asBool();
+    double period_rate_stabilizer = rf_rate_stabilizer.check("period", Value(1.0)).asDouble();
+    double set_point_rate_stabilizer = rf_rate_stabilizer.check("set_point", Value(15.0)).asDouble();
+
     /* Logging parameters. */
     ResourceFinder rf_logging = rf.findNestedResourceFinder("LOG");
     bool enable_log = rf_logging.check("enable_log", Value(false)).asBool();
@@ -354,6 +361,11 @@ int main(int argc, char** argv)
         yInfo() << log_ID << "- bbox_tl_0:" << eigenToString(bbox_0.head<2>());
         yInfo() << log_ID << "- bbox_br_0:" << eigenToString(bbox_0.tail<2>());
     }
+
+    yInfo() << log_ID << "Rate stabilizer:";
+    yInfo() << log_ID << "- enable:" << enable_rate_stabilizer;
+    yInfo() << log_ID << "- period:" << period_rate_stabilizer;
+    yInfo() << log_ID << "- set_point:" << set_point_rate_stabilizer;
 
     yInfo() << log_ID << "Logging:";
     yInfo() << log_ID << "- enable_log:"        << enable_log;
@@ -653,6 +665,14 @@ int main(int argc, char** argv)
         new Validator2D(point_cloud_prediction, "object-tracking/validator2d", camera_name, camera_fallback_key, camera_laterality)
     );
 
+    /* Rate stabilizer. */
+    std::unique_ptr<RateStabilizer> rate_stabilizer;
+    if (enable_rate_stabilizer)
+        rate_stabilizer = std::unique_ptr<RateStabilizer>
+        (
+            new RateStabilizer(port_prefix, period_rate_stabilizer, set_point_rate_stabilizer)
+        );
+
     std::unique_ptr<FilteringAlgorithm> filter = std::unique_ptr<PFilter>
     (
         new PFilter(port_prefix,
@@ -662,7 +682,8 @@ int main(int argc, char** argv)
                     std::move(pf_prediction), std::move(pf_correction),
                     std::move(pf_resampling),
                     segmentation,
-                    std::move(validator))
+                    std::move(validator),
+                    std::move(rate_stabilizer))
     );
     std::cout << "done." << std::endl;
 

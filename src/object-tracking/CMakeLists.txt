@@ -87,6 +87,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/PointCloudSegmentation.h
     include/ProximityLikelihood.h
     include/Random3DPose.h
+    include/RateStabilizer.h
     include/SimulatedFilter.h
     include/SimulatedPointCloud.h
     include/SuperquadricSampler.h
@@ -130,6 +131,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/PointCloudSegmentation.cpp
     src/ProximityLikelihood.cpp
     src/Random3DPose.cpp
+    src/RateStabilizer.cpp
     src/SimulatedFilter.cpp
     src/SimulatedPointCloud.cpp
     src/SuperquadricSampler.cpp
@@ -138,7 +140,12 @@ set(${EXE_TARGET_NAME}_SRC
     src/springyFingers.cpp
     )
 
-set(${EXE_TARGET_NAME}_THRIFT_HDR thrift/objecttracking.thrift thrift/model.thrift thrift/localizesuperquadricsampler.thrift)
+set(${EXE_TARGET_NAME}_THRIFT_HDR
+    thrift/objecttracking.thrift
+    thrift/model.thrift
+    thrift/localizesuperquadricsampler.thrift
+    thrift/ratestabilizer.thrift
+    )
 
 yarp_add_idl(${EXE_TARGET_NAME}_THRIFT_SRC ${${EXE_TARGET_NAME}_THRIFT_HDR})
 

@@ -124,11 +124,6 @@ protected:
     bool is_occlusion_ = false;
 
     /**
-     * Depth stride.
-     */
-    std::size_t depth_stride_ = 1;
-
-    /**
      * IOL.
      */
     std::string IOL_object_name_;

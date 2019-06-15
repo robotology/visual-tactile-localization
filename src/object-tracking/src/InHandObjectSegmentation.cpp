@@ -59,9 +59,11 @@ InHandObjectSegmentation::InHandObjectSegmentation
     const std::size_t& depth_stride,
     std::unique_ptr<ObjectRenderer> object_renderer
 ) :
-    object_renderer_(std::move(object_renderer)),
-    depth_stride_(depth_stride)
+    object_renderer_(std::move(object_renderer))
 {
+    setDepthStride(depth_stride);
+    setDefaultDepthStride(depth_stride);
+
     if (!port_image_out_.open("/" + port_prefix + "/segmentation:o"))
     {
         std::string err = log_ID_ + "::ctor. Error: cannot open ROIs output port.";
@@ -438,7 +440,7 @@ std::vector<std::pair<int, int>> InHandObjectSegmentation::getObject2DCoordinate
 
     // Fill coordinates vector
     std::vector<std::pair<int, int>> coordinates;
-    for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= depth_stride_)
+    for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= getDepthStride())
     {
         cv::Point& p = non_zero_coordinates.at<cv::Point>(i);
         coordinates.push_back(std::make_pair(p.x, p.y));

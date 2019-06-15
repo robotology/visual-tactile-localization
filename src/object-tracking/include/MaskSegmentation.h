@@ -47,8 +47,6 @@ protected:
 
     void drawMaskOnCamera(const cv::Mat& mask_points, Camera& camera);
 
-    double depth_stride_;
-
     Eigen::Transform<double, 3, Eigen::Affine> camera_pose_;
 
     std::string mask_name_;

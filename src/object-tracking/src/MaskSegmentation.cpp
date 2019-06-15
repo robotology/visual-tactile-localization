@@ -21,10 +21,12 @@ using namespace yarp::sig;
 
 MaskSegmentation::MaskSegmentation(const std::string& port_prefix, const std::string& mask_name, const std::size_t& depth_stride, const bool& handle_mask_streaming) :
     mask_name_(mask_name),
-    depth_stride_(depth_stride),
     mask_streaming_initialized_(!handle_mask_streaming),
     handle_mask_streaming_(handle_mask_streaming)
 {
+    setDepthStride(depth_stride);
+    setDefaultDepthStride(depth_stride);
+
     if (!port_image_out_.open("/" + port_prefix + "/segmentation:o"))
     {
         std::string err = log_ID_ + "::ctor. Error: cannot open bounding box output port.";
@@ -103,7 +105,7 @@ bool MaskSegmentation::freezeSegmentation(Camera& camera)
 
         // Fill coordinates vector
         coordinates_.clear();
-        for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= depth_stride_)
+        for (std::size_t i = 0; i < non_zero_coordinates.total(); i+= getDepthStride())
         {
             cv::Point& p = non_zero_coordinates.at<cv::Point>(i);
             coordinates_.push_back(std::make_pair(p.x, p.y));

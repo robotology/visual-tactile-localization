@@ -98,7 +98,10 @@ bool MaskSegmentation::freezeSegmentation(Camera& camera)
         mask_initialized_ = true;
 
         mask_ = mask.clone();
+    }
 
+    if(mask_initialized_)
+    {
         // Find non zero coordinates
         cv::Mat non_zero_coordinates;
         cv::findNonZero(mask_, non_zero_coordinates);
@@ -110,10 +113,7 @@ bool MaskSegmentation::freezeSegmentation(Camera& camera)
             cv::Point& p = non_zero_coordinates.at<cv::Point>(i);
             coordinates_.push_back(std::make_pair(p.x, p.y));
         }
-    }
 
-    if(mask_initialized_)
-    {
         // Draw the mask on the camera image
         drawMaskOnCamera(mask_, camera);
 

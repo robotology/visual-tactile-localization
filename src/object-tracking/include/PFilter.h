@@ -92,6 +92,8 @@ protected:
 
     bfl::EstimatesExtraction point_estimate_extraction_;
 
+    bfl::EstimatesExtraction rate_;
+
     Eigen::VectorXd point_estimate_;
 
     double resampling_threshold_;

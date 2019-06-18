@@ -48,6 +48,7 @@ PFilter::PFilter
     resampling_threshold_(resampling_threshold),
     segmentation_(segmentation),
     point_estimate_extraction_(9, 3),
+    rate_(1),
     pause_(false)
 {
     // Setup point estimates extraction
@@ -80,6 +81,9 @@ PFilter::PFilter
         std::string err = "PFILTER::CTOR::ERROR\n\tError: cannot attach the RPC command port.";
         throw(std::runtime_error(err));
     }
+
+    rate_.setMethod(EstimatesExtraction::ExtractionMethod::emean);
+    rate_.setMobileAverageWindowSize(15);
 
     yInfo() << log_ID_ << "RPC command port opened and attached. Ready to recieve commands!";
 }
@@ -114,6 +118,7 @@ bool PFilter::reset_filter()
     // Reset the rate stabilizer
     if (rate_stabilizer_ != nullptr)
         rate_stabilizer_ ->reset();
+    rate_.clear();
 
     // Reset the segmentation
     segmentation_->reset();
@@ -138,6 +143,7 @@ bool PFilter::stop_filter()
     // Reset the rate stabilizer
     if (rate_stabilizer_ != nullptr)
         rate_stabilizer_->reset();
+    rate_.clear();
 
     // Reset the segmentation
     segmentation_->reset();
@@ -354,21 +360,27 @@ void PFilter::filteringStep()
     // Evaluate execution time
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     double execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0;
-    double rate = 1 / execution_time;
+    VectorXd rate(1);
+    VectorXd rate_vector(1);
+    VectorXd rate_weight(1);
+    rate_vector(0) = 1 / execution_time;
+    rate_weight(0) = std::log(1.0);
+    std::tie(std::ignore, rate) = rate_.extract(rate_vector, rate_weight);
 
-    std::cout << "Current rate is " << rate << " fps" << std::endl;
+    std::cout << "Current rate is " << rate(0) << " fps" << std::endl;
     std::cout << "Neff is: " << neff << std::endl << std::endl;
 
     // Change depth stride
     if (rate_stabilizer_ != nullptr)
     {
         int depth_stride = segmentation_->getDepthStride();
-        int control = rate_stabilizer_->getOutput(rate);
+        int control = rate_stabilizer_->getOutput(rate(0));
         depth_stride += control;
 
         if (depth_stride <= 0)
             depth_stride = 1;
 
+        std::cout << "Depth stride is " << depth_stride << std::endl;
         segmentation_->setDepthStride(depth_stride);
     }
 

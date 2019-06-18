@@ -41,9 +41,6 @@ int RateStabilizer::getOutput(const double& feedback)
     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
     double elapsed_time_partial = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_time_).count() / 1000.0;
 
-    if (elapsed_time_partial > 1.0)
-        elapsed_time_partial = 0.0;
-
     elapsed_time_ += elapsed_time_partial;
 
     if (elapsed_time_ > period_)

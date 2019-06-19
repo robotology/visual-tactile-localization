@@ -25,6 +25,7 @@
 #include <ObjectSampler.h>
 #include <ObjectMeshSampler.h>
 #include <ParticlesCorrection.h>
+#include <PointCloudDumper.h>
 #include <PointCloudSegmentation.h>
 #include <PFilter.h>
 #include <ProximityLikelihood.h>
@@ -287,6 +288,7 @@ int main(int argc, char** argv)
         yWarning() << "Invalid log path. Disabling log...";
         enable_log = false;
     }
+    bool dump_point_clouds = rf_logging.check("dump_point_clouds", Value(false)).asBool();
 
     /* Miscellaneous. */
     ResourceFinder rf_misc = rf.findNestedResourceFinder("MISC");
@@ -370,6 +372,7 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "Logging:";
     yInfo() << log_ID << "- enable_log:"        << enable_log;
     yInfo() << log_ID << "- absolute_log_path:" << log_path;
+    yInfo() << log_ID << "- dump_point_clouds:" << dump_point_clouds;
 
     yInfo() << log_ID << "Miscellaneous:";
     yInfo() << log_ID << "- send_hull:" << enable_send_hull;
@@ -523,7 +526,15 @@ int main(int argc, char** argv)
      * Initialize measurement model.
      */
     std::unique_ptr<AdditiveMeasurementModel> measurement_model;
-    if (robot == "icub")
+    if (dump_point_clouds)
+    {
+        // A fake measurement model that dump incoming point clouds is used
+        measurement_model = std::unique_ptr<PointCloudDumper>
+        (
+            new PointCloudDumper(std::move(camera), segmentation, depth_fetch_mode, port_prefix)
+        );
+    }
+    else if (robot == "icub")
     {
         if (handle_hand_contacts)
         {

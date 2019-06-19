@@ -82,6 +82,7 @@ set(${EXE_TARGET_NAME}_HDR
     include/ParticlesCorrection.h
     include/PFilter.h
     include/PointCloudAdaptor.h
+    include/PointCloudDumper.h
     include/PointCloudModel.h
     include/PointCloudPrediction.h
     include/PointCloudSegmentation.h
@@ -128,6 +129,7 @@ set(${EXE_TARGET_NAME}_SRC
     src/ParticlesCorrection.cpp
     src/PFilter.cpp
     src/PointCloudModel.cpp
+    src/PointCloudDumper.cpp
     src/PointCloudSegmentation.cpp
     src/ProximityLikelihood.cpp
     src/Random3DPose.cpp
@@ -145,6 +147,7 @@ set(${EXE_TARGET_NAME}_THRIFT_HDR
     thrift/model.thrift
     thrift/localizesuperquadricsampler.thrift
     thrift/ratestabilizer.thrift
+    thrift/pointclouddumper.thrift
     )
 
 yarp_add_idl(${EXE_TARGET_NAME}_THRIFT_SRC ${${EXE_TARGET_NAME}_THRIFT_HDR})

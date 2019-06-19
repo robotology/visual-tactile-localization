@@ -13,14 +13,16 @@ using namespace bfl;
 using namespace Eigen;
 
 
-MeasurementModelReference::MeasurementModelReference(AdditiveMeasurementModel& measurement_model) :
-    measurement_model_(dynamic_cast<ObjectMeasurements&>(measurement_model))
-{ }
+MeasurementModelReference::MeasurementModelReference(AdditiveMeasurementModel& measurement_model)
+{
+    if (ObjectMeasurements* p = dynamic_cast<ObjectMeasurements*>(&measurement_model))
+        measurement_model_ = p;
+}
 
 
 ObjectMeasurements& MeasurementModelReference::getObjectMeasurementsModel()
 {
-    return measurement_model_;
+    return *measurement_model_;
 }
 
 

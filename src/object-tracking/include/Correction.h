@@ -21,7 +21,7 @@ public:
 
     ObjectMeasurements& getObjectMeasurementsModel();
 private:
-    ObjectMeasurements& measurement_model_;
+    ObjectMeasurements* measurement_model_;
 };
 
 

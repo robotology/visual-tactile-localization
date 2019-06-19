@@ -272,6 +272,7 @@ int main(int argc, char** argv)
     std::string mask_name;
     if (segmentation_type == "mask")
         mask_name = rf_segmentation.check("mask_name", Value("006_mustard_bottle")).asString();
+    bool handle_mask_rpc = rf_segmentation.check("handle_mask_rpc", Value(true)).asBool();
 
     /* Rate stabilizer parameters. */
     ResourceFinder rf_rate_stabilizer = rf.findNestedResourceFinder("RATE_STABILIZER");
@@ -363,6 +364,7 @@ int main(int argc, char** argv)
         yInfo() << log_ID << "- bbox_tl_0:" << eigenToString(bbox_0.head<2>());
         yInfo() << log_ID << "- bbox_br_0:" << eigenToString(bbox_0.tail<2>());
     }
+    yInfo() << log_ID << "- handle_mask_rpc" << handle_mask_rpc;
 
     yInfo() << log_ID << "Rate stabilizer:";
     yInfo() << log_ID << "- enable:" << enable_rate_stabilizer;
@@ -465,7 +467,7 @@ int main(int argc, char** argv)
         (
             // If point cloud prediction module is done using class LocalizeSuperquadricSampler as sampler
             // then it is not required to initialize the mask streaming since already done
-            new MaskSegmentation(port_prefix, mask_name, depth_stride, (pc_pred_type != "localize_superquadric"))
+            new MaskSegmentation(port_prefix, mask_name, depth_stride, handle_mask_rpc)
         );
     }
     else

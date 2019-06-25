@@ -467,7 +467,7 @@ int main(int argc, char** argv)
         (
             // If point cloud prediction module is done using class LocalizeSuperquadricSampler as sampler
             // then it is not required to initialize the mask streaming since already done
-            new MaskSegmentation(port_prefix, mask_name, depth_stride, handle_mask_rpc)
+            new MaskSegmentation(port_prefix, mask_name, depth_stride, handle_mask_rpc && (pc_pred_type != "localize_superquadric"))
         );
     }
     else

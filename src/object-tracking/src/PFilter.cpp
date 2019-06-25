@@ -5,6 +5,10 @@
  * GPL-2+ license. See the accompanying LICENSE file for details.
  */
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include <PFilter.h>
 
 #include <BayesFilters/utils.h>
@@ -277,7 +281,12 @@ void PFilter::filteringStep()
 
         return;
     }
+
+#ifdef _OPENMP
+    double start = omp_get_wtime();
+#else
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+#endif
 
     if (getFilteringStep() != 0)
         prediction_->predict(cor_particle_, pred_particle_);
@@ -358,8 +367,12 @@ void PFilter::filteringStep()
     prediction_->getStateModel().setProperty("tick");
 
     // Evaluate execution time
+#ifdef _OPENMP
+    double execution_time = omp_get_wtime() - start;
+#else
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     double execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0;
+#endif
     VectorXd rate(1);
     VectorXd rate_vector(1);
     VectorXd rate_weight(1);

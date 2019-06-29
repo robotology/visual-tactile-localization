@@ -8,6 +8,8 @@
 #ifndef VTKICUBHAND_H
 #define VTKICUBHAND_H
 
+#include <Eigen/Dense>
+
 #include <iCubArmModel.h>
 #include <VtkMesh.h>
 
@@ -27,7 +29,7 @@ public:
 
     void addToRenderer(vtkRenderer& renderer);
 
-    bool updateHandPose();
+    bool updateHandPose(const Eigen::Transform<double, 3, Eigen::Affine>& offset = Eigen::Transform<double, 3, Eigen::Affine>::Identity());
 
 private:
     std::unordered_map<std::string, VtkMesh> meshes_;

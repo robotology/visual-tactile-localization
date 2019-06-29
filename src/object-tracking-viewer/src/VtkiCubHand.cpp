@@ -62,7 +62,7 @@ void VtkiCubHand::addToRenderer(vtkRenderer& renderer)
 }
 
 
-bool VtkiCubHand::updateHandPose()
+bool VtkiCubHand::updateHandPose(const Transform<double, 3, Affine>& offset)
 {
     // Get the hand of the pose
     yarp::sig::Vector* hand_pose_yarp = hand_pose_port_in.read(false);
@@ -70,12 +70,26 @@ bool VtkiCubHand::updateHandPose()
     if (hand_pose_yarp == nullptr)
         return false;
 
-    MatrixXd hand_pose = toEigen(*hand_pose_yarp);
+    VectorXd hand_pose = toEigen(*hand_pose_yarp);
+
+    // Apply offset to the pose
+    AngleAxisd orientation(hand_pose(6), hand_pose.segment<3>(3));
+    Transform<double, 3, Affine> transform;
+    transform = Translation<double, 3>(hand_pose.head<3>());
+    transform.rotate(orientation);
+    Transform<double, 3, Affine> transform_w_offset = offset * transform;
+
+    // Convert to x-y-z-axis-angle
+    VectorXd hand_pose_w_offset(7);
+    hand_pose_w_offset.head<3>() = transform_w_offset.translation();
+    AngleAxisd orientation_w_offset(transform_w_offset.rotation());
+    hand_pose_w_offset.segment<3>(3) = orientation_w_offset.axis();
+    hand_pose_w_offset(6) = orientation_w_offset.angle();
 
     // Get the pose of all parts of the hand according to finger forward kinematics
     bool valid_hand_parts_poses;
     std::vector<Superimpose::ModelPoseContainer> vector_poses;
-    std::tie(valid_hand_parts_poses, vector_poses) = hand_model_.getModelPose(hand_pose);
+    std::tie(valid_hand_parts_poses, vector_poses) = hand_model_.getModelPose(hand_pose_w_offset);
 
     if (!valid_hand_parts_poses)
         return false;

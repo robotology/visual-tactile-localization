@@ -28,13 +28,6 @@ using namespace Eigen;
 
 Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
 {
-    // Open estimate input port
-    if(!port_estimate_in_.open("/" + port_prefix + "/estimate:i"))
-    {
-        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open estimate input port.";
-        throw(std::runtime_error(err));
-    }
-
     // Open RPC input port for commands
     if (!port_rpc_command_.open("/object-tracking-viewer/cmd:i"))
     {
@@ -68,6 +61,14 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     show_ground_truth_ = rf.check("show_ground_truth", Value("false")).asBool();
     yInfo() << log_ID_ << "- show_ground_truth:" << show_ground_truth_;
 
+    // Load estimate visualization boolean
+    show_estimate_ = rf.check("show_estimate", Value("false")).asBool();
+    yInfo() << log_ID_ << "- show_estimate:" << show_estimate_;
+
+    // Load point cloud visualization boolean
+    show_point_cloud_ = rf.check("show_point_cloud", Value("false")).asBool();
+    yInfo() << log_ID_ << "- show_point_cloud:" << show_point_cloud_;
+
     // Load name of the camera
     std::string camera_name = rf.check("camera", Value("icub")).asString();
     yInfo() << log_ID_ << "- camera:" << camera_name;
@@ -85,6 +86,16 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
         if(!port_ground_truth_in_.open("/" + port_prefix + "/ground-truth:i"))
         {
             std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open ground truth input port.";
+            throw(std::runtime_error(err));
+        }
+    }
+
+    if (show_estimate_)
+    {
+        // Open estimate input port
+        if(!port_estimate_in_.open("/" + port_prefix + "/estimate:i"))
+        {
+            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot open estimate input port.";
             throw(std::runtime_error(err));
         }
     }
@@ -107,38 +118,44 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     reader_->SetFileName(mesh_path.c_str());
     reader_->Update();
 
-    // Initialize camera
-    if (camera_name == "iCubCamera")
-        camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking", camera_fallback_key));
-    else if (camera_name == "RealsenseCamera")
-        camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
-    else
+    if (show_point_cloud_)
     {
-        std::string err = "VIEWER::CTOR::ERROR\n\tError: the camera you requested (" + camera_name + ") is not supported.";
-        throw(std::runtime_error(err));
-    }
-    camera_->initialize();
+        // Initialize camera
+        if (camera_name == "iCubCamera")
+            camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking", camera_fallback_key));
+        else if (camera_name == "RealsenseCamera")
+            camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
+        else
+        {
+            std::string err = "VIEWER::CTOR::ERROR\n\tError: the camera you requested (" + camera_name + ") is not supported.";
+            throw(std::runtime_error(err));
+        }
+        camera_->initialize();
 
-    // Cache deprojection matrix
-    bool valid_deprojection_matrix;
-    std::tie(valid_deprojection_matrix, deprojection_matrix_) = camera_->getDeprojectionMatrix();
-    if(!valid_deprojection_matrix)
-    {
-        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot get deprojection matrix from the camera.";
-        throw(std::runtime_error(err));
-    }
+        // Cache deprojection matrix
+        bool valid_deprojection_matrix;
+        std::tie(valid_deprojection_matrix, deprojection_matrix_) = camera_->getDeprojectionMatrix();
+        if(!valid_deprojection_matrix)
+        {
+            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot get deprojection matrix from the camera.";
+            throw(std::runtime_error(err));
+        }
 
-    // Cache 2d coordinates
-    std::size_t u_stride = 1;
-    std::size_t v_stride = 1;
-    set2DCoordinates(u_stride, v_stride);
+        // Cache 2d coordinates
+        std::size_t u_stride = 1;
+        std::size_t v_stride = 1;
+        set2DCoordinates(u_stride, v_stride);
+    }
 
     // Configure mesh actor
     mapper_ = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper_->SetInputConnection(reader_->GetOutputPort());
 
-    mesh_actor_ = vtkSmartPointer<vtkActor>::New();
-    mesh_actor_->SetMapper(mapper_);
+    if (show_estimate_)
+    {
+        mesh_actor_ = vtkSmartPointer<vtkActor>::New();
+        mesh_actor_->SetMapper(mapper_);
+    }
 
     if (show_ground_truth_)
     {
@@ -149,8 +166,11 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     }
 
     // Configure measurements actor
-    int points_size = 2;
-    vtk_measurements_ = std::unique_ptr<Points>(new Points(points_size));
+    if (show_point_cloud_)
+    {
+        int points_size = 2;
+        vtk_measurements_ = std::unique_ptr<Points>(new Points(points_size));
+    }
 
     // Configure vtk hand actors
     if (show_hand_)
@@ -180,8 +200,10 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     render_window_interactor_->SetRenderWindow(render_window_);
 
     // Add actors to renderer
-    renderer_->AddActor(mesh_actor_);
-    renderer_->AddActor(vtk_measurements_->get_actor());
+    if (show_estimate_)
+        renderer_->AddActor(mesh_actor_);
+    if (show_point_cloud_)
+        renderer_->AddActor(vtk_measurements_->get_actor());
     if (show_hand_)
         vtk_icub_hand_->addToRenderer(*renderer_);
     if (show_ground_truth_)
@@ -234,6 +256,7 @@ void Viewer::updateView()
     mutex_rpc_.unlock();
 
     // Update estimate
+    if (show_estimate_)
     {
         yarp::sig::Vector* estimate = port_estimate_in_.read(false);
 
@@ -285,6 +308,7 @@ void Viewer::updateView()
     }
 
     // Update point cloud of the scene
+    if (show_point_cloud_)
     {
         bool valid_rgb;
         cv::Mat rgb_image;

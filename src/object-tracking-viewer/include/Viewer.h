@@ -236,6 +236,10 @@ private:
 
     bool show_ground_truth_;
 
+    bool show_estimate_;
+
+    bool show_point_cloud_;
+
     std::unique_ptr<VtkiCubHand> vtk_icub_hand_;
 
     const std::string log_ID_ = "[VIEWER]";

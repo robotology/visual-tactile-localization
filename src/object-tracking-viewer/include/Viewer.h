@@ -240,6 +240,8 @@ private:
 
     bool show_point_cloud_;
 
+    bool hand_in_camera_frame_;
+
     std::unique_ptr<VtkiCubHand> vtk_icub_hand_;
 
     const std::string log_ID_ = "[VIEWER]";

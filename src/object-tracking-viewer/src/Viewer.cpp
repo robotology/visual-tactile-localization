@@ -53,6 +53,9 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     show_hand_ = rf.check("show_hand", Value(false)).asBool();
     yInfo() << log_ID_ << "- show_hand:" << show_hand_;
 
+    hand_in_camera_frame_ = rf.check("hand_in_camera_frame", Value(false)).asBool();
+    yInfo() << log_ID_ << "- hand_in_camera_frame:" << hand_in_camera_frame_;
+
     // Load hand laterality
     std::string hand_laterality = rf.check("hand_laterality", Value("right")).asString();
     yInfo() << log_ID_ << "- hand_laterality:" << hand_laterality;
@@ -118,34 +121,31 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     reader_->SetFileName(mesh_path.c_str());
     reader_->Update();
 
-    if (show_point_cloud_)
+    // Initialize camera
+    if (camera_name == "iCubCamera")
+        camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking", camera_fallback_key));
+    else if (camera_name == "RealsenseCamera")
+        camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
+    else
     {
-        // Initialize camera
-        if (camera_name == "iCubCamera")
-            camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking", camera_fallback_key));
-        else if (camera_name == "RealsenseCamera")
-            camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
-        else
-        {
-            std::string err = "VIEWER::CTOR::ERROR\n\tError: the camera you requested (" + camera_name + ") is not supported.";
-            throw(std::runtime_error(err));
-        }
-        camera_->initialize();
-
-        // Cache deprojection matrix
-        bool valid_deprojection_matrix;
-        std::tie(valid_deprojection_matrix, deprojection_matrix_) = camera_->getDeprojectionMatrix();
-        if(!valid_deprojection_matrix)
-        {
-            std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot get deprojection matrix from the camera.";
-            throw(std::runtime_error(err));
-        }
-
-        // Cache 2d coordinates
-        std::size_t u_stride = 1;
-        std::size_t v_stride = 1;
-        set2DCoordinates(u_stride, v_stride);
+        std::string err = "VIEWER::CTOR::ERROR\n\tError: the camera you requested (" + camera_name + ") is not supported.";
+        throw(std::runtime_error(err));
     }
+    camera_->initialize();
+
+    // Cache deprojection matrix
+    bool valid_deprojection_matrix;
+    std::tie(valid_deprojection_matrix, deprojection_matrix_) = camera_->getDeprojectionMatrix();
+    if(!valid_deprojection_matrix)
+    {
+        std::string err = "VIEWER::CTOR::ERROR\n\tError: cannot get deprojection matrix from the camera.";
+        throw(std::runtime_error(err));
+    }
+
+    // Cache 2d coordinates
+    std::size_t u_stride = 1;
+    std::size_t v_stride = 1;
+    set2DCoordinates(u_stride, v_stride);
 
     // Configure mesh actor
     mapper_ = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -340,7 +340,17 @@ void Viewer::updateView()
     // Update hand of the robot
     if (show_hand_)
     {
-        vtk_icub_hand_->updateHandPose();
+        if (hand_in_camera_frame_)
+        {
+            bool valid_pose;
+            Transform<double, 3, Affine> camera_pose;
+
+            std::tie(valid_pose, camera_pose) = camera_->getCameraPose(false);
+            if (valid_pose)
+                vtk_icub_hand_->updateHandPose(camera_pose);
+        }
+        else
+            vtk_icub_hand_->updateHandPose();
     }
 }
 

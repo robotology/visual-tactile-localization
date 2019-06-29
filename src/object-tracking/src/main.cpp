@@ -291,11 +291,6 @@ int main(int argc, char** argv)
     }
     bool dump_point_clouds = rf_logging.check("dump_point_clouds", Value(false)).asBool();
 
-    /* Miscellaneous. */
-    ResourceFinder rf_misc = rf.findNestedResourceFinder("MISC");
-    const bool enable_send_hull = rf_misc.check("send_hull", Value(false)).asBool();
-    const bool enable_send_mask = rf_misc.check("send_mask", Value(false)).asBool();
-
     /* Log parameters. */
     yInfo() << log_ID << "Robot name:" << robot;
 
@@ -375,10 +370,6 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- enable_log:"        << enable_log;
     yInfo() << log_ID << "- absolute_log_path:" << log_path;
     yInfo() << log_ID << "- dump_point_clouds:" << dump_point_clouds;
-
-    yInfo() << log_ID << "Miscellaneous:";
-    yInfo() << log_ID << "- send_hull:" << enable_send_hull;
-    yInfo() << log_ID << "- send_mask:" << enable_send_mask;
 
     /**
      * Initialize camera
@@ -562,9 +553,10 @@ int main(int argc, char** argv)
         }
         else
         {
-            measurement_model = std::unique_ptr<iCubObjectMeasurements>
+            measurement_model = std::unique_ptr<ObjectMeasurements>
             (
-                new iCubObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
+                // new iCubObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
+                new ObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
             );
         }
 

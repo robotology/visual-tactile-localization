@@ -111,6 +111,12 @@
     <protocol>fast_tcp</protocol>
   </connection>
 
+  <connection>
+    <from>/object-tracking/localize-superquadric/viewer-rpc:o</from>
+    <to>/object-tracking-viewer/cmd:i</to>
+    <protocol>fast_tcp</protocol>
+  </connection>
+
   <!-- To object-tracking-ground-truth -->
 
   <connection>
@@ -169,6 +175,30 @@
     <protocol>fast_tcp</protocol>
   </connection>
 
+  <connection>
+    <from>/object-tracking/segmentation:o</from>
+    <to>/object-tracking/validator2d/validationImage:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking-depth/SFM/depth:o</from>
+    <to>/object-tracking/localize-superquadric/depthImage:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/instanceSegmenter/maskImage:o</from>
+    <to>/object-tracking/mask:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/instanceSegmenter/maskImage:o</from>
+    <to>/object-tracking/localize-superquadric/mask:i</to>
+    <protocol>tcp</protocol>
+  </connection>
+
   <!-- To yarp viewers -->
 
   <connection>
@@ -193,6 +223,39 @@
     <from>/object-tracking/validator2d/validationImage:o</from>
     <to>/object-tracking/viewer/validation:i</to>
     <protocol>mjpeg</protocol>
+  </connection>
+
+  <!-- To instance segmentation module -->
+  <connection>
+    <from>/object-tracking/mask_rpc:o</from>
+    <to>/instanceSegmenter/rpc</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/object-tracking/localize-superquadric/mask_rpc:o</from>
+    <to>/instanceSegmenter/rpc</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <connection>
+    <from>/icub/camcalib/left/out</from>
+    <to>/instanceSegmenter/RGBimage:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
+  <!-- To localize-superquadrics -->
+  <connection>
+    <from>/object-tracking/localize-superquadric/localize_superquadric_rpc:o</from>
+    <to>/localize-superquadric/service:rpc</to>
+    <protocol>tcp</protocol>
+  </connection>
+
+  <!-- To objectsPropertyCollector -->
+  <connection>
+    <from>/localize-superquadric/opc:rpc</from>
+    <to>/memory/rpc</to>
+    <protocol>tcp</protocol>
   </connection>
 
   <!-- For contacts handling - disabled -->

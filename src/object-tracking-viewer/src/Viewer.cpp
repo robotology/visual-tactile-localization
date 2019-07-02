@@ -284,8 +284,11 @@ void Viewer::updateView()
                 vtk_transform->RotateX(-90.0);
 
                 // Update axes if requested
+                vtkSmartPointer<vtkTransform> transform_axes = vtkSmartPointer<vtkTransform>::New();
+                transform_axes->Translate(state.head<3>().data());
+                transform_axes->RotateWXYZ(state(6) * 180 / M_PI, state(3), state(4), state(5));
                 if (show_estimate_axes_)
-                    estimate_axes_->SetUserTransform(vtk_transform);
+                    estimate_axes_->SetUserTransform(transform_axes);
             }
 
             // Apply transform
@@ -498,10 +501,18 @@ void Viewer::enableSuperquadricActor()
     // Enable visualization of axes if required
     if (show_estimate_axes_)
     {
+      	// Remove previously added actors
+        if (use_superquadric_visualization_)
+            renderer_->RemoveActor(estimate_axes_);
+
+        vtkSmartPointer<vtkTransform> transform_axes = vtkSmartPointer<vtkTransform>::New();
+        transform_axes->Translate(position.data());
+        transform_axes->RotateWXYZ(angle_axis.angle() * 180 / M_PI, axis(0), axis(1), axis(2));
         estimate_axes_ = vtkSmartPointer<vtkAxesActor>::New();
-        estimate_axes_->SetUserTransform(vtk_transform);
+        estimate_axes_->SetUserTransform(transform_axes);
         estimate_axes_->AxisLabelsOff();
-        estimate_axes_->SetTotalLength(size_x * 1.5, size_y * 1.5, size_z * 1.5);
+        estimate_axes_->SetTotalLength(size_x * 1.5, size_z * 1.5, size_y * 1.5);
+
         renderer_->AddActor(estimate_axes_);
     }
 }

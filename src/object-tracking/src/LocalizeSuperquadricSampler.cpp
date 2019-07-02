@@ -133,7 +133,7 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
     VectorXd centroid = (point_cloud.rowwise().sum()) / point_cloud.cols();
     VectorXi good_points(point_cloud.cols());
     double threshold;
-    if (object_name_ == "Cracker")
+    if (object_name_ == "Cracker" || (object_name_.find("Bottle") != std::string::npos))
         threshold = 0.2;
     else
         threshold = 0.1;

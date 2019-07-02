@@ -383,6 +383,16 @@ std::string LocalizeSuperquadricSampler::getObjectMaskName(const std::string& ob
         name = "005_tomato_soup_can";
     else if (object_name == "Mustard")
         name = "006_mustard_bottle";
+    else if (object_name == "BottleMustard")
+        name = "bottle_mustard";
+    else if (object_name == "BottleOrange")
+        name = "bottle_orange";
+    else if (object_name == "BottleIit")
+        name = "bottle_iit";
+    else if (object_name == "BottlePinkTea")
+        name = "bottle_pinktea";
+    else if (object_name == "BottleGreenTea")
+        name = "bottle_greentea";
 
     return name;
 }

@@ -209,6 +209,10 @@ private:
 
     vtkSmartPointer<vtkInteractorStyleSwitch> interactor_style_;
 
+    vtkSmartPointer<vtkAxesActor> estimate_axes_;
+
+    vtkSmartPointer<vtkAxesActor> spare_axes_;
+
     /**
      * Superquadric visualization
      */
@@ -239,6 +243,8 @@ private:
     bool show_estimate_;
 
     bool show_point_cloud_;
+
+    bool show_estimate_axes_;
 
     bool hand_in_camera_frame_;
 
@@ -274,3 +280,4 @@ private:
 };
 
 #endif /* VIEWER_H */
+

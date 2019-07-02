@@ -72,6 +72,10 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     show_point_cloud_ = rf.check("show_point_cloud", Value("false")).asBool();
     yInfo() << log_ID_ << "- show_point_cloud:" << show_point_cloud_;
 
+    // Load estimate axes visualization boolean
+    show_estimate_axes_ = rf.check("show_estimate_axes", Value("false")).asBool();
+    yInfo() << log_ID_ << "- show_estimate_axes:" << show_estimate_axes_;
+
     // Load name of the camera
     std::string camera_name = rf.check("camera", Value("icub")).asString();
     yInfo() << log_ID_ << "- camera:" << camera_name;
@@ -276,7 +280,13 @@ void Viewer::updateView()
                                       state(3), state(4), state(5));
 
             if (use_superquadric_visualization_)
+            {
                 vtk_transform->RotateX(-90.0);
+
+                // Update axes if requested
+                if (show_estimate_axes_)
+                    estimate_axes_->SetUserTransform(vtk_transform);
+            }
 
             // Apply transform
 
@@ -438,6 +448,9 @@ void Viewer::enableSuperquadricActor()
     // Create a new supequadric actor
     superquadric_ = vtkSmartPointer<vtkSuperquadric>::New();
     superquadric_->ToroidalOff();
+    double superq_scales[3];
+    superquadric_->GetScale(superq_scales);
+    double scale_multiplier = 1.0 / superquadric_->GetSize();
     superquadric_->SetSize(1.0);
     superquadric_->SetCenter(0.0, 0.0, 0.0);
     superquadric_->SetScale(size_x, size_y, size_z);
@@ -481,6 +494,16 @@ void Viewer::enableSuperquadricActor()
 
     // Add the new actor
     renderer_->AddActor(mesh_actor_);
+
+    // Enable visualization of axes if required
+    if (show_estimate_axes_)
+    {
+        estimate_axes_ = vtkSmartPointer<vtkAxesActor>::New();
+        estimate_axes_->SetUserTransform(vtk_transform);
+        estimate_axes_->AxisLabelsOff();
+        estimate_axes_->SetTotalLength(size_x * 1.5, size_y * 1.5, size_z * 1.5);
+        renderer_->AddActor(estimate_axes_);
+    }
 }
 
 

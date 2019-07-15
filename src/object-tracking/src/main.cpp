@@ -35,6 +35,7 @@
 #include <SuperquadricSampler.h>
 #endif
 #include <Validator2D.h>
+#include <YCBVideoCamera.h>
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
 #include <BayesFilters/FilteringAlgorithm.h>
@@ -387,6 +388,13 @@ int main(int argc, char** argv)
         camera = std::unique_ptr<RealsenseCamera>
         (
             new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key)
+        );
+    }
+    else if (camera_name == "YCBVideoCamera")
+    {
+        camera = std::unique_ptr<YcbVideoCamera>
+        (
+            new YcbVideoCamera(port_prefix, "object-tracking", camera_fallback_key)
         );
     }
     else

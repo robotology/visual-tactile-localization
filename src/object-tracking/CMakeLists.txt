@@ -249,6 +249,7 @@ set(${EXE_TARGET_NAME}_CONF
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/sfm_config.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/springy_calibration_left.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/springy_calibration_right.ini
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/ycbvideo_camera_config.ini
 )
 
 set(${EXE_TARGET_NAME}_SHADER_VERT

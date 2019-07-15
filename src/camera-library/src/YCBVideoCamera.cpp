@@ -42,7 +42,7 @@ YcbVideoCamera::YcbVideoCamera
     ok &= rf_camera.check("cy");
     if (!ok)
     {
-        std::string err = log_ID_ + "::ctor. Error: cannot load realsense camera parameters.";
+        std::string err = log_ID_ + "::ctor. Error: cannot load Ycb Video camera parameters.";
         throw(std::runtime_error(err));
     }
 

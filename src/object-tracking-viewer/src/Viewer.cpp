@@ -8,6 +8,10 @@
 #include <CameraParameters.h>
 #include <Viewer.h>
 
+#include <iCubCamera.h>
+#include <RealsenseCamera.h>
+#include <YCBVideoCamera.h>
+
 #include <vtkTransform.h>
 
 #include <string>
@@ -130,6 +134,8 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
         camera_ = std::unique_ptr<iCubCamera>(new iCubCamera("left", port_prefix, "object-tracking", camera_fallback_key));
     else if (camera_name == "RealsenseCamera")
         camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
+    else if (camera_name == "YCBVideoCamera")
+        camera_ = std::unique_ptr<YcbVideoCamera>(new YcbVideoCamera(port_prefix, "object-tracking", camera_fallback_key));
     else
     {
         std::string err = "VIEWER::CTOR::ERROR\n\tError: the camera you requested (" + camera_name + ") is not supported.";

@@ -30,8 +30,6 @@
 #include <Eigen/Dense>
 
 #include <Camera.h>
-#include <iCubCamera.h>
-#include <RealsenseCamera.h>
 
 #include <VtkiCubHand.h>
 

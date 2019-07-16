@@ -43,7 +43,7 @@ protected:
 
     bool enableMaskStreaming();
 
-    std::pair<bool, cv::Mat> getMask();
+    std::pair<bool, cv::Mat> getMask(Camera& camera);
 
     void drawMaskOnCamera(const cv::Mat& mask_points, Camera& camera);
 

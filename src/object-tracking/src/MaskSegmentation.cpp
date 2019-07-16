@@ -91,7 +91,7 @@ bool MaskSegmentation::freezeSegmentation(Camera& camera)
     // Get binary mask
     bool valid_mask = false;
     cv::Mat mask;
-    std::tie(valid_mask, mask) = getMask();
+    std::tie(valid_mask, mask) = getMask(camera);
 
     if (valid_mask)
     {
@@ -281,7 +281,7 @@ bool MaskSegmentation::enableMaskStreaming()
 }
 
 
-std::pair<bool, cv::Mat> MaskSegmentation::getMask()
+std::pair<bool, cv::Mat> MaskSegmentation::getMask(Camera& camera)
 {
     ImageOf<PixelMono>* mask_in;
     mask_in = port_image_in_.read(false);
@@ -290,6 +290,10 @@ std::pair<bool, cv::Mat> MaskSegmentation::getMask()
         return std::make_pair(false, cv::Mat());
 
     cv::Mat mask = yarp::cv::toCvMat(*mask_in);
+
+    CameraParameters parameters;
+    std::tie(std::ignore, parameters) = camera.getIntrinsicParameters();
+    cv::resize(mask, mask, cv::Size(parameters.width, parameters.height));
 
     cv::Mat non_zero_coordinates;
     cv::findNonZero(mask, non_zero_coordinates);

@@ -76,8 +76,6 @@ protected:
 
     void filteringStep() override;
 
-    void log() override;
-
     yarp::os::BufferedPort<yarp::sig::Vector> port_estimate_out_;
 
     yarp::os::BufferedPort<yarp::sig::Vector> port_timings_out_;
@@ -99,6 +97,8 @@ protected:
     double resampling_threshold_;
 
     bool pause_;
+
+    std::size_t keyframe_counter_ = 0;
 
 private:
     const std::string log_ID_ = "[PFilter]";

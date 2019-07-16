@@ -127,6 +127,8 @@ bool PFilter::reset_filter()
     // Reset the segmentation
     segmentation_->reset();
 
+    keyframe_counter_ = 0;
+
     SIS::reset();
 
     return true;
@@ -151,6 +153,8 @@ bool PFilter::stop_filter()
 
     // Reset the segmentation
     segmentation_->reset();
+
+    keyframe_counter_ = 0;
 
     reboot();
 
@@ -293,10 +297,11 @@ void PFilter::filteringStep()
 
     correction_->correct(pred_particle_, cor_particle_);
 
+    /* Increase keyframe counter */
+    keyframe_counter_++;
+
     /* Normalize weights using LogSumExp. */
     cor_particle_.weight().array() -= utils::log_sum_exp(cor_particle_.weight());
-
-    log();
 
     double neff = resampling_->neff(cor_particle_.weight());
     if (neff < static_cast<double>(num_particle_) * resampling_threshold_)
@@ -337,11 +342,8 @@ void PFilter::filteringStep()
 
     if (valid_estimate)
     {
-        // Log
-        logger(point_estimate_.transpose());
-
         // Send estimate over the port using axis/angle representation
-        VectorXd estimate(13);
+        VectorXd estimate(14);
         estimate.head<3>() = point_estimate_.head<3>();
         AngleAxisd angle_axis(AngleAxisd(point_estimate_(9), Vector3d::UnitZ()) *
                               AngleAxisd(point_estimate_(10), Vector3d::UnitY()) *
@@ -350,6 +352,10 @@ void PFilter::filteringStep()
         estimate(6) = angle_axis.angle();
         estimate.segment<3>(7) = point_estimate_.segment<3>(3);
         estimate.segment<3>(10) = point_estimate_.segment<3>(6);
+        estimate(13) = keyframe_counter_;
+
+        // Log
+        logger(estimate.transpose());
 
         Vector& estimate_yarp = port_estimate_out_.prepare();
         estimate_yarp.resize(13);
@@ -403,7 +409,3 @@ void PFilter::filteringStep()
     timings[0] = execution_time;
     port_timings_out_.write();
 }
-
-
-void PFilter::log()
-{ }

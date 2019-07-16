@@ -102,6 +102,7 @@ std::pair<bool, cv::Mat> YcbVideoCamera::getRgbImage(const bool& blocking)
 
     cv::Mat image = yarp::cv::toCvMat(*image_in);
     cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+    cv::resize(image, image, cv::Size(parameters_.width, parameters_.height));
 
     return std::make_pair(true, image);
 }
@@ -116,6 +117,19 @@ std::pair<bool, Eigen::MatrixXf> YcbVideoCamera::getDepthImage(const bool& block
         return std::make_pair(false, MatrixXf());
 
     cv::Mat image = yarp::cv::toCvMat(*image_in);
+
+    if ((image.cols != parameters_.width) && (image.rows != parameters_.height))
+    {
+        if ((image.cols == 640) && (image.rows == 480) && (parameters_.width == 320) && (parameters_.height == 240))
+        {
+            cv::Mat image_resized(parameters_.height, parameters_.width, CV_32F);
+            for (std::size_t i = 0; i < image.rows; i += 2)
+                for (std::size_t j = 0; j < image.cols; j += 2)
+                    image_resized.at<float>(i / 2, j / 2) = image.at<float>(i, j);
+            image = image_resized.clone();
+        }
+    }
+
     Map<Eigen::Matrix<float, Dynamic, Dynamic, Eigen::RowMajor>> depth(image.ptr<float>(), image.rows, image.cols);
 
     return std::make_pair(true, depth);

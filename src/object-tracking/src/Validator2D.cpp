@@ -13,6 +13,7 @@
 #include <CameraParameters.h>
 #include <iCubCamera.h>
 #include <RealsenseCamera.h>
+#include <YCBVideoCamera.h>
 
 #include <yarp/cv/Cv.h>
 #include <yarp/sig/Image.h>
@@ -53,6 +54,10 @@ Validator2D::Validator2D
     else if (camera_name == "RealsenseCamera")
     {
         camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
+    }
+    else if (camera_name == "YCBVideoCamera")
+    {
+        camera_ = std::unique_ptr<YcbVideoCamera>(new YcbVideoCamera(port_prefix, "object-tracking", camera_fallback_key));
     }
     else
     {

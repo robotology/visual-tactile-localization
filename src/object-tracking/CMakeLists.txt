@@ -243,6 +243,7 @@ set(${EXE_TARGET_NAME}_CONF
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/config_mask_320_240.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/config_mask_640_480.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/config_realsense_320_240.ini
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/config_ycbvideo.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/icub_camera_config.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/realsense2_dev.ini
     ${CMAKE_CURRENT_SOURCE_DIR}/conf/realsense_camera_config.ini 

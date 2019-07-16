@@ -9,6 +9,7 @@
 #include <LocalizeSuperquadricSampler.h>
 #include <RealsenseCamera.h>
 #include <VCGTriMesh.h>
+#include <YCBVideoCamera.h>
 
 #include <vtkFitImplicitFunction.h>
 #include <vtkBoundedPointSource.h>
@@ -70,6 +71,10 @@ LocalizeSuperquadricSampler::LocalizeSuperquadricSampler
     {
         camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
     }
+    else if (camera_name == "YCBVideoCamera")
+    {
+        camera_ = std::unique_ptr<YcbVideoCamera>(new YcbVideoCamera(port_prefix, "object-tracking", camera_fallback_key));
+    }
     else
     {
         std::string err = log_ID_ + "::ctor. The requested camera is not available. Requested camera is " + camera_name;
@@ -81,8 +86,8 @@ LocalizeSuperquadricSampler::LocalizeSuperquadricSampler
     // Second argument is mask name - unknown at the moment
     // Third argument is depth stride - set to 1 - becuase the superquadric modelling pipeline
     // will take care of subsampling the point cloud
-    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 2, true));
-    // segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 1, false));
+    // segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 2, true));
+    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 2, false));
 }
 
 
@@ -133,14 +138,14 @@ std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t&
     VectorXd centroid = (point_cloud.rowwise().sum()) / point_cloud.cols();
     VectorXi good_points(point_cloud.cols());
     double threshold;
-    if (object_name_ == "Cracker" || (object_name_.find("Bottle") != std::string::npos))
-        threshold = 0.2;
-    else
-        threshold = 0.1;
+    // if (object_name_ == "Cracker" || (object_name_.find("Bottle") != std::string::npos))
+    //     threshold = 0.2;
+    // else
+    //     threshold = 0.1;
     for (int i = 0 ; i < point_cloud.cols(); i++)
     {
-        good_points(i) = 0;
-        if ((point_cloud.col(i) - centroid).norm() < threshold)
+        // good_points(i) = 0;
+        // if ((point_cloud.col(i) - centroid).norm() < threshold)
             good_points(i) = 1;
     }
 

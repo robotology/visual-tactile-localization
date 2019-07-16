@@ -54,12 +54,12 @@ std::pair<bool, Data> ObjectMeasurements::measure(const Data& data) const
 
 bool ObjectMeasurements::freeze()
 {
-    // Freeze segmentation
-    if (!segmentation_->freezeSegmentation(*camera_))
-        return false;
-
     // Get depth image
     if(!getDepth())
+        return false;
+
+    // Freeze segmentation
+    if (!segmentation_->freezeSegmentation(*camera_))
         return false;
 
     // Get 3D point cloud.

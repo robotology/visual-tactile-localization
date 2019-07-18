@@ -18,14 +18,18 @@ ObjectMeasurements::ObjectMeasurements
     std::shared_ptr<PointCloudPrediction> prediction,
     const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance,
     const double& visual_outlier_threshold,
-    const std::string& depth_fetch_mode
+    const std::string& depth_fetch_mode,
+    const bool& enable_log,
+    const std::string& log_path
 ) :
     camera_(std::move(camera)),
     segmentation_(segmentation),
     prediction_(prediction),
     visual_noise_covariance_(visual_noise_covariance),
     visual_outlier_threshold_(visual_outlier_threshold),
-    depth_fetch_mode_(depth_fetch_mode)
+    depth_fetch_mode_(depth_fetch_mode),
+    enable_log_(enable_log),
+    log_path_(log_path)
 { }
 
 
@@ -37,9 +41,11 @@ ObjectMeasurements::ObjectMeasurements
     const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance,
     const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance,
     const double& visual_outlier_threshold,
-    const std::string& depth_fetch_mode
+    const std::string& depth_fetch_mode,
+    const bool& enable_log,
+    const std::string& log_path
 ) :
-    ObjectMeasurements(std::move(camera), segmentation, prediction, visual_noise_covariance, visual_outlier_threshold, depth_fetch_mode)
+    ObjectMeasurements(std::move(camera), segmentation, prediction, visual_noise_covariance, visual_outlier_threshold, depth_fetch_mode, enable_log, log_path)
 {
     tactile_noise_covariance_ = tactile_noise_covariance;
     has_tactile_noise_covariance_ = true;
@@ -179,6 +185,11 @@ bool ObjectMeasurements::setProperty(const std::string& property)
 
         return true;
     }
+    else if(property == "enable_log")
+    {
+        if (enable_log_)
+            enable_log(log_path_, "object-tracking");
+    }
 
     return false;
 }
@@ -216,4 +227,6 @@ void ObjectMeasurements::reset()
     depth_initialized_ = false;
 
     segmentation_->setProperty("reset");
+
+    disable_log();
 }

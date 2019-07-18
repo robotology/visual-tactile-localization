@@ -23,9 +23,9 @@
 class ObjectMeasurements : public bfl::AdditiveMeasurementModel
 {
 public:
-    ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::shared_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode_);
+    ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::shared_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode_, const bool& enable_log = false, const std::string& log_path = "");
 
-    ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::shared_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode);
+    ObjectMeasurements(std::unique_ptr<Camera> camera, std::shared_ptr<PointCloudSegmentation> segmentation, std::shared_ptr<PointCloudPrediction> prediction, const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance, const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance, const double& visual_outlier_threshold, const std::string& depth_fetch_mode, const bool& enable_log = false, const std::string& log_path = "");
 
     std::pair<bool, bfl::Data> measure(const bfl::Data& data = bfl::Data()) const;
 
@@ -93,6 +93,10 @@ protected:
     Eigen::Matrix3d tactile_noise_covariance_;
 
     bool has_tactile_noise_covariance_ = false;
+
+    bool enable_log_;
+
+    const std::string log_path_;
 
     std::vector<std::string> log_file_names(const std::string& prefix_path, const std::string& prefix_name) override
     {

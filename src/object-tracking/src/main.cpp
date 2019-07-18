@@ -564,7 +564,7 @@ int main(int argc, char** argv)
             measurement_model = std::unique_ptr<ObjectMeasurements>
             (
                 // new iCubObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
-                new ObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
+                new ObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode, enable_log, log_path)
             );
         }
 
@@ -573,12 +573,9 @@ int main(int argc, char** argv)
     {
         measurement_model = std::unique_ptr<ObjectMeasurements>
         (
-            new ObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode)
+            new ObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode, enable_log, log_path)
         );
     }
-
-    if (enable_log)
-        measurement_model->enable_log(log_path, "object-tracking");
 
     /**
      * Filter construction.
@@ -696,12 +693,11 @@ int main(int argc, char** argv)
                     std::move(pf_resampling),
                     segmentation,
                     std::move(validator),
-                    std::move(rate_stabilizer))
+                    std::move(rate_stabilizer),
+                    enable_log,
+                    log_path)
     );
     std::cout << "done." << std::endl;
-
-    if (enable_log)
-        filter->enable_log(log_path, "object-tracking");
 
     std::cout << "Booting filter..." << std::flush;
 

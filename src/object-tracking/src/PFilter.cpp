@@ -35,7 +35,9 @@ PFilter::PFilter
     std::unique_ptr<Resampling> resampling,
     std::shared_ptr<PointCloudSegmentation> segmentation,
     std::unique_ptr<Validator2D> validator,
-    std::unique_ptr<RateStabilizer> rate_stabilizer
+    std::unique_ptr<RateStabilizer> rate_stabilizer,
+    const bool& enable_log,
+    const std::string& log_path
 ) :
     SIS
     (
@@ -53,7 +55,9 @@ PFilter::PFilter
     segmentation_(segmentation),
     point_estimate_extraction_(9, 3),
     rate_(1),
-    pause_(false)
+    pause_(false),
+    enable_log_(enable_log),
+    log_path_(log_path)
 {
     // Setup point estimates extraction
     set_point_estimate_method(point_estimate_method);
@@ -102,6 +106,10 @@ PFilter::~PFilter()
 
 bool PFilter::run_filter()
 {
+    if (enable_log_)
+        enable_log(log_path_, "object-tracking");
+    correction_->getMeasurementModel().setProperty("enable_log");
+
     run();
 
     return true;
@@ -131,6 +139,8 @@ bool PFilter::reset_filter()
 
     SIS::reset();
 
+    disable_log();
+
     return true;
 }
 
@@ -155,6 +165,8 @@ bool PFilter::stop_filter()
     segmentation_->reset();
 
     keyframe_counter_ = 0;
+
+    disable_log();
 
     reboot();
 

@@ -44,7 +44,9 @@ public:
         std::unique_ptr<bfl::Resampling> resampling,
         std::shared_ptr<PointCloudSegmentation> segmentation,
         std::unique_ptr<Validator2D> validator,
-        std::unique_ptr<RateStabilizer> rate_stabilizer
+        std::unique_ptr<RateStabilizer> rate_stabilizer,
+        const bool& enable_log = false,
+        const std::string& log_path = ""
     );
 
     virtual ~PFilter();
@@ -97,6 +99,10 @@ protected:
     double resampling_threshold_;
 
     bool pause_;
+
+    bool enable_log_;
+
+    const std::string log_path_;
 
     std::size_t keyframe_counter_ = 0;
 

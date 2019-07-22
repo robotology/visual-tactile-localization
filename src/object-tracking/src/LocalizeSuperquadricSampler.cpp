@@ -101,6 +101,9 @@ LocalizeSuperquadricSampler::~LocalizeSuperquadricSampler()
 
 std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t& number_of_points)
 {
+    // Freeze camera
+    camera_->freeze();
+
     // Try to freeze segmentation, until it is ready
     bool valid_segmentation = false;
     while (!valid_segmentation)

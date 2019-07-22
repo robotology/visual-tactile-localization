@@ -60,6 +60,9 @@ std::pair<bool, Data> ObjectMeasurements::measure(const Data& data) const
 
 bool ObjectMeasurements::freeze()
 {
+    // Freeze camera
+    camera_->freeze();
+
     // Get depth image
     if(!getDepth())
         return false;

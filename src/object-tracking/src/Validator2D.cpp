@@ -78,15 +78,21 @@ Validator2D::~Validator2D()
 bool Validator2D::renderEvaluation(const Transform<double, 3, Affine> object_pose)
 {
     // Take input image
-    ImageOf<PixelRgb>* image_in_yarp;
-    image_in_yarp = port_image_in_.read(false);
+    // ImageOf<PixelRgb>* image_in_yarp;
+    // image_in_yarp = port_image_in_.read(false);
 
-    if (image_in_yarp == nullptr)
+    // if (image_in_yarp == nullptr)
+    //     return false;
+
+    // Freeze camera
+    camera_->freeze();
+
+    // Get rgb image
+    bool valid_image;
+    cv::Mat image_in;
+    std::tie(valid_image, image_in_) = camera_->getRgbImage(false);
+    if (!valid_image)
         return false;
-
-    // Convert to cv::Mat
-    cv::Mat image_in = yarp::cv::toCvMat(*image_in_yarp);
-    cv::cvtColor(image_in, image_in, cv::COLOR_RGB2BGR);
 
     // Express pose with respect to the camera reference frame
     bool valid_pose = false;

@@ -27,6 +27,18 @@ bool Camera::initialize()
 }
 
 
+bool Camera::freeze()
+{
+    return true;
+}
+
+
+bool Camera::reset()
+{
+    return false;
+}
+
+
 std::pair<bool, MatrixXd> Camera::getDeprojectionMatrix()
 {
     if (!deprojection_matrix_initialized_)

@@ -23,6 +23,10 @@ public:
 
     virtual bool initialize();
 
+    virtual bool freeze();
+
+    virtual bool reset();
+
     virtual std::pair<bool, Eigen::Transform<double, 3, Eigen::Affine>> getCameraPose(const bool& blocking) = 0;
 
     virtual std::pair<bool, cv::Mat> getRgbImage(const bool& blocking) = 0;

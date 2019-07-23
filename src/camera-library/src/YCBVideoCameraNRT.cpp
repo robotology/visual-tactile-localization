@@ -174,7 +174,7 @@ std::pair<bool, cv::Mat> YcbVideoCameraNrt::getRgbImage(const bool& blocking)
     if (image.empty())
     {
         std::cout << log_ID_ << "::getRgbImage. Warning: frame " << file_name << " is empty!" << std::endl;
-        return std::make_pair(false, image);
+        return std::make_pair(false, cv::Mat());
     }
     cv::resize(image, image, cv::Size(parameters_.width, parameters_.height));
 

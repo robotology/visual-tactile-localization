@@ -104,7 +104,7 @@ protected:
 
     const std::string log_path_;
 
-    std::size_t keyframe_counter_ = 0;
+    std::size_t keyframe_counter_ = 1;
 
 private:
     const std::string log_ID_ = "[PFilter]";

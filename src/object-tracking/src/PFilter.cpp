@@ -118,6 +118,8 @@ bool PFilter::run_filter()
 
 bool PFilter::reset_filter()
 {
+    SIS::reset();
+
     // Reset the kinematic model
     prediction_->getStateModel().setProperty("reset");
 
@@ -135,9 +137,10 @@ bool PFilter::reset_filter()
     // Reset the segmentation
     segmentation_->reset();
 
-    keyframe_counter_ = 0;
+    // Reset the validator
+    validator_->reset();
 
-    SIS::reset();
+    keyframe_counter_ = 0;
 
     disable_log();
 
@@ -147,6 +150,8 @@ bool PFilter::reset_filter()
 
 bool PFilter::stop_filter()
 {
+    reboot();
+
     // Reset the kinematic model
     prediction_->getStateModel().setProperty("reset");
 
@@ -164,11 +169,12 @@ bool PFilter::stop_filter()
     // Reset the segmentation
     segmentation_->reset();
 
+    // Reset the validator
+    validator_->reset();
+
     keyframe_counter_ = 0;
 
     disable_log();
-
-    reboot();
 
     return true;
 }
@@ -278,6 +284,8 @@ bool PFilter::set_history_window(const int16_t window)
 
 bool PFilter::quit()
 {
+    disable_log();
+
     return teardown();
 }
 
@@ -298,6 +306,15 @@ void PFilter::filteringStep()
         return;
     }
 
+    // Stop when no measurements are available
+    // Unfortunately no getProperty available
+    if(!correction_->getMeasurementModel().setProperty("measurements_available"))
+    {
+        quit();
+
+        return;
+    }
+
 #ifdef _OPENMP
     double start = omp_get_wtime();
 #else
@@ -308,9 +325,6 @@ void PFilter::filteringStep()
         prediction_->predict(cor_particle_, pred_particle_);
 
     correction_->correct(pred_particle_, cor_particle_);
-
-    /* Increase keyframe counter */
-    keyframe_counter_++;
 
     /* Normalize weights using LogSumExp. */
     cor_particle_.weight().array() -= utils::log_sum_exp(cor_particle_.weight());
@@ -365,6 +379,7 @@ void PFilter::filteringStep()
         estimate.segment<3>(7) = point_estimate_.segment<3>(3);
         estimate.segment<3>(10) = point_estimate_.segment<3>(6);
         estimate(13) = keyframe_counter_;
+        std::cout << "Frame: " << keyframe_counter_ << std::endl;
 
         // Log
         logger(estimate.transpose());
@@ -420,4 +435,7 @@ void PFilter::filteringStep()
     timings.resize(1);
     timings[0] = execution_time;
     port_timings_out_.write();
+
+    /* Increase keyframe counter */
+    keyframe_counter_++;
 }

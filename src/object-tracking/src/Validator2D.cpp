@@ -168,7 +168,7 @@ bool Validator2D::renderEvaluation(const Transform<double, 3, Affine> object_pos
     cv::convexHull(contour, hull[0]);
 
     // Superimpose on input image
-    cv::drawContours(image_in_, hull, 0, cv::Scalar(255, 0, 0), 3);
+    cv::drawContours(image_in_, hull, 0, cv::Scalar(0, 0, 255), 3);
 
     // Send validation image
     ImageOf<PixelRgb>& image_out = port_image_out_.prepare();

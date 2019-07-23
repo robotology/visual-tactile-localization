@@ -385,7 +385,7 @@ void PFilter::filteringStep()
         logger(estimate.transpose());
 
         Vector& estimate_yarp = port_estimate_out_.prepare();
-        estimate_yarp.resize(13);
+        estimate_yarp.resize(14);
         toEigen(estimate_yarp) = estimate;
         port_estimate_out_.write();
     }

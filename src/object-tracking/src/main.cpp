@@ -36,6 +36,7 @@
 #endif
 #include <Validator2D.h>
 #include <YCBVideoCamera.h>
+#include <YCBVideoCameraNRT.h>
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
 #include <BayesFilters/FilteringAlgorithm.h>
@@ -201,11 +202,14 @@ int main(int argc, char** argv)
     const std::string camera_name         = rf_camera.check("name", Value("iCubCamera")).asString();
     const std::string camera_laterality   = rf_camera.check("laterality", Value("left")).asString();
     const std::string camera_fallback_key = rf_camera.check("fallback_key", Value("icub_320_240")).asString();
+    const std::string camera_path         = rf_camera.check("path", Value("null")).asString();
 
     /* Kinematic model. */
     ResourceFinder rf_kinematic_model = rf.findNestedResourceFinder("KINEMATIC_MODEL");
     VectorXd kin_q_x             = loadVectorDouble(rf_kinematic_model, "q_x", 3);
     VectorXd kin_q_eul           = loadVectorDouble(rf_kinematic_model, "q_eul", 3);
+    const double kin_rate        = rf_kinematic_model.check("rate", Value(30.0)).asDouble();
+    const bool kin_est_period    = rf_kinematic_model.check("estimate_period", Value(true)).asBool();
     const bool use_tdd_occlusion = rf_kinematic_model.check("use_tdd_occlusion", Value(false)).asBool();
     const double tdd_max_seconds = rf_kinematic_model.check("tdd_max_seconds", Value(10.0)).asDouble();
     const double tdd_exp_gain    = rf_kinematic_model.check("tdd_exp_gain", Value(1.0)).asDouble();
@@ -262,6 +266,7 @@ int main(int argc, char** argv)
     Vector4d bbox_0;
     ResourceFinder rf_segmentation    = rf.findNestedResourceFinder("SEGMENTATION");
     const std::string segmentation_type     = rf_segmentation.check("type", Value("in_hand")).asString();
+    const std::string segmentation_path     = rf_segmentation.check("path", Value("null")).asString();
     const std::string iol_object_name       = rf_segmentation.check("iol_object_name", Value("Bottle")).asString();
     const double iol_bbox_scale             = rf_segmentation.check("iol_bbox_scale", Value(1.0)).asDouble();
     const bool use_initial_bounding_box     = rf_segmentation.check("use_bbox_0", Value(false)).asBool();
@@ -270,9 +275,7 @@ int main(int argc, char** argv)
         bbox_0.head<2>() = loadVectorDouble(rf_segmentation, "bbox_tl_0", 2);
         bbox_0.tail<2>() = loadVectorDouble(rf_segmentation, "bbox_br_0", 2);
     }
-    std::string mask_name;
-    if (segmentation_type == "mask")
-        mask_name = rf_segmentation.check("mask_name", Value("006_mustard_bottle")).asString();
+    std::string mask_name = rf_segmentation.check("mask_name", Value("006_mustard_bottle")).asString();
     bool handle_mask_rpc = rf_segmentation.check("handle_mask_rpc", Value(true)).asBool();
 
     /* Rate stabilizer parameters. */
@@ -315,10 +318,13 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- name:"         << camera_name;
     yInfo() << log_ID << "- laterality:"   << camera_laterality;
     yInfo() << log_ID << "- fallback_key:" << camera_fallback_key;
+    yInfo() << log_ID << "- path:"         << camera_path;
 
     yInfo() << log_ID << "Kinematic model:";
-    yInfo() << log_ID << "- q_x:"         << eigenToString(kin_q_x);
-    yInfo() << log_ID << "- q_eul:"       << eigenToString(kin_q_eul);
+    yInfo() << log_ID << "- q_x:"             << eigenToString(kin_q_x);
+    yInfo() << log_ID << "- q_eul:"           << eigenToString(kin_q_eul);
+    yInfo() << log_ID << "- rate:"            << kin_rate;
+    yInfo() << log_ID << "- estimate_period:" << kin_est_period;
 
     yInfo() << log_ID << "Measurement model:";
     yInfo() << log_ID << "- visual_covariance:" << eigenToString(visual_covariance);
@@ -352,6 +358,7 @@ int main(int argc, char** argv)
 
     yInfo() << log_ID << "Segmentation:";
     yInfo() << log_ID << "- type:" << segmentation_type;
+    yInfo() << log_ID << "- path:" << segmentation_path;
     yInfo() << log_ID << "- iol_object_name:" << iol_object_name;
     yInfo() << log_ID << "- iol_bbox_scale:"  << iol_bbox_scale;
     yInfo() << log_ID << "- use_bbox_0:"      << use_initial_bounding_box;
@@ -395,6 +402,13 @@ int main(int argc, char** argv)
         camera = std::unique_ptr<YcbVideoCamera>
         (
             new YcbVideoCamera(port_prefix, "object-tracking", camera_fallback_key)
+        );
+    }
+    else if (camera_name == "YCBVideoCameraNRT")
+    {
+        camera = std::unique_ptr<YcbVideoCameraNrt>
+        (
+            new YcbVideoCameraNrt(camera_path, 320, 240, "object-tracking")
         );
     }
     else
@@ -469,6 +483,13 @@ int main(int argc, char** argv)
             new MaskSegmentation(port_prefix, mask_name, depth_stride, handle_mask_rpc && (pc_pred_type != "localize_superquadric"))
         );
     }
+    else if (segmentation_type == "masknrt")
+    {
+        segmentation = std::unique_ptr<MaskSegmentation>
+        (
+            new MaskSegmentation(port_prefix, segmentation_path, mask_name, depth_stride)
+        );
+    }
     else
     {
         yError() << log_ID << "The requested segmentation is not available. Requested segmentation type is" << segmentation_type;
@@ -502,7 +523,19 @@ int main(int argc, char** argv)
     }
     else if (pc_pred_type == "localize_superquadric")
     {
-        std::unique_ptr<LocalizeSuperquadricSampler> sampler = std::unique_ptr<LocalizeSuperquadricSampler>(new LocalizeSuperquadricSampler("object-tracking/localize-superquadric", camera_name, camera_fallback_key, camera_laterality));
+        std::unique_ptr<LocalizeSuperquadricSampler> sampler = std::unique_ptr<LocalizeSuperquadricSampler>
+        (
+            new LocalizeSuperquadricSampler("object-tracking/localize-superquadric", camera_name, camera_fallback_key, camera_laterality)
+        );
+        superquadric_particle_initialization = sampler->getParticleSetInitialization();
+        obj_sampler = std::move(sampler);
+    }
+    else if (pc_pred_type == "localize_superquadric_nrt")
+    {
+        std::unique_ptr<LocalizeSuperquadricSampler> sampler = std::unique_ptr<LocalizeSuperquadricSampler>
+        (
+            new LocalizeSuperquadricSampler("object-tracking/localize-superquadric", segmentation_path, camera_path)
+        );
         superquadric_particle_initialization = sampler->getParticleSetInitialization();
         obj_sampler = std::move(sampler);
     }
@@ -596,7 +629,7 @@ int main(int argc, char** argv)
     {
         kinematic_model = std::unique_ptr<DiscretizedKinematicModel>
         (
-            new DiscretizedKinematicModel(kin_q_x(0), kin_q_x(1), kin_q_x(2), kin_q_eul(0), kin_q_eul(1), kin_q_eul(2))
+            new DiscretizedKinematicModel(kin_q_x(0), kin_q_x(1), kin_q_x(2), kin_q_eul(0), kin_q_eul(1), kin_q_eul(2), 1.0 / kin_rate, kin_est_period)
         );
     }
 
@@ -643,7 +676,7 @@ int main(int argc, char** argv)
     /* Particles initialization. */
     MatrixXd covariance_0 = initial_covariance.asDiagonal();
     std::unique_ptr<ParticleSetInitialization> pf_initialization;
-    if (use_superq_guess && (pc_pred_type == "localize_superquadric"))
+    if (use_superq_guess && (pc_pred_type == "localize_superquadric" || pc_pred_type == "localize_superquadric_nrt"))
     {
         pf_initialization = std::move(superquadric_particle_initialization);
     }
@@ -670,11 +703,21 @@ int main(int argc, char** argv)
     std::unique_ptr<Resampling> pf_resampling = std::unique_ptr<Resampling>(new Resampling());
 
     /* 2D Validation. */
-    std::unique_ptr<Validator2D> validator = std::unique_ptr<Validator2D>
-    (
-        new Validator2D(point_cloud_prediction, "object-tracking/validator2d", camera_name, camera_fallback_key, camera_laterality)
-    );
-
+    std::unique_ptr<Validator2D> validator;
+    if (camera_name == "YCBVideoCameraNRT")
+    {
+        validator = std::unique_ptr<Validator2D>
+        (
+            new Validator2D(point_cloud_prediction, "object-tracking/validator2d", camera_path)
+        );
+    }
+    else
+    {
+        validator = std::unique_ptr<Validator2D>
+        (
+            new Validator2D(point_cloud_prediction, "object-tracking/validator2d", camera_name, camera_fallback_key, camera_laterality)
+        );
+    }
     /* Rate stabilizer. */
     std::unique_ptr<RateStabilizer> rate_stabilizer;
     if (enable_rate_stabilizer)

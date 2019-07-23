@@ -7,6 +7,7 @@
 
 #include <MaskSegmentation.h>
 
+#include <fstream>
 #include <iostream>
 
 #include <yarp/cv/Cv.h>
@@ -53,22 +54,47 @@ MaskSegmentation::MaskSegmentation(const std::string& port_prefix, const std::st
 }
 
 
+MaskSegmentation::MaskSegmentation(const std::string& port_prefix, const std::string& path, const std::string& mask_name, const std::size_t& depth_stride) :
+    mask_name_(mask_name),
+    mask_streaming_initialized_(true),
+    handle_mask_streaming_(false),
+    offline_(true)
+{
+    setDepthStride(depth_stride);
+    setDefaultDepthStride(depth_stride);
+
+    if (!port_image_out_.open("/" + port_prefix + "/segmentation:o"))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open bounding box output port.";
+        throw(std::runtime_error(err));
+    }
+
+    /* Compose root path. */
+    std::string root = path;
+    if (root.back() != '/')
+        root += '/';
+
+    /* Compose path containing mask images. */
+    path_mask_images_ = root + "maskrender/";
+}
+
+
 MaskSegmentation::~MaskSegmentation()
 {
     port_image_out_.close();
 
-    port_image_in_.close();
+    if (!offline_)
+    {
+        port_image_in_.close();
 
-    // port_detection_info_in_.close();
-
-    mask_rpc_client_.close();
+        mask_rpc_client_.close();
+    }
 }
 
 
 bool MaskSegmentation::freezeSegmentation(Camera& camera)
 {
-
-    if (!mask_streaming_initialized_)
+    if ((!offline_) && (!mask_streaming_initialized_))
     {
         mask_streaming_initialized_ = enableMaskStreaming();
 
@@ -189,9 +215,16 @@ bool MaskSegmentation::setProperty(const std::string& property)
 {
     if (property == "reset")
     {
-        mask_initialized_ = false;
+        if (offline_)
+        {
+            head_ = 1;
+        }
+        else
+        {
+            mask_initialized_ = false;
 
-        mask_streaming_initialized_ = !handle_mask_streaming_;
+            mask_streaming_initialized_ = !handle_mask_streaming_;
+        }
 
         return true;
     }
@@ -283,13 +316,34 @@ bool MaskSegmentation::enableMaskStreaming()
 
 std::pair<bool, cv::Mat> MaskSegmentation::getMask(Camera& camera)
 {
-    ImageOf<PixelMono>* mask_in;
-    mask_in = port_image_in_.read(false);
+    cv::Mat mask;
 
-    if (mask_in == nullptr)
-        return std::make_pair(false, cv::Mat());
+    if (offline_)
+    {
+        std::string file_name = path_mask_images_ + mask_name_ + "_" + composeFileName(head_, number_of_digits_) + ".png";
+        mask = cv::imread(file_name, cv::IMREAD_COLOR);
 
-    cv::Mat mask = yarp::cv::toCvMat(*mask_in);
+        // Move head to the next frame
+        head_++;
+
+        if (mask.empty())
+        {
+            // Detection not available for this frame
+            return std::make_pair(false, cv::Mat());
+        }
+
+        cv::cvtColor(mask, mask, cv::COLOR_BGR2GRAY);
+    }
+    else
+    {
+        ImageOf<PixelMono>* mask_in;
+        mask_in = port_image_in_.read(false);
+
+        if (mask_in == nullptr)
+            return std::make_pair(false, cv::Mat());
+
+        mask = yarp::cv::toCvMat(*mask_in);
+    }
 
     CameraParameters parameters;
     std::tie(std::ignore, parameters) = camera.getIntrinsicParameters();
@@ -309,8 +363,7 @@ void MaskSegmentation::drawMaskOnCamera(const cv::Mat& mask, Camera& camera)
 {
     // Get current image
     bool valid_rgb_image = false;
-    cv::Mat image_in;
-    std::tie(valid_rgb_image, image_in) = camera.getRgbImage(false);
+    std::tie(valid_rgb_image, image_mask_) = camera.getRgbImage(false);
 
     if (!valid_rgb_image)
         return;
@@ -319,10 +372,17 @@ void MaskSegmentation::drawMaskOnCamera(const cv::Mat& mask, Camera& camera)
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
     for (std::size_t i = 0; i < contours.size(); i++)
-        cv::drawContours(image_in, contours, i, cv::Scalar(0, 255, 0), 3);
+        cv::drawContours(image_mask_, contours, i, cv::Scalar(0, 255, 0), 3);
 
-    cv::cvtColor(image_in, image_in, cv::COLOR_BGR2RGB);
     ImageOf<PixelRgb>& image_out = port_image_out_.prepare();
-    image_out = fromCvMat<PixelRgb>(image_in);
+    image_out = fromCvMat<PixelRgb>(image_mask_);
     port_image_out_.write();
+}
+
+
+std::string MaskSegmentation::composeFileName(const std::size_t& index, const std::size_t& number_digits)
+{
+    std::ostringstream ss;
+    ss << std::setw(number_digits) << std::setfill('0') << index;
+    return ss.str();
 }

@@ -25,6 +25,8 @@ public:
 
     MaskSegmentation(const std::string& port_prefix, const std::string& mask_name, const std::size_t& depth_stride, const bool& handle_mask_streaming);
 
+    MaskSegmentation(const std::string& port_prefix, const std::string& path, const std::string& mask_name, const std::size_t& depth_stride);
+
     ~MaskSegmentation();
 
     bool freezeSegmentation(Camera& camera) override;
@@ -35,9 +37,10 @@ public:
 
     bool setProperty(const std::string& property) override;
 
-    void setMaskName(const std::string& mask_name);
+    virtual void setMaskName(const std::string& mask_name);
 
 protected:
+    std::string composeFileName(const std::size_t& index, const std::size_t& number_digits);
 
     // std::pair<bool, Eigen::Vector4d> getBoundingBox();
 
@@ -55,9 +58,13 @@ protected:
 
     cv::Mat mask_;
 
+    cv::Mat image_mask_;
+
     bool mask_initialized_ = false;
 
     bool mask_streaming_initialized_ = false;
+
+    bool offline_ = false;
 
     const bool handle_mask_streaming_;
 
@@ -70,6 +77,16 @@ protected:
     // yarp::os::BufferedPort<yarp::os::Bottle> port_detection_info_in_;
 
     yarp::os::RpcClient mask_rpc_client_;
+
+    /**
+     * Required for offline execution.
+     */
+
+    std::string path_mask_images_;
+
+    std::size_t number_of_digits_ = 6;
+
+    int head_ = 1;
 
     const std::string log_ID_ = "MaskSegmentation";
 };

@@ -33,7 +33,9 @@ class LocalizeSuperquadricSampler : public ObjectSampler,
                                     public LocalizeSuperquadricSamplerIDL
 {
 public:
-    LocalizeSuperquadricSampler(const std::string& port_prefix, const std::string& camera_name, const std::string& camera_fallback_key, const std::string& camera_laterality = "");
+    LocalizeSuperquadricSampler(const std::string& port_prefix, const std::string& camera_name, const std::string& camera_fallback_key, const std::string& camera_laterality);
+
+    LocalizeSuperquadricSampler(const std::string& port_prefix, const std::string& mask_path, const std::string& camera_path);
 
     virtual ~LocalizeSuperquadricSampler();
 

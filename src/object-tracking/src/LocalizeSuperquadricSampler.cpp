@@ -10,6 +10,7 @@
 #include <RealsenseCamera.h>
 #include <VCGTriMesh.h>
 #include <YCBVideoCamera.h>
+#include <YCBVideoCameraNRT.h>
 
 #include <vtkFitImplicitFunction.h>
 #include <vtkBoundedPointSource.h>
@@ -87,7 +88,47 @@ LocalizeSuperquadricSampler::LocalizeSuperquadricSampler
     // Third argument is depth stride - set to 1 - becuase the superquadric modelling pipeline
     // will take care of subsampling the point cloud
     // segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 2, true));
-    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 2, false));
+    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, "", 4, false));
+}
+
+
+LocalizeSuperquadricSampler::LocalizeSuperquadricSampler(const std::string& port_prefix, const std::string& mask_path, const std::string& camera_path)
+{
+    // Open port for communication with module localize-superquadrics
+    if (!(localize_superq_rpc_client_.open("/" + port_prefix + "/localize_superquadric_rpc:o")))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open superquadric rpc client port.";
+        throw(std::runtime_error(err));
+    }
+
+    // Open port for communication with module object-tracking-viewer
+    if (!(viewer_rpc_client_.open("/" + port_prefix + "/viewer-rpc:o")))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open mask rpc client port.";
+        throw(std::runtime_error(err));
+    }
+
+    // Open RPC input port for commands
+    if (!port_rpc_command_.open("/" + port_prefix + "/cmd:i"))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open RPC input command port.";
+        throw(std::runtime_error(err));
+    }
+
+    if (!(this->yarp().attachAsServer(port_rpc_command_)))
+    {
+        std::string err = "PFILTER::CTOR::ERROR\n\tError: cannot attach the RPC command port.";
+        throw(std::runtime_error(err));
+    }
+
+    camera_ = std::unique_ptr<YcbVideoCameraNrt>(new YcbVideoCameraNrt(camera_path, 320, 240, "object-tracking"));
+    camera_->initialize();
+
+    // Initialize mask segmentation required to obtain the point cloud of the instance of interest
+    // Second argument is mask name - unknown at the moment
+    // Third argument is depth stride - set to 1 - becuase the superquadric modelling pipeline
+    // will take care of subsampling the point cloud
+    segmentation_ = std::unique_ptr<MaskSegmentation>(new MaskSegmentation(port_prefix, mask_path, "", 2));
 }
 
 
@@ -101,13 +142,13 @@ LocalizeSuperquadricSampler::~LocalizeSuperquadricSampler()
 
 std::pair<bool, MatrixXd> LocalizeSuperquadricSampler::sample(const std::size_t& number_of_points)
 {
-    // Freeze camera
-    camera_->freeze();
-
     // Try to freeze segmentation, until it is ready
     bool valid_segmentation = false;
     while (!valid_segmentation)
     {
+        // Freeze camera
+        camera_->freeze();
+
         std::cout << log_ID_ << "::sample. Trying to get segmentation from instance semgmentation module." << std::endl;
         valid_segmentation = segmentation_->freezeSegmentation(*camera_);
         std::this_thread::sleep_for(std::chrono::seconds(1));

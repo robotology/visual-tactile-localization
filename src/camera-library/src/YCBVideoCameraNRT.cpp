@@ -157,6 +157,14 @@ bool YcbVideoCameraNrt::reset()
 }
 
 
+bool YcbVideoCameraNrt::setFrame(const std::size_t& number)
+{
+    head_ = number;
+
+    return true;
+}
+
+
 std::pair<bool, cv::Mat> YcbVideoCameraNrt::getRgbImage(const bool& blocking)
 {
     std::string file_name = path_rgb_images_ + composeFileName(head_, number_of_digits_) + ".png";

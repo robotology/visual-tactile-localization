@@ -25,6 +25,8 @@ public:
 
     bool reset() override;
 
+    bool setFrame(const std::size_t& number) override;
+
     std::pair<bool, Eigen::Transform<double, 3, Eigen::Affine>> getCameraPose(const bool& blocking) override;
 
     std::pair<bool, cv::Mat> getRgbImage(const bool& blocking) override;

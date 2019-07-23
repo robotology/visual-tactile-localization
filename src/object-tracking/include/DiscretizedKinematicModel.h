@@ -24,7 +24,9 @@ public:
         const double sigma_z,
         const double sigma_phi,
         const double sigma_theta,
-        const double sigma_psi
+        const double sigma_psi,
+        const double period,
+        const bool estimate_period
     );
 
     virtual ~DiscretizedKinematicModel();
@@ -62,6 +64,8 @@ protected:
     std::chrono::high_resolution_clock::time_point last_time_;
 
     bool last_time_set_ = false;
+
+    bool estimate_period_ = false;
 };
 
 #endif /* DISCRETIZEDKINEMATICMODEL_H */

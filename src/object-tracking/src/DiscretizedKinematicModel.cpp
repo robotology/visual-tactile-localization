@@ -15,9 +15,12 @@ using namespace Eigen;
 DiscretizedKinematicModel::DiscretizedKinematicModel
 (
     const double sigma_x,  const double sigma_y,  const double sigma_z,
-    const double sigma_yaw, const double sigma_pitch, const double sigma_roll
-)
+    const double sigma_yaw, const double sigma_pitch, const double sigma_roll,
+    const double period, const bool estimate_period
+    )
 {
+    estimate_period_ = estimate_period;
+
     sigma_position_.resize(3);
     sigma_position_ << sigma_x, sigma_y, sigma_z;
 
@@ -32,8 +35,8 @@ DiscretizedKinematicModel::DiscretizedKinematicModel
 
     // Evaluate F and Q matrices using a default
     // sampling time to be updated online
-    evaluateStateTransitionMatrix(0.01);
-    evaluateNoiseCovarianceMatrix(0.01);
+    evaluateStateTransitionMatrix(period);
+    evaluateNoiseCovarianceMatrix(period);
 }
 
 
@@ -96,26 +99,28 @@ bool DiscretizedKinematicModel::setProperty(const std::string& property)
 {
     if (property == "tick")
     {
-        // Evaluate elapsed time and reset matrices F_ and Q_
-        std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-
-        if (last_time_set_)
+        if (estimate_period_)
         {
-            std::chrono::duration<double, std::milli> delta_chrono = now - last_time_;
-            double delta = delta_chrono.count() / 1000.0;
+            // Evaluate elapsed time and reset matrices F_ and Q_
+            std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
 
-            // Avoid too large delta during playback
-            // if the user stops streaming of data
-            if (delta > 0.3)
-                delta = 0.01;
+            if (last_time_set_)
+            {
+                std::chrono::duration<double, std::milli> delta_chrono = now - last_time_;
+                double delta = delta_chrono.count() / 1000.0;
 
-            evaluateStateTransitionMatrix(delta);
-            evaluateNoiseCovarianceMatrix(delta);
+                // Avoid too large delta during playback
+                // if the user stops streaming of data
+                if (delta > 0.3)
+                    delta = 0.01;
+
+                evaluateStateTransitionMatrix(delta);
+                evaluateNoiseCovarianceMatrix(delta);
+            }
+
+            last_time_ = now;
+            last_time_set_ = true;
         }
-
-        last_time_ = now;
-        last_time_set_ = true;
-
         return true;
     }
     else if (property == "reset")

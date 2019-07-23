@@ -24,7 +24,11 @@ class Validator2D
 public:
     Validator2D(std::shared_ptr<PointCloudPrediction> point_cloud_prediction, const std::string& port_prefix, const std::string& camera_name, const std::string& camera_fallback_key, const std::string& camera_laterality = "");
 
+    Validator2D(std::shared_ptr<PointCloudPrediction> point_cloud_prediction, const std::string& port_prefix, const std::string& camera_path);
+
     ~Validator2D();
+
+    bool reset();
 
     bool renderEvaluation(const Eigen::Transform<double, 3, Eigen::Affine> object_pose);
 
@@ -36,6 +40,8 @@ private:
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_in_;
 
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb>> port_image_out_;
+
+    cv::Mat image_in_;
 
     const std::string log_ID_ = "Validator2D";
 };

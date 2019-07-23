@@ -14,6 +14,7 @@
 #include <iCubCamera.h>
 #include <RealsenseCamera.h>
 #include <YCBVideoCamera.h>
+#include <YCBVideoCameraNRT.h>
 
 #include <yarp/cv/Cv.h>
 #include <yarp/sig/Image.h>
@@ -68,10 +69,44 @@ Validator2D::Validator2D
 }
 
 
+Validator2D::Validator2D
+(
+    std::shared_ptr<PointCloudPrediction> point_cloud_prediction,
+    const std::string& port_prefix,
+    const std::string& camera_path
+) :
+    prediction_(point_cloud_prediction)
+{
+    if (!port_image_in_.open("/" + port_prefix + "/validationImage:i"))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open background input port.";
+        throw(std::runtime_error(err));
+    }
+
+    if (!port_image_out_.open("/" + port_prefix + "/validationImage:o"))
+    {
+        std::string err = log_ID_ + "::ctor. Error: cannot open output image port.";
+        throw(std::runtime_error(err));
+    }
+
+    // Initialize camera required to extract depth
+    camera_ = std::unique_ptr<YcbVideoCameraNrt>(new YcbVideoCameraNrt(camera_path, 320, 240, "object-tracking"));
+    camera_->initialize();
+}
+
+
 Validator2D::~Validator2D()
 {
     port_image_in_.close();
     port_image_out_.close();
+}
+
+
+bool Validator2D::reset()
+{
+    camera_->reset();
+
+    return true;
 }
 
 
@@ -89,7 +124,6 @@ bool Validator2D::renderEvaluation(const Transform<double, 3, Affine> object_pos
 
     // Get rgb image
     bool valid_image;
-    cv::Mat image_in;
     std::tie(valid_image, image_in_) = camera_->getRgbImage(false);
     if (!valid_image)
         return false;
@@ -134,12 +168,11 @@ bool Validator2D::renderEvaluation(const Transform<double, 3, Affine> object_pos
     cv::convexHull(contour, hull[0]);
 
     // Superimpose on input image
-    cv::drawContours(image_in, hull, 0, cv::Scalar(255, 0, 0), 3);
+    cv::drawContours(image_in_, hull, 0, cv::Scalar(255, 0, 0), 3);
 
     // Send validation image
-    cv::cvtColor(image_in, image_in, cv::COLOR_BGR2RGB);
     ImageOf<PixelRgb>& image_out = port_image_out_.prepare();
-    image_out = fromCvMat<PixelRgb>(image_in);
+    image_out = fromCvMat<PixelRgb>(image_in_);
     port_image_out_.write();
 
     return true;

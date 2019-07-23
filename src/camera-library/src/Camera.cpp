@@ -39,6 +39,13 @@ bool Camera::reset()
 }
 
 
+bool Camera::setFrame(const std::size_t& number)
+{
+
+    return false;
+}
+
+
 std::pair<bool, MatrixXd> Camera::getDeprojectionMatrix()
 {
     if (!deprojection_matrix_initialized_)

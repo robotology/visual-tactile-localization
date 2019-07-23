@@ -27,6 +27,8 @@ public:
 
     virtual bool reset();
 
+    virtual bool setFrame(const std::size_t& number);
+
     virtual std::pair<bool, Eigen::Transform<double, 3, Eigen::Affine>> getCameraPose(const bool& blocking) = 0;
 
     virtual std::pair<bool, cv::Mat> getRgbImage(const bool& blocking) = 0;

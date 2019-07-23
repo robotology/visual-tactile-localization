@@ -96,6 +96,8 @@ protected:
 
     bool enable_log_;
 
+    bool measurements_available_ = true;
+
     const std::string log_path_;
 
     std::vector<std::string> log_file_names(const std::string& prefix_path, const std::string& prefix_name) override

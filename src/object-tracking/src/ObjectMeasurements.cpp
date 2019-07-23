@@ -61,7 +61,9 @@ std::pair<bool, Data> ObjectMeasurements::measure(const Data& data) const
 bool ObjectMeasurements::freeze()
 {
     // Freeze camera
-    camera_->freeze();
+    measurements_available_ = camera_->freeze();
+    if (!measurements_available_)
+        return false;
 
     // Get depth image
     if(!getDepth())
@@ -193,6 +195,10 @@ bool ObjectMeasurements::setProperty(const std::string& property)
         if (enable_log_)
             enable_log(log_path_, "object-tracking");
     }
+    else if (property == "measurements_available")
+    {
+        return measurements_available_;
+    }
 
     return false;
 }
@@ -228,6 +234,10 @@ bool ObjectMeasurements::getDepth()
 void ObjectMeasurements::reset()
 {
     depth_initialized_ = false;
+
+    measurements_available_ = true;
+
+    camera_->reset();
 
     segmentation_->setProperty("reset");
 

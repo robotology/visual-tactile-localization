@@ -189,8 +189,8 @@ std::pair<bool, Eigen::MatrixXf> YcbVideoCameraNrt::getDepthImage(const bool& bl
 
     if ((in = std::fopen(file_name.c_str(), "rb")) == nullptr)
     {
-        std::string err  = log_ID_ + "::ctor. Error: cannot load depth frame " + file_name;
-        throw(std::runtime_error(err));
+        std::cout << log_ID_ << "::ctor. Error: cannot load depth frame " + file_name;
+        return std::make_pair(true, MatrixXf());
     }
 
     /* Load image size .*/

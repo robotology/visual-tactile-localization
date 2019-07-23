@@ -32,6 +32,7 @@ set(${LIBRARY_TARGET_NAME}_HDR
     include/iCubCamera.h
     include/RealsenseCamera.h
     include/YCBVideoCamera.h
+    include/YCBVideoCameraNRT.h
     )
 
 set(${LIBRARY_TARGET_NAME}_SRC
@@ -39,6 +40,7 @@ set(${LIBRARY_TARGET_NAME}_SRC
     src/iCubCamera.cpp
     src/RealsenseCamera.cpp
     src/YCBVideoCamera.cpp
+    src/YCBVideoCameraNRT.cpp
     )
 
 add_library(${LIBRARY_TARGET_NAME} ${${LIBRARY_TARGET_NAME}_HDR} ${${LIBRARY_TARGET_NAME}_SRC})

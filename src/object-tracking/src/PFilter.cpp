@@ -140,7 +140,7 @@ bool PFilter::reset_filter()
     // Reset the validator
     validator_->reset();
 
-    keyframe_counter_ = 0;
+    keyframe_counter_ = 1;
 
     disable_log();
 
@@ -172,7 +172,7 @@ bool PFilter::stop_filter()
     // Reset the validator
     validator_->reset();
 
-    keyframe_counter_ = 0;
+    keyframe_counter_ = 1;
 
     disable_log();
 

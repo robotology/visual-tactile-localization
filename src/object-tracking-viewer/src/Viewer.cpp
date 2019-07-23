@@ -11,6 +11,7 @@
 #include <iCubCamera.h>
 #include <RealsenseCamera.h>
 #include <YCBVideoCamera.h>
+#include <YCBVideoCameraNRT.h>
 
 #include <vtkTransform.h>
 
@@ -80,6 +81,8 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     show_estimate_axes_ = rf.check("show_estimate_axes", Value("false")).asBool();
     yInfo() << log_ID_ << "- show_estimate_axes:" << show_estimate_axes_;
 
+    sync_to_estimate_ = rf.check("sync_to_estimate", Value("false")).asBool();
+    yInfo() << log_ID_ << "- sync_to_estimate:" << sync_to_estimate_;
     // Load name of the camera
     std::string camera_name = rf.check("camera", Value("icub")).asString();
     yInfo() << log_ID_ << "- camera:" << camera_name;
@@ -125,6 +128,10 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     const std::string mesh_path = rf_object_tracking.findPath("mesh/" + object_name) + "/nontextured.ply";
     yInfo() << log_ID_ << "- mesh_path:" << mesh_path;
 
+    // Load camera path from the default configuration file of module object-tracking
+    ResourceFinder rf_camera = rf_object_tracking.findNestedResourceFinder("CAMERA");
+    const std::string camera_path = rf_camera.check("path", Value("null")).asString();
+
     reader_ = vtkSmartPointer<vtkPLYReader>::New();
     reader_->SetFileName(mesh_path.c_str());
     reader_->Update();
@@ -136,6 +143,8 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
         camera_ = std::unique_ptr<RealsenseCamera>(new RealsenseCamera(port_prefix, "object-tracking", camera_fallback_key));
     else if (camera_name == "YCBVideoCamera")
         camera_ = std::unique_ptr<YcbVideoCamera>(new YcbVideoCamera(port_prefix, "object-tracking", camera_fallback_key));
+    else if (camera_name == "YCBVideoCameraNRT")
+        camera_ = std::unique_ptr<YcbVideoCameraNrt>(new YcbVideoCameraNrt(camera_path, 320, 240, "object-tracking"));
     else
     {
         std::string err = "VIEWER::CTOR::ERROR\n\tError: the camera you requested (" + camera_name + ") is not supported.";
@@ -260,18 +269,19 @@ void Viewer::updateView()
     if (set_new_superquadric_)
     {
         enableSuperquadricActor();
-
-        set_new_superquadric_ = false;
     }
     mutex_rpc_.unlock();
 
     // Update estimate
+    bool is_estimate = false;
+    std::size_t camera_frame_id = 0;
     if (show_estimate_)
     {
         yarp::sig::Vector* estimate = port_estimate_in_.read(false);
 
         if (estimate != nullptr)
         {
+            is_estimate = true;
 
             VectorXd state = toEigen(*estimate);
 
@@ -298,8 +308,10 @@ void Viewer::updateView()
             }
 
             // Apply transform
-
             mesh_actor_->SetUserTransform(vtk_transform);
+
+            // Get camera frame
+            camera_frame_id = state(13);
         }
     }
 
@@ -326,8 +338,25 @@ void Viewer::updateView()
         }
     }
 
+    // First time the superquadric is received
+    // The first frame can be shown
+    if (set_new_superquadric_)
+    {
+        set_new_superquadric_ = false;
+        camera_frame_id = 1;
+        is_estimate = true;
+    }
+
     // Update point cloud of the scene
-    if (show_point_cloud_)
+    bool disable_point_cloud = false;
+    if (sync_to_estimate_)
+    {
+        disable_point_cloud = !is_estimate;
+
+        camera_->setFrame(camera_frame_id);
+    }
+
+    if (show_point_cloud_ && (!disable_point_cloud))
     {
         bool valid_rgb;
         cv::Mat rgb_image;

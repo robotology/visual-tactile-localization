@@ -138,7 +138,7 @@ public:
             cv::Vec3b cv_color = rgb_image.at<cv::Vec3b>(cv::Point(coordinates[i].first, coordinates[i].second));
             /* yarp::sig::PixelRgb pixel = rgb_image.pixel(coordinates[i].first, coordinates[i].second); */
             /* std::vector<unsigned char> color = {pixel.r, pixel.g, pixel.b}; */
-            std::vector<unsigned char> color = {cv_color[0], cv_color[1], cv_color[2]};
+            std::vector<unsigned char> color = {cv_color[2], cv_color[1], cv_color[0]};
 
             vtk_colors->InsertNextTypedTuple(color.data());
         }
@@ -243,6 +243,8 @@ private:
     bool show_point_cloud_;
 
     bool show_estimate_axes_;
+
+    bool sync_to_estimate_;
 
     bool hand_in_camera_frame_;
 

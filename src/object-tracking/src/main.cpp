@@ -65,7 +65,7 @@ using namespace SuperqModel;
 
 VectorXd loadVectorDouble
 (
-    ResourceFinder &rf,
+    Bottle &rf,
     const std::string key,
     const std::size_t size
 )
@@ -107,7 +107,7 @@ VectorXd loadVectorDouble
 
 std::vector<std::string> loadListString
 (
-    ResourceFinder &rf,
+    Bottle &rf,
     const std::string key
 )
 {
@@ -174,22 +174,22 @@ int main(int argc, char** argv)
     }
 
     /* Get number of particles. */
-    ResourceFinder rf_particles = rf.findNestedResourceFinder("PARTICLES");
-    const std::size_t number_particles = rf_particles.check("number",  Value(1)).asInt();
+    Bottle rf_particles = rf.findGroup("PARTICLES");
+    const std::size_t number_particles = rf.findGroup("PARTICLES").check("number",  Value(1)).asInt();
     const double resampling_threshold  = rf_particles.check("resample_threshold", Value(0.5)).asDouble();
     const bool sample_from_mean = rf_particles.check("sample_from_mean", Value(false)).asBool();
 
     /* Get likelihood variance */
-    ResourceFinder rf_likelihood = rf.findNestedResourceFinder("LIKELIHOOD");
+    Bottle rf_likelihood = rf.findGroup("LIKELIHOOD");
     const double likelihood_variance = rf_likelihood.check("variance",  Value(0.1)).asDouble();
 
     /* Get point estimate extraction method and window size. */
-    ResourceFinder rf_point_estimate = rf.findNestedResourceFinder("POINT_ESTIMATE");
+    Bottle rf_point_estimate = rf.findGroup("POINT_ESTIMATE");
     const std::string point_estimate_method      = rf_point_estimate.check("method", Value("smean")).asString();
     const std::size_t point_estimate_window_size = rf_point_estimate.check("window_size", Value(10)).asInt();
 
     /* Get initial conditions. */
-    ResourceFinder rf_initial_conditions = rf.findNestedResourceFinder("INITIAL_CONDITION");
+    Bottle rf_initial_conditions = rf.findGroup("INITIAL_CONDITION");
     VectorXd cov_x_0             = loadVectorDouble(rf_initial_conditions, "cov_x_0",       3);
     VectorXd cov_v_0             = loadVectorDouble(rf_initial_conditions, "cov_v_0",       3);
     VectorXd cov_eul_0           = loadVectorDouble(rf_initial_conditions, "cov_eul_0",     3);
@@ -200,13 +200,13 @@ int main(int argc, char** argv)
     const bool& use_ground_truth = rf_initial_conditions.check("use_ground_truth", Value(false)).asBool();
 
     /* Camera parameters. */
-    ResourceFinder rf_camera = rf.findNestedResourceFinder("CAMERA");
+    Bottle rf_camera = rf.findGroup("CAMERA");
     const std::string camera_name         = rf_camera.check("name", Value("iCubCamera")).asString();
     const std::string camera_laterality   = rf_camera.check("laterality", Value("left")).asString();
     const std::string camera_fallback_key = rf_camera.check("fallback_key", Value("icub_320_240")).asString();
 
     /* Kinematic model. */
-    ResourceFinder rf_kinematic_model = rf.findNestedResourceFinder("KINEMATIC_MODEL");
+    Bottle rf_kinematic_model = rf.findGroup("KINEMATIC_MODEL");
     VectorXd kin_q_x             = loadVectorDouble(rf_kinematic_model, "q_x", 3);
     VectorXd kin_q_eul           = loadVectorDouble(rf_kinematic_model, "q_eul", 3);
     const double kin_rate        = rf_kinematic_model.check("rate", Value(30.0)).asDouble();
@@ -216,41 +216,41 @@ int main(int argc, char** argv)
     const double tdd_exp_gain    = rf_kinematic_model.check("tdd_exp_gain", Value(1.0)).asDouble();
 
     /* Measurement model. */
-    ResourceFinder rf_measurement_model = rf.findNestedResourceFinder("MEASUREMENT_MODEL");
+    Bottle rf_measurement_model = rf.findGroup("MEASUREMENT_MODEL");
     VectorXd visual_covariance           = loadVectorDouble(rf_measurement_model, "visual_covariance", 3);
     MatrixXd visual_covariance_diagonal  = visual_covariance.asDiagonal();
     VectorXd tactile_covariance          = loadVectorDouble(rf_measurement_model, "tactile_covariance", 3);
     MatrixXd tactile_covariance_diagonal = tactile_covariance.asDiagonal();
 
     /* Unscented transform. */
-    ResourceFinder rf_unscented_transform = rf.findNestedResourceFinder("UNSCENTED_TRANSFORM");
+    Bottle rf_unscented_transform = rf.findGroup("UNSCENTED_TRANSFORM");
     const double ut_alpha = rf_unscented_transform.check("alpha", Value("1.0")).asDouble();
     const double ut_beta  = rf_unscented_transform.check("beta", Value("2.0")).asDouble();
     const double ut_kappa = rf_unscented_transform.check("kappa", Value("0.0")).asDouble();
 
     /* Point cloud prediction. */
-    ResourceFinder rf_point_cloud_prediction = rf.findNestedResourceFinder("POINT_CLOUD_PREDICTION");
+    Bottle rf_point_cloud_prediction = rf.findGroup("POINT_CLOUD_PREDICTION");
     const std::string pc_pred_type        = rf_point_cloud_prediction.check("type", Value()).asString();
     const std::size_t pc_pred_num_samples = rf_point_cloud_prediction.check("number_samples", Value("100")).asInt();
     const bool pc_pred_use_normals        = rf_point_cloud_prediction.check("use_normals", Value(false)).asBool();
 
     /* Point cloud filtering. */
-    ResourceFinder rf_point_cloud_filtering = rf.findNestedResourceFinder("POINT_CLOUD_FILTERING");
+    Bottle rf_point_cloud_filtering = rf.findGroup("POINT_CLOUD_FILTERING");
     const double pc_outlier_threshold = rf_point_cloud_filtering.check("outlier_threshold", Value("0.1")).asDouble();
 
     /* Depth. */
-    ResourceFinder rf_depth = rf.findNestedResourceFinder("DEPTH");
+    Bottle rf_depth = rf.findGroup("DEPTH");
     const std::string depth_fetch_mode = rf_depth.check("fetch_mode", Value("new_image")).toString();
     const std::size_t depth_stride     = rf_depth.check("stride", Value(1)).asInt();
 
     /* Hand occlusion. */
-    ResourceFinder rf_hand_occlusion = rf.findNestedResourceFinder("HAND_OCCLUSION");
+    Bottle rf_hand_occlusion = rf.findGroup("HAND_OCCLUSION");
     const bool handle_hand_occlusion            = rf_hand_occlusion.check("handle_occlusion", Value(false)).asBool();
     const std::string hand_laterality_occlusion = rf_hand_occlusion.check("laterality", Value("right")).asString();
     const double hand_occlusion_scale           = rf_hand_occlusion.check("hull_scale", Value(1.0)).asDouble();
 
     /* Hand contacts. */
-    ResourceFinder rf_hand_contacts = rf.findNestedResourceFinder("HAND_CONTACTS");
+    Bottle rf_hand_contacts = rf.findGroup("HAND_CONTACTS");
     const bool handle_hand_contacts                      = rf_hand_contacts.check("handle_contacts", Value(false)).asBool();
     const std::string hand_laterality_contacts           = rf_hand_contacts.check("laterality", Value()).asString();
     std::vector<std::string> used_fingers_contacts;
@@ -258,14 +258,14 @@ int main(int argc, char** argv)
         used_fingers_contacts = loadListString(rf_hand_contacts, "used_fingers");
 
     /* Mesh parameters. */
-    ResourceFinder rf_object = rf.findNestedResourceFinder("OBJECT");
+    Bottle rf_object = rf.findGroup("OBJECT");
     const std::string object_name      = rf_object.check("object_name", Value("006_mustard_bottle")).asString();
     const std::string object_mesh_path = rf.findPath("mesh/" + object_name + ".obj");
     const std::string object_data_path = rf_object.check("path", Value("null")).asString();
 
     /* Segmentation parameters. */
     Vector4d bbox_0;
-    ResourceFinder rf_segmentation    = rf.findNestedResourceFinder("SEGMENTATION");
+    Bottle rf_segmentation    = rf.findGroup("SEGMENTATION");
     const std::string segmentation_type     = rf_segmentation.check("type", Value("in_hand")).asString();
     const std::string iol_object_name       = rf_segmentation.check("iol_object_name", Value("Bottle")).asString();
     const double iol_bbox_scale             = rf_segmentation.check("iol_bbox_scale", Value(1.0)).asDouble();
@@ -278,13 +278,13 @@ int main(int argc, char** argv)
     bool handle_mask_rpc = rf_segmentation.check("handle_mask_rpc", Value(true)).asBool();
 
     /* Rate stabilizer parameters. */
-    ResourceFinder rf_rate_stabilizer = rf.findNestedResourceFinder("RATE_STABILIZER");
+    Bottle rf_rate_stabilizer = rf.findGroup("RATE_STABILIZER");
     bool enable_rate_stabilizer = rf_rate_stabilizer.check("enable", Value(false)).asBool();
     double period_rate_stabilizer = rf_rate_stabilizer.check("period", Value(1.0)).asDouble();
     double set_point_rate_stabilizer = rf_rate_stabilizer.check("set_point", Value(15.0)).asDouble();
 
     /* Logging parameters. */
-    ResourceFinder rf_logging = rf.findNestedResourceFinder("LOG");
+    Bottle rf_logging = rf.findGroup("LOG");
     bool enable_log = rf_logging.check("enable_log", Value(false)).asBool();
     const std::string log_path = rf_logging.check("absolute_log_path", Value("")).asString();
     if (enable_log && log_path == "")

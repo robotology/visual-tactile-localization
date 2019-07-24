@@ -14,11 +14,11 @@ int main(int argc, char* argv[])
     {
         std::cout << "Usage: " << argv[0]
                   << " <use_ground_truth> (true/false)"
-                  << " Filename(.ply)"
-                  << " Trajectory(.txt)"
-                  << " Estimate(.txt)"
-                  << " Prediction(.txt)"
-                  << " Measurements(.txt)" << std::endl;
+                  << " Filename(.obj)"
+                  << " Trajectory"
+                  << " Estimate"
+                  << " Prediction"
+                  << " Measurements" << std::endl;
         return EXIT_FAILURE;
     }
 

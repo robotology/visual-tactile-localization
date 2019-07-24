@@ -175,7 +175,7 @@ Visualizer::Visualizer
     {
         // Load target data
         bool valid_target;
-        std::tie(valid_target, target_) = readStateFromFile(target_data_filename, 13);
+        std::tie(valid_target, target_) = readStateFromFile(target_data_filename, 9);
         if (!valid_target)
         {
             throw std::runtime_error("ERROR::VISUALIZER::CTOR\nERROR:Invalid target data.");
@@ -184,7 +184,7 @@ Visualizer::Visualizer
 
     // Load estimate data
     bool valid_estimate;
-    std::tie(valid_estimate, estimate_) = readStateFromFile(estimate_data_filename, 12);
+    std::tie(valid_estimate, estimate_) = readStateFromFile(estimate_data_filename, 14);
     if (!valid_estimate)
     {
         throw std::runtime_error("ERROR::VISUALIZER::CTOR\nERROR:Invalid estimate data.");
@@ -192,7 +192,7 @@ Visualizer::Visualizer
 
     // Load prediction data
     bool valid_prediction;
-    std::tie(valid_prediction, prediction_) = readStateFromFile(prediction_data_filename, 12);
+    std::tie(valid_prediction, prediction_) = readStateFromFile(prediction_data_filename, 14);
     if (!valid_prediction)
     {
         throw std::runtime_error("ERROR::VISUALIZER::CTOR\nERROR:Invalid prediction data.");
@@ -205,8 +205,8 @@ Visualizer::Visualizer
     {
         throw std::runtime_error("ERROR::VISUALIZER::CTOR\nERROR:Invalid measurements data.");
     }
-    vtk_measurements = std::unique_ptr<Points>(new Points(measurements_[0], 4));
-    vtk_measurements->set_color("red");
+    vtk_measurements = std::unique_ptr<Points>(new Points(measurements_[0], 3));
+    vtk_measurements->set_color("blue");
 
     // Evaluate the total number of steps taking into account the size of the data
     std::vector<int> sizes{static_cast<int>(estimate_.cols()), static_cast<int>(prediction_.cols()), measurements_.size()};
@@ -215,7 +215,7 @@ Visualizer::Visualizer
     num_steps_ = *(std::min_element(sizes.begin(), sizes.end()));
 
     // Load mesh
-    reader_ = vtkSmartPointer<vtkPLYReader>::New();
+    reader_ = vtkSmartPointer<vtkOBJReader>::New();
     reader_->SetFileName(mesh_filename.c_str());
     reader_->Update();
 
@@ -229,17 +229,19 @@ Visualizer::Visualizer
     {
         mesh_actor_ = vtkSmartPointer<vtkActor>::New();
         mesh_actor_->SetMapper(mapper_);
+        mesh_actor_->GetProperty()->SetColor(0.0, 0.9, 0.0);
+        mesh_actor_->GetProperty()->SetOpacity(0.5);
     }
 
     estimate_actor_ = vtkSmartPointer<vtkActor>::New();
     estimate_actor_->SetMapper(mapper_);
     estimate_actor_->GetProperty()->SetColor(0.9, 0.0, 0.0);
-    estimate_actor_->GetProperty()->SetOpacity(0.3);
+    estimate_actor_->GetProperty()->SetOpacity(0.5);
 
-    prediction_actor_ = vtkSmartPointer<vtkActor>::New();
-    prediction_actor_->SetMapper(mapper_);
-    prediction_actor_->GetProperty()->SetColor(0.0, 0.0, 0.9);
-    prediction_actor_->GetProperty()->SetOpacity(0.3);
+    // prediction_actor_ = vtkSmartPointer<vtkActor>::New();
+    // prediction_actor_->SetMapper(mapper_);
+    // prediction_actor_->GetProperty()->SetColor(0.0, 0.0, 0.9);
+    // prediction_actor_->GetProperty()->SetOpacity(0.3);
 
     renderer_ = vtkSmartPointer<vtkRenderer>::New();
     if (use_ground_truth_)
@@ -247,7 +249,7 @@ Visualizer::Visualizer
         renderer_->AddActor(mesh_actor_);
     }
     renderer_->AddActor(estimate_actor_);
-    renderer_->AddActor(prediction_actor_);
+    // renderer_->AddActor(prediction_actor_);
     renderer_->SetBackground(0.8, 0.8, 0.8);
 
     // Measurements part
@@ -302,8 +304,8 @@ void Visualizer::updateView()
     {
         // Get the current data
         Ref<VectorXd> state = target_.col(step_);
-        Ref<Vector3d> pos = state.topRows(3);
-        Ref<Vector4d> quaternion = state.segment(6, 4);
+        Ref<Vector3d> pos = state.segment<3>(2);
+        Ref<Vector4d> axis_angle = state.segment<4>(5);
 
         // Create a new transform
         vtkSmartPointer<vtkTransform> vtk_transform = vtkSmartPointer<vtkTransform>::New();
@@ -312,12 +314,7 @@ void Visualizer::updateView()
         vtk_transform->Translate(pos.data());
 
         // set rotation
-        Quaterniond q;
-        q.w() = quaternion(0);
-        q.x() = quaternion(1);
-        q.y() = quaternion(2);
-        q.z() = quaternion(3);
-        AngleAxisd angle_axis(q);
+        AngleAxisd angle_axis(axis_angle(3), axis_angle.head<3>());
         Vector3d axis = angle_axis.axis();
         vtk_transform->RotateWXYZ(angle_axis.angle() * 180 / M_PI,
                                   axis(0), axis(1), axis(2));
@@ -328,8 +325,8 @@ void Visualizer::updateView()
     {
         // Get the current data
         Ref<VectorXd> state = estimate_.col(step_);
-        Ref<Vector3d> pos = state.topRows(3);
-        Ref<Vector3d> euler = state.bottomRows(3);
+        Ref<Vector3d> pos = state.segment<3>(0);
+        Ref<Vector4d> axis_angle = state.segment<4>(3);
 
         // Create a new transform
         vtkSmartPointer<vtkTransform> vtk_transform = vtkSmartPointer<vtkTransform>::New();
@@ -338,10 +335,7 @@ void Visualizer::updateView()
         vtk_transform->Translate(pos.data());
 
         // Set rotation
-        Quaterniond q = AngleAxis<double>(euler(0), Vector3d::UnitZ()) *
-                        AngleAxis<double>(euler(1), Vector3d::UnitY()) *
-                        AngleAxis<double>(euler(2), Vector3d::UnitX());
-        AngleAxisd angle_axis(q);
+        AngleAxisd angle_axis(axis_angle(3), axis_angle.head<3>());
         Vector3d axis = angle_axis.axis();
         vtk_transform->RotateWXYZ(angle_axis.angle() * 180 / M_PI,
                                   axis(0), axis(1), axis(2));
@@ -349,33 +343,33 @@ void Visualizer::updateView()
         estimate_actor_->SetUserTransform(vtk_transform);
     }
     // Prediction
-    {
-        // Get the current data
-        Ref<VectorXd> state = prediction_.col(step_);
-        Ref<Vector3d> pos = state.topRows(3);
-        Ref<Vector3d> euler = state.bottomRows(3);
+    // {
+        // // Get the current data
+        // Ref<VectorXd> state = prediction_.col(step_);
+        // Ref<Vector3d> pos = state.topRows(3);
+        // Ref<Vector3d> euler = state.bottomRows(3);
 
-        // Create a new transform
-        vtkSmartPointer<vtkTransform> vtk_transform = vtkSmartPointer<vtkTransform>::New();
+        // // Create a new transform
+        // vtkSmartPointer<vtkTransform> vtk_transform = vtkSmartPointer<vtkTransform>::New();
 
-        // Set translation
-        vtk_transform->Translate(pos.data());
+        // // Set translation
+        // vtk_transform->Translate(pos.data());
 
-        // Set rotation
-        Quaterniond q = AngleAxis<double>(euler(0), Vector3d::UnitZ()) *
-                        AngleAxis<double>(euler(1), Vector3d::UnitY()) *
-                        AngleAxis<double>(euler(2), Vector3d::UnitX());
-        AngleAxisd angle_axis(q);
-        Vector3d axis = angle_axis.axis();
-        vtk_transform->RotateWXYZ(angle_axis.angle() * 180 / M_PI,
-                                  axis(0), axis(1), axis(2));
-        // Apply transform
-        prediction_actor_->SetUserTransform(vtk_transform);
-    }
+        // // Set rotation
+        // Quaterniond q = AngleAxis<double>(euler(0), Vector3d::UnitZ()) *
+        //                 AngleAxis<double>(euler(1), Vector3d::UnitY()) *
+        //                 AngleAxis<double>(euler(2), Vector3d::UnitX());
+        // AngleAxisd angle_axis(q);
+        // Vector3d axis = angle_axis.axis();
+        // vtk_transform->RotateWXYZ(angle_axis.angle() * 180 / M_PI,
+        //                           axis(0), axis(1), axis(2));
+        // // Apply transform
+        // prediction_actor_->SetUserTransform(vtk_transform);
+    // }
 
     // Set measurements
     vtk_measurements->set_points(measurements_[step_]);
-    vtk_measurements->set_color("red");
+    vtk_measurements->set_color("blue");
 
     // Render
     renderWindowInteractor_->Render();

@@ -326,6 +326,11 @@ void PFilter::filteringStep()
 
     correction_->correct(pred_particle_, cor_particle_);
 
+    // FIXME:
+    // In case of skipped correction, this samples
+    // particles from the predicted distribution
+    cor_particle_.state()  = cor_particle_.mean();
+
     /* Normalize weights using LogSumExp. */
     cor_particle_.weight().array() -= utils::log_sum_exp(cor_particle_.weight());
 

@@ -18,6 +18,7 @@
 #include <iCubSpringyFingersDetection.h>
 #include <InHandObjectSegmentation.h>
 #include <InitParticles.h>
+#include <InitParticlesGroundTruth.h>
 #include <LocalizeSuperquadricSampler.h>
 #include <MaskSegmentation.h>
 #include <NanoflannPointCloudPrediction.h>
@@ -196,13 +197,13 @@ int main(int argc, char** argv)
     VectorXd center_0            = loadVectorDouble(rf_initial_conditions, "center_0",      6);
     VectorXd radius_0            = loadVectorDouble(rf_initial_conditions, "radius_0",      6);
     const bool& use_superq_guess = rf_initial_conditions.check("use_superq_guess", Value(false)).asBool();
+    const bool& use_ground_truth = rf_initial_conditions.check("use_ground_truth", Value(false)).asBool();
 
     /* Camera parameters. */
     ResourceFinder rf_camera = rf.findNestedResourceFinder("CAMERA");
     const std::string camera_name         = rf_camera.check("name", Value("iCubCamera")).asString();
     const std::string camera_laterality   = rf_camera.check("laterality", Value("left")).asString();
     const std::string camera_fallback_key = rf_camera.check("fallback_key", Value("icub_320_240")).asString();
-    const std::string camera_path         = rf_camera.check("path", Value("null")).asString();
 
     /* Kinematic model. */
     ResourceFinder rf_kinematic_model = rf.findNestedResourceFinder("KINEMATIC_MODEL");
@@ -258,15 +259,14 @@ int main(int argc, char** argv)
 
     /* Mesh parameters. */
     ResourceFinder rf_object = rf.findNestedResourceFinder("OBJECT");
-    const std::string object_name          = rf_object.check("object_name", Value("ycb_mustard")).asString();
-    const std::string object_mesh_path_obj = rf.findPath("mesh/" + object_name) + "/nontextured.obj";
-    const std::string object_mesh_path_ply = rf.findPath("mesh/" + object_name) + "/nontextured.ply";
+    const std::string object_name      = rf_object.check("object_name", Value("006_mustard_bottle")).asString();
+    const std::string object_mesh_path = rf.findPath("mesh/" + object_name + ".obj");
+    const std::string object_data_path = rf_object.check("path", Value("null")).asString();
 
     /* Segmentation parameters. */
     Vector4d bbox_0;
     ResourceFinder rf_segmentation    = rf.findNestedResourceFinder("SEGMENTATION");
     const std::string segmentation_type     = rf_segmentation.check("type", Value("in_hand")).asString();
-    const std::string segmentation_path     = rf_segmentation.check("path", Value("null")).asString();
     const std::string iol_object_name       = rf_segmentation.check("iol_object_name", Value("Bottle")).asString();
     const double iol_bbox_scale             = rf_segmentation.check("iol_bbox_scale", Value(1.0)).asDouble();
     const bool use_initial_bounding_box     = rf_segmentation.check("use_bbox_0", Value(false)).asBool();
@@ -275,7 +275,6 @@ int main(int argc, char** argv)
         bbox_0.head<2>() = loadVectorDouble(rf_segmentation, "bbox_tl_0", 2);
         bbox_0.tail<2>() = loadVectorDouble(rf_segmentation, "bbox_br_0", 2);
     }
-    std::string mask_name = rf_segmentation.check("mask_name", Value("006_mustard_bottle")).asString();
     bool handle_mask_rpc = rf_segmentation.check("handle_mask_rpc", Value(true)).asBool();
 
     /* Rate stabilizer parameters. */
@@ -313,12 +312,12 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- cov_eul_0: "        << eigenToString(cov_eul_0);
     yInfo() << log_ID << "- cov_eul_dot_0: "    << eigenToString(cov_eul_dot_0);
     yInfo() << log_ID << "- use_superq_guess: " << use_superq_guess;
+    yInfo() << log_ID << "- use_ground_truth: " << use_ground_truth;
 
     yInfo() << log_ID << "Camera:";
     yInfo() << log_ID << "- name:"         << camera_name;
     yInfo() << log_ID << "- laterality:"   << camera_laterality;
     yInfo() << log_ID << "- fallback_key:" << camera_fallback_key;
-    yInfo() << log_ID << "- path:"         << camera_path;
 
     yInfo() << log_ID << "Kinematic model:";
     yInfo() << log_ID << "- q_x:"             << eigenToString(kin_q_x);
@@ -352,13 +351,12 @@ int main(int argc, char** argv)
     yInfo() << log_ID << "- hull_scale:" << hand_occlusion_scale;
 
     yInfo() << log_ID << "Object:";
-    yInfo() << log_ID << "- object_name:"        << object_name;
-    yInfo() << log_ID << "- mesh path is (obj):" << object_mesh_path_obj;
-    yInfo() << log_ID << "- mesh path is (ply):" << object_mesh_path_ply;
+    yInfo() << log_ID << "- object_name:"         << object_name;
+    yInfo() << log_ID << "- object_data_path:"    << object_data_path;
+    yInfo() << log_ID << "- mesh path is (obj):"  << object_mesh_path;
 
     yInfo() << log_ID << "Segmentation:";
     yInfo() << log_ID << "- type:" << segmentation_type;
-    yInfo() << log_ID << "- path:" << segmentation_path;
     yInfo() << log_ID << "- iol_object_name:" << iol_object_name;
     yInfo() << log_ID << "- iol_bbox_scale:"  << iol_bbox_scale;
     yInfo() << log_ID << "- use_bbox_0:"      << use_initial_bounding_box;
@@ -408,7 +406,7 @@ int main(int argc, char** argv)
     {
         camera = std::unique_ptr<YcbVideoCameraNrt>
         (
-            new YcbVideoCameraNrt(camera_path, 320, 240, "object-tracking")
+            new YcbVideoCameraNrt(object_data_path, 320, 240, "object-tracking")
         );
     }
     else
@@ -430,7 +428,7 @@ int main(int argc, char** argv)
         const std::string sicad_shader_path = rf.findPath("shader/");
         std::unique_ptr<ObjectRenderer> object_renderer = std::unique_ptr<ObjectRenderer>
         (
-            new ObjectRenderer(object_mesh_path_obj, sicad_shader_path, *camera)
+            new ObjectRenderer(object_mesh_path, sicad_shader_path, *camera)
         );
 
         if (use_initial_bounding_box)
@@ -480,14 +478,14 @@ int main(int argc, char** argv)
         (
             // If point cloud prediction module is done using class LocalizeSuperquadricSampler as sampler
             // then it is not required to initialize the mask streaming since already done
-            new MaskSegmentation(port_prefix, mask_name, depth_stride, handle_mask_rpc && (pc_pred_type != "localize_superquadric"))
+            new MaskSegmentation(port_prefix, object_name, depth_stride, handle_mask_rpc && (pc_pred_type != "localize_superquadric"))
         );
     }
     else if (segmentation_type == "masknrt")
     {
         segmentation = std::unique_ptr<MaskSegmentation>
         (
-            new MaskSegmentation(port_prefix, segmentation_path, mask_name, depth_stride)
+            new MaskSegmentation(port_prefix, object_data_path, object_name, depth_stride)
         );
     }
     else
@@ -502,7 +500,7 @@ int main(int argc, char** argv)
     std::unique_ptr<ObjectSampler> obj_sampler;
     std::unique_ptr<ParticleSetInitialization> superquadric_particle_initialization;
     if (pc_pred_type == "mesh")
-        obj_sampler = std::unique_ptr<ObjectMeshSampler>(new ObjectMeshSampler(object_mesh_path_ply));
+        obj_sampler = std::unique_ptr<ObjectMeshSampler>(new ObjectMeshSampler(object_mesh_path));
     else if (pc_pred_type == "superquadric")
     {
 #ifdef USE_SUPERQUADRICLIB
@@ -534,7 +532,7 @@ int main(int argc, char** argv)
     {
         std::unique_ptr<LocalizeSuperquadricSampler> sampler = std::unique_ptr<LocalizeSuperquadricSampler>
         (
-            new LocalizeSuperquadricSampler("object-tracking/localize-superquadric", segmentation_path, camera_path)
+            new LocalizeSuperquadricSampler("object-tracking/localize-superquadric", object_data_path, object_data_path)
         );
         superquadric_particle_initialization = sampler->getParticleSetInitialization();
         obj_sampler = std::move(sampler);
@@ -677,9 +675,9 @@ int main(int argc, char** argv)
     MatrixXd covariance_0 = initial_covariance.asDiagonal();
     std::unique_ptr<ParticleSetInitialization> pf_initialization;
     if (use_superq_guess && (pc_pred_type == "localize_superquadric" || pc_pred_type == "localize_superquadric_nrt"))
-    {
         pf_initialization = std::move(superquadric_particle_initialization);
-    }
+    else if (use_ground_truth)
+        pf_initialization = std::unique_ptr<InitParticlesGroundTruth>(new InitParticlesGroundTruth(object_data_path, object_name, covariance_0));
     else
         pf_initialization = std::unique_ptr<InitParticles>(new InitParticles(center_0, radius_0, covariance_0));
 
@@ -692,7 +690,7 @@ int main(int argc, char** argv)
 
     /* Likelihood. */
     std::unique_ptr<ObjectSampler> obj_sampler_likelihood = std::unique_ptr<ObjectMeshSampler>(
-        new ObjectMeshSampler(object_mesh_path_ply));
+        new ObjectMeshSampler(object_mesh_path));
 
     std::unique_ptr<ProximityLikelihood> proximity_likelihood = std::unique_ptr<ProximityLikelihood>(
         new ProximityLikelihood(likelihood_variance, point_cloud_prediction));
@@ -708,7 +706,7 @@ int main(int argc, char** argv)
     {
         validator = std::unique_ptr<Validator2D>
         (
-            new Validator2D(point_cloud_prediction, "object-tracking/validator2d", camera_path)
+            new Validator2D(point_cloud_prediction, "object-tracking/validator2d", object_data_path)
         );
     }
     else

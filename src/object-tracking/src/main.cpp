@@ -166,6 +166,9 @@ int main(int argc, char** argv)
     /* Get robot name. */
     const std::string robot = rf.check("robot", Value("icub")).asString();
 
+    /* Get autostart flag. */
+    const bool autostart = rf.check("autostart", Value(false)).asBool();
+
     Network yarp;
     if (!yarp.checkNetwork())
     {
@@ -747,6 +750,9 @@ int main(int argc, char** argv)
     std::cout << "done." << std::endl;
 
     std::cout << "Running filter..." << std::endl;
+
+    if (autostart)
+        filter->run();
 
     if (!filter->wait())
         return EXIT_FAILURE;

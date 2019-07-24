@@ -125,14 +125,13 @@ Viewer::Viewer(const std::string port_prefix, ResourceFinder& rf)
     const std::string object_name = rf_object.check("object_name", Value("ycb_mustard")).asString();
     yInfo() << log_ID_ << "- object_name:" << object_name;
 
-    const std::string mesh_path = rf_object_tracking.findPath("mesh/" + object_name) + "/nontextured.ply";
+    const std::string mesh_path = rf_object_tracking.findPath("mesh/" + object_name + ".obj");
     yInfo() << log_ID_ << "- mesh_path:" << mesh_path;
 
-    // Load camera path from the default configuration file of module object-tracking
-    ResourceFinder rf_camera = rf_object_tracking.findNestedResourceFinder("CAMERA");
-    const std::string camera_path = rf_camera.check("path", Value("null")).asString();
+    // Load camera data from the default configuration file of module object-tracking
+    const std::string camera_path = rf_object.check("path", Value("null")).asString();
 
-    reader_ = vtkSmartPointer<vtkPLYReader>::New();
+    reader_ = vtkSmartPointer<vtkOBJReader>::New();
     reader_->SetFileName(mesh_path.c_str());
     reader_->Update();
 

@@ -15,7 +15,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkInteractorStyleSwitch.h>
 #include <vtkOrientationMarkerWidget.h>
-#include <vtkPLYReader.h>
+#include <vtkOBJReader.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPointData.h>
 #include <vtkProperty.h>
@@ -185,7 +185,7 @@ private:
 
     std::unique_ptr<Points> vtk_measurements_;
 
-    vtkSmartPointer<vtkPLYReader> reader_;
+    vtkSmartPointer<vtkOBJReader> reader_;
 
     vtkSmartPointer<vtkPolyDataMapper> mapper_;
 

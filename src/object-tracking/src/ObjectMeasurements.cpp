@@ -30,7 +30,10 @@ ObjectMeasurements::ObjectMeasurements
     depth_fetch_mode_(depth_fetch_mode),
     enable_log_(enable_log),
     log_path_(log_path)
-{ }
+{
+    if (enable_log_)
+        this->enable_log(log_path_, "object-tracking");
+}
 
 
 ObjectMeasurements::ObjectMeasurements

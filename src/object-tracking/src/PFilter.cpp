@@ -93,6 +93,9 @@ PFilter::PFilter
     rate_.setMethod(EstimatesExtraction::ExtractionMethod::emean);
     rate_.setMobileAverageWindowSize(15);
 
+    if (enable_log_)
+        this->enable_log(log_path_, "object-tracking");
+
     yInfo() << log_ID_ << "RPC command port opened and attached. Ready to recieve commands!";
 }
 

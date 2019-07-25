@@ -25,7 +25,7 @@ public:
 
     virtual bool freezeSegmentation(Camera& camera) = 0;
 
-    virtual std::pair<bool, Eigen::MatrixXd> extractPointCloud(Camera& camera, const Eigen::Ref<const Eigen::MatrixXf>& depth, const double& max_depth = 1.0) = 0;
+    virtual std::pair<bool, Eigen::MatrixXd> extractPointCloud(Camera& camera, const Eigen::Ref<const Eigen::MatrixXf>& depth, const double& max_depth) = 0;
 
     virtual void addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_occlusion);
 

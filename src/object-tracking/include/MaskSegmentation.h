@@ -31,7 +31,7 @@ public:
 
     bool freezeSegmentation(Camera& camera) override;
 
-    std::pair<bool, Eigen::MatrixXd> extractPointCloud(Camera& camera, const Eigen::Ref<const Eigen::MatrixXf>& depth, const double& max_depth = 1.0) override;
+    std::pair<bool, Eigen::MatrixXd> extractPointCloud(Camera& camera, const Eigen::Ref<const Eigen::MatrixXf>& depth, const double& max_depth) override;
 
     bool getProperty(const std::string& property) const override;
 

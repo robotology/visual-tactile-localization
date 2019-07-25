@@ -65,7 +65,7 @@ bool PointCloudDumper::freeze()
     bool blocking_call = false;
     bool valid_point_cloud;
     MatrixXd point_cloud;
-    std::tie(valid_point_cloud, point_cloud) = segmentation_->extractPointCloud(*camera_, depth_);
+    std::tie(valid_point_cloud, point_cloud) = segmentation_->extractPointCloud(*camera_, depth_, 10.0);
     if (!valid_point_cloud)
         return false;
 

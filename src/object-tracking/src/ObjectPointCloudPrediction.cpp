@@ -51,7 +51,7 @@ bool ObjectPointCloudPrediction::init()
 }
 
 
-std::pair<bool, MatrixXd> ObjectPointCloudPrediction::predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas)
+std::pair<bool, MatrixXd> ObjectPointCloudPrediction::predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas, const bool& enforce_no_normals)
 {
     // Check if meas size is multiple of 3
     if ((meas.size() % 3) != 0)

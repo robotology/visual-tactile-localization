@@ -371,6 +371,11 @@ void Visualizer::updateView()
     vtk_measurements->set_points(measurements_[step_]);
     vtk_measurements->set_color("blue");
 
+    // std::ofstream out;
+    // out.open("./measurements_" + std::to_string(step_));
+    // out << measurements_[step_].transpose();
+    // out.close();
+
     // Render
     renderWindowInteractor_->Render();
 }

@@ -15,6 +15,7 @@
 #include <BayesFilters/StateModel.h>
 
 #include <Correction.h>
+#include <ObjectMeasurements.h>
 #include <ProximityLikelihood.h>
 
 #include <functional>
@@ -22,7 +23,21 @@
 #include <random>
 
 
-class ParticlesCorrection : public bfl::PFCorrection
+class CorrectionReference
+{
+public:
+    CorrectionReference();
+
+    CorrectionReference(Correction& correction);
+
+    ObjectMeasurements& getObjectMeasurementsModelPrivate();
+
+    ObjectMeasurements* measurement_model_;
+};
+
+
+class ParticlesCorrection : CorrectionReference,
+                            public bfl::PFCorrection
 {
 public:
     ParticlesCorrection(std::unique_ptr<Correction> gaussian_correction, std::unique_ptr<ProximityLikelihood> likihood_model/*, std::unique_ptr<bfl::StateModel> state_model*/, const bool& sample_from_mean) noexcept;
@@ -38,6 +53,8 @@ public:
     void setMeasurementModel(std::unique_ptr<bfl::MeasurementModel> measurement_model) override;
 
     bfl::MeasurementModel& getMeasurementModel() override;
+
+    ObjectMeasurements& getObjectMeasurementsModel();
 
     bfl::LikelihoodModel& getLikelihoodModel() override;
 

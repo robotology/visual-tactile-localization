@@ -19,6 +19,26 @@ using namespace bfl;
 using namespace Eigen;
 
 
+CorrectionReference::CorrectionReference()
+{ }
+
+
+CorrectionReference::CorrectionReference(Correction& correction)
+{
+    if (Correction* p = dynamic_cast<Correction*>(&correction))
+    {
+        measurement_model_ = &(p->getObjectMeasurementsModel());
+        std::cout << measurement_model_ << std::endl;
+    }
+}
+
+
+ObjectMeasurements& CorrectionReference::getObjectMeasurementsModelPrivate()
+{
+    return *measurement_model_;
+}
+
+
 ParticlesCorrection::ParticlesCorrection
 (
     std::unique_ptr<Correction> gauss_corr,
@@ -38,6 +58,7 @@ ParticlesCorrection::ParticlesCorrection
     const bool& sample_from_mean,
     unsigned int seed
 ) noexcept :
+    CorrectionReference(*gauss_corr),
     gaussian_correction_(std::move(gauss_corr)),
     likelihood_model_(std::move(lik_model)),
     // state_model_(std::move(state_model)),
@@ -77,6 +98,12 @@ void ParticlesCorrection::setMeasurementModel(std::unique_ptr<MeasurementModel> 
 MeasurementModel& ParticlesCorrection::getMeasurementModel()
 {
     return gaussian_correction_->getMeasurementModel();
+}
+
+
+ObjectMeasurements& ParticlesCorrection::getObjectMeasurementsModel()
+{
+    return getObjectMeasurementsModelPrivate();
 }
 
 

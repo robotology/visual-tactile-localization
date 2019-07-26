@@ -16,6 +16,7 @@
 #include <BayesFilters/Resampling.h>
 #include <BayesFilters/SIS.h>
 
+#include <ObjectMeasurements.h>
 #include <PointCloudSegmentation.h>
 #include <RateStabilizer.h>
 #include <Validator2D.h>
@@ -27,7 +28,19 @@
 #include <thrift/ObjectTrackingIDL.h>
 
 
-class PFilter : public bfl::SIS,
+class ParticlesCorrectionReference
+{
+public:
+    ParticlesCorrectionReference(bfl::PFCorrection& correction);
+
+    ObjectMeasurements& getObjectMeasurementsModel();
+private:
+    ObjectMeasurements* measurement_model_;
+};
+
+
+class PFilter : public ParticlesCorrectionReference,
+                public bfl::SIS,
                 public ObjectTrackingIDL
 {
 public:

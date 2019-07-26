@@ -9,6 +9,7 @@
 #include <omp.h>
 #endif
 
+#include <ParticlesCorrection.h>
 #include <PFilter.h>
 
 #include <BayesFilters/utils.h>
@@ -20,6 +21,22 @@ using namespace bfl;
 using namespace Eigen;
 using namespace yarp::eigen;
 using namespace yarp::sig;
+
+
+ParticlesCorrectionReference::ParticlesCorrectionReference(PFCorrection& correction)
+{
+    if (ParticlesCorrection* p = dynamic_cast<ParticlesCorrection*>(&correction))
+    {
+        measurement_model_ = &(p->getObjectMeasurementsModel());
+        std::cout << measurement_model_ << std::endl;
+    }
+}
+
+
+ObjectMeasurements& ParticlesCorrectionReference::getObjectMeasurementsModel()
+{
+    return *measurement_model_;
+}
 
 
 PFilter::PFilter
@@ -39,6 +56,7 @@ PFilter::PFilter
     const bool& enable_log,
     const std::string& log_path
 ) :
+    ParticlesCorrectionReference(*correction),
     SIS
     (
         num_particle,
@@ -327,7 +345,13 @@ void PFilter::filteringStep()
     if (getFilteringStep() != 0)
         prediction_->predict(cor_particle_, pred_particle_);
 
+    if (getFilteringStep() == 0)
+        getObjectMeasurementsModel().setObjectPose(pred_particle_.mean(0));
+
     correction_->correct(pred_particle_, cor_particle_);
+
+    if (getFilteringStep() != 0)
+        getObjectMeasurementsModel().setObjectPose(cor_particle_.mean(0));
 
     // FIXME:
     // In case of skipped correction, this samples

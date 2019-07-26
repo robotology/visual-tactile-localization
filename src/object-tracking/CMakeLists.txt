@@ -53,6 +53,12 @@ endif()
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
+# mlpack
+find_package(MLPACK REQUIRED)
+
+# armadillo
+find_package(Armadillo REQUIRED)
+
 set(${EXE_TARGET_NAME}_HDR
     include/BoundingBoxSegmentation.h
     include/ContactDetection.h
@@ -168,6 +174,8 @@ target_include_directories(${EXE_TARGET_NAME}
                            # https://github.com/cnr-isti-vclab/vcglib
                            ${CMAKE_CURRENT_SOURCE_DIR}/include/vcglib
                            ${OPENGL_INCLUDE_DIRS}
+                           ${ARMADILLO_INCLUDE_DIRS}
+                           ${MLPACK_INCLUDE_DIRS}
                            )
 
 target_link_libraries(${EXE_TARGET_NAME}
@@ -185,6 +193,8 @@ target_link_libraries(${EXE_TARGET_NAME}
                       iCubFingersEncoders
                       CameraLibrary
                       ${VTK_LIBRARIES}
+                      ${ARMADILLO_LIBRARIES}
+                      ${MLPACK_LIBRARIES}
                       )
 
 if (USE_OPENMP)

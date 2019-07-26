@@ -127,30 +127,31 @@ bool ObjectMeasurements::freeze()
     // kfn->TreeType() = KFNModel::KD_TREE;
     // kfn->RandomBasis() = false;
 
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
     bool found_outlier = false;
-    std::vector<int> excluded_points;
+    VectorXi excluded_points = VectorXi::Zero(point_cloud.cols());
 
     std::cout << "Number points: " << point_cloud.cols() << std::endl;
-    point_cloud_tmp = point_cloud;
-    prediction_tmp = prediction;
+    point_cloud_tmp.swap(point_cloud);
+    prediction_tmp.swap(prediction);
     do
     {
-        if (excluded_points.size() != 0)
+        if (excluded_points.sum() != 0)
         {
-            point_cloud_tmp.resize(point_cloud.rows(), point_cloud.cols() - excluded_points.size());
+            point_cloud_tmp.resize(point_cloud.rows(), point_cloud.cols() - excluded_points.sum());
             prediction_tmp.resize(point_cloud_tmp.rows(), point_cloud_tmp.cols());
             for (std::size_t i = 0, j = 0; i < point_cloud.cols(); i++)
             {
-                if (std::find(excluded_points.begin(), excluded_points.end(), i) == excluded_points.end())
+                if (excluded_points(i) == 0)
                 {
                     point_cloud_tmp.col(j).swap(point_cloud.col(i));
                     prediction_tmp.col(j).swap(prediction.col(i));
                     j++;
                 }
             }
-            excluded_points.clear();
+            excluded_points = VectorXi::Zero(point_cloud_tmp.cols());
         }
-
         // std::ofstream pc;
         // pc.open("./pc" + std::to_string(counter) + ".OFF");
         // pc << "OFF" << std::endl;
@@ -180,46 +181,52 @@ bool ObjectMeasurements::freeze()
         // fn.close();
 
         found_outlier = false;
+#pragma omp parallel for
         for (std::size_t i = 0; i < point_cloud_tmp.cols(); i++)
         {
-            // Query point
-            Vector3d q = point_cloud_tmp.col(i);
-
-            // Projected point
-            Vector3d q_p = prediction_tmp.col(i);
-
-            // Furthest point to q
-            Vector3d f = point_cloud_tmp.col(neighbors(i));
-
-            // Projected point
-            Vector3d f_p = prediction_tmp.col(neighbors(i));
-
-            // Distance in real point cloud
-            double dist_real = (q - f).norm();
-
-            // Distance in projection
-            double dist_proj = (q_p - f_p).norm();
-
-            if (abs(dist_proj - dist_real) > 0.01)
+            if (!found_outlier)
             {
-                // Distance of outlier candidates to their projections
-                double dist_1 = (q - q_p).norm();
-                double dist_2 = (f - f_p).norm();
-                int excluded;
-                if (dist_1 > dist_2)
-                    excluded = i;
-                else
-                    excluded = neighbors(i);
-                excluded_points.push_back(excluded);
-                found_outlier = true;
-                break;
+                // Query point
+                Vector3d q = point_cloud_tmp.col(i);
+
+                // Projected point
+                Vector3d q_p = prediction_tmp.col(i);
+
+                // Furthest point to q
+                Vector3d f = point_cloud_tmp.col(neighbors(i));
+
+                // Projected point
+                Vector3d f_p = prediction_tmp.col(neighbors(i));
+
+                // Distance in real point cloud
+                double dist_real = (q - f).norm();
+
+                // Distance in projection
+                double dist_proj = (q_p - f_p).norm();
+
+                if (abs(dist_proj - dist_real) > 0.01)
+                {
+                    // Distance of outlier candidates to their projections
+                    double dist_1 = (q - q_p).norm();
+                    double dist_2 = (f - f_p).norm();
+                    int excluded;
+                    if (dist_1 > dist_2)
+                        excluded_points(i) = 1;
+                    else
+                        excluded_points(neighbors(i))  = 1;
+                    found_outlier = true;
+                }
             }
         }
 
-        point_cloud = point_cloud_tmp;
-        prediction = prediction_tmp;
+        point_cloud.swap(point_cloud_tmp);
+        prediction.swap(prediction_tmp);
     } while(found_outlier);
-    std::cout << "Inliers: " << point_cloud.cols() << std::endl;;
+    std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+    double execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    std::cout << "Inliers: " << point_cloud.cols() << std::endl;
+    std::cout << "Outlier rejection execution time: " << execution_time << std::endl;
 
     visual_data_size_ = point_cloud.cols();
 

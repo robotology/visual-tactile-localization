@@ -91,9 +91,13 @@ bool NanoflannPointCloudPrediction::init()
 }
 
 
-std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas)
+std::pair<bool, MatrixXd> NanoflannPointCloudPrediction::predictPointCloud(ConstMatrixXdRef state, ConstVectorXdRef meas, const bool& enforce_no_normals)
 {
-    bool use_normals = use_normals_;
+    bool use_normals;
+    if (enforce_no_normals)
+        use_normals = false;
+    else
+        use_normals = use_normals_;
 
     // Check if meas size is multiple of 3
     if ((meas.size() % 3) != 0)

@@ -49,6 +49,8 @@ public:
 
     bool setProperty(const std::string& property) override;
 
+    void setObjectPose(const Eigen::VectorXd& pose);
+
 protected:
 
     bool getDepth();
@@ -91,6 +93,8 @@ protected:
     Eigen::Matrix3d visual_noise_covariance_;
 
     Eigen::Matrix3d tactile_noise_covariance_;
+
+    Eigen::VectorXd object_pose_;
 
     bool has_tactile_noise_covariance_ = false;
 

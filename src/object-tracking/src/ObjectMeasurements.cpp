@@ -207,6 +207,12 @@ bool ObjectMeasurements::setProperty(const std::string& property)
 }
 
 
+void ObjectMeasurements::setObjectPose(const Eigen::VectorXd& pose)
+{
+    object_pose_ = pose;
+}
+
+
 bool ObjectMeasurements::getDepth()
 {
     std::string mode = depth_fetch_mode_;

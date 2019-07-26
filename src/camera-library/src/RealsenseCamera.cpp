@@ -161,7 +161,7 @@ std::pair<bool, cv::Mat> RealsenseCamera::getRgbImage(const bool& blocking)
         return std::make_pair(false, cv::Mat());
 
     cv::Mat image = yarp::cv::toCvMat(*image_in);
-    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
+    // cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
 
     return std::make_pair(true, image);
     // }

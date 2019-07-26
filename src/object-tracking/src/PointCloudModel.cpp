@@ -33,7 +33,7 @@ std::pair<bool, bfl::Data> PointCloudModel::predictedMeasure(const Eigen::Ref<co
 
     bool valid_prediction;
     MatrixXd prediction;
-    std::tie(valid_prediction, prediction) = prediction_->predictPointCloud(cur_states, any::any_cast<MatrixXd>(measurement).col(0));
+    std::tie(valid_prediction, prediction) = prediction_->predictPointCloud(cur_states, any::any_cast<MatrixXd>(measurement).col(0), false);
 
     if (!valid_prediction)
         return std::make_pair(false, Data());

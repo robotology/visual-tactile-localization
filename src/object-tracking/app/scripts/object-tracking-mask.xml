@@ -164,6 +164,12 @@
     <protocol>tcp</protocol>
   </connection>
 
+  <connection>
+    <from>/object-tracking/segmentation:o</from>
+    <to>/object-tracking/validator2d/rgbImage:i</to>
+    <protocol>mjpeg</protocol>
+  </connection>
+
   <!-- used by instance segmenter -->
   <connection>
     <from>/depthCamera/rgbImage:o</from>

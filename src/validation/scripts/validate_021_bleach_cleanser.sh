@@ -1,6 +1,6 @@
 # 021_bleach_cleanser found in videos 51 54 55 57
 ROOT=/mnt/ycb_video/640_480
-NAME=021_bleacher_cleanser
+NAME=021_bleach_cleanser
 OUTPUT=/home/xenvre/validation/$NAME
 
 for video_id in 0051 0054 0055 0057;

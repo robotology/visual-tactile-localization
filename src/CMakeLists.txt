@@ -13,6 +13,7 @@ add_subdirectory(icub-fingers-encoders)
 add_subdirectory(sfm-library)
 add_subdirectory(object-tracking-depth)
 add_subdirectory(object-tracking)
+add_subdirectory(validation)
 
 option(BUILD_OBJECT_TRACKING_LOGGER "Build object-tracking-logger" OFF)
 if (BUILD_OBJECT_TRACKING_LOGGER)

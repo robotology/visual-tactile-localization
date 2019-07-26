@@ -125,27 +125,27 @@ void ParticlesCorrection::correctStep(const bfl::ParticleSet& pred_particles, bf
     gaussian_correction_->correctStep(pred_particles, corr_particles);
 
     /* Sample from the proposal distribution. */
-    #pragma omp parallel for
-    for (std::size_t i = 0; i < pred_particles.components; i++)
-    {
-        if (sample_from_mean_)
-            corr_particles.state(i) = corr_particles.mean(i);
-        else
-            corr_particles.state(i) = sampleFromProposal(corr_particles.mean(i), corr_particles.covariance(i));
-    }
+    // #pragma omp parallel for
+    // for (std::size_t i = 0; i < pred_particles.components; i++)
+    // {
+    //     if (sample_from_mean_)
+    //         corr_particles.state(i) = corr_particles.mean(i);
+    //     else
+    //         corr_particles.state(i) = sampleFromProposal(corr_particles.mean(i), corr_particles.covariance(i));
+    // }
 
     /* Evaluate the likelihood. */
-    std::tie(valid_likelihood_, likelihood_) = likelihood_model_->likelihood(getMeasurementModel(), corr_particles.state());
+    // std::tie(valid_likelihood_, likelihood_) = likelihood_model_->likelihood(getMeasurementModel(), corr_particles.state());
 
-    if (!valid_likelihood_)
-    {
-        corr_particles = pred_particles;
+    // if (!valid_likelihood_)
+    // {
+    //     corr_particles = pred_particles;
 
-        return;
-    }
+    //     return;
+    // }
 
     /* Update weights in the log space. */
-    corr_particles.weight() = pred_particles.weight() + likelihood_;
+    // corr_particles.weight() = pred_particles.weight() + likelihood_;
     // for (std::size_t i = 0; i < pred_particles.components; i++)
     //     corr_particles.weight(i) = pred_particles.weight(i) + likelihood_(i) -
     //         evaluateProposal(corr_particles.state(i), corr_particles.mean(i), corr_particles.covariance(i));

@@ -353,30 +353,25 @@ void PFilter::filteringStep()
     if (getFilteringStep() != 0)
         getObjectMeasurementsModel().setObjectPose(cor_particle_.mean(0));
 
-    // FIXME:
-    // In case of skipped correction, this samples
-    // particles from the predicted distribution
-    cor_particle_.state()  = cor_particle_.mean();
-
     /* Normalize weights using LogSumExp. */
-    cor_particle_.weight().array() -= utils::log_sum_exp(cor_particle_.weight());
+    // cor_particle_.weight().array() -= utils::log_sum_exp(cor_particle_.weight());
 
-    double neff = resampling_->neff(cor_particle_.weight());
-    if (neff < static_cast<double>(num_particle_) * resampling_threshold_)
-    {
-        ParticleSet res_particle(num_particle_, state_size_);
-        VectorXi res_parent(num_particle_, 1);
+    // double neff = resampling_->neff(cor_particle_.weight());
+    // if (neff < static_cast<double>(num_particle_) * resampling_threshold_)
+    // {
+    //     ParticleSet res_particle(num_particle_, state_size_);
+    //     VectorXi res_parent(num_particle_, 1);
 
-        resampling_->resample(cor_particle_, res_particle, res_parent);
+    //     resampling_->resample(cor_particle_, res_particle, res_parent);
 
-        cor_particle_ = res_particle;
-    }
+    //     cor_particle_ = res_particle;
+    // }
 
     // Use mean estimate as hint for the point cloud segmentation scheme
     Transform<double, 3, Affine> object_transform;
-    int max_weight_index;
-    cor_particle_.weight().maxCoeff(&max_weight_index);
-    const VectorXd& mean = cor_particle_.mean(max_weight_index);
+    // int max_weight_index;
+    // cor_particle_.weight().maxCoeff(&max_weight_index);
+    const VectorXd& mean = cor_particle_.mean(0);
     object_transform = Translation<double, 3>(mean.head<3>());
     AngleAxisd rotation(AngleAxisd(mean(9), Vector3d::UnitZ()) *
                         AngleAxisd(mean(10), Vector3d::UnitY()) *
@@ -386,7 +381,9 @@ void PFilter::filteringStep()
 
     // Update the point estimate extraction
     bool valid_estimate;
-    std::tie(valid_estimate, point_estimate_) =  point_estimate_extraction_.extract(cor_particle_.state(), cor_particle_.weight());
+    VectorXd weight(1);
+    weight(0) = std::log(1.0);
+    std::tie(valid_estimate, point_estimate_) =  point_estimate_extraction_.extract(cor_particle_.mean(), weight);
     if (!valid_estimate)
         yInfo() << log_ID_ << "Cannot extract point estimate!";
 
@@ -446,7 +443,7 @@ void PFilter::filteringStep()
     std::tie(std::ignore, rate) = rate_.extract(rate_vector, rate_weight);
 
     std::cout << "Current rate is " << rate(0) << " fps" << std::endl;
-    std::cout << "Neff is: " << neff << std::endl << std::endl;
+    // std::cout << "Neff is: " << neff << std::endl << std::endl;
 
     // Change depth stride
     if (rate_stabilizer_ != nullptr)

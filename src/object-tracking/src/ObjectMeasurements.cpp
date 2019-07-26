@@ -160,17 +160,15 @@ bool ObjectMeasurements::freeze()
         // pc.close();
 
         // Store reference and query sets for furthest neighbour search
-        arma::mat point_cloud_query = arma::mat(point_cloud_tmp.data(), point_cloud_tmp.rows(), point_cloud_tmp.cols(), false, false);
-        MatrixXd pc_copy = point_cloud_tmp;
-        arma::mat point_cloud_reference = arma::mat(pc_copy.data(), pc_copy.rows(), pc_copy.cols(), false, false);
+        arma::mat point_cloud_reference = arma::mat(point_cloud_tmp.data(), point_cloud_tmp.rows(), point_cloud_tmp.cols(), false, false);
+        // MatrixXd pc_copy = point_cloud_tmp;
+        // arma::mat point_cloud_reference = arma::mat(pc_copy.data(), pc_copy.rows(), pc_copy.cols(), false, false);
         // kfn->BuildModel(std::move(point_cloud_reference), size_t(20), DUAL_TREE_MODE, 0.0);
-        DrusillaSelect<> akfn(point_cloud_reference, 5, 5);
 
+        DrusillaSelect<> akfn(point_cloud_reference, 5, 5);
         // Perform fn search
-        arma::Mat<size_t> neighbors;
-        arma::mat distances;
         // kfn->Search(std::move(point_cloud_query), 1, neighbors, distances);
-        akfn.Search(point_cloud_query, 1, neighbors, distances);
+        // akfn.Search(point_cloud_query, 1, neighbors, distances);
 
         // std::ofstream fn;
         // fn.open("./fn" + std::to_string(counter) + ".OFF");
@@ -181,11 +179,18 @@ bool ObjectMeasurements::freeze()
         // fn.close();
 
         found_outlier = false;
-#pragma omp parallel for
+// #pragma omp parallel for
         for (std::size_t i = 0; i < point_cloud_tmp.cols(); i++)
         {
             if (!found_outlier)
             {
+                arma::Mat<size_t> neighbors;
+                arma::mat distances;
+
+                MatrixXd query = point_cloud_tmp.col(i);
+                arma::mat query_arma(query.data(), 3, 1, false, false);
+                akfn.Search(query_arma, 1, neighbors, distances);
+
                 // Query point
                 Vector3d q = point_cloud_tmp.col(i);
 
@@ -193,10 +198,10 @@ bool ObjectMeasurements::freeze()
                 Vector3d q_p = prediction_tmp.col(i);
 
                 // Furthest point to q
-                Vector3d f = point_cloud_tmp.col(neighbors(i));
+                Vector3d f = point_cloud_tmp.col(neighbors(0));
 
                 // Projected point
-                Vector3d f_p = prediction_tmp.col(neighbors(i));
+                Vector3d f_p = prediction_tmp.col(neighbors(0));
 
                 // Distance in real point cloud
                 double dist_real = (q - f).norm();
@@ -213,8 +218,9 @@ bool ObjectMeasurements::freeze()
                     if (dist_1 > dist_2)
                         excluded_points(i) = 1;
                     else
-                        excluded_points(neighbors(i))  = 1;
+                        excluded_points(neighbors(0))  = 1;
                     found_outlier = true;
+                    break;
                 }
             }
         }
@@ -224,9 +230,8 @@ bool ObjectMeasurements::freeze()
     } while(found_outlier);
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     double execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-    std::cout << "Inliers: " << point_cloud.cols() << std::endl;
     std::cout << "Outlier rejection execution time: " << execution_time << std::endl;
+    std::cout << "Inliers: " << point_cloud.cols() << std::endl;
 
     visual_data_size_ = point_cloud.cols();
 

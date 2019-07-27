@@ -26,10 +26,7 @@ using namespace yarp::sig;
 ParticlesCorrectionReference::ParticlesCorrectionReference(PFCorrection& correction)
 {
     if (ParticlesCorrection* p = dynamic_cast<ParticlesCorrection*>(&correction))
-    {
         measurement_model_ = &(p->getObjectMeasurementsModel());
-        std::cout << measurement_model_ << std::endl;
-    }
 }
 
 

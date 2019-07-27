@@ -68,7 +68,6 @@ std::pair<bool, Data> ObjectMeasurements::measure(const Data& data) const
     return std::make_pair(true, measurement_);
 }
 
-#include <fstream>
 
 bool ObjectMeasurements::freeze()
 {
@@ -89,54 +88,28 @@ bool ObjectMeasurements::freeze()
     bool blocking_call = false;
     bool valid_point_cloud;
     MatrixXd point_cloud;
-    MatrixXd point_cloud_tmp;
     std::tie(valid_point_cloud, point_cloud) = segmentation_->extractPointCloud(*camera_, depth_, 10.0);
     if (!valid_point_cloud)
         return false;
 
-    // Predict point cloud with all the measurements
-    bool valid_prediction;
+    // Peform outlier rejection
+
+    // Predict point cloud using current object pose
     MatrixXd prediction;
-    MatrixXd prediction_tmp;
     MatrixXd prediction_vector;
-    MatrixXd point_cloud_vector;
-    point_cloud_vector.resize(3 * point_cloud.cols(), 1);
-    point_cloud_vector = Map<MatrixXd>(point_cloud.data(), point_cloud.size(), 1);
-    std::tie(valid_prediction, prediction_vector) = prediction_->predictPointCloud(object_pose_, point_cloud_vector, true);
+    std::tie(std::ignore, prediction_vector) = prediction_->predictPointCloud(object_pose_, Map<MatrixXd>(point_cloud.data(), point_cloud.size(), 1), true);
     prediction = Map<MatrixXd>(prediction_vector.col(0).data(), 3, prediction_vector.col(0).size() / 3);
 
-    // {
-    //     save = false;
-    //     std::ofstream pc;
-    //     pc.open("./pc.OFF");
-    //     pc << "OFF" << std::endl;
-    //     pc << point_cloud.cols() << " 0 0" << std::endl;
-    //     pc << point_cloud.transpose();
-    //     pc.close();
-
-    //     std::ofstream proj;
-    //     proj.open("./proj.OFF");
-    //     proj << "OFF" << std::endl;
-    //     proj << prediction.cols() << " 0 0" << std::endl;
-    //     proj << prediction.transpose();
-    //     proj.close();
-    // }
-
-    // Initialize furthest neighbour search
-    // KFNModel* kfn = new KFNModel();
-    // kfn->TreeType() = KFNModel::KD_TREE;
-    // kfn->RandomBasis() = false;
-
-    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-
-    bool found_outlier = false;
+    // Temporary storage
+    MatrixXd point_cloud_tmp;
+    MatrixXd prediction_tmp;
     VectorXi excluded_points = VectorXi::Zero(point_cloud.cols());
 
-    std::cout << "Number points: " << point_cloud.cols() << std::endl;
     point_cloud_tmp.swap(point_cloud);
     prediction_tmp.swap(prediction);
     do
     {
+        // Move inliers to temporary storage
         if (excluded_points.sum() != 0)
         {
             point_cloud_tmp.resize(point_cloud.rows(), point_cloud.cols() - excluded_points.sum());
@@ -152,56 +125,44 @@ bool ObjectMeasurements::freeze()
             }
             excluded_points = VectorXi::Zero(point_cloud_tmp.cols());
         }
-        // std::ofstream pc;
-        // pc.open("./pc" + std::to_string(counter) + ".OFF");
-        // pc << "OFF" << std::endl;
-        // pc << point_cloud_tmp.cols() << " 0 0" << std::endl;
-        // pc << point_cloud_tmp.transpose();
-        // pc.close();
 
-        // Store reference and query sets for furthest neighbour search
+        // Initialize DrusillaSelect
+        bool use_drusilla = true;
         arma::mat point_cloud_reference = arma::mat(point_cloud_tmp.data(), point_cloud_tmp.rows(), point_cloud_tmp.cols(), false, false);
-        // MatrixXd pc_copy = point_cloud_tmp;
-        // arma::mat point_cloud_reference = arma::mat(pc_copy.data(), pc_copy.rows(), pc_copy.cols(), false, false);
-        // kfn->BuildModel(std::move(point_cloud_reference), size_t(20), DUAL_TREE_MODE, 0.0);
+        DrusillaSelect<>* akfn;
+        try
+        {
+            akfn = new DrusillaSelect<>(point_cloud_reference, 5, 5);
+        }
+        catch (std::invalid_argument)
+        {
+            use_drusilla = false;
+        }
 
-        DrusillaSelect<> akfn(point_cloud_reference, 5, 5);
-        // Perform fn search
-        // kfn->Search(std::move(point_cloud_query), 1, neighbors, distances);
-        // akfn.Search(point_cloud_query, 1, neighbors, distances);
-
-        // std::ofstream fn;
-        // fn.open("./fn" + std::to_string(counter) + ".OFF");
-        // fn << "OFF" << std::endl;
-        // fn << point_cloud_tmp.cols() << " 0 0" << std::endl;
-        // for (std::size_t i = 0; i < point_cloud_tmp.cols(); i++)
-        //     fn << point_cloud_tmp.col(neighbors(i)).transpose() << std::endl;
-        // fn.close();
-
-        found_outlier = false;
-// #pragma omp parallel for
+        // Search for outliers
+        std::size_t k = 1;
         for (std::size_t i = 0; i < point_cloud_tmp.cols(); i++)
         {
-            if (!found_outlier)
+            arma::Mat<size_t> neighbors;
+            arma::mat distances;
+
+            MatrixXd query = point_cloud_tmp.col(i);
+            arma::mat query_arma(query.data(), 3, 1, false, false);
+            akfn->Search(query_arma, k, neighbors, distances);
+
+            // Query point
+            Vector3d q = point_cloud_tmp.col(i);
+
+            // Projected point
+            Vector3d q_p = prediction_tmp.col(i);
+
+            for (std::size_t j = 0; j < neighbors.n_rows; j++)
             {
-                arma::Mat<size_t> neighbors;
-                arma::mat distances;
-
-                MatrixXd query = point_cloud_tmp.col(i);
-                arma::mat query_arma(query.data(), 3, 1, false, false);
-                akfn.Search(query_arma, 1, neighbors, distances);
-
-                // Query point
-                Vector3d q = point_cloud_tmp.col(i);
-
-                // Projected point
-                Vector3d q_p = prediction_tmp.col(i);
-
                 // Furthest point to q
-                Vector3d f = point_cloud_tmp.col(neighbors(0));
+                Vector3d f = point_cloud_tmp.col(neighbors(j));
 
                 // Projected point
-                Vector3d f_p = prediction_tmp.col(neighbors(0));
+                Vector3d f_p = prediction_tmp.col(neighbors(j));
 
                 // Distance in real point cloud
                 double dist_real = (q - f).norm();
@@ -214,54 +175,24 @@ bool ObjectMeasurements::freeze()
                     // Distance of outlier candidates to their projections
                     double dist_1 = (q - q_p).norm();
                     double dist_2 = (f - f_p).norm();
-                    int excluded;
                     if (dist_1 > dist_2)
                         excluded_points(i) = 1;
                     else
-                        excluded_points(neighbors(0))  = 1;
-                    found_outlier = true;
-                    break;
+                        excluded_points(neighbors(j))  = 1;
                 }
             }
         }
 
         point_cloud.swap(point_cloud_tmp);
         prediction.swap(prediction_tmp);
-    } while(found_outlier);
-    std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-    double execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "Outlier rejection execution time: " << execution_time << std::endl;
-    std::cout << "Inliers: " << point_cloud.cols() << std::endl;
+        // std::cout << point_cloud.cols() << std::endl;
+    } while(excluded_points.sum() != 0);
 
-    visual_data_size_ = point_cloud.cols();
-
-    // Evaluate centroid of point cloud and discard too far points
-    // VectorXd centroid = (point_cloud.topRows<3>().rowwise().sum()) / point_cloud.cols();
-    // VectorXi good_points(point_cloud.cols());
-    // for (int i = 0 ; i < point_cloud.cols(); i++)
-    // {
-    //     good_points(i) = 0;
-    //     if ((point_cloud.topRows<3>().col(i) - centroid).norm() < visual_outlier_threshold_)
-    //         good_points(i) = 1;
-    // }
-    // visual_data_size_ = good_points.sum();
-
-    // Take only valid visual points
-    // MatrixXd points(3, visual_data_size_);
-    // for (int i = 0, j = 0; i < point_cloud.cols(); i++)
-    // {
-    //     if (good_points(i) == 1)
-    //     {
-    //         point_cloud.topRows<3>().col(i).swap(points.col(j));
-    //         j++;
-    //     }
-    // }
 
     // Resize measurements to be a column vector.
+    visual_data_size_ = point_cloud.cols();
     measurement_.resize(3 * point_cloud.cols(), 1);
     measurement_.swap(Map<MatrixXd>(point_cloud.data(), point_cloud.size(), 1));
-    // measurement_.resize(3 * points.cols(), 1);
-    // measurement_.swap(Map<MatrixXd>(points.data(), points.size(), 1));
 
     // Log measurements
     logger(measurement_.transpose());

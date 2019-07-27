@@ -26,10 +26,7 @@ CorrectionReference::CorrectionReference()
 CorrectionReference::CorrectionReference(Correction& correction)
 {
     if (Correction* p = dynamic_cast<Correction*>(&correction))
-    {
         measurement_model_ = &(p->getObjectMeasurementsModel());
-        std::cout << measurement_model_ << std::endl;
-    }
 }
 
 

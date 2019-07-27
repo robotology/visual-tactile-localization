@@ -7,7 +7,6 @@
 
 #include <ObjectMeasurements.h>
 
-#include <mlpack/methods/neighbor_search/ns_model.hpp>
 #include <mlpack/methods/approx_kfn/drusilla_select.hpp>
 
 #include <armadillo>
@@ -16,8 +15,7 @@
 using namespace bfl;
 using namespace Eigen;
 using namespace mlpack::neighbor;
-using KFNModel = NSModel<FurthestNS>;
-
+using MatrixXu = Matrix<std::size_t, Dynamic, Dynamic>;
 
 ObjectMeasurements::ObjectMeasurements
 (
@@ -132,37 +130,53 @@ bool ObjectMeasurements::freeze()
         DrusillaSelect<>* akfn;
         try
         {
-            akfn = new DrusillaSelect<>(point_cloud_reference, 5, 5);
+            std::size_t drusilla_l = 5;
+            std::size_t drusilla_m = 5;
+            akfn = new DrusillaSelect<>(point_cloud_reference, drusilla_l, drusilla_m);
         }
         catch (std::invalid_argument)
         {
+            // If drusilla_l * drusilla_m > point_cloud_tmp.cols()
+            // DrusillaSelect cannot be used
             use_drusilla = false;
         }
 
         // Search for outliers
-        std::size_t k = 1;
+        std::size_t k = 10;
         for (std::size_t i = 0; i < point_cloud_tmp.cols(); i++)
         {
-            arma::Mat<size_t> neighbors;
-            arma::mat distances;
-
-            MatrixXd query = point_cloud_tmp.col(i);
-            arma::mat query_arma(query.data(), 3, 1, false, false);
-            akfn->Search(query_arma, k, neighbors, distances);
-
             // Query point
             Vector3d q = point_cloud_tmp.col(i);
+
+            MatrixXu neighbors;
+            if (use_drusilla)
+            {
+                arma::Mat<size_t> neighbors_arma;
+                arma::mat distances;
+
+                arma::mat query_arma(q.data(), 3, 1, false, false);
+                akfn->Search(query_arma, k, neighbors_arma, distances);
+                neighbors = Map<MatrixXu>(neighbors_arma.memptr(), neighbors_arma.n_rows, neighbors_arma.n_cols);
+            }
+            else
+            {
+                // Since DrusillaSelect is not available, a brute force approach with k = 1 is used
+                std::size_t max_index;
+                (point_cloud_tmp.colwise() - q).colwise().norm().maxCoeff(&max_index);
+                neighbors.resize(1, 1);
+                neighbors(0, 0) = max_index;
+            }
 
             // Projected point
             Vector3d q_p = prediction_tmp.col(i);
 
-            for (std::size_t j = 0; j < neighbors.n_rows; j++)
+            for (std::size_t j = 0; j < neighbors.rows(); j++)
             {
                 // Furthest point to q
-                Vector3d f = point_cloud_tmp.col(neighbors(j));
+                Vector3d f = point_cloud_tmp.col(neighbors.col(0)(j));
 
                 // Projected point
-                Vector3d f_p = prediction_tmp.col(neighbors(j));
+                Vector3d f_p = prediction_tmp.col(neighbors.col(0)(j));
 
                 // Distance in real point cloud
                 double dist_real = (q - f).norm();
@@ -178,7 +192,7 @@ bool ObjectMeasurements::freeze()
                     if (dist_1 > dist_2)
                         excluded_points(i) = 1;
                     else
-                        excluded_points(neighbors(j))  = 1;
+                        excluded_points(neighbors.col(0)(j))  = 1;
                 }
             }
         }

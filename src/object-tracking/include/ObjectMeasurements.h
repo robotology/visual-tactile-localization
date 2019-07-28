@@ -35,6 +35,8 @@ public:
 
     std::pair<bool, bfl::Data> predictedMeasure(const Eigen::Ref<const Eigen::MatrixXd>& current_states) const override;
 
+    std::pair<bool, std::vector<Eigen::MatrixXd>> predictSegmentation(const Eigen::Ref<const Eigen::MatrixXd>& object_poses) const;
+
     std::pair<bool, bfl::Data> innovation(const bfl::Data& predicted_measurements, const bfl::Data& measurements) const override;
 
     std::pair<bool, Eigen::MatrixXd> getNoiseCovarianceMatrix() const override;

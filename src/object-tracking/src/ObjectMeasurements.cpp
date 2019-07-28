@@ -240,7 +240,85 @@ std::pair<bool, bfl::Data> ObjectMeasurements::predictedMeasure(const Eigen::Ref
     if (!valid_prediction)
         return std::make_pair(false, Data());
 
+    // Predict 2d measurements of segmentation contour
+    std::vector<MatrixXd> predicted_segmentation_contours;
+    std::tie(std::ignore, predicted_segmentation_contours) = predictSegmentation(cur_states);
+
     return std::make_pair(true, prediction);
+}
+
+
+std::pair<bool, std::vector<MatrixXd>> ObjectMeasurements::predictSegmentation(const Ref<const MatrixXd>& object_poses) const
+{
+    // Get camera pose
+    bool valid_pose = false;
+    Transform<double, 3, Affine> camera_pose;
+    std::tie(valid_pose, camera_pose) = camera_->getCameraPose(false);
+    if (!valid_pose)
+        return std::make_pair(false, std::vector<MatrixXd>());
+
+    // Get camera intrinsic parameters
+    bool valid_camera_parameters;
+    CameraParameters camera_parameters;
+    std::tie(valid_camera_parameters, camera_parameters) = camera_->getIntrinsicParameters();
+    if (!valid_camera_parameters)
+        return std::make_pair(false, std::vector<MatrixXd>());
+
+    // Populate segmentation
+    std::vector<MatrixXd> segmentation_matrices;
+    for (std::size_t i = 0; i < object_poses.cols(); i++)
+    {
+        Transform<double, 3, Affine> object_pose;
+        object_pose = Translation<double, 3>(object_poses.col(i).head<3>());
+        AngleAxisd angle_axis(AngleAxisd(object_poses.col(i).tail<3>()(0), Vector3d::UnitZ()) *
+                              AngleAxisd(object_poses.col(i).tail<3>()(1), Vector3d::UnitY()) *
+                              AngleAxisd(object_poses.col(i).tail<3>()(2), Vector3d::UnitX()));
+        object_pose.rotate(angle_axis);
+        Transform<double, 3, Affine> cam_to_object = camera_pose.inverse() * object_pose;
+
+        // Get the model virtual point cloud from class PointCloudPrediction
+        MatrixXd cloud = prediction_->evaluateModel(cam_to_object);
+
+        // Transform to a cv contour, i.e. a std::vector of std::vector of cv::Point
+        // std::vector<std::vector<cv::Point>> contours;
+        std::vector<cv::Point> contour(cloud.cols());
+
+        for (std::size_t j = 0; j < cloud.cols(); j++)
+        {
+            int u = camera_parameters.cx + cloud.col(j)(0) / cloud.col(j)(2) * camera_parameters.fx;
+            int v = camera_parameters.cy + cloud.col(j)(1) / cloud.col(j)(2) * camera_parameters.fy;
+
+            contour.at(j) = cv::Point(u, v);
+        }
+
+        // Render the hull on an image
+        std::vector<std::vector<cv::Point>> hull(1);
+        cv::convexHull(contour, hull[0]);
+        cv::Mat mask(camera_parameters.width, camera_parameters.height, CV_8UC1, cv::Scalar(0));
+        cv::drawContours(mask, hull, 0, 255, CV_FILLED);
+
+        // Extract contours from the mask
+        std::vector<std::vector<cv::Point>> extracted_contours;
+        cv::findContours(mask, extracted_contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+        // Store coordinates
+        std::size_t number_points = 0;
+        for (std::size_t j = 0; j < extracted_contours.size(); j++)
+            number_points += extracted_contours.at(j).size();
+
+        std::size_t p = 0;
+        MatrixXd segmentation(2, number_points);
+        for (std::size_t j = 0; j < extracted_contours.size(); j++)
+            for (std::size_t k = 0; k < extracted_contours.at(j).size(); k++)
+            {
+                segmentation.col(p)(0) = extracted_contours.at(j).at(k).x;
+                segmentation.col(p)(1) = extracted_contours.at(j).at(k).y;
+                p++;
+            }
+        segmentation_matrices.push_back(segmentation);
+    }
+
+    return std::make_pair(true, segmentation_matrices);
 }
 
 

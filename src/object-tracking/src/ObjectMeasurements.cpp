@@ -202,6 +202,9 @@ bool ObjectMeasurements::freeze()
         // std::cout << point_cloud.cols() << std::endl;
     } while(excluded_points.sum() != 0);
 
+    // Extract 2d measurements of segmentation contour
+    MatrixXd segmentation_contour;
+    std::tie(std::ignore, segmentation_contour) = segmentation_->extractSegmentation();
 
     // Resize measurements to be a column vector.
     visual_data_size_ = point_cloud.cols();

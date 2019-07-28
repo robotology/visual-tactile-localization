@@ -205,6 +205,33 @@ std::pair<bool, MatrixXd> MaskSegmentation::extractPointCloud(Camera& camera, co
 }
 
 
+std::pair<bool, MatrixXd> MaskSegmentation::extractSegmentation()
+{
+    if (!mask_initialized_)
+        return std::make_pair(false, MatrixXd());
+
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(mask_, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+    // Evaluate the number of points
+    std::size_t number_points = 0;
+    for (std::size_t i = 0; i < contours.size(); i++)
+        number_points += contours.at(i).size();
+
+    MatrixXd coordinates(2, number_points);
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < contours.size(); i++)
+        for (std::size_t j = 0; j < contours.at(i).size(); j++)
+    {
+        coordinates.col(k)(0) = contours.at(i).at(j).x;
+        coordinates.col(k)(1) = contours.at(i).at(j).y;
+        k++;
+    }
+
+    return std::make_pair(true, coordinates);
+}
+
+
 bool MaskSegmentation::getProperty(const std::string& property) const
 {
     return false;

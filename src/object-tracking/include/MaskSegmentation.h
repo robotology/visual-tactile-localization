@@ -33,6 +33,8 @@ public:
 
     std::pair<bool, Eigen::MatrixXd> extractPointCloud(Camera& camera, const Eigen::Ref<const Eigen::MatrixXf>& depth, const double& max_depth) override;
 
+    std::pair<bool, Eigen::MatrixXd> extractSegmentation() override;
+
     bool getProperty(const std::string& property) const override;
 
     bool setProperty(const std::string& property) override;

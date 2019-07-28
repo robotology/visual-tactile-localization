@@ -16,6 +16,13 @@ PointCloudSegmentation::~PointCloudSegmentation()
 { }
 
 
+std::pair<bool, Eigen::MatrixXd> PointCloudSegmentation::extractSegmentation()
+{
+    std::string error = log_ID_ + "::extractSegmentation. Base class method not implemented.";
+    throw(std::runtime_error(error));
+}
+
+
 void PointCloudSegmentation::addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_occlusion)
 {
     occlusions_.push_back(std::move(object_occlusion));

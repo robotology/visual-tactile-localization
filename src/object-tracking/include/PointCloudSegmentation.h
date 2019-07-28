@@ -13,6 +13,8 @@
 
 #include <Eigen/Dense>
 
+#include <string>
+
 
 class PointCloudSegmentation
 {
@@ -26,6 +28,8 @@ public:
     virtual bool freezeSegmentation(Camera& camera) = 0;
 
     virtual std::pair<bool, Eigen::MatrixXd> extractPointCloud(Camera& camera, const Eigen::Ref<const Eigen::MatrixXf>& depth, const double& max_depth) = 0;
+
+    virtual std::pair<bool, Eigen::MatrixXd> extractSegmentation();
 
     virtual void addObjectOcclusion(std::unique_ptr<ObjectOcclusion> object_occlusion);
 
@@ -62,6 +66,8 @@ private:
     std::size_t depth_stride_;
 
     std::size_t default_depth_stride_;
+
+    const std::string log_ID_ = "[PointCloudSegmentation]";
 };
 
 #endif /* POINTCLOUDSEGMENTATION_H */

@@ -9,7 +9,7 @@
 #define CORRECTION_H
 
 #include <BayesFilters/AdditiveMeasurementModel.h>
-#include <BayesFilters/SUKFCorrection.h>
+#include <SUKFCorrectionAlt.h>
 
 #include <ObjectMeasurements.h>
 

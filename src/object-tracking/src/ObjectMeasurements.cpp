@@ -22,7 +22,7 @@ ObjectMeasurements::ObjectMeasurements
     std::unique_ptr<Camera> camera,
     std::shared_ptr<PointCloudSegmentation> segmentation,
     std::shared_ptr<PointCloudPrediction> prediction,
-    const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance,
+    const Eigen::Ref<const Eigen::MatrixXd>& visual_noise_covariance,
     const double& visual_outlier_threshold,
     const std::string& depth_fetch_mode,
     const bool& enable_log,
@@ -47,8 +47,8 @@ ObjectMeasurements::ObjectMeasurements
     std::unique_ptr<Camera> camera,
     std::shared_ptr<PointCloudSegmentation> segmentation,
     std::shared_ptr<PointCloudPrediction> prediction,
-    const Eigen::Ref<const Eigen::Matrix3d>& visual_noise_covariance,
-    const Eigen::Ref<const Eigen::Matrix3d>& tactile_noise_covariance,
+    const Eigen::Ref<const Eigen::MatrixXd>& visual_noise_covariance,
+    const Eigen::Ref<const Eigen::MatrixXd>& tactile_noise_covariance,
     const double& visual_outlier_threshold,
     const std::string& depth_fetch_mode,
     const bool& enable_log,
@@ -208,11 +208,12 @@ bool ObjectMeasurements::freeze()
 
     // Resize measurements to be a column vector.
     visual_data_size_ = point_cloud.cols();
-    measurement_.resize(3 * point_cloud.cols(), 1);
-    measurement_.swap(Map<MatrixXd>(point_cloud.data(), point_cloud.size(), 1));
+    measurement_.resize(3 * visual_data_size_  + segmentation_contour.cols() * 2, 1);
+    measurement_.col(0).head(visual_data_size_ * 3).swap(Map<MatrixXd>(point_cloud.data(), point_cloud.size(), 1));
+    measurement_.col(0).tail(segmentation_contour.cols() * 2).swap(Map<MatrixXd>(segmentation_contour.data(), segmentation_contour.cols() * 2, 1));
 
     // Log measurements
-    logger(measurement_.transpose());
+    logger(measurement_.col(0).head(visual_data_size_ * 3).transpose());
 
     return true;
 }
@@ -234,8 +235,8 @@ std::pair<bool, bfl::Data> ObjectMeasurements::predictedMeasure(const Eigen::Ref
         return std::make_pair(false, Data());
 
     bool valid_prediction;
-    MatrixXd prediction;
-    std::tie(valid_prediction, prediction) = prediction_->predictPointCloud(cur_states, any::any_cast<MatrixXd>(measurement).col(0), false);
+    MatrixXd prediction_3d;
+    std::tie(valid_prediction, prediction_3d) = prediction_->predictPointCloud(cur_states, any::any_cast<MatrixXd>(measurement).col(0).head(visual_data_size_ * 3), false);
 
     if (!valid_prediction)
         return std::make_pair(false, Data());
@@ -244,7 +245,7 @@ std::pair<bool, bfl::Data> ObjectMeasurements::predictedMeasure(const Eigen::Ref
     std::vector<MatrixXd> predicted_segmentation_contours;
     std::tie(std::ignore, predicted_segmentation_contours) = predictSegmentation(cur_states);
 
-    return std::make_pair(true, prediction);
+    return std::make_pair(true, std::make_tuple(visual_data_size_, prediction_3d, predicted_segmentation_contours));
 }
 
 

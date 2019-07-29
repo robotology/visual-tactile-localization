@@ -222,7 +222,7 @@ int main(int argc, char** argv)
     Bottle rf_measurement_model = rf.findGroup("MEASUREMENT_MODEL");
     VectorXd visual_covariance           = loadVectorDouble(rf_measurement_model, "visual_covariance", 3);
     MatrixXd visual_covariance_diagonal  = visual_covariance.asDiagonal();
-    VectorXd tactile_covariance          = loadVectorDouble(rf_measurement_model, "tactile_covariance", 3);
+    VectorXd tactile_covariance          = loadVectorDouble(rf_measurement_model, "mask_covariance", 2);
     MatrixXd tactile_covariance_diagonal = tactile_covariance.asDiagonal();
 
     /* Unscented transform. */
@@ -607,7 +607,7 @@ int main(int argc, char** argv)
     {
         measurement_model = std::unique_ptr<ObjectMeasurements>
         (
-            new ObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode, enable_log, log_path)
+            new ObjectMeasurements(std::move(camera), segmentation, point_cloud_prediction, visual_covariance_diagonal, tactile_covariance_diagonal, pc_outlier_threshold, depth_fetch_mode, enable_log, log_path)
         );
     }
 

@@ -1,4 +1,4 @@
-image: pattacini/visual-tactile-localization:latest
+image: xenvredocker/vtl:latest
 ports:
 - port: 6080
   onOpen: notify

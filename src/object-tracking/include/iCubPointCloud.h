@@ -52,7 +52,7 @@ public:
 
     std::pair<bool, bfl::Data> measure(const bfl::Data& data = bfl::Data()) const override;
 
-    bool freeze() override;
+    bool freeze(const bfl::Data& data = bfl::Data()) override;
 
     std::pair<std::size_t, std::size_t> getOutputSize() const override;
 

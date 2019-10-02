@@ -48,7 +48,7 @@ public:
 
     void enableNoise(const double std_noise_x, const double std_noise_y, const double std_noise_z);
 
-    bool freeze() override;
+    bool freeze(const bfl::Data& data = bfl::Data()) override;
 
     std::pair<bool, bfl::Data> measure(const bfl::Data& data = bfl::Data()) const override;
 

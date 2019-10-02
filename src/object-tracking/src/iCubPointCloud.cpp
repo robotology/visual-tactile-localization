@@ -106,7 +106,7 @@ std::pair<bool, Data> iCubPointCloud::measure(const Data& data) const
 }
 
 
-bool iCubPointCloud::freeze()
+bool iCubPointCloud::freeze(const Data& data)
 {
     // Get bounding box
     bool valid_bbox;

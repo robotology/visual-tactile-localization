@@ -131,7 +131,7 @@ void SimulatedPointCloud::transformModel(const VectorXd& state, simpleTriMesh& t
 }
 
 
-bool SimulatedPointCloud::freeze()
+bool SimulatedPointCloud::freeze(const Data& data)
 {
     try
     {
